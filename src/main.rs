@@ -31,6 +31,10 @@ use bevy::window::{
     PresentMode,
     WindowMode,
 };
+use bevy_remote::{
+    http::RemoteHttpPlugin,
+    RemotePlugin,
+};
 
 fn main() {
     let mut app = App::new();
@@ -67,5 +71,8 @@ fn main() {
         SplashPlugin,
         StatePlugin,
     ))
+    .add_plugins(RemotePlugin::default())
+    .add_plugins(RemoteHttpPlugin::default())
     .run();
 }
+

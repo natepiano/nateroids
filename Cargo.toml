@@ -5,10 +5,11 @@ edition = "2021"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-bevy = { version = "0.15.0", features = ["tonemapping_luts", "bevy_dev_tools"] }
+bevy = { version = "0.15.1", features = ["tonemapping_luts", "bevy_dev_tools"] }
+bevy_remote = { version = "0.15.1" }
 bevy_rapier3d = { version = "0.28.0", features = ["simd-stable", "debug-render-3d"] }
 leafwing-input-manager = "0.16.0"
-bevy-inspector-egui = "0.28.0"
+bevy-inspector-egui = "0.28.1"
 #
 # todo: rust question - bevy-inspector-egui explicilty asks for the "manage-clipboard" feature from bevy_egui
 #                       however this feature breaks the wasm build so that i have to disable it
