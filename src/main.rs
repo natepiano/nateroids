@@ -56,8 +56,6 @@ fn main() {
             }),
     );
 
-    // there's a limit to the tuple size so
-    // i just split them in 2
     app.add_plugins((
         ActorPlugin,
         AssetLoaderPlugin,
