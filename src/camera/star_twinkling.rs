@@ -1,8 +1,5 @@
 use crate::{
-    camera::stars::{
-        Star,
-        StarConfig,
-    },
+    camera::stars::{Star, StarConfig},
     schedule::InGameSet,
 };
 use bevy::prelude::*;
@@ -29,8 +26,8 @@ impl Plugin for StarTwinklingPlugin {
 #[derive(Component)]
 struct Twinkling {
     original_emissive: Vec4,
-    target_emissive:   Vec4,
-    twinkle_timer:     Timer,
+    target_emissive: Vec4,
+    twinkle_timer: Timer,
 }
 
 #[derive(Resource)]
@@ -47,10 +44,10 @@ fn should_start_twinkling(start_timer: &mut ResMut<StartTwinklingTimer>, time: R
 }
 
 fn get_random_indices(count: usize, range: usize) -> Vec<usize> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut numbers = HashSet::with_capacity(count);
     while numbers.len() < count {
-        numbers.insert(rng.gen_range(0..range));
+        numbers.insert(rng.random_range(0..range));
     }
     numbers.into_iter().collect()
 }
@@ -93,7 +90,7 @@ fn start_twinkling(
     let all_stars: Vec<(Entity, &MeshMaterial3d<StandardMaterial>)> = stars.iter().collect();
     let filtered_stars = extract_elements_at_indices(&all_stars, &indices);
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     for (entity, material_handle) in filtered_stars {
         if let Some(material) = materials.get(material_handle) {
@@ -103,10 +100,10 @@ fn start_twinkling(
                 material.emissive.blue,
                 material.emissive.alpha,
             );
-            let intensity = rng.gen_range(config.twinkle_intensity.start..config.twinkle_intensity.end);
+            let intensity = rng.random_range(config.twinkle_intensity.start..config.twinkle_intensity.end);
             let target_emissive = original_emissive * intensity;
 
-            let duration = rng.gen_range(config.twinkle_duration.start..config.twinkle_duration.end);
+            let duration = rng.random_range(config.twinkle_duration.start..config.twinkle_duration.end);
 
             commands.entity(entity).insert(Twinkling {
                 original_emissive,

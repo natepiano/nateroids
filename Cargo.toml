@@ -5,8 +5,8 @@ edition = "2021"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-bevy = { version = "0.15.1", features = ["tonemapping_luts", "bevy_dev_tools"] }
-bevy_remote = { version = "0.15.1" }
+bevy = { version = "0.15.2", features = ["tonemapping_luts", "bevy_dev_tools"] }
+bevy_remote = { version = "0.15.2" }
 bevy_rapier3d = { version = "0.28.0", features = ["simd-stable", "debug-render-3d"] }
 leafwing-input-manager = "0.16.0"
 bevy-inspector-egui = "0.29.1"
@@ -19,8 +19,8 @@ bevy-inspector-egui = "0.29.1"
 #                       without the extra rigamarole...is there a better way to do this?
 # RUSTFLAGS="--cfg=web_sys_unstable_apis" cargo build --release --target wasm32-unknown-unknown
 #
-rand = "0.8.5"
-strum = { version = "0.26.3", features = ["derive"] }
+rand = "0.9.0"
+strum = { version = "0.27.0", features = ["derive"] }
 
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
