@@ -5,9 +5,16 @@ edition = "2021"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-bevy = { version = "0.15.2", features = ["tonemapping_luts", "bevy_dev_tools"] }
-bevy_remote = { version = "0.15.2" }
-bevy_rapier3d = { version = "0.28.0", features = ["simd-stable", "debug-render-3d"] }
+bevy = { version = "^0.15.3", features = [
+  "tonemapping_luts",
+  "bevy_dev_tools",
+] }
+bevy_panorbit_camera = { git = "https://github.com/natepiano/bevy_panorbit_camera.git", branch = "feature/blender-trackpad-controls", features = ["bevy_egui"] }
+bevy_remote = { version = "0.15.3" }
+bevy_rapier3d = { version = "0.28.0", features = [
+  "simd-stable",
+  "debug-render-3d",
+] }
 leafwing-input-manager = "0.16.0"
 bevy-inspector-egui = "0.29.1"
 #

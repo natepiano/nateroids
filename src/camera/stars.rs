@@ -37,7 +37,7 @@ impl Default for StarConfig {
         Self {
             batch_size_replace: 10,
             duration_replace_timer: 1.,
-            star_count: 500,
+            star_count: 1000,
             star_color: -30.0..30.0,
             star_color_white_probability: 0.85,
             star_color_white_start_ratio: 0.7,

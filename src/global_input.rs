@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
-use strum::{
-    EnumIter,
-    IntoEnumIterator,
-};
+use strum::{EnumIter, IntoEnumIterator};
 
 pub struct InputPlugin;
 
@@ -22,6 +19,7 @@ pub enum GlobalAction {
     BoundaryInspector,
     CameraConfigInspector,
     Debug,
+    Home,
     LightsInspector,
     MissileInspector,
     NateroidInspector,
@@ -77,6 +75,7 @@ impl GlobalAction {
             Self::BoundaryInspector => insert_shift_input(input_map, action, KeyCode::KeyB),
             Self::CameraConfigInspector => insert_shift_input(input_map, action, KeyCode::KeyC),
             Self::Debug => insert_shift_input(input_map, action, KeyCode::KeyD),
+            Self::Home => input_map.with(action, KeyCode::F12),
             Self::LightsInspector => insert_shift_input(input_map, action, KeyCode::KeyL),
             Self::MissileInspector => insert_shift_input(input_map, action, KeyCode::Digit1),
             Self::NateroidInspector => insert_shift_input(input_map, action, KeyCode::Digit2),
@@ -126,4 +125,8 @@ pub fn toggle_active(
 #[derive(Default)]
 pub struct ToggleState {
     pub state: bool,
+}
+
+pub fn just_pressed<A: Actionlike>(action: A) -> impl Fn(Res<ActionState<A>>) -> bool {
+    move |action_state: Res<ActionState<A>>| action_state.just_pressed(&action)
 }

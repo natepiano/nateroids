@@ -1,17 +1,14 @@
-mod camera_control;
 mod cameras;
+mod config;
 mod lights;
 mod star_twinkling;
 mod stars;
 
-use bevy::{
-    prelude::*,
-    render::view::Layer,
-};
+use bevy::{prelude::*, render::view::Layer};
 
-use camera_control::CameraControlPlugin;
 use cameras::CamerasPlugin;
 pub use cameras::PrimaryCamera;
+use config::CameraConfigPlugin;
 use lights::DirectionalLightsPlugin;
 use star_twinkling::StarTwinklingPlugin;
 use stars::StarsPlugin;
@@ -20,7 +17,7 @@ pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(CameraControlPlugin)
+        app.add_plugins(CameraConfigPlugin)
             .add_plugins(DirectionalLightsPlugin)
             .add_plugins(CamerasPlugin)
             .add_plugins(StarsPlugin)

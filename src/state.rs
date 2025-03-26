@@ -1,8 +1,5 @@
 use crate::global_input::GlobalAction;
-use bevy::{
-    dev_tools::states::*,
-    prelude::*,
-};
+use bevy::{dev_tools::states::*, prelude::*};
 use bevy_rapier3d::plugin::RapierConfiguration;
 use leafwing_input_manager::prelude::ActionState;
 
@@ -13,7 +10,6 @@ impl Plugin for StatePlugin {
         app.init_state::<GameState>()
             .add_computed_state::<PlayingGame>()
             .add_computed_state::<IsPaused>()
-            .add_computed_state::<IsInspecting>()
             .add_systems(
                 Update,
                 (
@@ -26,7 +22,9 @@ impl Plugin for StatePlugin {
             .add_systems(Update, log_transitions::<GameState>);
     }
 
-    fn name(&self) -> &str { "state plugin" }
+    fn name(&self) -> &str {
+        "state plugin"
+    }
 }
 
 // splash is the default so bevy will automatically enter this state
@@ -40,7 +38,7 @@ pub enum GameState {
     #[default]
     Splash,
     InGame {
-        paused:     bool,
+        paused: bool,
         inspecting: bool,
     },
     GameOver,
@@ -94,29 +92,6 @@ impl ComputedStates for IsPaused {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum IsInspecting {
-    NotInspecting,
-    Inspecting,
-}
-
-impl ComputedStates for IsInspecting {
-    type SourceStates = GameState;
-
-    fn compute(sources: GameState) -> Option<Self> {
-        // Here we convert from our [`GameState`] to all potential [`IsInspecting`]
-        // versions.
-        match sources {
-            GameState::InGame { inspecting: true, .. } => Some(Self::Inspecting),
-            GameState::InGame {
-                inspecting: false, ..
-            } => Some(Self::NotInspecting),
-            // If `GameState` is not `InGame`, inspecting is meaningless, and so we set it to `None`.
-            _ => None,
-        }
-    }
-}
-
 fn toggle_pause(
     user_input: Res<ActionState<GlobalAction>>,
     mut next_state: ResMut<NextState<GameState>>,
@@ -125,7 +100,7 @@ fn toggle_pause(
     if user_input.just_pressed(&GlobalAction::Pause) {
         if let GameState::InGame { paused, inspecting } = state.get() {
             next_state.set(GameState::InGame {
-                paused:     !*paused,
+                paused: !*paused,
                 inspecting: *inspecting,
             });
         }
@@ -135,7 +110,7 @@ fn toggle_pause(
 fn transition_to_in_game(mut next_state: ResMut<NextState<GameState>>) {
     println!("Transitioning to InGame");
     next_state.set(GameState::InGame {
-        paused:     false,
+        paused: false,
         inspecting: false,
     });
 }

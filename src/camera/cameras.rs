@@ -1,34 +1,35 @@
 use crate::{
-    camera::{
-        camera_control::{
-            CameraConfig,
-            CameraControl,
-        },
-        CameraOrder,
-        RenderLayer,
-    },
-    global_input::GlobalAction,
+    camera::{config::CameraConfig, CameraOrder, RenderLayer},
+    global_input::{just_pressed, GlobalAction},
     orientation::CameraOrientation,
     playfield::Boundary,
 };
 use bevy::{
-    core_pipeline::{
-        bloom::Bloom,
-        tonemapping::Tonemapping,
-    },
+    core_pipeline::{bloom::Bloom, tonemapping::Tonemapping},
     prelude::*,
     render::view::RenderLayers,
 };
+use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin, TrackpadBehavior};
 use leafwing_input_manager::prelude::*;
 
 pub struct CamerasPlugin;
 
 impl Plugin for CamerasPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_star_camera.before(spawn_primary_camera))
+        app.add_plugins(PanOrbitCameraPlugin)
+            .add_systems(Startup, spawn_star_camera.before(spawn_primary_camera))
             .add_systems(Startup, spawn_primary_camera)
-            .add_systems(Update, update_clear_color)
-            .add_systems(Update, (toggle_stars, update_bloom_settings));
+            .add_systems(Update, home_camera.run_if(just_pressed(GlobalAction::Home)))
+            .add_systems(Update, (toggle_stars, update_bloom_settings, update_clear_color));
+    }
+}
+
+fn home_camera(
+    orientation: Res<CameraOrientation>,
+    mut camera_transform: Query<&mut Transform, With<PrimaryCamera>>,
+) {
+    if let Ok(mut transform) = camera_transform.get_single_mut() {
+        *transform = orientation.config.locus;
     }
 }
 
@@ -116,13 +117,24 @@ pub fn spawn_primary_camera(
         .get_single_mut()
         .expect("why in god's name is there no star's camera?");
 
-      let transform = Transform::from_xyz(0.0, 0.0, config.scale().z * 2.)
+    let transform = Transform::from_xyz(0.0, 0.0, config.scale().z * 2.)
         .looking_at(orientation.config.nexus, orientation.config.axis_mundi);
 
     orientation.config.locus = transform;
 
     commands
-        .spawn(Camera3d::default())
+        .spawn(PanOrbitCamera {
+            button_orbit: MouseButton::Middle,
+            button_pan: MouseButton::Middle,
+            modifier_pan: Some(KeyCode::ShiftLeft),
+            zoom_sensitivity: 0.1,
+            trackpad_behavior: TrackpadBehavior::BlenderLike {
+                modifier_pan: Some(KeyCode::ShiftLeft),
+                modifier_zoom: Some(KeyCode::ControlLeft),
+            },
+            trackpad_pinch_to_zoom_enabled: true,
+            ..default()
+        })
         .insert(transform)
         .insert(Camera {
             hdr: true,
@@ -134,7 +146,7 @@ pub fn spawn_primary_camera(
         })
         .insert(Tonemapping::TonyMcMapface)
         .insert(RenderLayers::from_layers(RenderLayer::Game.layers()))
-        .insert(InputManagerBundle::with_map(CameraControl::camera_input_map()))
+        //   .insert(InputManagerBundle::with_map(CameraControl::camera_input_map()))
         .add_child(stars_camera_entity)
         .insert(PrimaryCamera);
 }
