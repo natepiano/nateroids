@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
-use strum::{EnumIter, IntoEnumIterator};
+use strum::{
+    EnumIter,
+    IntoEnumIterator,
+};
 
 pub struct InputPlugin;
 

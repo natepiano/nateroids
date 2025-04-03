@@ -1094,8 +1094,8 @@ dependencies = [
 
 [[package]]
 name = "bevy_panorbit_camera"
-version = "0.24.0"
-source = "git+https://github.com/natepiano/bevy_panorbit_camera.git?branch=feature%2Fblender-trackpad-controls#9cc9fed37cee14c52b38db24251ca1ff1c31423f"
+version = "0.25.0"
+source = "git+https://github.com/Plonq/bevy_panorbit_camera.git#65f7f173a6f78035d03237c9b699849b0a2c8e6c"
 dependencies = [
  "bevy",
  "bevy_egui 0.33.0",

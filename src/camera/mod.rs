@@ -4,10 +4,12 @@ mod lights;
 mod star_twinkling;
 mod stars;
 
-use bevy::{prelude::*, render::view::Layer};
+use bevy::{
+    prelude::*,
+    render::view::Layer,
+};
 
 use cameras::CamerasPlugin;
-pub use cameras::PrimaryCamera;
 use config::CameraConfigPlugin;
 use lights::DirectionalLightsPlugin;
 use star_twinkling::StarTwinklingPlugin;

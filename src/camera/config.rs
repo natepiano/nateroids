@@ -1,7 +1,15 @@
-use crate::global_input::{toggle_active, GlobalAction};
-use bevy::{color::palettes::tailwind, prelude::*};
+use crate::global_input::{
+    toggle_active,
+    GlobalAction,
+};
+use bevy::{
+    color::palettes::tailwind,
+    prelude::*,
+};
 use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay, prelude::*, quick::ResourceInspectorPlugin,
+    inspector_options::std_options::NumberDisplay,
+    prelude::*,
+    quick::ResourceInspectorPlugin,
 };
 
 pub struct CameraConfigPlugin;
@@ -20,11 +28,11 @@ impl Plugin for CameraConfigPlugin {
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct CameraConfig {
-    pub clear_color: Color,
+    pub clear_color:               Color,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub darkening_factor: f32,
+    pub darkening_factor:          f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub bloom_intensity: f32,
+    pub bloom_intensity:           f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub bloom_low_frequency_boost: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
@@ -34,9 +42,9 @@ pub struct CameraConfig {
 impl Default for CameraConfig {
     fn default() -> Self {
         Self {
-            clear_color: Color::from(tailwind::SLATE_900),
-            darkening_factor: 0.002,
-            bloom_intensity: 0.9,
+            clear_color:               Color::from(tailwind::SLATE_900),
+            darkening_factor:          0.002,
+            bloom_intensity:           0.9,
             bloom_low_frequency_boost: 0.5,
             bloom_high_pass_frequency: 0.5,
         }

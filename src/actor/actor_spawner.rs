@@ -1,20 +1,44 @@
 use crate::{
     actor::{
-        actor_template::{MissileConfig, NateroidConfig, SpaceshipConfig},
-        get_scene_aabb, Aabb, Teleporter,
+        actor_template::{
+            MissileConfig,
+            NateroidConfig,
+            SpaceshipConfig,
+        },
+        get_scene_aabb,
+        Aabb,
+        Teleporter,
     },
-    asset_loader::{AssetsState, SceneAssets},
+    asset_loader::{
+        AssetsState,
+        SceneAssets,
+    },
     camera::RenderLayer,
-    global_input::{toggle_active, GlobalAction},
-    playfield::{ActorPortals, Boundary},
+    global_input::{
+        toggle_active,
+        GlobalAction,
+    },
+    playfield::{
+        ActorPortals,
+        Boundary,
+    },
 };
-use bevy::{ecs::system::EntityCommands, prelude::*, render::view::RenderLayers};
+use bevy::{
+    ecs::system::EntityCommands,
+    prelude::*,
+    render::view::RenderLayers,
+};
 use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay, prelude::*, quick::ResourceInspectorPlugin,
+    inspector_options::std_options::NumberDisplay,
+    prelude::*,
+    quick::ResourceInspectorPlugin,
 };
 use bevy_rapier3d::prelude::*;
 use rand::Rng;
-use std::{fmt, ops::Range};
+use std::{
+    fmt,
+    ops::Range,
+};
 
 // this is how far off we are from blender for the assets we're loading
 // we need to get them scaled up to generate a usable aabb
@@ -73,7 +97,7 @@ pub enum VelocityBehavior {
         angvel: f32,
     },
     RelativeToParent {
-        base_velocity: f32,
+        base_velocity:           f32,
         inherit_parent_velocity: bool,
     },
 }
@@ -112,64 +136,64 @@ impl VelocityBehavior {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 pub struct ActorConfig {
-    pub spawnable: bool,
+    pub spawnable:                bool,
     #[reflect(ignore)]
-    pub aabb: Aabb,
+    pub aabb:                     Aabb,
     #[reflect(ignore)]
-    pub actor_kind: ActorKind,
+    pub actor_kind:               ActorKind,
     #[reflect(ignore)]
-    pub collider: Collider,
-    pub collider_type: ColliderType,
-    pub collision_damage: f32,
+    pub collider:                 Collider,
+    pub collider_type:            ColliderType,
+    pub collision_damage:         f32,
     #[reflect(ignore)]
-    pub collision_groups: CollisionGroups,
-    pub gravity_scale: f32,
-    pub health: f32,
-    pub locked_axes: LockedAxes,
+    pub collision_groups:         CollisionGroups,
+    pub gravity_scale:            f32,
+    pub health:                   f32,
+    pub locked_axes:              LockedAxes,
     #[inspector(min = 0.0, max = 20.0, display = NumberDisplay::Slider)]
-    pub mass: f32,
-    pub render_layer: RenderLayer,
+    pub mass:                     f32,
+    pub render_layer:             RenderLayer,
     #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
-    pub restitution: f32,
+    pub restitution:              f32,
     pub restitution_combine_rule: CoefficientCombineRule,
-    pub rigid_body: RigidBody,
-    pub rotation: Option<Quat>,
+    pub rigid_body:               RigidBody,
+    pub rotation:                 Option<Quat>,
     #[inspector(min = 0.1, max = 10.0, display = NumberDisplay::Slider)]
-    pub scalar: f32,
+    pub scalar:                   f32,
     #[reflect(ignore)]
-    pub scene: Handle<Scene>,
-    pub spawn_position_behavior: SpawnPositionBehavior,
-    pub spawn_timer_seconds: Option<f32>,
+    pub scene:                    Handle<Scene>,
+    pub spawn_position_behavior:  SpawnPositionBehavior,
+    pub spawn_timer_seconds:      Option<f32>,
     #[reflect(ignore)]
-    pub spawn_timer: Option<Timer>,
-    pub velocity_behavior: VelocityBehavior,
+    pub spawn_timer:              Option<Timer>,
+    pub velocity_behavior:        VelocityBehavior,
 }
 
 impl Default for ActorConfig {
     fn default() -> Self {
         Self {
-            spawnable: true,
-            actor_kind: ActorKind::default(),
-            aabb: Aabb::default(),
-            collider: Collider::cuboid(0.5, 0.5, 0.5),
-            collider_type: ColliderType::Cuboid,
-            collision_damage: 0.,
-            collision_groups: CollisionGroups::default(),
-            gravity_scale: 0.,
-            health: 0.,
-            locked_axes: LockedAxes::TRANSLATION_LOCKED_Z,
-            mass: 1.,
-            render_layer: RenderLayer::Both,
-            restitution: 1.,
+            spawnable:                true,
+            actor_kind:               ActorKind::default(),
+            aabb:                     Aabb::default(),
+            collider:                 Collider::cuboid(0.5, 0.5, 0.5),
+            collider_type:            ColliderType::Cuboid,
+            collision_damage:         0.,
+            collision_groups:         CollisionGroups::default(),
+            gravity_scale:            0.,
+            health:                   0.,
+            locked_axes:              LockedAxes::TRANSLATION_LOCKED_Z,
+            mass:                     1.,
+            render_layer:             RenderLayer::Both,
+            restitution:              1.,
             restitution_combine_rule: CoefficientCombineRule::Max,
-            rigid_body: RigidBody::Dynamic,
-            rotation: None,
-            scalar: 1.,
-            scene: Handle::default(),
-            spawn_position_behavior: SpawnPositionBehavior::Fixed(Vec3::ZERO),
-            spawn_timer_seconds: None,
-            spawn_timer: None,
-            velocity_behavior: VelocityBehavior::Fixed(Vec3::ZERO),
+            rigid_body:               RigidBody::Dynamic,
+            rotation:                 None,
+            scalar:                   1.,
+            scene:                    Handle::default(),
+            spawn_position_behavior:  SpawnPositionBehavior::Fixed(Vec3::ZERO),
+            spawn_timer_seconds:      None,
+            spawn_timer:              None,
+            velocity_behavior:        VelocityBehavior::Fixed(Vec3::ZERO),
         }
     }
 }
@@ -234,24 +258,24 @@ impl ActorConfig {
 
 #[derive(Bundle)]
 pub struct ActorBundle {
-    pub actor_kind: ActorKind,
-    pub aabb: Aabb,
-    pub active_events: ActiveEvents,
-    pub collider: Collider,
+    pub actor_kind:       ActorKind,
+    pub aabb:             Aabb,
+    pub active_events:    ActiveEvents,
+    pub collider:         Collider,
     pub collision_damage: CollisionDamage,
     pub collision_groups: CollisionGroups,
-    pub gravity_scale: GravityScale,
-    pub health: Health,
-    pub locked_axes: LockedAxes,
-    pub rigid_body: RigidBody,
-    pub restitution: Restitution,
-    pub mass_properties: ColliderMassProperties,
-    pub render_layers: RenderLayers,
-    pub scene_root: SceneRoot,
-    pub teleporter: Teleporter,
-    pub transform: Transform,
-    pub velocity: Velocity,
-    pub wall_visualizer: ActorPortals,
+    pub gravity_scale:    GravityScale,
+    pub health:           Health,
+    pub locked_axes:      LockedAxes,
+    pub rigid_body:       RigidBody,
+    pub restitution:      Restitution,
+    pub mass_properties:  ColliderMassProperties,
+    pub render_layers:    RenderLayers,
+    pub scene_root:       SceneRoot,
+    pub teleporter:       Teleporter,
+    pub transform:        Transform,
+    pub velocity:         Velocity,
+    pub wall_visualizer:  ActorPortals,
 }
 
 impl ActorBundle {
@@ -284,7 +308,7 @@ impl ActorBundle {
             locked_axes: config.locked_axes,
             rigid_body: config.rigid_body,
             restitution: Restitution {
-                coefficient: config.restitution,
+                coefficient:  config.restitution,
                 combine_rule: config.restitution_combine_rule,
             },
             mass_properties: ColliderMassProperties::Mass(config.mass),
@@ -340,7 +364,8 @@ fn get_random_component(min: f32, max: f32, rng: &mut impl Rng) -> f32 {
     if (max - min).abs() < f32::EPSILON {
         min // If the range is effectively zero, just return the min value
     } else {
-        rng.random_range(min.min(max)..=min.max(max)) // Ensure min is always less
+        rng.random_range(min.min(max)..=min.max(max)) // Ensure min is always
+                                                      // less
                                                       // than max
     }
 }

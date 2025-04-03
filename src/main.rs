@@ -73,4 +73,3 @@ fn main() {
     .add_plugins(RemoteHttpPlugin::default())
     .run();
 }
-

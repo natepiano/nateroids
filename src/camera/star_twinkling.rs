@@ -1,5 +1,8 @@
 use crate::{
-    camera::stars::{Star, StarConfig},
+    camera::stars::{
+        Star,
+        StarConfig,
+    },
     schedule::InGameSet,
 };
 use bevy::prelude::*;
@@ -26,8 +29,8 @@ impl Plugin for StarTwinklingPlugin {
 #[derive(Component)]
 struct Twinkling {
     original_emissive: Vec4,
-    target_emissive: Vec4,
-    twinkle_timer: Timer,
+    target_emissive:   Vec4,
+    twinkle_timer:     Timer,
 }
 
 #[derive(Resource)]

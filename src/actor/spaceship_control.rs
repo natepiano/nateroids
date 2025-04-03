@@ -6,7 +6,6 @@ use crate::{
             Spaceship,
         },
     },
-    camera::PrimaryCamera,
     global_input::{
         toggle_active,
         GlobalAction,
@@ -23,6 +22,7 @@ use bevy_inspector_egui::{
     prelude::*,
     quick::ResourceInspectorPlugin,
 };
+use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_rapier3d::dynamics::Velocity;
 use leafwing_input_manager::{
     action_state::ActionState,
@@ -111,7 +111,7 @@ impl SpaceshipControl {
 
 fn spaceship_movement_controls(
     mut q_spaceship: Query<(&mut Transform, &mut Velocity), With<Spaceship>>,
-    q_camera: Query<&Transform, (With<PrimaryCamera>, Without<Spaceship>)>,
+    q_camera: Query<&Transform, (With<PanOrbitCamera>, Without<Spaceship>)>,
     q_input_map: Query<&ActionState<SpaceshipControl>>,
     spaceship_config: Res<SpaceshipConfig>,
     movement_config: Res<SpaceshipControlConfig>,
