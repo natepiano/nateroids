@@ -1,38 +1,18 @@
 use crate::{
-    actor::{
-        Aabb,
-        Teleporter,
-    },
-    global_input::{
-        toggle_active,
-        GlobalAction,
-    },
+    actor::{Aabb, Teleporter},
+    global_input::{GlobalAction, toggle_active},
     orientation::CameraOrientation,
-    playfield::{
-        boundary_face::BoundaryFace,
-        Boundary,
-    },
+    playfield::{Boundary, boundary_face::BoundaryFace},
     state::PlayingGame,
 };
 use bevy::{
-    app::{
-        App,
-        Plugin,
-    },
-    color::{
-        palettes::tailwind,
-        Color,
-    },
-    math::{
-        Dir3,
-        Vec3,
-    },
+    app::{App, Plugin},
+    color::{Color, palettes::tailwind},
+    math::{Dir3, Vec3},
     prelude::*,
 };
 use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay,
-    prelude::*,
-    quick::ResourceInspectorPlugin,
+    inspector_options::std_options::NumberDisplay, prelude::*, quick::ResourceInspectorPlugin,
 };
 use bevy_rapier3d::dynamics::Velocity;
 
@@ -65,55 +45,55 @@ pub struct PortalGizmo {}
 
 fn update_portal_config(mut config_store: ResMut<GizmoConfigStore>, portal_config: Res<PortalConfig>) {
     let (config, _) = config_store.config_mut::<PortalGizmo>();
-    config.line_width = portal_config.line_width;
-    config.line_joints = GizmoLineJoint::Round(portal_config.line_joints);
+    config.line.width = portal_config.line_width;
+    config.line.joints = GizmoLineJoint::Round(portal_config.line_joints);
 }
 
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 struct PortalConfig {
-    color_approaching:             Color,
-    color_emerging:                Color,
+    color_approaching: Color,
+    color_emerging: Color,
     #[inspector(min = 0.0, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
-    pub direction_change_factor:   f32,
+    pub direction_change_factor: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub distance_approach:         f32,
+    pub distance_approach: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub distance_shrink:           f32,
+    pub distance_shrink: f32,
     #[inspector(min = 1.0, max = 30.0, display = NumberDisplay::Slider)]
-    pub fadeout_duration:          f32,
+    pub fadeout_duration: f32,
     #[inspector(min = 0, max = 40, display = NumberDisplay::Slider)]
-    line_joints:                   u32,
+    line_joints: u32,
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
-    line_width:                    f32,
+    line_width: f32,
     #[inspector(min = 0.001, max = 1.0, display = NumberDisplay::Slider)]
-    pub minimum_radius:            f32,
+    pub minimum_radius: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub movement_smoothing_factor: f32,
     #[inspector(min = 1., max = 10., display = NumberDisplay::Slider)]
-    pub portal_scalar:             f32,
+    pub portal_scalar: f32,
     #[inspector(min = 1., max = 10., display = NumberDisplay::Slider)]
-    pub portal_smallest:           f32,
+    pub portal_smallest: f32,
     #[inspector(min = 3, max = 256, display = NumberDisplay::Slider)]
-    resolution:                    u32,
+    resolution: u32,
 }
 
 impl Default for PortalConfig {
     fn default() -> Self {
         Self {
-            color_approaching:         Color::from(tailwind::BLUE_600),
-            color_emerging:            Color::from(tailwind::YELLOW_800),
-            direction_change_factor:   0.75,
-            distance_approach:         0.5,
-            distance_shrink:           0.25,
-            fadeout_duration:          14.,
-            line_joints:               4,
-            line_width:                2.,
-            minimum_radius:            0.1,
+            color_approaching: Color::from(tailwind::BLUE_600),
+            color_emerging: Color::from(tailwind::YELLOW_800),
+            direction_change_factor: 0.75,
+            distance_approach: 0.5,
+            distance_shrink: 0.25,
+            fadeout_duration: 14.,
+            line_joints: 4,
+            line_width: 2.,
+            minimum_radius: 0.1,
             movement_smoothing_factor: 0.08,
-            portal_scalar:             2.,
-            portal_smallest:           5.,
-            resolution:                128,
+            portal_scalar: 2.,
+            portal_smallest: 5.,
+            resolution: 128,
         }
     }
 }
@@ -121,34 +101,34 @@ impl Default for PortalConfig {
 #[derive(Component, Default)]
 pub struct ActorPortals {
     pub approaching: Option<Portal>,
-    pub emerging:    Option<Portal>,
+    pub emerging: Option<Portal>,
 }
 
 #[derive(Resource, Clone, Debug)]
 pub struct Portal {
-    pub actor_direction:            Vec3,
-    pub actor_distance_to_wall:     f32,
+    pub actor_direction: Vec3,
+    pub actor_distance_to_wall: f32,
     pub boundary_distance_approach: f32,
-    pub boundary_distance_shrink:   f32,
-    pub face:                       BoundaryFace,
-    fade_out_started:               Option<f32>,
-    pub normal:                     Dir3,
-    pub position:                   Vec3,
-    pub radius:                     f32,
+    pub boundary_distance_shrink: f32,
+    pub face: BoundaryFace,
+    fade_out_started: Option<f32>,
+    pub normal: Dir3,
+    pub position: Vec3,
+    pub radius: f32,
 }
 
 impl Default for Portal {
     fn default() -> Self {
         Self {
-            actor_direction:            Vec3::ZERO,
-            actor_distance_to_wall:     0.,
+            actor_direction: Vec3::ZERO,
+            actor_distance_to_wall: 0.,
             boundary_distance_approach: 0.,
-            boundary_distance_shrink:   0.,
-            face:                       BoundaryFace::Right,
-            fade_out_started:           None,
-            normal:                     Dir3::X,
-            position:                   Vec3::ZERO,
-            radius:                     0.,
+            boundary_distance_shrink: 0.,
+            face: BoundaryFace::Right,
+            fade_out_started: None,
+            normal: Dir3::X,
+            position: Vec3::ZERO,
+            radius: 0.,
         }
     }
 }

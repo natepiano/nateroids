@@ -1,14 +1,11 @@
 use crate::{
     actor::{
-        actor_spawner::spawn_actor,
-        actor_template::SpaceshipConfig,
-        spaceship_control::SpaceshipControl,
+        actor_spawner::spawn_actor, actor_template::SpaceshipConfig, spaceship_control::SpaceshipControl,
     },
     schedule::InGameSet,
     state::GameState,
 };
 use bevy::prelude::*;
-use leafwing_input_manager::prelude::*;
 
 #[derive(Component, Debug)]
 pub struct Spaceship;
@@ -33,10 +30,8 @@ fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipConfig
         return;
     }
 
-    let spaceship_input = InputManagerBundle::with_map(SpaceshipControl::generate_input_map());
-
     spawn_actor(&mut commands, &spaceship_config.0, None, None)
-        .insert(spaceship_input)
+        .insert(SpaceshipControl::generate_input_map())
         .insert(Spaceship);
 }
 
@@ -48,7 +43,7 @@ fn spaceship_destroyed(
     query: Query<Entity, With<Spaceship>>,
     state: Res<State<GameState>>,
 ) {
-    if query.get_single().is_err() {
+    if query.single().is_err() {
         println!(
             "spaceship destroyed: {:?}, count {:?}",
             state,

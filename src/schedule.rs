@@ -32,16 +32,6 @@ impl Plugin for SchedulePlugin {
                 // that takes us in or out of InGame - i.e., pausing
                 // 1 line of code right here allows for pausing and starting the game!
                 .run_if(in_state(IsPaused::NotPaused)),
-        )
-        .add_systems(
-            Update,
-            // apply_deferred - think of this as flushing all queued updates
-            // in this case, after a despawn - before moving on to the next SystemSet
-            // this way there isn't any chance that UserInput systems will use despawned entities
-            // for performance reasons this is pretty cool
-            apply_deferred
-                .after(InGameSet::DespawnEntities)
-                .before(InGameSet::UserInput),
         );
     }
 }

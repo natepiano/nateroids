@@ -1,39 +1,22 @@
 use crate::{
     actor::{
         actor_template::SpaceshipConfig,
-        spaceship::{
-            ContinuousFire,
-            Spaceship,
-        },
+        spaceship::{ContinuousFire, Spaceship},
     },
-    global_input::{
-        toggle_active,
-        GlobalAction,
-    },
-    orientation::{
-        CameraOrientation,
-        OrientationType,
-    },
+    global_input::{GlobalAction, toggle_active},
+    orientation::{CameraOrientation, OrientationType},
     schedule::InGameSet,
 };
 use bevy::prelude::*;
 use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay,
-    prelude::*,
-    quick::ResourceInspectorPlugin,
+    inspector_options::std_options::NumberDisplay, prelude::*, quick::ResourceInspectorPlugin,
 };
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_rapier3d::dynamics::Velocity;
 use leafwing_input_manager::{
-    action_state::ActionState,
-    input_map::InputMap,
-    plugin::InputManagerPlugin,
-    Actionlike,
+    Actionlike, action_state::ActionState, input_map::InputMap, plugin::InputManagerPlugin,
 };
-use strum::{
-    EnumIter,
-    IntoEnumIterator,
-};
+use strum::{EnumIter, IntoEnumIterator};
 
 pub struct SpaceshipControlPlugin;
 
@@ -62,9 +45,9 @@ impl Plugin for SpaceshipControlPlugin {
 #[reflect(Resource, InspectorOptions)]
 pub struct SpaceshipControlConfig {
     #[inspector(min = 30., max = 300.0, display = NumberDisplay::Slider)]
-    pub acceleration:   f32,
+    pub acceleration: f32,
     #[inspector(min = 50., max = 300.0, display = NumberDisplay::Slider)]
-    pub max_speed:      f32,
+    pub max_speed: f32,
     #[inspector(min = 1.0, max = 10.0, display = NumberDisplay::Slider)]
     pub rotation_speed: f32,
 }
@@ -72,9 +55,9 @@ pub struct SpaceshipControlConfig {
 impl Default for SpaceshipControlConfig {
     fn default() -> Self {
         Self {
-            acceleration:   60.,
+            acceleration: 60.,
             rotation_speed: 5.0,
-            max_speed:      80.,
+            max_speed: 80.,
         }
     }
 }
@@ -118,64 +101,64 @@ fn spaceship_movement_controls(
     time: Res<Time>,
     orientation_mode: Res<CameraOrientation>,
 ) {
-    if let Ok(camera_transform) = q_camera.get_single() {
+    if let Ok(camera_transform) = q_camera.single() {
         // we can use this because there is only exactly one spaceship - so we're not
         // looping over the query
-        if let Ok((mut spaceship_transform, mut velocity)) = q_spaceship.get_single_mut() {
+        if let Ok((mut spaceship_transform, mut velocity)) = q_spaceship.single_mut() {
             // dynamically update from inspector while game is running to change size
             spaceship_transform.scale = Vec3::splat(spaceship_config.0.scalar);
 
-            let controls = q_input_map.single();
+            if let Ok(controls) = q_input_map.single() {
+                let mut rotation = 0.0;
+                let delta_seconds = time.delta_secs();
+                let rotation_speed = movement_config.rotation_speed;
 
-            let mut rotation = 0.0;
-            let delta_seconds = time.delta_secs();
-            let rotation_speed = movement_config.rotation_speed;
+                if controls.pressed(&SpaceshipControl::TurnRight) {
+                    // right
+                    velocity.angvel.z = 0.0;
+                    rotation = rotation_speed * delta_seconds;
+                } else if controls.pressed(&SpaceshipControl::TurnLeft) {
+                    // left
+                    velocity.angvel.z = 0.0;
+                    rotation = -rotation_speed * delta_seconds;
+                }
 
-            if controls.pressed(&SpaceshipControl::TurnRight) {
-                // right
-                velocity.angvel.z = 0.0;
-                rotation = rotation_speed * delta_seconds;
-            } else if controls.pressed(&SpaceshipControl::TurnLeft) {
-                // left
-                velocity.angvel.z = 0.0;
-                rotation = -rotation_speed * delta_seconds;
+                let camera_forward = camera_transform.forward();
+                let facing_opposite = camera_forward.dot(Vec3::new(0.0, 0.0, -1.0)) > 0.0;
+
+                if facing_opposite {
+                    rotation = -rotation;
+                }
+
+                // rotate around the z-axis
+                spaceship_transform.rotate_z(rotation);
+
+                let max_speed = movement_config.max_speed;
+                let accel = movement_config.acceleration;
+
+                if controls.pressed(&SpaceshipControl::Accelerate) {
+                    apply_acceleration(
+                        &mut velocity,
+                        -spaceship_transform.forward().as_vec3(),
+                        accel,
+                        max_speed,
+                        delta_seconds,
+                        orientation_mode,
+                    );
+                }
+
+                /* let mut roll = 0.0;
+
+                   if keyboard_input.pressed(ShiftLeft) {
+                    roll = -SPACESHIP_ROLL_SPEED * time.delta_seconds();
+                } else if keyboard_input.pressed(ControlLeft) {
+                    roll = SPACESHIP_ROLL_SPEED * time.delta_seconds();
+                }*/
+
+                // rotate around the local z-axis
+                // the rotation is relative to the current rotation
+                // transform.rotate_local_z(roll);
             }
-
-            let camera_forward = camera_transform.forward();
-            let facing_opposite = camera_forward.dot(Vec3::new(0.0, 0.0, -1.0)) > 0.0;
-
-            if facing_opposite {
-                rotation = -rotation;
-            }
-
-            // rotate around the z-axis
-            spaceship_transform.rotate_z(rotation);
-
-            let max_speed = movement_config.max_speed;
-            let accel = movement_config.acceleration;
-
-            if controls.pressed(&SpaceshipControl::Accelerate) {
-                apply_acceleration(
-                    &mut velocity,
-                    -spaceship_transform.forward().as_vec3(),
-                    accel,
-                    max_speed,
-                    delta_seconds,
-                    orientation_mode,
-                );
-            }
-
-            /* let mut roll = 0.0;
-
-               if keyboard_input.pressed(ShiftLeft) {
-                roll = -SPACESHIP_ROLL_SPEED * time.delta_seconds();
-            } else if keyboard_input.pressed(ControlLeft) {
-                roll = SPACESHIP_ROLL_SPEED * time.delta_seconds();
-            }*/
-
-            // rotate around the local z-axis
-            // the rotation is relative to the current rotation
-            // transform.rotate_local_z(roll);
         }
     }
 }
@@ -213,7 +196,7 @@ fn toggle_continuous_fire(
     mut commands: Commands,
     q_spaceship: Query<(Entity, &ActionState<SpaceshipControl>, Option<&ContinuousFire>), With<Spaceship>>,
 ) {
-    if let Ok((entity, control, continuous)) = q_spaceship.get_single() {
+    if let Ok((entity, control, continuous)) = q_spaceship.single() {
         if control.just_pressed(&SpaceshipControl::ContinuousFire) {
             if continuous.is_some() {
                 println!("removing continuous");

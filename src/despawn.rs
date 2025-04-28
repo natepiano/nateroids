@@ -1,8 +1,5 @@
 use crate::{
-    actor::{
-        missile::Missile,
-        Health,
-    },
+    actor::{Health, missile::Missile},
     schedule::InGameSet,
     state::GameState,
 };
@@ -29,7 +26,9 @@ fn despawn_missiles(mut commands: Commands, query: Query<(Entity, &Missile)>) {
     }
 }
 
-pub fn despawn(commands: &mut Commands, entity: Entity) { commands.entity(entity).despawn_recursive(); }
+pub fn despawn(commands: &mut Commands, entity: Entity) {
+    commands.entity(entity).despawn();
+}
 
 fn despawn_dead_entities(mut commands: Commands, query: Query<(Entity, &Health, &Name)>) {
     for (entity, health, _name) in query.iter() {

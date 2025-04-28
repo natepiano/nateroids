@@ -1,8 +1,5 @@
 use crate::global_input::GlobalAction;
-use bevy::{
-    dev_tools::states::*,
-    prelude::*,
-};
+use bevy::{dev_tools::states::*, prelude::*};
 use bevy_rapier3d::plugin::RapierConfiguration;
 use leafwing_input_manager::prelude::ActionState;
 
@@ -25,7 +22,9 @@ impl Plugin for StatePlugin {
             .add_systems(Update, log_transitions::<GameState>);
     }
 
-    fn name(&self) -> &str { "state plugin" }
+    fn name(&self) -> &str {
+        "state plugin"
+    }
 }
 
 // splash is the default so bevy will automatically enter this state
@@ -39,7 +38,7 @@ pub enum GameState {
     #[default]
     Splash,
     InGame {
-        paused:     bool,
+        paused: bool,
         inspecting: bool,
     },
     GameOver,
@@ -101,7 +100,7 @@ fn toggle_pause(
     if user_input.just_pressed(&GlobalAction::Pause) {
         if let GameState::InGame { paused, inspecting } = state.get() {
             next_state.set(GameState::InGame {
-                paused:     !*paused,
+                paused: !*paused,
                 inspecting: *inspecting,
             });
         }
@@ -111,13 +110,13 @@ fn toggle_pause(
 fn transition_to_in_game(mut next_state: ResMut<NextState<GameState>>) {
     println!("Transitioning to InGame");
     next_state.set(GameState::InGame {
-        paused:     false,
+        paused: false,
         inspecting: false,
     });
 }
 
 fn pause_rapier(mut rapier_config_query: Query<&mut RapierConfiguration>) {
-    if let Ok(mut rapier_config) = rapier_config_query.get_single_mut() {
+    if let Ok(mut rapier_config) = rapier_config_query.single_mut() {
         println!("pausing game and physics");
         rapier_config.physics_pipeline_active = false;
     } else {
@@ -126,7 +125,7 @@ fn pause_rapier(mut rapier_config_query: Query<&mut RapierConfiguration>) {
 }
 
 fn unpause_rapier(mut rapier_config_query: Query<&mut RapierConfiguration>) {
-    if let Ok(mut rapier_config) = rapier_config_query.get_single_mut() {
+    if let Ok(mut rapier_config) = rapier_config_query.single_mut() {
         println!("unpausing game and physics");
         rapier_config.physics_pipeline_active = true;
     } else {

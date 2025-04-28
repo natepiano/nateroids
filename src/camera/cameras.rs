@@ -1,6 +1,6 @@
 use crate::{
-    camera::{config::CameraConfig, CameraOrder, RenderLayer},
-    global_input::{just_pressed, GlobalAction},
+    camera::{CameraOrder, RenderLayer, config::CameraConfig},
+    global_input::{GlobalAction, just_pressed},
     playfield::Boundary,
 };
 use bevy::{
@@ -24,7 +24,7 @@ impl Plugin for CamerasPlugin {
 }
 
 pub fn home_camera(boundary: Res<Boundary>, mut camera_query: Query<(&mut PanOrbitCamera, &Projection)>) {
-    if let Ok((mut pan_orbit, projection)) = camera_query.get_single_mut() {
+    if let Ok((mut pan_orbit, projection)) = camera_query.single_mut() {
         if let Projection::Perspective(perspective) = projection {
             let grid_size = boundary.scale();
 
@@ -88,7 +88,7 @@ fn update_bloom_settings(
     mut q_current_settings: Query<&mut Bloom, With<StarsCamera>>,
 ) {
     if camera_config.is_changed() {
-        if let Ok(mut old_bloom_settings) = q_current_settings.get_single_mut() {
+        if let Ok(mut old_bloom_settings) = q_current_settings.single_mut() {
             *old_bloom_settings = get_bloom_settings(camera_config);
         }
     }
@@ -111,21 +111,21 @@ fn toggle_stars(
     user_input: Res<ActionState<GlobalAction>>,
     camera_config: Res<CameraConfig>,
 ) {
-    let current_bloom_settings = camera.single_mut();
-
-    match current_bloom_settings {
-        (entity, Some(_)) => {
-            if user_input.just_pressed(&GlobalAction::Stars) {
-                println!("stars off");
-                commands.entity(entity).remove::<Bloom>();
-            }
-        },
-        (entity, None) => {
-            if user_input.just_pressed(&GlobalAction::Stars) {
-                println!("stars on");
-                commands.entity(entity).insert(get_bloom_settings(camera_config));
-            }
-        },
+    if let Ok(current_bloom_settings) = camera.single_mut() {
+        match current_bloom_settings {
+            (entity, Some(_)) => {
+                if user_input.just_pressed(&GlobalAction::Stars) {
+                    println!("stars off");
+                    commands.entity(entity).remove::<Bloom>();
+                }
+            },
+            (entity, None) => {
+                if user_input.just_pressed(&GlobalAction::Stars) {
+                    println!("stars on");
+                    commands.entity(entity).insert(get_bloom_settings(camera_config));
+                }
+            },
+        }
     }
 }
 
@@ -140,7 +140,7 @@ pub fn spawn_panorbit_camera(
     // view as the primary camera but can show the stars with bloom while the
     // primary shows everything else
     let stars_camera_entity = q_stars_camera
-        .get_single_mut()
+        .single_mut()
         .expect("why in god's name is there no star's camera?");
 
     // Use default FOV and aspect ratio values since the camera doesn't exist yet

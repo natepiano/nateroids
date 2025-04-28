@@ -1,26 +1,17 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-use crate::{
-    playfield::Boundary,
-    schedule::InGameSet,
-};
+use crate::{playfield::Boundary, schedule::InGameSet};
 
 use crate::actor::{
+    Teleporter,
     aabb::Aabb,
     actor_spawner::ActorConfig,
     actor_template::MissileConfig,
-    spaceship::{
-        ContinuousFire,
-        Spaceship,
-    },
-    Teleporter,
+    spaceship::{ContinuousFire, Spaceship},
 };
 
-use crate::actor::{
-    actor_spawner::spawn_actor,
-    spaceship_control::SpaceshipControl,
-};
+use crate::actor::{actor_spawner::spawn_actor, spaceship_control::SpaceshipControl};
 use leafwing_input_manager::prelude::*;
 
 pub struct MissilePlugin;
@@ -37,10 +28,10 @@ impl Plugin for MissilePlugin {
 #[derive(Copy, Clone, Component, Debug)]
 pub struct Missile {
     // velocity:               Vec3,
-    pub total_distance:     f32,
-    pub traveled_distance:  f32,
-    remaining_distance:     f32,
-    pub last_position:      Option<Vec3>,
+    pub total_distance: f32,
+    pub traveled_distance: f32,
+    remaining_distance: f32,
+    pub last_position: Option<Vec3>,
     last_teleport_position: Option<Vec3>, // Add this field
 }
 
@@ -70,21 +61,23 @@ fn should_fire(
         return false;
     }
 
-    let action_state = q_input_map.single();
-
-    if continuous_fire.is_some() {
-        // We know the timer exists, so we can safely unwrap it
-        let timer = missile_config.spawn_timer.as_mut().expect(
-            "configure missile spawn timer here: impl Default for
+    if let Ok(action_state) = q_input_map.single() {
+        if continuous_fire.is_some() {
+            // We know the timer exists, so we can safely unwrap it
+            let timer = missile_config.spawn_timer.as_mut().expect(
+                "configure missile spawn timer here: impl Default for
 InitialEnsembleConfig",
-        );
-        timer.tick(time.delta());
-        if !timer.just_finished() {
-            return false;
+            );
+            timer.tick(time.delta());
+            if !timer.just_finished() {
+                return false;
+            }
+            action_state.pressed(&SpaceshipControl::Fire)
+        } else {
+            action_state.just_pressed(&SpaceshipControl::Fire)
         }
-        action_state.pressed(&SpaceshipControl::Fire)
     } else {
-        action_state.just_pressed(&SpaceshipControl::Fire)
+        false
     }
 }
 
@@ -101,8 +94,7 @@ fn fire_missile(
     mut missile_config: ResMut<MissileConfig>,
     time: Res<Time>,
 ) {
-    let Ok((spaceship_transform, spaceship_velocity, aabb, continuous_fire)) = q_spaceship.get_single()
-    else {
+    let Ok((spaceship_transform, spaceship_velocity, aabb, continuous_fire)) = q_spaceship.single() else {
         return;
     };
 
