@@ -12,16 +12,31 @@ mod splash;
 mod state;
 
 use crate::{
-    actor::ActorPlugin, asset_loader::AssetLoaderPlugin, camera::CameraPlugin, despawn::DespawnPlugin,
-    global_input::InputPlugin, orientation::OrientationPlugin, physics::PhysicsPlugin,
-    playfield::PlayfieldPlugin, schedule::SchedulePlugin, splash::SplashPlugin, state::StatePlugin,
+    actor::ActorPlugin,
+    asset_loader::AssetLoaderPlugin,
+    camera::CameraPlugin,
+    despawn::DespawnPlugin,
+    global_input::InputPlugin,
+    orientation::OrientationPlugin,
+    physics::PhysicsPlugin,
+    playfield::PlayfieldPlugin,
+    schedule::SchedulePlugin,
+    splash::SplashPlugin,
+    state::StatePlugin,
 };
 use bevy::prelude::*;
 
 #[cfg(target_arch = "wasm32")]
-use bevy::window::{PresentMode, WindowMode};
+use bevy::window::{
+    PresentMode,
+    WindowMode,
+};
+
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
-use bevy_remote::{RemotePlugin, http::RemoteHttpPlugin};
+use bevy::remote::{
+    RemotePlugin,
+    http::RemoteHttpPlugin,
+};
 
 fn main() {
     let mut app = App::new();

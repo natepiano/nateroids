@@ -5,14 +5,23 @@ edition = "2024"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-bevy = { version = "0.16.0", features = ["tonemapping_luts", "bevy_dev_tools"] }
+bevy = { version = "0.16.1", features = [
+  "tonemapping_luts",
+  "bevy_dev_tools",
+  "bevy_remote",
+] }
 bevy_rapier3d = { git = "https://github.com/mnmaita/bevy_rapier.git", branch = "mnmaita/bevy-0.16", features = [
-    "simd-stable",
-    "debug-render-3d",
-    "parallel",
+  "simd-stable",
+  "debug-render-3d",
+  "parallel",
 ] } # merged - so you could change to crates.io but you're waiting for leafwing anyway
+# bevy_rapier3d = { version = "0.29.0", features = [
+#     "simd-stable",
+#     "debug-render-3d",
+#     "parallel",
+# ] } # merged - so you could change to crates.io but you're waiting for leafwing anyway
 
-bevy_remote = "0.16.0"
+
 bevy_panorbit_camera = { version = "0.26.0", features = ["bevy_egui"] }
 
 
