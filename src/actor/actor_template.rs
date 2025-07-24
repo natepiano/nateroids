@@ -5,13 +5,13 @@
 /// anything, it will be reflected in the newly created entity. each of these
 /// can be thought of as an ActorConfig
 use crate::actor::{
+    ColliderType,
     actor_spawner::{
         ActorConfig,
         ActorKind,
         SpawnPositionBehavior,
         VelocityBehavior,
     },
-    ColliderType,
 };
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;

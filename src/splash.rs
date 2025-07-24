@@ -1,5 +1,11 @@
-use crate::{camera::RenderLayer, state::GameState};
-use bevy::{prelude::*, render::view::RenderLayers};
+use crate::{
+    camera::RenderLayer,
+    state::GameState,
+};
+use bevy::{
+    prelude::*,
+    render::view::RenderLayers,
+};
 
 pub(crate) struct SplashPlugin;
 
@@ -53,7 +59,7 @@ fn run_splash(
     }
     if spawn_timer.timer.just_finished() {
         next_state.set(GameState::InGame {
-            paused: false,
+            paused:     false,
             inspecting: false,
         });
     }

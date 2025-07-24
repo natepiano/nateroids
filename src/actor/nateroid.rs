@@ -8,8 +8,8 @@ use crate::{
 };
 
 use crate::global_input::{
-    toggle_active,
     GlobalAction,
+    toggle_active,
 };
 use bevy::prelude::*;
 

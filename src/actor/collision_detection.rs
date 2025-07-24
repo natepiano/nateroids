@@ -3,8 +3,8 @@ use bevy_rapier3d::prelude::CollisionEvent;
 
 use crate::{
     actor::{
-        actor_spawner::CollisionDamage,
         Health,
+        actor_spawner::CollisionDamage,
     },
     schedule::InGameSet,
 };

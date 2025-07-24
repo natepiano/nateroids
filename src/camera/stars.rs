@@ -7,8 +7,8 @@ use std::ops::Range;
 
 use crate::camera::RenderLayer;
 use rand::{
-    prelude::ThreadRng,
     Rng,
+    prelude::ThreadRng,
 };
 
 pub struct StarsPlugin;

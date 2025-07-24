@@ -1,6 +1,8 @@
 use crate::{
     actor::{
-        actor_spawner::spawn_actor, actor_template::SpaceshipConfig, spaceship_control::SpaceshipControl,
+        actor_spawner::spawn_actor,
+        actor_template::SpaceshipConfig,
+        spaceship_control::SpaceshipControl,
     },
     schedule::InGameSet,
     state::GameState,

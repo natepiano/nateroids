@@ -1,14 +1,28 @@
 use crate::{
-    camera::{CameraOrder, RenderLayer, config::CameraConfig},
-    global_input::{GlobalAction, just_pressed},
+    camera::{
+        CameraOrder,
+        RenderLayer,
+        config::CameraConfig,
+    },
+    global_input::{
+        GlobalAction,
+        just_pressed,
+    },
     playfield::Boundary,
 };
 use bevy::{
-    core_pipeline::{bloom::Bloom, tonemapping::Tonemapping},
+    core_pipeline::{
+        bloom::Bloom,
+        tonemapping::Tonemapping,
+    },
     prelude::*,
     render::view::RenderLayers,
 };
-use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin, TrackpadBehavior};
+use bevy_panorbit_camera::{
+    PanOrbitCamera,
+    PanOrbitCameraPlugin,
+    TrackpadBehavior,
+};
 use leafwing_input_manager::prelude::*;
 
 pub struct CamerasPlugin;
@@ -145,9 +159,10 @@ pub fn spawn_panorbit_camera(
 
     // Use default FOV and aspect ratio values since the camera doesn't exist yet
     // values determined from home_camera
-    // i tried having home_camera run on first frame using a run condition but it didn't work
-    // it set the correct radius but it didn't actually move the camera - this doesn't make sense
-    // hard coding the initial values here sucks but I can live with it for now
+    // i tried having home_camera run on first frame using a run condition but it
+    // didn't work it set the correct radius but it didn't actually move the
+    // camera - this doesn't make sense hard coding the initial values here
+    // sucks but I can live with it for now
     let default_fov = 0.7853982;
     let default_aspect_ratio = 1.7777778;
     let grid_size = config.scale();
@@ -162,7 +177,7 @@ pub fn spawn_panorbit_camera(
             modifier_pan: Some(KeyCode::ShiftLeft),
             zoom_sensitivity: 0.1,
             trackpad_behavior: TrackpadBehavior::BlenderLike {
-                modifier_pan: Some(KeyCode::ShiftLeft),
+                modifier_pan:  Some(KeyCode::ShiftLeft),
                 modifier_zoom: Some(KeyCode::ControlLeft),
             },
             trackpad_pinch_to_zoom_enabled: true,

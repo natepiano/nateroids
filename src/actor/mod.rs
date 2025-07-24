@@ -20,8 +20,8 @@ use crate::actor::{
 };
 pub use crate::actor::{
     aabb::{
-        get_scene_aabb,
         Aabb,
+        get_scene_aabb,
     },
     actor_spawner::{
         ColliderType,

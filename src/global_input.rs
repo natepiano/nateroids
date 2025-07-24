@@ -117,11 +117,7 @@ pub fn toggle_active(
             state.state = !state.state;
         }
 
-        if state.state {
-            !default
-        } else {
-            default
-        }
+        if state.state { !default } else { default }
     }
 }
 

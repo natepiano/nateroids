@@ -1,15 +1,23 @@
 use crate::{
-    global_input::{GlobalAction, toggle_active},
+    global_input::{
+        GlobalAction,
+        toggle_active,
+    },
     state::PlayingGame,
 };
 use bevy::prelude::*;
 use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay, prelude::*, quick::ResourceInspectorPlugin,
+    inspector_options::std_options::NumberDisplay,
+    prelude::*,
+    quick::ResourceInspectorPlugin,
 };
 
 use crate::playfield::{
     boundary_face::BoundaryFace,
-    portals::{Portal, PortalGizmo},
+    portals::{
+        Portal,
+        PortalGizmo,
+    },
 };
 
 use crate::orientation::CameraOrientation;
@@ -52,12 +60,12 @@ fn update_gizmos_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Re
 #[reflect(Resource, InspectorOptions)]
 pub struct Boundary {
     pub cell_count: UVec3,
-    pub color: Color,
+    pub color:      Color,
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
     pub line_width: f32,
     #[inspector(min = 50., max = 300., display = NumberDisplay::Slider)]
-    pub scalar: f32,
-    pub transform: Transform,
+    pub scalar:     f32,
+    pub transform:  Transform,
 }
 
 impl Default for Boundary {
@@ -439,9 +447,7 @@ impl Boundary {
         boundary_scale.x.max(boundary_scale.y).max(boundary_scale.z)
     }
 
-    pub fn scale(&self) -> Vec3 {
-        self.scalar * self.cell_count.as_vec3()
-    }
+    pub fn scale(&self) -> Vec3 { self.scalar * self.cell_count.as_vec3() }
 }
 
 fn is_in_bounds(point: Vec3, start: f32, origin: Vec3, boundary_min: Vec3, boundary_max: Vec3) -> bool {

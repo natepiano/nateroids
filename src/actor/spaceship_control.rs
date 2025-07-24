@@ -1,22 +1,39 @@
 use crate::{
     actor::{
         actor_template::SpaceshipConfig,
-        spaceship::{ContinuousFire, Spaceship},
+        spaceship::{
+            ContinuousFire,
+            Spaceship,
+        },
     },
-    global_input::{GlobalAction, toggle_active},
-    orientation::{CameraOrientation, OrientationType},
+    global_input::{
+        GlobalAction,
+        toggle_active,
+    },
+    orientation::{
+        CameraOrientation,
+        OrientationType,
+    },
     schedule::InGameSet,
 };
 use bevy::prelude::*;
 use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay, prelude::*, quick::ResourceInspectorPlugin,
+    inspector_options::std_options::NumberDisplay,
+    prelude::*,
+    quick::ResourceInspectorPlugin,
 };
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_rapier3d::dynamics::Velocity;
 use leafwing_input_manager::{
-    Actionlike, action_state::ActionState, input_map::InputMap, plugin::InputManagerPlugin,
+    Actionlike,
+    action_state::ActionState,
+    input_map::InputMap,
+    plugin::InputManagerPlugin,
 };
-use strum::{EnumIter, IntoEnumIterator};
+use strum::{
+    EnumIter,
+    IntoEnumIterator,
+};
 
 pub struct SpaceshipControlPlugin;
 
@@ -45,9 +62,9 @@ impl Plugin for SpaceshipControlPlugin {
 #[reflect(Resource, InspectorOptions)]
 pub struct SpaceshipControlConfig {
     #[inspector(min = 30., max = 300.0, display = NumberDisplay::Slider)]
-    pub acceleration: f32,
+    pub acceleration:   f32,
     #[inspector(min = 50., max = 300.0, display = NumberDisplay::Slider)]
-    pub max_speed: f32,
+    pub max_speed:      f32,
     #[inspector(min = 1.0, max = 10.0, display = NumberDisplay::Slider)]
     pub rotation_speed: f32,
 }
@@ -55,9 +72,9 @@ pub struct SpaceshipControlConfig {
 impl Default for SpaceshipControlConfig {
     fn default() -> Self {
         Self {
-            acceleration: 60.,
+            acceleration:   60.,
             rotation_speed: 5.0,
-            max_speed: 80.,
+            max_speed:      80.,
         }
     }
 }

@@ -1,17 +1,26 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-use crate::{playfield::Boundary, schedule::InGameSet};
+use crate::{
+    playfield::Boundary,
+    schedule::InGameSet,
+};
 
 use crate::actor::{
     Teleporter,
     aabb::Aabb,
     actor_spawner::ActorConfig,
     actor_template::MissileConfig,
-    spaceship::{ContinuousFire, Spaceship},
+    spaceship::{
+        ContinuousFire,
+        Spaceship,
+    },
 };
 
-use crate::actor::{actor_spawner::spawn_actor, spaceship_control::SpaceshipControl};
+use crate::actor::{
+    actor_spawner::spawn_actor,
+    spaceship_control::SpaceshipControl,
+};
 use leafwing_input_manager::prelude::*;
 
 pub struct MissilePlugin;
@@ -28,10 +37,10 @@ impl Plugin for MissilePlugin {
 #[derive(Copy, Clone, Component, Debug)]
 pub struct Missile {
     // velocity:               Vec3,
-    pub total_distance: f32,
-    pub traveled_distance: f32,
-    remaining_distance: f32,
-    pub last_position: Option<Vec3>,
+    pub total_distance:     f32,
+    pub traveled_distance:  f32,
+    remaining_distance:     f32,
+    pub last_position:      Option<Vec3>,
     last_teleport_position: Option<Vec3>, // Add this field
 }
 

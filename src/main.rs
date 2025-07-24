@@ -32,11 +32,11 @@ use bevy::window::{
     WindowMode,
 };
 
-use bevy_inspector_egui::bevy_egui::EguiPlugin;
 use bevy::remote::{
     RemotePlugin,
     http::RemoteHttpPlugin,
 };
+use bevy_inspector_egui::bevy_egui::EguiPlugin;
 
 fn main() {
     let mut app = App::new();
@@ -59,9 +59,7 @@ fn main() {
     );
 
     app.add_plugins((
-        EguiPlugin {
-            enable_multipass_for_primary_context: true,
-        },
+        EguiPlugin::default(),
         ActorPlugin,
         AssetLoaderPlugin,
         PlayfieldPlugin,

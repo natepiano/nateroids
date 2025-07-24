@@ -22,7 +22,7 @@ bevy_rapier3d = { git = "https://github.com/mnmaita/bevy_rapier.git", branch = "
 # ] } # merged - so you could change to crates.io but you're waiting for leafwing anyway
 
 
-bevy_panorbit_camera = { version = "0.26.0", features = ["bevy_egui"] }
+bevy_panorbit_camera = { version = "0.27.1", features = ["bevy_egui"] }
 
 
 #
@@ -35,7 +35,7 @@ bevy_panorbit_camera = { version = "0.26.0", features = ["bevy_egui"] }
 
 
 leafwing-input-manager = { git = "https://github.com/leafwing-studios/leafwing-input-manager", rev = "f337a7f" }
-bevy-inspector-egui = "0.31.0"
+bevy-inspector-egui = "0.32.0"
 #
 # todo: rust question - bevy-inspector-egui explicilty asks for the "manage-clipboard" feature from bevy_egui
 #                       however this feature breaks the wasm build so that i have to disable it
@@ -45,8 +45,8 @@ bevy-inspector-egui = "0.31.0"
 #                       without the extra rigamarole...is there a better way to do this?
 # RUSTFLAGS="--cfg=web_sys_unstable_apis" cargo build --release --target wasm32-unknown-unknown
 #
-rand = "0.9.1"
-strum = { version = "0.27.1", features = ["derive"] }
+rand = "0.9.2"
+strum = { version = "0.27.2", features = ["derive"] }
 
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]

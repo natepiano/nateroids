@@ -1,13 +1,13 @@
 use crate::{
     actor::{
+        Aabb,
+        Teleporter,
         actor_template::{
             MissileConfig,
             NateroidConfig,
             SpaceshipConfig,
         },
         get_scene_aabb,
-        Aabb,
-        Teleporter,
     },
     asset_loader::{
         AssetsState,
@@ -15,8 +15,8 @@ use crate::{
     },
     camera::RenderLayer,
     global_input::{
-        toggle_active,
         GlobalAction,
+        toggle_active,
     },
     playfield::{
         ActorPortals,
@@ -365,8 +365,8 @@ fn get_random_component(min: f32, max: f32, rng: &mut impl Rng) -> f32 {
         min // If the range is effectively zero, just return the min value
     } else {
         rng.random_range(min.min(max)..=min.max(max)) // Ensure min is always
-                                                      // less
-                                                      // than max
+        // less
+        // than max
     }
 }
 
