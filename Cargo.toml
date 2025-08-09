@@ -22,7 +22,7 @@ bevy_rapier3d = { git = "https://github.com/mnmaita/bevy_rapier.git", branch = "
 # ] } # merged - so you could change to crates.io but you're waiting for leafwing anyway
 
 
-bevy_panorbit_camera = { version = "0.27.1", features = ["bevy_egui"] }
+bevy_panorbit_camera = { version = "0.27.2", features = ["bevy_egui"] }
 
 
 #
