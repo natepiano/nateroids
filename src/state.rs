@@ -98,13 +98,13 @@ fn toggle_pause(
     mut next_state: ResMut<NextState<GameState>>,
     state: Res<State<GameState>>,
 ) {
-    if user_input.just_pressed(&GlobalAction::Pause) {
-        if let GameState::InGame { paused, inspecting } = state.get() {
-            next_state.set(GameState::InGame {
-                paused:     !*paused,
-                inspecting: *inspecting,
-            });
-        }
+    if user_input.just_pressed(&GlobalAction::Pause)
+        && let GameState::InGame { paused, inspecting } = state.get()
+    {
+        next_state.set(GameState::InGame {
+            paused:     !*paused,
+            inspecting: *inspecting,
+        });
     }
 }
 

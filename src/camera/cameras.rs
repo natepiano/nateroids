@@ -38,20 +38,18 @@ impl Plugin for CamerasPlugin {
 }
 
 pub fn home_camera(boundary: Res<Boundary>, mut camera_query: Query<(&mut PanOrbitCamera, &Projection)>) {
-    if let Ok((mut pan_orbit, projection)) = camera_query.single_mut() {
-        if let Projection::Perspective(perspective) = projection {
-            let grid_size = boundary.scale();
+    if let Ok((mut pan_orbit, Projection::Perspective(perspective))) = camera_query.single_mut() {
+        let grid_size = boundary.scale();
 
-            let target_radius = calculate_camera_radius(grid_size, perspective.fov, perspective.aspect_ratio);
+        let target_radius = calculate_camera_radius(grid_size, perspective.fov, perspective.aspect_ratio);
 
-            // Set the camera's orbit parameters
-            pan_orbit.target_focus = Vec3::ZERO;
-            pan_orbit.target_yaw = 0.0;
-            pan_orbit.target_pitch = 0.0;
-            pan_orbit.target_radius = target_radius;
+        // Set the camera's orbit parameters
+        pan_orbit.target_focus = Vec3::ZERO;
+        pan_orbit.target_yaw = 0.0;
+        pan_orbit.target_pitch = 0.0;
+        pan_orbit.target_radius = target_radius;
 
-            pan_orbit.force_update = true;
-        }
+        pan_orbit.force_update = true;
     }
 }
 
@@ -101,10 +99,10 @@ fn update_bloom_settings(
     camera_config: Res<CameraConfig>,
     mut q_current_settings: Query<&mut Bloom, With<StarsCamera>>,
 ) {
-    if camera_config.is_changed() {
-        if let Ok(mut old_bloom_settings) = q_current_settings.single_mut() {
-            *old_bloom_settings = get_bloom_settings(camera_config);
-        }
+    if camera_config.is_changed()
+        && let Ok(mut old_bloom_settings) = q_current_settings.single_mut()
+    {
+        *old_bloom_settings = get_bloom_settings(camera_config);
     }
 }
 
@@ -163,7 +161,7 @@ pub fn spawn_panorbit_camera(
     // didn't work it set the correct radius but it didn't actually move the
     // camera - this doesn't make sense hard coding the initial values here
     // sucks but I can live with it for now
-    let default_fov = 0.7853982;
+    let default_fov = std::f32::consts::FRAC_PI_4;
     let default_aspect_ratio = 1.7777778;
     let grid_size = config.scale();
     let initial_radius = calculate_camera_radius(grid_size, default_fov, default_aspect_ratio);

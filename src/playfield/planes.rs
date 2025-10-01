@@ -109,6 +109,7 @@ enum PlaneType {
     Right,
 }
 
+#[allow(clippy::too_many_arguments)]
 fn create_or_update_plane(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -128,7 +129,7 @@ fn create_or_update_plane(
     let rotation = Quat::from_axis_angle(axis, 0.);
     let transform = Transform::from_translation(position).with_rotation(rotation);
 
-    let entity = if let Some(entity) = existing_entity {
+    if let Some(entity) = existing_entity {
         commands
             .entity(entity)
             .insert(Mesh3d(mesh.clone()))
@@ -142,9 +143,7 @@ fn create_or_update_plane(
             .insert(MeshMaterial3d(material_handle.clone()))
             .insert(transform)
             .id()
-    };
-
-    entity
+    }
 }
 
 fn manage_box_planes(

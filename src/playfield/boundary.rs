@@ -282,9 +282,8 @@ impl Boundary {
 
         // Project this onto the edge direction
         let projection_length = to_position.dot(edge_direction);
-        let point_on_edge = anchor_point + projection_length * edge_direction;
 
-        point_on_edge
+        anchor_point + projection_length * edge_direction
     }
 
     // arc_3d has these assumptions:

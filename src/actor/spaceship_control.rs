@@ -213,15 +213,15 @@ fn toggle_continuous_fire(
     mut commands: Commands,
     q_spaceship: Query<(Entity, &ActionState<SpaceshipControl>, Option<&ContinuousFire>), With<Spaceship>>,
 ) {
-    if let Ok((entity, control, continuous)) = q_spaceship.single() {
-        if control.just_pressed(&SpaceshipControl::ContinuousFire) {
-            if continuous.is_some() {
-                println!("removing continuous");
-                commands.entity(entity).remove::<ContinuousFire>();
-            } else {
-                println!("adding continuous");
-                commands.entity(entity).insert(ContinuousFire);
-            }
+    if let Ok((entity, control, continuous)) = q_spaceship.single()
+        && control.just_pressed(&SpaceshipControl::ContinuousFire)
+    {
+        if continuous.is_some() {
+            println!("removing continuous");
+            commands.entity(entity).remove::<ContinuousFire>();
+        } else {
+            println!("adding continuous");
+            commands.entity(entity).insert(ContinuousFire);
         }
     }
 }

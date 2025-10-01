@@ -247,11 +247,11 @@ fn handle_approaching_visual(
     }
 
     // If we reach this point, we've teleported
-    if let Some(approaching) = &mut visual.approaching {
-        if approaching.fade_out_started.is_none() {
-            // Start fade-out
-            approaching.fade_out_started = Some(time.elapsed_secs());
-        }
+    if let Some(approaching) = &mut visual.approaching
+        && approaching.fade_out_started.is_none()
+    {
+        // Start fade-out
+        approaching.fade_out_started = Some(time.elapsed_secs());
     }
 }
 
@@ -365,36 +365,36 @@ fn draw_emerging_portals(
     mut gizmos: Gizmos<PortalGizmo>,
 ) {
     for mut portal in q_portals.iter_mut() {
-        if let Some(ref mut emerging) = portal.emerging {
-            if let Some(emerging_start) = emerging.fade_out_started {
-                // Calculate the elapsed time since the emerging process started
-                let elapsed_time = time.elapsed_secs() - emerging_start;
+        if let Some(ref mut emerging) = portal.emerging
+            && let Some(emerging_start) = emerging.fade_out_started
+        {
+            // Calculate the elapsed time since the emerging process started
+            let elapsed_time = time.elapsed_secs() - emerging_start;
 
-                // Define the total duration for the emerging process
-                let emerging_duration = config.fadeout_duration;
+            // Define the total duration for the emerging process
+            let emerging_duration = config.fadeout_duration;
 
-                // Calculate the progress based on elapsed time
-                let progress = (elapsed_time / emerging_duration).clamp(0.0, 1.0);
+            // Calculate the progress based on elapsed time
+            let progress = (elapsed_time / emerging_duration).clamp(0.0, 1.0);
 
-                // Interpolate the radius from the full size down to zero
-                let initial_radius = emerging.radius;
-                let radius = initial_radius * (1.0 - progress); // Scale down as progress increases
+            // Interpolate the radius from the full size down to zero
+            let initial_radius = emerging.radius;
+            let radius = initial_radius * (1.0 - progress); // Scale down as progress increases
 
-                if radius > 0.0 {
-                    emerging.radius = radius;
-                    boundary.draw_portal(
-                        &mut gizmos,
-                        emerging,
-                        config.color_emerging,
-                        config.resolution,
-                        &orientation,
-                    );
-                }
+            if radius > 0.0 {
+                emerging.radius = radius;
+                boundary.draw_portal(
+                    &mut gizmos,
+                    emerging,
+                    config.color_emerging,
+                    config.resolution,
+                    &orientation,
+                );
+            }
 
-                // Remove visual after the emerging duration is complete
-                if elapsed_time >= emerging_duration {
-                    portal.emerging = None;
-                }
+            // Remove visual after the emerging duration is complete
+            if elapsed_time >= emerging_duration {
+                portal.emerging = None;
             }
         }
     }

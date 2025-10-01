@@ -62,14 +62,14 @@ pub fn get_scene_aabb(scenes: &Assets<Scene>, meshes: &Assets<Mesh>, handle: &Ha
     if let Some(scene) = scenes.get(handle) {
         let mut aabb = None;
         for entity in scene.world.iter_entities() {
-            if let Some(mesh_handle) = entity.get::<Mesh3d>() {
-                if let Some(mesh) = meshes.get(mesh_handle) {
-                    let mesh_aabb = get_mesh_aabb(mesh);
-                    aabb = Some(match aabb {
-                        Some(existing) => combine_aabb(existing, mesh_aabb),
-                        None => mesh_aabb,
-                    });
-                }
+            if let Some(mesh_handle) = entity.get::<Mesh3d>()
+                && let Some(mesh) = meshes.get(mesh_handle)
+            {
+                let mesh_aabb = get_mesh_aabb(mesh);
+                aabb = Some(match aabb {
+                    Some(existing) => combine_aabb(existing, mesh_aabb),
+                    None => mesh_aabb,
+                });
             }
         }
         aabb.unwrap_or(Aabb {

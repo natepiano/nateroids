@@ -13,7 +13,8 @@
       "WebFetch(domain:github.com)",
       "Bash(git commit:*)",
       "Bash(cargo clippy:*)",
-      "Bash(cargo clean:*)"
+      "Bash(cargo clean:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
