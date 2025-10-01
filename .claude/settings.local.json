@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/natemccoy/rust/bevy-0.17.0/**)",
+      "WebFetch(domain:bevy.org)",
+      "WebSearch",
+      "Bash(cargo build:*)",
+      "Bash(cargo run:*)",
+      "Bash(RUST_BACKTRACE=1 cargo run)",
+      "Bash(export RUST_BACKTRACE=1)",
+      "Bash(sw_vers)",
+      "Bash(cargo tree:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
