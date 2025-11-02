@@ -20,7 +20,11 @@
       "Bash(~/.claude/scripts/bevy_migration_verify_guides.sh:*)",
       "Bash(~/.claude/scripts/bevy_migration_dependency_check.py:*)",
       "Bash(gh api:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Read(//Users/natemccoy/rust/bevy-0.17.1/release-content/migration-guides/**)",
+      "Bash(~/.claude/scripts/bevy_migration_count_pattern.sh:*)",
+      "Bash(bash:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
