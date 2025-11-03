@@ -71,9 +71,11 @@ impl Plugin for ActorSpawner {
 }
 
 #[derive(Reflect, Component, Clone, Debug)]
+#[reflect(Component)]
 pub struct Health(pub f32);
 
 #[derive(Reflect, Component, Clone, Debug)]
+#[reflect(Component)]
 pub struct CollisionDamage(pub f32);
 
 #[derive(Reflect, Debug, Clone, PartialEq, Eq)]
