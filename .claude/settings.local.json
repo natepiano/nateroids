@@ -35,7 +35,9 @@
       "WebFetch(domain:joonaa.dev)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:idanarye.github.io)",
-      "WebFetch(domain:rapier.rs)"
+      "WebFetch(domain:rapier.rs)",
+      "Bash(cargo check:*)",
+      "Bash(cargo doc:*)"
     ],
     "deny": [],
     "ask": []
