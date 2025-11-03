@@ -37,7 +37,11 @@
       "WebFetch(domain:idanarye.github.io)",
       "WebFetch(domain:rapier.rs)",
       "Bash(cargo check:*)",
-      "Bash(cargo doc:*)"
+      "Bash(cargo doc:*)",
+      "Bash(git log:*)",
+      "mcp__brp__world_query",
+      "mcp__brp__world_get_components",
+      "mcp__brp__world_list_components"
     ],
     "deny": [],
     "ask": []
