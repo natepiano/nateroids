@@ -24,7 +24,18 @@
       "Read(//Users/natemccoy/rust/bevy-0.17.1/release-content/migration-guides/**)",
       "Bash(~/.claude/scripts/bevy_migration_count_pattern.sh:*)",
       "Bash(bash:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(awk:*)",
+      "Bash(rg:*)",
+      "Bash(grep:*)",
+      "Bash(cargo search:*)",
+      "WebFetch(domain:crates.io)",
+      "Bash(cargo info:*)",
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:joonaa.dev)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:idanarye.github.io)",
+      "WebFetch(domain:rapier.rs)"
     ],
     "deny": [],
     "ask": []
