@@ -5,8 +5,8 @@ mod star_twinkling;
 mod stars;
 
 use bevy::{
+    camera::visibility::Layer,
     prelude::*,
-    render::view::Layer,
 };
 
 use cameras::CamerasPlugin;
@@ -42,12 +42,9 @@ impl CameraOrder {
     }
 }
 
-// todo: #bevyquestion - how can i get PBRs to actually render on RenderLayer 1
-// so i could choose to have some affected by bloom and some not...
-// weird - if i put game on render layer 1 and stars on render layer 0,
-// to line up with the camera order, the PBRs on render layer 1 are still
-// showing on render layer 0 even though i don't think i asked for that
-// used for both camera order and render layer
+// Bevy 0.17 fixed the RenderLayers bug, so now we can align camera order with
+// render layers Stars camera (order 0) renders layer 0
+// Game camera (order 1) renders layer 1
 #[derive(Reflect, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RenderLayer {
     Both,

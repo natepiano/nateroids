@@ -16,6 +16,7 @@ use crate::{
     },
     schedule::InGameSet,
 };
+use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::{
     inspector_options::std_options::NumberDisplay,
@@ -23,7 +24,6 @@ use bevy_inspector_egui::{
     quick::ResourceInspectorPlugin,
 };
 use bevy_panorbit_camera::PanOrbitCamera;
-use bevy_rapier3d::dynamics::Velocity;
 use leafwing_input_manager::{
     Actionlike,
     action_state::ActionState,
@@ -110,7 +110,7 @@ impl SpaceshipControl {
 }
 
 fn spaceship_movement_controls(
-    mut q_spaceship: Query<(&mut Transform, &mut Velocity), With<Spaceship>>,
+    mut q_spaceship: Query<(&mut Transform, &mut LinearVelocity, &mut AngularVelocity), With<Spaceship>>,
     q_camera: Query<&Transform, (With<PanOrbitCamera>, Without<Spaceship>)>,
     q_input_map: Query<&ActionState<SpaceshipControl>>,
     spaceship_config: Res<SpaceshipConfig>,
@@ -121,7 +121,9 @@ fn spaceship_movement_controls(
     if let Ok(camera_transform) = q_camera.single() {
         // we can use this because there is only exactly one spaceship - so we're not
         // looping over the query
-        if let Ok((mut spaceship_transform, mut velocity)) = q_spaceship.single_mut() {
+        if let Ok((mut spaceship_transform, mut linear_velocity, mut angular_velocity)) =
+            q_spaceship.single_mut()
+        {
             // dynamically update from inspector while game is running to change size
             spaceship_transform.scale = Vec3::splat(spaceship_config.0.scalar);
 
@@ -132,11 +134,11 @@ fn spaceship_movement_controls(
 
                 if controls.pressed(&SpaceshipControl::TurnRight) {
                     // right
-                    velocity.angvel.z = 0.0;
+                    angular_velocity.z = 0.0;
                     rotation = rotation_speed * delta_seconds;
                 } else if controls.pressed(&SpaceshipControl::TurnLeft) {
                     // left
-                    velocity.angvel.z = 0.0;
+                    angular_velocity.z = 0.0;
                     rotation = -rotation_speed * delta_seconds;
                 }
 
@@ -155,7 +157,7 @@ fn spaceship_movement_controls(
 
                 if controls.pressed(&SpaceshipControl::Accelerate) {
                     apply_acceleration(
-                        &mut velocity,
+                        &mut linear_velocity,
                         -spaceship_transform.forward().as_vec3(),
                         accel,
                         max_speed,
@@ -181,28 +183,28 @@ fn spaceship_movement_controls(
 }
 
 fn apply_acceleration(
-    velocity: &mut Velocity,
+    linear_velocity: &mut LinearVelocity,
     direction: Vec3,
     acceleration: f32,
     max_speed: f32,
     delta_seconds: f32,
     orientation: Res<CameraOrientation>,
 ) {
-    let proposed_velocity = velocity.linvel + direction * (acceleration * delta_seconds);
+    let proposed_velocity = **linear_velocity + direction * (acceleration * delta_seconds);
     let proposed_speed = proposed_velocity.length();
 
     // Ensure we're not exceeding max velocity
     if proposed_speed > max_speed {
-        velocity.linvel = proposed_velocity.normalize() * max_speed;
+        **linear_velocity = proposed_velocity.normalize() * max_speed;
     } else {
-        velocity.linvel = proposed_velocity;
+        **linear_velocity = proposed_velocity;
     }
 
     //todo: #handl3d
     match orientation.orientation {
         // in 3d we can accelerate in all dirs
         OrientationType::BehindSpaceship3D => (),
-        _ => velocity.linvel.z = 0.0, // Force the `z` value of velocity.linvel to be 0
+        _ => linear_velocity.z = 0.0, // Force the `z` value of linear_velocity to be 0
     }
 }
 

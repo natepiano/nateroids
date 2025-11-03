@@ -1,5 +1,5 @@
+use avian3d::prelude::*;
 use bevy::prelude::*;
-use bevy_rapier3d::prelude::CollisionEvent;
 
 use crate::{
     actor::{
@@ -21,30 +21,29 @@ impl Plugin for CollisionDetectionPlugin {
 }
 
 fn handle_collision_events(
-    mut collision_events: EventReader<CollisionEvent>,
+    mut collision_events: MessageReader<CollisionStart>,
     mut health_query: Query<&mut Health>,
     name_query: Query<&Name>,
     collision_damage_query: Query<&CollisionDamage>,
 ) {
-    for &collision_event in collision_events.read() {
-        if let CollisionEvent::Started(entity1, entity2, ..) = collision_event
-            && let Ok(name1) = name_query.get(entity1)
-            && let Ok(name2) = name_query.get(entity2)
+    for event in collision_events.read() {
+        if let Ok(name1) = name_query.get(event.collider1)
+            && let Ok(name2) = name_query.get(event.collider2)
         {
             apply_collision_damage(
                 &mut health_query,
                 &collision_damage_query,
-                entity1,
+                event.collider1,
                 name1,
-                entity2,
+                event.collider2,
                 name2,
             );
             apply_collision_damage(
                 &mut health_query,
                 &collision_damage_query,
-                entity2,
+                event.collider2,
                 name2,
-                entity1,
+                event.collider1,
                 name1,
             );
         }

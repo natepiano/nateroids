@@ -1,9 +1,9 @@
 use crate::global_input::GlobalAction;
+use avian3d::prelude::*;
 use bevy::{
     dev_tools::states::*,
     prelude::*,
 };
-use bevy_rapier3d::plugin::RapierConfiguration;
 use leafwing_input_manager::prelude::ActionState;
 
 pub struct StatePlugin;
@@ -116,20 +116,12 @@ fn transition_to_in_game(mut next_state: ResMut<NextState<GameState>>) {
     });
 }
 
-fn pause_rapier(mut rapier_config_query: Query<&mut RapierConfiguration>) {
-    if let Ok(mut rapier_config) = rapier_config_query.single_mut() {
-        println!("pausing game and physics");
-        rapier_config.physics_pipeline_active = false;
-    } else {
-        error!("Error: Unable to find the RapierConfiguration component.");
-    }
+fn pause_rapier(mut time: ResMut<Time<Physics>>) {
+    println!("pausing game and physics");
+    time.pause();
 }
 
-fn unpause_rapier(mut rapier_config_query: Query<&mut RapierConfiguration>) {
-    if let Ok(mut rapier_config) = rapier_config_query.single_mut() {
-        println!("unpausing game and physics");
-        rapier_config.physics_pipeline_active = true;
-    } else {
-        error!("Error: Unable to find the RapierConfiguration component.");
-    }
+fn unpause_rapier(mut time: ResMut<Time<Physics>>) {
+    println!("unpausing game and physics");
+    time.unpause();
 }

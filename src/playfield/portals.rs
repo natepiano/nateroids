@@ -14,6 +14,7 @@ use crate::{
     },
     state::PlayingGame,
 };
+use avian3d::prelude::*;
 use bevy::{
     app::{
         App,
@@ -34,7 +35,6 @@ use bevy_inspector_egui::{
     prelude::*,
     quick::ResourceInspectorPlugin,
 };
-use bevy_rapier3d::dynamics::Velocity;
 
 pub struct PortalPlugin;
 
@@ -154,7 +154,7 @@ impl Default for Portal {
 }
 
 fn init_portals(
-    mut q_actor: Query<(&Aabb, &Transform, &Velocity, &Teleporter, &mut ActorPortals)>,
+    mut q_actor: Query<(&Aabb, &Transform, &LinearVelocity, &Teleporter, &mut ActorPortals)>,
     boundary: Res<Boundary>,
     portal_config: Res<PortalConfig>,
     time: Res<Time>,
@@ -173,7 +173,7 @@ fn init_portals(
         let radius = aabb.max_dimension().max(portal_config.portal_smallest) * portal_config.portal_scalar;
 
         let portal_position = transform.translation;
-        let actor_direction = velocity.linvel.normalize_or_zero();
+        let actor_direction = velocity.normalize_or_zero();
 
         let portal = Portal {
             actor_direction,

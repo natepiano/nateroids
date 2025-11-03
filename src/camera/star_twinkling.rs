@@ -146,7 +146,7 @@ fn update_twinkling(
                 LinearRgba::new(new_emissive.x, new_emissive.y, new_emissive.z, new_emissive.w);
         }
 
-        if twinkling.twinkle_timer.finished() {
+        if twinkling.twinkle_timer.is_finished() {
             commands.entity(entity).remove::<Twinkling>();
         }
     }

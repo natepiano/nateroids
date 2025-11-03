@@ -11,12 +11,10 @@ use crate::{
     playfield::Boundary,
 };
 use bevy::{
-    core_pipeline::{
-        bloom::Bloom,
-        tonemapping::Tonemapping,
-    },
+    camera::visibility::RenderLayers,
+    core_pipeline::tonemapping::Tonemapping,
+    post_process::bloom::Bloom,
     prelude::*,
-    render::view::RenderLayers,
 };
 use bevy_panorbit_camera::{
     PanOrbitCamera,
@@ -85,7 +83,6 @@ fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
         .spawn(Camera3d::default())
         .insert(Camera {
             order: CameraOrder::Stars.order(),
-            hdr: true, // 1. HDR is required for bloom
             ..default()
         })
         .insert(Tonemapping::BlenderFilmic)
@@ -183,7 +180,6 @@ pub fn spawn_panorbit_camera(
         })
         //  .insert(transform)
         .insert(Camera {
-            hdr: true,
             order: CameraOrder::Game.order(),
             clear_color: ClearColorConfig::Custom(
                 camera_config.clear_color.darker(camera_config.darkening_factor),

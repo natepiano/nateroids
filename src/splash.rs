@@ -3,8 +3,8 @@ use crate::{
     state::GameState,
 };
 use bevy::{
+    camera::visibility::RenderLayers,
     prelude::*,
-    render::view::RenderLayers,
 };
 
 pub(crate) struct SplashPlugin;

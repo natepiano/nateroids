@@ -13,17 +13,19 @@ use crate::actor::{
         VelocityBehavior,
     },
 };
+use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
-use bevy_rapier3d::{
-    dynamics::LockedAxes,
-    geometry::Group,
-    prelude::CollisionGroups,
-};
 
-pub const GROUP_SPACESHIP: Group = Group::GROUP_1;
-pub const GROUP_ASTEROID: Group = Group::GROUP_2;
-pub const GROUP_MISSILE: Group = Group::GROUP_3;
+#[derive(PhysicsLayer, Clone, Copy, Debug, Default)]
+pub enum GameLayer {
+    #[default]
+    Default,
+    Spaceship,
+    Asteroid,
+    Missile,
+    Boundary,
+}
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
@@ -44,7 +46,7 @@ impl Default for MissileConfig {
         Self(ActorConfig {
             actor_kind: ActorKind::Missile,
             collision_damage: 50.,
-            collision_groups: CollisionGroups::new(GROUP_MISSILE, GROUP_ASTEROID),
+            collision_layers: CollisionLayers::new([GameLayer::Missile], [GameLayer::Asteroid]),
             health: 1.,
             mass: 0.1,
             // #todo: #handle3d
@@ -88,12 +90,16 @@ impl Default for SpaceshipConfig {
         Self(ActorConfig {
             actor_kind: ActorKind::Spaceship,
             collision_damage: 50.,
-            collision_groups: CollisionGroups::new(GROUP_SPACESHIP, GROUP_ASTEROID),
+            collision_layers: CollisionLayers::new(
+                [GameLayer::Spaceship],
+                [GameLayer::Asteroid, GameLayer::Boundary],
+            ),
             health: 500.,
             mass: 10.0,
-            locked_axes: LockedAxes::ROTATION_LOCKED_X
-                | LockedAxes::ROTATION_LOCKED_Y
-                | LockedAxes::TRANSLATION_LOCKED_Z,
+            locked_axes: LockedAxes::new()
+                .lock_rotation_x()
+                .lock_rotation_y()
+                .lock_translation_z(),
             restitution: 0.1,
             // #todo: #handle3d
             rotation: Some(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2)),

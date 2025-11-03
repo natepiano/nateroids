@@ -1,7 +1,7 @@
 use crate::playfield::Boundary;
 use bevy::{
+    camera::visibility::RenderLayers,
     prelude::*,
-    render::view::RenderLayers,
 };
 use std::ops::Range;
 

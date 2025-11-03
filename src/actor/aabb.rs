@@ -5,7 +5,6 @@ use crate::global_input::{
 use bevy::{
     color::palettes::tailwind,
     prelude::*,
-    render::mesh::VertexAttributeValues,
 };
 
 pub struct AabbPlugin;
@@ -61,15 +60,17 @@ fn draw_aabb_system(mut gizmos: Gizmos, query: Query<(&Transform, &Aabb)>) {
 pub fn get_scene_aabb(scenes: &Assets<Scene>, meshes: &Assets<Mesh>, handle: &Handle<Scene>) -> Aabb {
     if let Some(scene) = scenes.get(handle) {
         let mut aabb = None;
-        for entity in scene.world.iter_entities() {
-            if let Some(mesh_handle) = entity.get::<Mesh3d>()
-                && let Some(mesh) = meshes.get(mesh_handle)
-            {
-                let mesh_aabb = get_mesh_aabb(mesh);
-                aabb = Some(match aabb {
-                    Some(existing) => combine_aabb(existing, mesh_aabb),
-                    None => mesh_aabb,
-                });
+        if let Some(mut query_state) = scene.world.try_query::<EntityRef>() {
+            for entity in query_state.iter(&scene.world) {
+                if let Some(mesh_handle) = entity.get::<Mesh3d>()
+                    && let Some(mesh) = meshes.get(mesh_handle)
+                {
+                    let mesh_aabb = get_mesh_aabb(mesh);
+                    aabb = Some(match aabb {
+                        Some(existing) => combine_aabb(existing, mesh_aabb),
+                        None => mesh_aabb,
+                    });
+                }
             }
         }
         aabb.unwrap_or(Aabb {
@@ -85,7 +86,10 @@ pub fn get_scene_aabb(scenes: &Assets<Scene>, meshes: &Assets<Mesh>, handle: &Ha
 }
 
 fn get_mesh_aabb(mesh: &Mesh) -> Aabb {
-    if let Some(VertexAttributeValues::Float32x3(positions)) = mesh.attribute(Mesh::ATTRIBUTE_POSITION) {
+    if let Some(positions) = mesh
+        .attribute(Mesh::ATTRIBUTE_POSITION)
+        .and_then(|attr| attr.as_float3())
+    {
         let mut min = Vec3::splat(f32::MAX);
         let mut max = Vec3::splat(f32::MIN);
         for position in positions.iter() {

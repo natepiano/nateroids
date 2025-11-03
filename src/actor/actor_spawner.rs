@@ -23,17 +23,17 @@ use crate::{
         Boundary,
     },
 };
+use avian3d::prelude::*;
 use bevy::{
+    camera::visibility::RenderLayers,
     ecs::system::EntityCommands,
     prelude::*,
-    render::view::RenderLayers,
 };
 use bevy_inspector_egui::{
     inspector_options::std_options::NumberDisplay,
     prelude::*,
     quick::ResourceInspectorPlugin,
 };
-use bevy_rapier3d::prelude::*;
 use rand::Rng;
 use std::{
     fmt,
@@ -105,28 +105,34 @@ pub enum VelocityBehavior {
 impl VelocityBehavior {
     fn calculate_velocity(
         &self,
-        parent_velocity: Option<&Velocity>,
+        parent_linear_velocity: Option<&LinearVelocity>,
         parent_transform: Option<&Transform>,
-    ) -> Velocity {
+    ) -> (LinearVelocity, AngularVelocity) {
         match self {
-            VelocityBehavior::Fixed(velocity) => Velocity::linear(*velocity),
-            VelocityBehavior::Random { linvel, angvel } => Velocity {
-                linvel: random_vec3(-*linvel..*linvel, -*linvel..*linvel, 0.0..0.0),
-                angvel: random_vec3(-*angvel..*angvel, -*angvel..*angvel, -*angvel..*angvel),
-            },
+            VelocityBehavior::Fixed(velocity) => (LinearVelocity(*velocity), AngularVelocity::ZERO),
+            VelocityBehavior::Random { linvel, angvel } => (
+                LinearVelocity(random_vec3(-*linvel..*linvel, -*linvel..*linvel, 0.0..0.0)),
+                AngularVelocity(random_vec3(
+                    -*angvel..*angvel,
+                    -*angvel..*angvel,
+                    -*angvel..*angvel,
+                )),
+            ),
             VelocityBehavior::RelativeToParent {
                 base_velocity,
                 inherit_parent_velocity,
             } => {
-                if let (Some(parent_velocity), Some(parent_transform)) = (parent_velocity, parent_transform) {
+                if let (Some(parent_linear_velocity), Some(parent_transform)) =
+                    (parent_linear_velocity, parent_transform)
+                {
                     let forward = -parent_transform.forward();
                     let mut velocity = forward * *base_velocity;
                     if *inherit_parent_velocity {
-                        velocity += parent_velocity.linvel;
+                        velocity += **parent_linear_velocity;
                     }
-                    Velocity::linear(velocity)
+                    (LinearVelocity(velocity), AngularVelocity::ZERO)
                 } else {
-                    Velocity::zero()
+                    (LinearVelocity::ZERO, AngularVelocity::ZERO)
                 }
             },
         }
@@ -146,7 +152,7 @@ pub struct ActorConfig {
     pub collider_type:            ColliderType,
     pub collision_damage:         f32,
     #[reflect(ignore)]
-    pub collision_groups:         CollisionGroups,
+    pub collision_layers:         CollisionLayers,
     pub gravity_scale:            f32,
     pub health:                   f32,
     pub locked_axes:              LockedAxes,
@@ -155,7 +161,7 @@ pub struct ActorConfig {
     pub render_layer:             RenderLayer,
     #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
     pub restitution:              f32,
-    pub restitution_combine_rule: CoefficientCombineRule,
+    pub restitution_combine_rule: CoefficientCombine,
     pub rigid_body:               RigidBody,
     pub rotation:                 Option<Quat>,
     #[inspector(min = 0.1, max = 10.0, display = NumberDisplay::Slider)]
@@ -178,14 +184,14 @@ impl Default for ActorConfig {
             collider:                 Collider::cuboid(0.5, 0.5, 0.5),
             collider_type:            ColliderType::Cuboid,
             collision_damage:         0.,
-            collision_groups:         CollisionGroups::default(),
+            collision_layers:         CollisionLayers::default(),
             gravity_scale:            0.,
             health:                   0.,
-            locked_axes:              LockedAxes::TRANSLATION_LOCKED_Z,
+            locked_axes:              LockedAxes::new().lock_translation_z(),
             mass:                     1.,
             render_layer:             RenderLayer::Both,
             restitution:              1.,
-            restitution_combine_rule: CoefficientCombineRule::Max,
+            restitution_combine_rule: CoefficientCombine::Max,
             rigid_body:               RigidBody::Dynamic,
             rotation:                 None,
             scalar:                   1.,
@@ -260,49 +266,48 @@ impl ActorConfig {
 pub struct ActorBundle {
     pub actor_kind:       ActorKind,
     pub aabb:             Aabb,
-    pub active_events:    ActiveEvents,
     pub collider:         Collider,
     pub collision_damage: CollisionDamage,
-    pub collision_groups: CollisionGroups,
+    pub collision_layers: CollisionLayers,
     pub gravity_scale:    GravityScale,
     pub health:           Health,
     pub locked_axes:      LockedAxes,
     pub rigid_body:       RigidBody,
     pub restitution:      Restitution,
-    pub mass_properties:  ColliderMassProperties,
+    pub mass_properties:  Mass,
     pub render_layers:    RenderLayers,
     pub scene_root:       SceneRoot,
     pub teleporter:       Teleporter,
     pub transform:        Transform,
-    pub velocity:         Velocity,
+    pub linear_velocity:  LinearVelocity,
+    pub angular_velocity: AngularVelocity,
     pub wall_visualizer:  ActorPortals,
 }
 
 impl ActorBundle {
     pub fn new(
         config: &ActorConfig,
-        parent: Option<(&Transform, &Velocity, &Aabb)>,
+        parent: Option<(&Transform, &LinearVelocity, &Aabb)>,
         boundary: Option<Res<Boundary>>,
     ) -> Self {
         let parent_aabb = parent.map(|(_, _, a)| a);
         let parent_transform = parent.map(|(t, _, _)| t);
-        let parent_velocity = parent.map(|(_, v, _)| v);
+        let parent_linear_velocity = parent.map(|(_, v, _)| v);
 
         let mut transform = config.calculate_spawn_transform(parent_transform.zip(parent_aabb), boundary);
 
         Self::apply_rotations(config, parent_transform, &mut transform);
 
-        let velocity = config
+        let (linear_velocity, angular_velocity) = config
             .velocity_behavior
-            .calculate_velocity(parent_velocity, parent_transform);
+            .calculate_velocity(parent_linear_velocity, parent_transform);
 
         Self {
             actor_kind: config.actor_kind,
             aabb: config.aabb.clone(),
-            active_events: ActiveEvents::COLLISION_EVENTS,
             collider: config.collider.clone(),
             collision_damage: CollisionDamage(config.collision_damage),
-            collision_groups: config.collision_groups,
+            collision_layers: config.collision_layers,
             gravity_scale: GravityScale(config.gravity_scale),
             health: Health(config.health),
             locked_axes: config.locked_axes,
@@ -311,12 +316,13 @@ impl ActorBundle {
                 coefficient:  config.restitution,
                 combine_rule: config.restitution_combine_rule,
             },
-            mass_properties: ColliderMassProperties::Mass(config.mass),
+            mass_properties: Mass(config.mass),
             render_layers: RenderLayers::from_layers(config.render_layer.layers()),
             scene_root: SceneRoot(config.scene.clone()),
             teleporter: Teleporter::default(),
             transform,
-            velocity,
+            linear_velocity,
+            angular_velocity,
             wall_visualizer: ActorPortals::default(),
         }
     }
@@ -445,7 +451,7 @@ fn initialize_actor_config(
     let collider = match config.collider_type {
         ColliderType::Ball => {
             let radius = size.length() / 3.;
-            Collider::ball(radius)
+            Collider::sphere(radius)
         },
         ColliderType::Cuboid => Collider::cuboid(half_extents.x, half_extents.y, half_extents.z),
     };
@@ -486,7 +492,7 @@ pub fn spawn_actor<'a>(
     commands: &'a mut Commands,
     config: &ActorConfig,
     boundary: Option<Res<Boundary>>,
-    parent: Option<(&Transform, &Velocity, &Aabb)>,
+    parent: Option<(&Transform, &LinearVelocity, &Aabb)>,
 ) -> EntityCommands<'a> {
     let bundle = ActorBundle::new(config, parent, boundary);
 
