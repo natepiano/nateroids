@@ -499,6 +499,7 @@ pub fn spawn_actor<'a>(
     let entity = commands
         .spawn(bundle)
         .insert(Name::new(config.actor_kind.to_string()))
+        .insert(CollisionEventsEnabled)
         .id();
 
     commands.entity(entity)

@@ -69,6 +69,10 @@ impl Default for NateroidConfig {
             actor_kind: ActorKind::Nateroid,
             collider_type: ColliderType::Cuboid,
             collision_damage: 10.,
+            collision_layers: CollisionLayers::new(
+                [GameLayer::Asteroid],
+                [GameLayer::Asteroid, GameLayer::Missile, GameLayer::Spaceship],
+            ),
             health: 200.,
             mass: 1.0,
             restitution: 0.3,
