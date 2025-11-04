@@ -1,11 +1,15 @@
 use crate::{
+    camera::RenderLayer,
     global_input::{
         GlobalAction,
         toggle_active,
     },
     state::PlayingGame,
 };
-use bevy::prelude::*;
+use bevy::{
+    camera::visibility::RenderLayers,
+    prelude::*,
+};
 use bevy_inspector_egui::{
     inspector_options::std_options::NumberDisplay,
     prelude::*,
@@ -45,6 +49,7 @@ struct BoundaryGizmo {}
 fn update_gizmos_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Res<Boundary>) {
     let (config, _) = config_store.config_mut::<BoundaryGizmo>();
     config.line.width = boundary.line_width;
+    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
 // circle_direction_change_factor:

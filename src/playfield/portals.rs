@@ -3,6 +3,7 @@ use crate::{
         Aabb,
         Teleporter,
     },
+    camera::RenderLayer,
     global_input::{
         GlobalAction,
         toggle_active,
@@ -20,6 +21,7 @@ use bevy::{
         App,
         Plugin,
     },
+    camera::visibility::RenderLayers,
     color::{
         Color,
         palettes::tailwind,
@@ -67,6 +69,7 @@ fn update_portal_config(mut config_store: ResMut<GizmoConfigStore>, portal_confi
     let (config, _) = config_store.config_mut::<PortalGizmo>();
     config.line.width = portal_config.line_width;
     config.line.joints = GizmoLineJoint::Round(portal_config.line_joints);
+    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]

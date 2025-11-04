@@ -10,11 +10,7 @@ bevy = { version = "0.17.2", features = [
   "bevy_dev_tools",
   "bevy_remote",
 ] }
-avian3d = { version = "0.4.1", features = [
-  "simd",
-  "debug-plugin",
-  "parallel",
-] }
+avian3d = { version = "0.4.1", features = ["simd", "debug-plugin", "parallel"] }
 bevy_panorbit_camera = { version = "0.32.0", features = ["bevy_egui"] }
 leafwing-input-manager = "0.19.0"
 bevy-inspector-egui = "0.35.0"
@@ -29,6 +25,7 @@ bevy-inspector-egui = "0.35.0"
 #
 rand = "0.9.2"
 strum = { version = "0.27.2", features = ["derive"] }
+bevy_brp_extras = "0.17.0"
 
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]

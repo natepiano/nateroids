@@ -13,6 +13,7 @@ use crate::{
 use bevy::{
     camera::visibility::RenderLayers,
     core_pipeline::tonemapping::Tonemapping,
+    light::AmbientLight,
     post_process::bloom::Bloom,
     prelude::*,
 };
@@ -73,7 +74,7 @@ fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32) -> f32 
     total_distance * buffer
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct StarsCamera;
 
 // star camera uses bloom so it needs to be in its own layer as we don't
@@ -83,11 +84,21 @@ fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
         .spawn(Camera3d::default())
         .insert(Camera {
             order: CameraOrder::Stars.order(),
+            clear_color: ClearColorConfig::Default,
             ..default()
         })
         .insert(Tonemapping::BlenderFilmic)
         .insert(RenderLayers::from_layers(RenderLayer::Stars.layers()))
         .insert(get_bloom_settings(camera_config))
+        // CRITICAL: Adding an `AmbientLight` component to the stars camera overrides the
+        // global `AmbientLight` resource for this camera only. Without this, the global
+        // ambient light (used for lighting game objects) washes out the stars completely,
+        // making the background appear black. The brightness value doesn't matter since
+        // stars are emissive (self-illuminating), but the component must be present.
+        .insert(AmbientLight {
+            brightness: 0.0,
+            ..default()
+        })
         .insert(StarsCamera);
 }
 
@@ -139,7 +150,6 @@ fn toggle_stars(
 }
 
 pub fn spawn_panorbit_camera(
-    camera_config: Res<CameraConfig>,
     config: Res<Boundary>,
     mut commands: Commands,
     mut q_stars_camera: Query<Entity, With<StarsCamera>>,
@@ -181,9 +191,10 @@ pub fn spawn_panorbit_camera(
         //  .insert(transform)
         .insert(Camera {
             order: CameraOrder::Game.order(),
-            clear_color: ClearColorConfig::Custom(
-                camera_config.clear_color.darker(camera_config.darkening_factor),
-            ),
+            // transparent because the game sits on top of the stars
+            // this (speculative) clears the depth buffer of bloom information still - allowing
+            // the game entities to render correctly without bloom
+            clear_color: ClearColorConfig::Custom(Color::Srgba(Srgba::new(0.0, 0.0, 0.0, 0.0))),
             ..default()
         })
         .insert(Tonemapping::TonyMcMapface)

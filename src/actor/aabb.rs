@@ -1,20 +1,27 @@
-use crate::global_input::{
-    GlobalAction,
-    toggle_active,
+use crate::{
+    camera::RenderLayer,
+    global_input::{GlobalAction, toggle_active},
 };
-use bevy::{
-    color::palettes::tailwind,
-    prelude::*,
-};
+use bevy::{camera::visibility::RenderLayers, color::palettes::tailwind, prelude::*};
 
 pub struct AabbPlugin;
 impl Plugin for AabbPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            draw_aabb_system.run_if(toggle_active(false, GlobalAction::AABBs)),
-        );
+        app.init_gizmo_group::<AabbGizmo>()
+            .add_systems(Startup, init_aabb_gizmo_config)
+            .add_systems(
+                Update,
+                draw_aabb_system.run_if(toggle_active(false, GlobalAction::AABBs)),
+            );
     }
+}
+
+#[derive(Default, Reflect, GizmoConfigGroup)]
+struct AabbGizmo {}
+
+fn init_aabb_gizmo_config(mut config_store: ResMut<GizmoConfigStore>) {
+    let (config, _) = config_store.config_mut::<AabbGizmo>();
+    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
 #[derive(Component, Debug, Clone, Reflect, Default)]
@@ -24,11 +31,13 @@ pub struct Aabb {
 }
 
 impl Aabb {
-    pub fn size(&self) -> Vec3 { self.max - self.min }
+    pub fn size(&self) -> Vec3 {
+        self.max - self.min
+    }
 
-    pub fn center(&self) -> Vec3 { (self.min + self.max) / 2.0 }
-
-    pub fn half_extents(&self) -> Vec3 { self.size() / 2.0 }
+    pub fn center(&self) -> Vec3 {
+        (self.min + self.max) / 2.0
+    }
 
     pub fn max_dimension(&self) -> f32 {
         let size = self.size();
@@ -43,14 +52,14 @@ impl Aabb {
     }
 }
 
-fn draw_aabb_system(mut gizmos: Gizmos, query: Query<(&Transform, &Aabb)>) {
+fn draw_aabb_system(mut gizmos: Gizmos<AabbGizmo>, query: Query<(&Transform, &Aabb)>) {
     for (transform, aabb) in query.iter() {
         let center = transform.transform_point(aabb.center());
 
         // Draw the wireframe cube
         gizmos.cuboid(
             Transform::from_translation(center)
-                .with_scale(aabb.half_extents() * 2.0 * transform.scale)
+                .with_scale(aabb.size() * transform.scale)
                 .with_rotation(transform.rotation),
             Color::from(tailwind::GREEN_800),
         );

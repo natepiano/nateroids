@@ -42,12 +42,13 @@ impl CameraOrder {
     }
 }
 
-// Bevy 0.17 fixed the RenderLayers bug, so now we can align camera order with
-// render layers Stars camera (order 0) renders layer 0
-// Game camera (order 1) renders layer 1
+// RenderLayers don't propagate to scene children, they default to layer 0
+// Stars camera (order 0) renders layer 1 (stars only) with bloom, clears with
+// opaque background color. Game camera (order 1) renders layer 0 (game objects)
+// without bloom, clears with transparent color (preserves stars but prevents
+// motion trails)
 #[derive(Reflect, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RenderLayer {
-    Both,
     Game,
     Stars,
 }
@@ -57,9 +58,8 @@ pub enum RenderLayer {
 impl RenderLayer {
     pub const fn layers(self) -> &'static [Layer] {
         match self {
-            RenderLayer::Both => &[0, 1],
-            RenderLayer::Game => &[0],
-            RenderLayer::Stars => &[1],
+            RenderLayer::Game => &[1],
+            RenderLayer::Stars => &[0],
         }
     }
 }

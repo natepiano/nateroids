@@ -57,7 +57,7 @@ impl Default for StarConfig {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Reflect, Component, Default)]
 pub struct Star {
     position:     Vec3,
     radius:       f32,

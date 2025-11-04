@@ -1,44 +1,21 @@
 use crate::{
     actor::{
-        Aabb,
-        Teleporter,
-        actor_template::{
-            MissileConfig,
-            NateroidConfig,
-            SpaceshipConfig,
-        },
+        Aabb, Teleporter,
+        actor_template::{MissileConfig, NateroidConfig, SpaceshipConfig},
         get_scene_aabb,
     },
-    asset_loader::{
-        AssetsState,
-        SceneAssets,
-    },
+    asset_loader::{AssetsState, SceneAssets},
     camera::RenderLayer,
-    global_input::{
-        GlobalAction,
-        toggle_active,
-    },
-    playfield::{
-        ActorPortals,
-        Boundary,
-    },
+    global_input::{GlobalAction, toggle_active},
+    playfield::{ActorPortals, Boundary},
 };
 use avian3d::prelude::*;
-use bevy::{
-    camera::visibility::RenderLayers,
-    ecs::system::EntityCommands,
-    prelude::*,
-};
+use bevy::{camera::visibility::RenderLayers, ecs::system::EntityCommands, prelude::*};
 use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay,
-    prelude::*,
-    quick::ResourceInspectorPlugin,
+    inspector_options::std_options::NumberDisplay, prelude::*, quick::ResourceInspectorPlugin,
 };
 use rand::Rng;
-use std::{
-    fmt,
-    ops::Range,
-};
+use std::{fmt, ops::Range};
 
 // this is how far off we are from blender for the assets we're loading
 // we need to get them scaled up to generate a usable aabb
@@ -55,6 +32,7 @@ impl Plugin for ActorSpawner {
             .register_type::<NateroidConfig>()
             .register_type::<SpaceshipConfig>()
             .add_systems(OnEnter(AssetsState::Loaded), initialize_actor_configs)
+            .add_observer(propagate_render_layers_on_spawn)
             .add_plugins(
                 ResourceInspectorPlugin::<MissileConfig>::default()
                     .run_if(toggle_active(false, GlobalAction::MissileInspector)),
@@ -67,6 +45,36 @@ impl Plugin for ActorSpawner {
                 ResourceInspectorPlugin::<SpaceshipConfig>::default()
                     .run_if(toggle_active(false, GlobalAction::SpaceshipInspector)),
             );
+    }
+}
+
+fn propagate_render_layers_on_spawn(
+    add: On<Add, Children>,
+    q_parents: Query<&RenderLayers, With<ActorKind>>,
+    children_query: Query<&Children>,
+    mut commands: Commands,
+) {
+    // Only process if this entity has ActorKind (scene children added to actor
+    // parent)
+    if let Ok(parent_layers) = q_parents.get(add.entity) {
+        // Recursively propagate to all descendants
+        propagate_to_descendants(add.entity, parent_layers, &children_query, &mut commands);
+    }
+}
+
+fn propagate_to_descendants(
+    entity: Entity,
+    parent_layers: &RenderLayers,
+    children_query: &Query<&Children>,
+    commands: &mut Commands,
+) {
+    if let Ok(children) = children_query.get(entity) {
+        for child in children.iter() {
+            commands.entity(child).insert(parent_layers.clone());
+
+            // Recursively propagate to grandchildren
+            propagate_to_descendants(child, parent_layers, children_query, commands);
+        }
     }
 }
 
@@ -99,7 +107,7 @@ pub enum VelocityBehavior {
         angvel: f32,
     },
     RelativeToParent {
-        base_velocity:           f32,
+        base_velocity: f32,
         inherit_parent_velocity: bool,
     },
 }
@@ -144,64 +152,64 @@ impl VelocityBehavior {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 pub struct ActorConfig {
-    pub spawnable:                bool,
+    pub spawnable: bool,
     #[reflect(ignore)]
-    pub aabb:                     Aabb,
+    pub aabb: Aabb,
     #[reflect(ignore)]
-    pub actor_kind:               ActorKind,
+    pub actor_kind: ActorKind,
     #[reflect(ignore)]
-    pub collider:                 Collider,
-    pub collider_type:            ColliderType,
-    pub collision_damage:         f32,
+    pub collider: Collider,
+    pub collider_type: ColliderType,
+    pub collision_damage: f32,
     #[reflect(ignore)]
-    pub collision_layers:         CollisionLayers,
-    pub gravity_scale:            f32,
-    pub health:                   f32,
-    pub locked_axes:              LockedAxes,
+    pub collision_layers: CollisionLayers,
+    pub gravity_scale: f32,
+    pub health: f32,
+    pub locked_axes: LockedAxes,
     #[inspector(min = 0.0, max = 20.0, display = NumberDisplay::Slider)]
-    pub mass:                     f32,
-    pub render_layer:             RenderLayer,
+    pub mass: f32,
+    pub render_layer: RenderLayer,
     #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
-    pub restitution:              f32,
+    pub restitution: f32,
     pub restitution_combine_rule: CoefficientCombine,
-    pub rigid_body:               RigidBody,
-    pub rotation:                 Option<Quat>,
+    pub rigid_body: RigidBody,
+    pub rotation: Option<Quat>,
     #[inspector(min = 0.1, max = 10.0, display = NumberDisplay::Slider)]
-    pub scalar:                   f32,
+    pub scalar: f32,
     #[reflect(ignore)]
-    pub scene:                    Handle<Scene>,
-    pub spawn_position_behavior:  SpawnPositionBehavior,
-    pub spawn_timer_seconds:      Option<f32>,
+    pub scene: Handle<Scene>,
+    pub spawn_position_behavior: SpawnPositionBehavior,
+    pub spawn_timer_seconds: Option<f32>,
     #[reflect(ignore)]
-    pub spawn_timer:              Option<Timer>,
-    pub velocity_behavior:        VelocityBehavior,
+    pub spawn_timer: Option<Timer>,
+    pub velocity_behavior: VelocityBehavior,
 }
 
 impl Default for ActorConfig {
     fn default() -> Self {
         Self {
-            spawnable:                true,
-            actor_kind:               ActorKind::default(),
-            aabb:                     Aabb::default(),
-            collider:                 Collider::cuboid(0.5, 0.5, 0.5),
-            collider_type:            ColliderType::Cuboid,
-            collision_damage:         0.,
-            collision_layers:         CollisionLayers::default(),
-            gravity_scale:            0.,
-            health:                   0.,
-            locked_axes:              LockedAxes::new().lock_translation_z(),
-            mass:                     1.,
-            render_layer:             RenderLayer::Both,
-            restitution:              1.,
+            spawnable: true,
+            actor_kind: ActorKind::default(),
+            aabb: Aabb::default(),
+            collider: Collider::cuboid(1., 1., 1.),
+            collider_type: ColliderType::Cuboid,
+            collision_damage: 0.,
+            collision_layers: CollisionLayers::default(),
+            gravity_scale: 0.,
+            health: 0.,
+            locked_axes: LockedAxes::new().lock_translation_z(),
+            mass: 1.,
+            render_layer: RenderLayer::Game,
+            restitution: 1.,
             restitution_combine_rule: CoefficientCombine::Max,
-            rigid_body:               RigidBody::Dynamic,
-            rotation:                 None,
-            scalar:                   1.,
-            scene:                    Handle::default(),
-            spawn_position_behavior:  SpawnPositionBehavior::Fixed(Vec3::ZERO),
-            spawn_timer_seconds:      None,
-            spawn_timer:              None,
-            velocity_behavior:        VelocityBehavior::Fixed(Vec3::ZERO),
+            rigid_body: RigidBody::Dynamic,
+            rotation: None,
+            scalar: 1.,
+            scene: Handle::default(),
+            spawn_position_behavior: SpawnPositionBehavior::Fixed(Vec3::ZERO),
+            spawn_timer_seconds: None,
+            spawn_timer: None,
+            velocity_behavior: VelocityBehavior::Fixed(Vec3::ZERO),
         }
     }
 }
@@ -237,11 +245,10 @@ impl ActorConfig {
             SpawnPositionBehavior::ForwardFromParent { distance } => {
                 if let Some((parent_transform, parent_aabb)) = parent {
                     let forward = -parent_transform.forward();
-                    let half_extents = parent_aabb.half_extents();
+                    let size = parent_aabb.size();
 
-                    let world_half_extents =
-                        parent_transform.rotation * (half_extents * parent_transform.scale);
-                    let forward_extent = forward.dot(world_half_extents);
+                    let world_size = parent_transform.rotation * (size * parent_transform.scale);
+                    let forward_extent = forward.dot(world_size);
 
                     // determined the buffer by eyeballing it up close to just make it 'look right'
                     let spawn_position = parent_transform.translation
@@ -266,24 +273,24 @@ impl ActorConfig {
 
 #[derive(Bundle)]
 pub struct ActorBundle {
-    pub actor_kind:       ActorKind,
-    pub aabb:             Aabb,
-    pub collider:         Collider,
+    pub actor_kind: ActorKind,
+    pub aabb: Aabb,
+    pub collider: Collider,
     pub collision_damage: CollisionDamage,
     pub collision_layers: CollisionLayers,
-    pub gravity_scale:    GravityScale,
-    pub health:           Health,
-    pub locked_axes:      LockedAxes,
-    pub rigid_body:       RigidBody,
-    pub restitution:      Restitution,
-    pub mass_properties:  Mass,
-    pub render_layers:    RenderLayers,
-    pub scene_root:       SceneRoot,
-    pub teleporter:       Teleporter,
-    pub transform:        Transform,
-    pub linear_velocity:  LinearVelocity,
+    pub gravity_scale: GravityScale,
+    pub health: Health,
+    pub locked_axes: LockedAxes,
+    pub rigid_body: RigidBody,
+    pub restitution: Restitution,
+    pub mass_properties: Mass,
+    pub render_layers: RenderLayers,
+    pub scene_root: SceneRoot,
+    pub teleporter: Teleporter,
+    pub transform: Transform,
+    pub linear_velocity: LinearVelocity,
     pub angular_velocity: AngularVelocity,
-    pub wall_visualizer:  ActorPortals,
+    pub wall_visualizer: ActorPortals,
 }
 
 impl ActorBundle {
@@ -315,7 +322,7 @@ impl ActorBundle {
             locked_axes: config.locked_axes,
             rigid_body: config.rigid_body,
             restitution: Restitution {
-                coefficient:  config.restitution,
+                coefficient: config.restitution,
                 combine_rule: config.restitution_combine_rule,
             },
             mass_properties: Mass(config.mass),
@@ -448,14 +455,13 @@ fn initialize_actor_config(
 
     // Calculate the size based on the adjusted AABB
     let size = adjusted_aabb.size();
-    let half_extents = adjusted_aabb.half_extents();
 
     let collider = match config.collider_type {
         ColliderType::Ball => {
             let radius = size.length() / 3.;
             Collider::sphere(radius)
         },
-        ColliderType::Cuboid => Collider::cuboid(half_extents.x, half_extents.y, half_extents.z),
+        ColliderType::Cuboid => Collider::cuboid(size.x, size.y, size.z),
     };
 
     let spawn_timer = config

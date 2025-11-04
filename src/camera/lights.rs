@@ -1,4 +1,5 @@
 use crate::{
+    camera::RenderLayer,
     global_input::{
         GlobalAction,
         toggle_active,
@@ -6,6 +7,7 @@ use crate::{
     orientation::CameraOrientation,
 };
 use bevy::{
+    camera::visibility::RenderLayers,
     color::palettes::tailwind,
     prelude::*,
 };
@@ -221,6 +223,7 @@ fn manage_lighting(
                         light_rotation.axis,
                         light_rotation.angle,
                     )))
+                    .insert(RenderLayers::from_layers(RenderLayer::Game.layers()))
                     .insert(LightDirection(*position));
             },
             (None, false) => {}, // Do nothing for disabled lights that don't exist
