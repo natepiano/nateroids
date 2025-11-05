@@ -15,8 +15,6 @@ reorder_imports = true
 enum_discrim_align_threshold = 50 # Default: 0
 struct_field_align_threshold = 50 # Default: 0
 
+# other formatting
 fn_single_line = true
-imports_layout = "Vertical"
 match_block_trailing_comma = true
-trailing_comma = "Vertical"
-unstable_features = true
