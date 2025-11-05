@@ -1,21 +1,44 @@
 use crate::{
     actor::{
-        Aabb, Teleporter,
-        actor_template::{MissileConfig, NateroidConfig, SpaceshipConfig},
+        Aabb,
+        Teleporter,
+        actor_template::{
+            MissileConfig,
+            NateroidConfig,
+            SpaceshipConfig,
+        },
         get_scene_aabb,
     },
-    asset_loader::{AssetsState, SceneAssets},
+    asset_loader::{
+        AssetsState,
+        SceneAssets,
+    },
     camera::RenderLayer,
-    global_input::{GlobalAction, toggle_active},
-    playfield::{ActorPortals, Boundary},
+    global_input::{
+        GlobalAction,
+        toggle_active,
+    },
+    playfield::{
+        ActorPortals,
+        Boundary,
+    },
 };
 use avian3d::prelude::*;
-use bevy::{camera::visibility::RenderLayers, ecs::system::EntityCommands, prelude::*};
+use bevy::{
+    camera::visibility::RenderLayers,
+    ecs::system::EntityCommands,
+    prelude::*,
+};
 use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay, prelude::*, quick::ResourceInspectorPlugin,
+    inspector_options::std_options::NumberDisplay,
+    prelude::*,
+    quick::ResourceInspectorPlugin,
 };
 use rand::Rng;
-use std::{fmt, ops::Range};
+use std::{
+    fmt,
+    ops::Range,
+};
 
 // this is how far off we are from blender for the assets we're loading
 // we need to get them scaled up to generate a usable aabb
@@ -107,7 +130,7 @@ pub enum VelocityBehavior {
         angvel: f32,
     },
     RelativeToParent {
-        base_velocity: f32,
+        base_velocity:           f32,
         inherit_parent_velocity: bool,
     },
 }
@@ -152,64 +175,64 @@ impl VelocityBehavior {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 pub struct ActorConfig {
-    pub spawnable: bool,
+    pub spawnable:                bool,
     #[reflect(ignore)]
-    pub aabb: Aabb,
+    pub aabb:                     Aabb,
     #[reflect(ignore)]
-    pub actor_kind: ActorKind,
+    pub actor_kind:               ActorKind,
     #[reflect(ignore)]
-    pub collider: Collider,
-    pub collider_type: ColliderType,
-    pub collision_damage: f32,
+    pub collider:                 Collider,
+    pub collider_type:            ColliderType,
+    pub collision_damage:         f32,
     #[reflect(ignore)]
-    pub collision_layers: CollisionLayers,
-    pub gravity_scale: f32,
-    pub health: f32,
-    pub locked_axes: LockedAxes,
+    pub collision_layers:         CollisionLayers,
+    pub gravity_scale:            f32,
+    pub health:                   f32,
+    pub locked_axes:              LockedAxes,
     #[inspector(min = 0.0, max = 20.0, display = NumberDisplay::Slider)]
-    pub mass: f32,
-    pub render_layer: RenderLayer,
+    pub mass:                     f32,
+    pub render_layer:             RenderLayer,
     #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
-    pub restitution: f32,
+    pub restitution:              f32,
     pub restitution_combine_rule: CoefficientCombine,
-    pub rigid_body: RigidBody,
-    pub rotation: Option<Quat>,
+    pub rigid_body:               RigidBody,
+    pub rotation:                 Option<Quat>,
     #[inspector(min = 0.1, max = 10.0, display = NumberDisplay::Slider)]
-    pub scalar: f32,
+    pub scalar:                   f32,
     #[reflect(ignore)]
-    pub scene: Handle<Scene>,
-    pub spawn_position_behavior: SpawnPositionBehavior,
-    pub spawn_timer_seconds: Option<f32>,
+    pub scene:                    Handle<Scene>,
+    pub spawn_position_behavior:  SpawnPositionBehavior,
+    pub spawn_timer_seconds:      Option<f32>,
     #[reflect(ignore)]
-    pub spawn_timer: Option<Timer>,
-    pub velocity_behavior: VelocityBehavior,
+    pub spawn_timer:              Option<Timer>,
+    pub velocity_behavior:        VelocityBehavior,
 }
 
 impl Default for ActorConfig {
     fn default() -> Self {
         Self {
-            spawnable: true,
-            actor_kind: ActorKind::default(),
-            aabb: Aabb::default(),
-            collider: Collider::cuboid(1., 1., 1.),
-            collider_type: ColliderType::Cuboid,
-            collision_damage: 0.,
-            collision_layers: CollisionLayers::default(),
-            gravity_scale: 0.,
-            health: 0.,
-            locked_axes: LockedAxes::new().lock_translation_z(),
-            mass: 1.,
-            render_layer: RenderLayer::Game,
-            restitution: 1.,
+            spawnable:                true,
+            actor_kind:               ActorKind::default(),
+            aabb:                     Aabb::default(),
+            collider:                 Collider::cuboid(1., 1., 1.),
+            collider_type:            ColliderType::Cuboid,
+            collision_damage:         0.,
+            collision_layers:         CollisionLayers::default(),
+            gravity_scale:            0.,
+            health:                   0.,
+            locked_axes:              LockedAxes::new().lock_translation_z(),
+            mass:                     1.,
+            render_layer:             RenderLayer::Game,
+            restitution:              1.,
             restitution_combine_rule: CoefficientCombine::Max,
-            rigid_body: RigidBody::Dynamic,
-            rotation: None,
-            scalar: 1.,
-            scene: Handle::default(),
-            spawn_position_behavior: SpawnPositionBehavior::Fixed(Vec3::ZERO),
-            spawn_timer_seconds: None,
-            spawn_timer: None,
-            velocity_behavior: VelocityBehavior::Fixed(Vec3::ZERO),
+            rigid_body:               RigidBody::Dynamic,
+            rotation:                 None,
+            scalar:                   1.,
+            scene:                    Handle::default(),
+            spawn_position_behavior:  SpawnPositionBehavior::Fixed(Vec3::ZERO),
+            spawn_timer_seconds:      None,
+            spawn_timer:              None,
+            velocity_behavior:        VelocityBehavior::Fixed(Vec3::ZERO),
         }
     }
 }
@@ -271,94 +294,24 @@ impl ActorConfig {
     }
 }
 
-#[derive(Bundle)]
-pub struct ActorBundle {
-    pub actor_kind: ActorKind,
-    pub aabb: Aabb,
-    pub collider: Collider,
-    pub collision_damage: CollisionDamage,
-    pub collision_layers: CollisionLayers,
-    pub gravity_scale: GravityScale,
-    pub health: Health,
-    pub locked_axes: LockedAxes,
-    pub rigid_body: RigidBody,
-    pub restitution: Restitution,
-    pub mass_properties: Mass,
-    pub render_layers: RenderLayers,
-    pub scene_root: SceneRoot,
-    pub teleporter: Teleporter,
-    pub transform: Transform,
-    pub linear_velocity: LinearVelocity,
-    pub angular_velocity: AngularVelocity,
-    pub wall_visualizer: ActorPortals,
-}
+// Combine rotations from optional parent with optional supplied rotation
+// missiles need this to get oriented correctly
+// both parent and actor_config.rotation are optional so we have to unpack both
+// and use one, both or none
+// extracted here for readability
+fn apply_rotations(config: &ActorConfig, parent_transform: Option<&Transform>, transform: &mut Transform) {
+    let final_rotation = parent_transform
+        .map(|t| t.rotation)
+        .map(|parent_rot| {
+            config
+                .rotation
+                .map(|initial_rot| parent_rot * initial_rot)
+                .unwrap_or(parent_rot)
+        })
+        .or(config.rotation);
 
-impl ActorBundle {
-    pub fn new(
-        config: &ActorConfig,
-        parent: Option<(&Transform, &LinearVelocity, &Aabb)>,
-        boundary: Option<Res<Boundary>>,
-    ) -> Self {
-        let parent_aabb = parent.map(|(_, _, a)| a);
-        let parent_transform = parent.map(|(t, _, _)| t);
-        let parent_linear_velocity = parent.map(|(_, v, _)| v);
-
-        let mut transform = config.calculate_spawn_transform(parent_transform.zip(parent_aabb), boundary);
-
-        Self::apply_rotations(config, parent_transform, &mut transform);
-
-        let (linear_velocity, angular_velocity) = config
-            .velocity_behavior
-            .calculate_velocity(parent_linear_velocity, parent_transform);
-
-        Self {
-            actor_kind: config.actor_kind,
-            aabb: config.aabb.clone(),
-            collider: config.collider.clone(),
-            collision_damage: CollisionDamage(config.collision_damage),
-            collision_layers: config.collision_layers,
-            gravity_scale: GravityScale(config.gravity_scale),
-            health: Health(config.health),
-            locked_axes: config.locked_axes,
-            rigid_body: config.rigid_body,
-            restitution: Restitution {
-                coefficient: config.restitution,
-                combine_rule: config.restitution_combine_rule,
-            },
-            mass_properties: Mass(config.mass),
-            render_layers: RenderLayers::from_layers(config.render_layer.layers()),
-            scene_root: SceneRoot(config.scene.clone()),
-            teleporter: Teleporter::default(),
-            transform,
-            linear_velocity,
-            angular_velocity,
-            wall_visualizer: ActorPortals::default(),
-        }
-    }
-
-    // Combine rotations from optional parent with optional supplied rotation
-    // missiles need this to get oriented correctly
-    // both parent and actor_config.rotation are optional so we have to unpack both
-    // and use one, both or none
-    // extracted here for readability
-    fn apply_rotations(
-        config: &ActorConfig,
-        parent_transform: Option<&Transform>,
-        transform: &mut Transform,
-    ) {
-        let final_rotation = parent_transform
-            .map(|t| t.rotation)
-            .map(|parent_rot| {
-                config
-                    .rotation
-                    .map(|initial_rot| parent_rot * initial_rot)
-                    .unwrap_or(parent_rot)
-            })
-            .or(config.rotation);
-
-        if let Some(rotation) = final_rotation {
-            transform.rotation = rotation;
-        }
+    if let Some(rotation) = final_rotation {
+        transform.rotation = rotation;
     }
 }
 
@@ -502,12 +455,61 @@ pub fn spawn_actor<'a>(
     boundary: Option<Res<Boundary>>,
     parent: Option<(&Transform, &LinearVelocity, &Aabb)>,
 ) -> EntityCommands<'a> {
-    let bundle = ActorBundle::new(config, parent, boundary);
+    // Extract parent components
+    let parent_transform = parent.map(|(t, _, _)| t);
+    let parent_velocity = parent.map(|(_, v, _)| v);
+    let parent_aabb = parent.map(|(_, _, a)| a);
 
+    // Calculate spawn transform
+    let mut transform = config.calculate_spawn_transform(parent_transform.zip(parent_aabb), boundary);
+
+    // Apply rotation logic using existing helper function
+    // NOTE: This preserves current behavior where rotation application happens in
+    // two phases:
+    // 1. calculate_spawn_transform applies config.rotation (if present)
+    // 2. apply_rotations may overwrite it when combining with parent rotation
+    // For missiles: calculate_spawn_transform sets config rotation, then
+    // apply_rotations overwrites with (spaceship_rotation * config_rotation).
+    // The intermediate application is redundant but functionally correct - this
+    // is how the current code works.
+    apply_rotations(config, parent_transform, &mut transform);
+
+    // Calculate velocities (from ActorBundle::new)
+    let (linear_velocity, angular_velocity) = config
+        .velocity_behavior
+        .calculate_velocity(parent_velocity, parent_transform);
+
+    // Spawn with component tuple (replacing bundle)
+    // Note: Split into spawn + insert because Bevy's Bundle trait is only
+    // implemented for tuples up to 15 elements
     let entity = commands
-        .spawn(bundle)
-        .insert(Name::new(config.actor_kind.to_string()))
-        .insert(CollisionEventsEnabled)
+        .spawn((
+            config.actor_kind,
+            config.aabb.clone(),
+            config.collider.clone(),
+            CollisionDamage(config.collision_damage),
+            config.collision_layers,
+            GravityScale(config.gravity_scale),
+            Health(config.health),
+            config.locked_axes,
+            config.rigid_body,
+            Restitution {
+                coefficient:  config.restitution,
+                combine_rule: config.restitution_combine_rule,
+            },
+            Mass(config.mass),
+            RenderLayers::from_layers(config.render_layer.layers()),
+            SceneRoot(config.scene.clone()),
+            Teleporter::default(),
+            transform,
+        ))
+        .insert((
+            linear_velocity,
+            angular_velocity,
+            ActorPortals::default(),
+            Name::new(config.actor_kind.to_string()),
+            CollisionEventsEnabled,
+        ))
         .id();
 
     commands.entity(entity)
