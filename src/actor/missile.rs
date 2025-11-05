@@ -1,27 +1,17 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
-
-use crate::{
-    playfield::Boundary,
-    schedule::InGameSet,
-};
-
-use crate::actor::{
-    Teleporter,
-    aabb::Aabb,
-    actor_spawner::ActorConfig,
-    actor_template::MissileConfig,
-    spaceship::{
-        ContinuousFire,
-        Spaceship,
-    },
-};
-
-use crate::actor::{
-    actor_spawner::spawn_actor,
-    spaceship_control::SpaceshipControl,
-};
 use leafwing_input_manager::prelude::*;
+
+use crate::actor::Teleporter;
+use crate::actor::aabb::Aabb;
+use crate::actor::actor_spawner::ActorConfig;
+use crate::actor::actor_spawner::spawn_actor;
+use crate::actor::actor_template::MissileConfig;
+use crate::actor::spaceship::ContinuousFire;
+use crate::actor::spaceship::Spaceship;
+use crate::actor::spaceship_control::SpaceshipControl;
+use crate::playfield::Boundary;
+use crate::schedule::InGameSet;
 
 pub struct MissilePlugin;
 

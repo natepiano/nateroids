@@ -1,13 +1,9 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use crate::{
-    actor::{
-        Health,
-        actor_spawner::CollisionDamage,
-    },
-    schedule::InGameSet,
-};
+use crate::actor::Health;
+use crate::actor::actor_spawner::CollisionDamage;
+use crate::schedule::InGameSet;
 
 pub struct CollisionDetectionPlugin;
 

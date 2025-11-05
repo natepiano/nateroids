@@ -1,8 +1,7 @@
-use crate::{
-    playfield::Boundary,
-    schedule::InGameSet,
-};
 use bevy::prelude::*;
+
+use crate::playfield::Boundary;
+use crate::schedule::InGameSet;
 
 pub struct TeleportPlugin;
 

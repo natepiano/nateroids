@@ -1,17 +1,11 @@
-use crate::{
-    actor::{
-        actor_spawner::spawn_actor,
-        actor_template::NateroidConfig,
-    },
-    playfield::Boundary,
-    schedule::InGameSet,
-};
-
-use crate::global_input::{
-    GlobalAction,
-    toggle_active,
-};
 use bevy::prelude::*;
+
+use crate::actor::actor_spawner::spawn_actor;
+use crate::actor::actor_template::NateroidConfig;
+use crate::global_input::GlobalAction;
+use crate::global_input::toggle_active;
+use crate::playfield::Boundary;
+use crate::schedule::InGameSet;
 
 pub struct NateroidPlugin;
 

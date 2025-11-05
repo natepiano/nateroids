@@ -1,12 +1,9 @@
-use crate::{
-    actor::{
-        Health,
-        missile::Missile,
-    },
-    schedule::InGameSet,
-    state::GameState,
-};
 use bevy::prelude::*;
+
+use crate::actor::Health;
+use crate::actor::missile::Missile;
+use crate::schedule::InGameSet;
+use crate::state::GameState;
 
 pub struct DespawnPlugin;
 

@@ -1,10 +1,9 @@
-use crate::global_input::GlobalAction;
 use avian3d::prelude::*;
-use bevy::{
-    dev_tools::states::*,
-    prelude::*,
-};
+use bevy::dev_tools::states::*;
+use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
+
+use crate::global_input::GlobalAction;
 
 pub struct StatePlugin;
 

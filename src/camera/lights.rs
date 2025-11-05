@@ -1,21 +1,14 @@
-use crate::{
-    camera::RenderLayer,
-    global_input::{
-        GlobalAction,
-        toggle_active,
-    },
-    orientation::CameraOrientation,
-};
-use bevy::{
-    camera::visibility::RenderLayers,
-    color::palettes::tailwind,
-    prelude::*,
-};
-use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay,
-    prelude::*,
-    quick::ResourceInspectorPlugin,
-};
+use bevy::camera::visibility::RenderLayers;
+use bevy::color::palettes::tailwind;
+use bevy::prelude::*;
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+
+use crate::camera::RenderLayer;
+use crate::global_input::GlobalAction;
+use crate::global_input::toggle_active;
+use crate::orientation::CameraOrientation;
 
 pub struct DirectionalLightsPlugin;
 
@@ -113,10 +106,8 @@ pub enum LightPosition {
 
 impl LightPosition {
     pub fn get_rotation(&self, orientation: &CameraOrientation) -> RotationInfo {
-        use std::f32::consts::{
-            FRAC_PI_2,
-            PI,
-        };
+        use std::f32::consts::FRAC_PI_2;
+        use std::f32::consts::PI;
         match self {
             LightPosition::Right => RotationInfo {
                 axis:  orientation.config.axis_mundi,

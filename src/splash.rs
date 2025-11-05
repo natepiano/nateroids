@@ -1,11 +1,8 @@
-use crate::{
-    camera::RenderLayer,
-    state::GameState,
-};
-use bevy::{
-    camera::visibility::RenderLayers,
-    prelude::*,
-};
+use bevy::camera::visibility::RenderLayers;
+use bevy::prelude::*;
+
+use crate::camera::RenderLayer;
+use crate::state::GameState;
 
 pub(crate) struct SplashPlugin;
 

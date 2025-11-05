@@ -1,39 +1,24 @@
-use crate::{
-    actor::{
-        actor_template::SpaceshipConfig,
-        spaceship::{
-            ContinuousFire,
-            Spaceship,
-        },
-    },
-    global_input::{
-        GlobalAction,
-        toggle_active,
-    },
-    orientation::{
-        CameraOrientation,
-        OrientationType,
-    },
-    schedule::InGameSet,
-};
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay,
-    prelude::*,
-    quick::ResourceInspectorPlugin,
-};
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
-use leafwing_input_manager::{
-    Actionlike,
-    action_state::ActionState,
-    input_map::InputMap,
-    plugin::InputManagerPlugin,
-};
-use strum::{
-    EnumIter,
-    IntoEnumIterator,
-};
+use leafwing_input_manager::Actionlike;
+use leafwing_input_manager::action_state::ActionState;
+use leafwing_input_manager::input_map::InputMap;
+use leafwing_input_manager::plugin::InputManagerPlugin;
+use strum::EnumIter;
+use strum::IntoEnumIterator;
+
+use crate::actor::actor_template::SpaceshipConfig;
+use crate::actor::spaceship::ContinuousFire;
+use crate::actor::spaceship::Spaceship;
+use crate::global_input::GlobalAction;
+use crate::global_input::toggle_active;
+use crate::orientation::CameraOrientation;
+use crate::orientation::OrientationType;
+use crate::schedule::InGameSet;
 
 pub struct SpaceshipControlPlugin;
 

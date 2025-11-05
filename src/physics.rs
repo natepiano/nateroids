@@ -1,13 +1,10 @@
-use crate::{
-    camera::RenderLayer,
-    global_input::GlobalAction,
-};
 use avian3d::prelude::*;
-use bevy::{
-    camera::visibility::RenderLayers,
-    prelude::*,
-};
+use bevy::camera::visibility::RenderLayers;
+use bevy::prelude::*;
 use leafwing_input_manager::action_state::ActionState;
+
+use crate::camera::RenderLayer;
+use crate::global_input::GlobalAction;
 
 pub struct PhysicsPlugin;
 

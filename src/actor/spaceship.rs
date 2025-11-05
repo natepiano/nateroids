@@ -1,13 +1,10 @@
-use crate::{
-    actor::{
-        actor_spawner::spawn_actor,
-        actor_template::SpaceshipConfig,
-        spaceship_control::SpaceshipControl,
-    },
-    schedule::InGameSet,
-    state::GameState,
-};
 use bevy::prelude::*;
+
+use crate::actor::actor_spawner::spawn_actor;
+use crate::actor::actor_template::SpaceshipConfig;
+use crate::actor::spaceship_control::SpaceshipControl;
+use crate::schedule::InGameSet;
+use crate::state::GameState;
 
 #[derive(Component, Debug)]
 pub struct Spaceship;

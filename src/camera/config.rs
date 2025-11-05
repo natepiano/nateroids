@@ -1,16 +1,11 @@
-use crate::global_input::{
-    GlobalAction,
-    toggle_active,
-};
-use bevy::{
-    color::palettes::tailwind,
-    prelude::*,
-};
-use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay,
-    prelude::*,
-    quick::ResourceInspectorPlugin,
-};
+use bevy::color::palettes::tailwind;
+use bevy::prelude::*;
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+
+use crate::global_input::GlobalAction;
+use crate::global_input::toggle_active;
 
 pub struct CameraConfigPlugin;
 

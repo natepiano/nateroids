@@ -1,13 +1,11 @@
-use crate::{
-    camera::stars::{
-        Star,
-        StarConfig,
-    },
-    schedule::InGameSet,
-};
+use std::collections::HashSet;
+
 use bevy::prelude::*;
 use rand::Rng;
-use std::collections::HashSet;
+
+use crate::camera::stars::Star;
+use crate::camera::stars::StarConfig;
+use crate::schedule::InGameSet;
 
 pub struct StarTwinklingPlugin;
 

@@ -1,23 +1,14 @@
-use crate::{
-    global_input::{
-        GlobalAction,
-        toggle_active,
-    },
-    orientation::{
-        CameraOrientation,
-        OrientationConfig,
-    },
-    playfield::Boundary,
-};
-use bevy::{
-    prelude::*,
-    render::render_resource::Face,
-};
-use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay,
-    prelude::*,
-    quick::ResourceInspectorPlugin,
-};
+use bevy::prelude::*;
+use bevy::render::render_resource::Face;
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+
+use crate::global_input::GlobalAction;
+use crate::global_input::toggle_active;
+use crate::orientation::CameraOrientation;
+use crate::orientation::OrientationConfig;
+use crate::playfield::Boundary;
 
 pub struct PlanesPlugin;
 

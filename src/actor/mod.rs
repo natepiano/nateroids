@@ -8,29 +8,21 @@ mod spaceship;
 mod spaceship_control;
 mod teleport;
 
-use crate::actor::{
-    aabb::AabbPlugin,
-    actor_spawner::ActorSpawner,
-    collision_detection::CollisionDetectionPlugin,
-    missile::MissilePlugin,
-    nateroid::NateroidPlugin,
-    spaceship::SpaceshipPlugin,
-    spaceship_control::SpaceshipControlPlugin,
-    teleport::TeleportPlugin,
-};
-pub use crate::actor::{
-    aabb::{
-        Aabb,
-        get_scene_aabb,
-    },
-    actor_spawner::{
-        ColliderType,
-        Health,
-    },
-    teleport::Teleporter,
-};
-
 use bevy::prelude::*;
+
+pub use crate::actor::aabb::Aabb;
+use crate::actor::aabb::AabbPlugin;
+pub use crate::actor::aabb::get_scene_aabb;
+use crate::actor::actor_spawner::ActorSpawner;
+pub use crate::actor::actor_spawner::ColliderType;
+pub use crate::actor::actor_spawner::Health;
+use crate::actor::collision_detection::CollisionDetectionPlugin;
+use crate::actor::missile::MissilePlugin;
+use crate::actor::nateroid::NateroidPlugin;
+use crate::actor::spaceship::SpaceshipPlugin;
+use crate::actor::spaceship_control::SpaceshipControlPlugin;
+use crate::actor::teleport::TeleportPlugin;
+pub use crate::actor::teleport::Teleporter;
 
 pub struct ActorPlugin;
 

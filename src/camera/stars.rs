@@ -1,15 +1,12 @@
-use crate::playfield::Boundary;
-use bevy::{
-    camera::visibility::RenderLayers,
-    prelude::*,
-};
 use std::ops::Range;
 
+use bevy::camera::visibility::RenderLayers;
+use bevy::prelude::*;
+use rand::Rng;
+use rand::prelude::ThreadRng;
+
 use crate::camera::RenderLayer;
-use rand::{
-    Rng,
-    prelude::ThreadRng,
-};
+use crate::playfield::Boundary;
 
 pub struct StarsPlugin;
 

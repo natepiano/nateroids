@@ -1,44 +1,28 @@
-use crate::{
-    actor::{
-        Aabb,
-        Teleporter,
-        actor_template::{
-            MissileConfig,
-            NateroidConfig,
-            SpaceshipConfig,
-        },
-        get_scene_aabb,
-    },
-    asset_loader::{
-        AssetsState,
-        SceneAssets,
-    },
-    camera::RenderLayer,
-    global_input::{
-        GlobalAction,
-        toggle_active,
-    },
-    playfield::{
-        ActorPortals,
-        Boundary,
-    },
-};
+use std::fmt;
+use std::ops::Range;
+
 use avian3d::prelude::*;
-use bevy::{
-    camera::visibility::RenderLayers,
-    ecs::system::EntityCommands,
-    prelude::*,
-};
-use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay,
-    prelude::*,
-    quick::ResourceInspectorPlugin,
-};
+use bevy::camera::visibility::RenderLayers;
+use bevy::ecs::system::EntityCommands;
+use bevy::prelude::*;
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use rand::Rng;
-use std::{
-    fmt,
-    ops::Range,
-};
+
+use crate::actor::Aabb;
+use crate::actor::Teleporter;
+use crate::actor::actor_template::MissileConfig;
+use crate::actor::actor_template::NateroidConfig;
+use crate::actor::actor_template::SpaceshipConfig;
+use crate::actor::get_scene_aabb;
+use crate::asset_loader::AssetsState;
+use crate::asset_loader::SceneAssets;
+use crate::camera::RenderLayer;
+use crate::global_input::GlobalAction;
+use crate::global_input::toggle_active;
+use crate::playfield::ActorPortals;
+use crate::playfield::Boundary;
 
 // this is how far off we are from blender for the assets we're loading
 // we need to get them scaled up to generate a usable aabb

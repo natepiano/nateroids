@@ -1,42 +1,25 @@
-use crate::{
-    actor::{
-        Aabb,
-        Teleporter,
-    },
-    camera::RenderLayer,
-    global_input::{
-        GlobalAction,
-        toggle_active,
-    },
-    orientation::CameraOrientation,
-    playfield::{
-        Boundary,
-        boundary_face::BoundaryFace,
-    },
-    state::PlayingGame,
-};
 use avian3d::prelude::*;
-use bevy::{
-    app::{
-        App,
-        Plugin,
-    },
-    camera::visibility::RenderLayers,
-    color::{
-        Color,
-        palettes::tailwind,
-    },
-    math::{
-        Dir3,
-        Vec3,
-    },
-    prelude::*,
-};
-use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay,
-    prelude::*,
-    quick::ResourceInspectorPlugin,
-};
+use bevy::app::App;
+use bevy::app::Plugin;
+use bevy::camera::visibility::RenderLayers;
+use bevy::color::Color;
+use bevy::color::palettes::tailwind;
+use bevy::math::Dir3;
+use bevy::math::Vec3;
+use bevy::prelude::*;
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+
+use crate::actor::Aabb;
+use crate::actor::Teleporter;
+use crate::camera::RenderLayer;
+use crate::global_input::GlobalAction;
+use crate::global_input::toggle_active;
+use crate::orientation::CameraOrientation;
+use crate::playfield::Boundary;
+use crate::playfield::boundary_face::BoundaryFace;
+use crate::state::PlayingGame;
 
 pub struct PortalPlugin;
 

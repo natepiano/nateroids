@@ -1,31 +1,18 @@
-use crate::{
-    camera::RenderLayer,
-    global_input::{
-        GlobalAction,
-        toggle_active,
-    },
-    state::PlayingGame,
-};
-use bevy::{
-    camera::visibility::RenderLayers,
-    prelude::*,
-};
-use bevy_inspector_egui::{
-    inspector_options::std_options::NumberDisplay,
-    prelude::*,
-    quick::ResourceInspectorPlugin,
-};
-
-use crate::playfield::{
-    boundary_face::BoundaryFace,
-    portals::{
-        Portal,
-        PortalGizmo,
-    },
-};
-
-use crate::orientation::CameraOrientation;
+use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
+use bevy::prelude::*;
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+
+use crate::camera::RenderLayer;
+use crate::global_input::GlobalAction;
+use crate::global_input::toggle_active;
+use crate::orientation::CameraOrientation;
+use crate::playfield::boundary_face::BoundaryFace;
+use crate::playfield::portals::Portal;
+use crate::playfield::portals::PortalGizmo;
+use crate::state::PlayingGame;
 
 pub struct BoundaryPlugin;
 

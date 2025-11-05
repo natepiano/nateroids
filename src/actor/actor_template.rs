@@ -1,21 +1,42 @@
+use avian3d::prelude::*;
+use bevy::prelude::*;
+use bevy_inspector_egui::InspectorOptions;
+
 /// this file is separated from actor_spawner just for the convenience of
 /// editing default values all the logic is in actor_spawner the reason we
 /// don't only use a bundle is we want to use an inspector to change defaults so
 /// a new bundle is constructed on each spawn and if the inspector changed
 /// anything, it will be reflected in the newly created entity. each of these
 /// can be thought of as an ActorConfig
-use crate::actor::{
-    ColliderType,
-    actor_spawner::{
-        ActorConfig,
-        ActorKind,
-        SpawnPositionBehavior,
-        VelocityBehavior,
-    },
-};
-use avian3d::prelude::*;
-use bevy::prelude::*;
-use bevy_inspector_egui::InspectorOptions;
+use crate::actor::ColliderType;
+/// this file is separated from actor_spawner just for the convenience of
+/// editing default values all the logic is in actor_spawner the reason we
+/// don't only use a bundle is we want to use an inspector to change defaults so
+/// a new bundle is constructed on each spawn and if the inspector changed
+/// anything, it will be reflected in the newly created entity. each of these
+/// can be thought of as an ActorConfig
+use crate::actor::actor_spawner::ActorConfig;
+/// this file is separated from actor_spawner just for the convenience of
+/// editing default values all the logic is in actor_spawner the reason we
+/// don't only use a bundle is we want to use an inspector to change defaults so
+/// a new bundle is constructed on each spawn and if the inspector changed
+/// anything, it will be reflected in the newly created entity. each of these
+/// can be thought of as an ActorConfig
+use crate::actor::actor_spawner::ActorKind;
+/// this file is separated from actor_spawner just for the convenience of
+/// editing default values all the logic is in actor_spawner the reason we
+/// don't only use a bundle is we want to use an inspector to change defaults so
+/// a new bundle is constructed on each spawn and if the inspector changed
+/// anything, it will be reflected in the newly created entity. each of these
+/// can be thought of as an ActorConfig
+use crate::actor::actor_spawner::SpawnPositionBehavior;
+/// this file is separated from actor_spawner just for the convenience of
+/// editing default values all the logic is in actor_spawner the reason we
+/// don't only use a bundle is we want to use an inspector to change defaults so
+/// a new bundle is constructed on each spawn and if the inspector changed
+/// anything, it will be reflected in the newly created entity. each of these
+/// can be thought of as an ActorConfig
+use crate::actor::actor_spawner::VelocityBehavior;
 
 #[derive(PhysicsLayer, Clone, Copy, Debug, Default)]
 pub enum GameLayer {

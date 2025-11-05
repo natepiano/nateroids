@@ -1,28 +1,19 @@
-use crate::{
-    camera::{
-        CameraOrder,
-        RenderLayer,
-        config::CameraConfig,
-    },
-    global_input::{
-        GlobalAction,
-        just_pressed,
-    },
-    playfield::Boundary,
-};
-use bevy::{
-    camera::visibility::RenderLayers,
-    core_pipeline::tonemapping::Tonemapping,
-    light::AmbientLight,
-    post_process::bloom::Bloom,
-    prelude::*,
-};
-use bevy_panorbit_camera::{
-    PanOrbitCamera,
-    PanOrbitCameraPlugin,
-    TrackpadBehavior,
-};
+use bevy::camera::visibility::RenderLayers;
+use bevy::core_pipeline::tonemapping::Tonemapping;
+use bevy::light::AmbientLight;
+use bevy::post_process::bloom::Bloom;
+use bevy::prelude::*;
+use bevy_panorbit_camera::PanOrbitCamera;
+use bevy_panorbit_camera::PanOrbitCameraPlugin;
+use bevy_panorbit_camera::TrackpadBehavior;
 use leafwing_input_manager::prelude::*;
+
+use crate::camera::CameraOrder;
+use crate::camera::RenderLayer;
+use crate::camera::config::CameraConfig;
+use crate::global_input::GlobalAction;
+use crate::global_input::just_pressed;
+use crate::playfield::Boundary;
 
 pub struct CamerasPlugin;
 

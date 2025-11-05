@@ -1,15 +1,10 @@
-use crate::{
-    camera::RenderLayer,
-    global_input::{
-        GlobalAction,
-        toggle_active,
-    },
-};
-use bevy::{
-    camera::visibility::RenderLayers,
-    color::palettes::tailwind,
-    prelude::*,
-};
+use bevy::camera::visibility::RenderLayers;
+use bevy::color::palettes::tailwind;
+use bevy::prelude::*;
+
+use crate::camera::RenderLayer;
+use crate::global_input::GlobalAction;
+use crate::global_input::toggle_active;
 
 pub struct AabbPlugin;
 impl Plugin for AabbPlugin {
