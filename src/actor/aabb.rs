@@ -1,8 +1,15 @@
 use crate::{
     camera::RenderLayer,
-    global_input::{GlobalAction, toggle_active},
+    global_input::{
+        GlobalAction,
+        toggle_active,
+    },
 };
-use bevy::{camera::visibility::RenderLayers, color::palettes::tailwind, prelude::*};
+use bevy::{
+    camera::visibility::RenderLayers,
+    color::palettes::tailwind,
+    prelude::*,
+};
 
 pub struct AabbPlugin;
 impl Plugin for AabbPlugin {
@@ -31,13 +38,9 @@ pub struct Aabb {
 }
 
 impl Aabb {
-    pub fn size(&self) -> Vec3 {
-        self.max - self.min
-    }
+    pub fn size(&self) -> Vec3 { self.max - self.min }
 
-    pub fn center(&self) -> Vec3 {
-        (self.min + self.max) / 2.0
-    }
+    pub fn center(&self) -> Vec3 { (self.min + self.max) / 2.0 }
 
     pub fn max_dimension(&self) -> f32 {
         let size = self.size();
