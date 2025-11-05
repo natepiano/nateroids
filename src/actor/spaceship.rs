@@ -6,7 +6,8 @@ use crate::actor::spaceship_control::SpaceshipControl;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
 
-#[derive(Component, Debug)]
+#[derive(Reflect, Component, Debug)]
+#[reflect(Component)]
 pub struct Spaceship;
 
 #[derive(Component, Default)]

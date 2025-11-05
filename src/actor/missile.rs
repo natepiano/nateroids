@@ -24,13 +24,14 @@ impl Plugin for MissilePlugin {
 
 // todo: #rustquestion - how can i make it so that new has to be used and
 // DrawDirection isn't constructed directly - i still need the fields visible
-#[derive(Copy, Clone, Component, Debug)]
+#[derive(Reflect, Copy, Clone, Component, Debug)]
+#[reflect(Component)]
 pub struct Missile {
     // velocity:               Vec3,
-    pub total_distance:     f32,
-    pub traveled_distance:  f32,
-    remaining_distance:     f32,
-    pub last_position:      Option<Vec3>,
+    pub total_distance: f32,
+    pub traveled_distance: f32,
+    remaining_distance: f32,
+    pub last_position: Option<Vec3>,
     last_teleport_position: Option<Vec3>, // Add this field
 }
 
