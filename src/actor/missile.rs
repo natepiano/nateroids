@@ -98,12 +98,16 @@ InitialEnsembleConfig",
 fn fire_missile(
     mut commands: Commands,
     q_input_map: Query<&ActionState<SpaceshipControl>>,
-    q_spaceship: Query<(&Transform, &LinearVelocity, &Aabb, Option<&ContinuousFire>), With<Spaceship>>,
+    q_spaceship: Query<
+        (&Transform, &LinearVelocity, &Aabb, Option<&ContinuousFire>),
+        With<Spaceship>,
+    >,
     boundary_config: Res<Boundary>,
     mut missile_config: ResMut<MissileConfig>,
     time: Res<Time>,
 ) {
-    let Ok((spaceship_transform, spaceship_linear_velocity, aabb, continuous_fire)) = q_spaceship.single()
+    let Ok((spaceship_transform, spaceship_linear_velocity, aabb, continuous_fire)) =
+        q_spaceship.single()
     else {
         return;
     };

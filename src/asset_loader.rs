@@ -11,7 +11,10 @@ impl Plugin for AssetLoaderPlugin {
             // make sure this loads before the spaceship uses it - right now that is
             // handled by running this PreStartup and spaceship in Startup
             .add_systems(PreStartup, load_assets)
-            .add_systems(Update, check_asset_loading.run_if(in_state(AssetsState::Loading)));
+            .add_systems(
+                Update,
+                check_asset_loading.run_if(in_state(AssetsState::Loading)),
+            );
     }
 }
 

@@ -124,13 +124,13 @@ impl Boundary {
     /// if no valid intersection exists.
     ///
     /// # Method
-    /// - The function calculates the intersection points of the ray with the
-    ///   positive and negative boundaries of the viewable area along all axes.
-    ///   todo: is this true? you'll have to test in 3d mode
-    /// - It iterates over these axes, updating the minimum intersection
-    ///   distance (`t_min`) if a valid intersection is found.
-    /// - Finally, it returns the intersection point corresponding to the
-    ///   minimum distance, or `None` if no valid intersection is found.
+    /// - The function calculates the intersection points of the ray with the positive and negative
+    ///   boundaries of the viewable area along all axes. todo: is this true? you'll have to test in
+    ///   3d mode
+    /// - It iterates over these axes, updating the minimum intersection distance (`t_min`) if a
+    ///   valid intersection is found.
+    /// - Finally, it returns the intersection point corresponding to the minimum distance, or
+    ///   `None` if no valid intersection is found.
     pub fn calculate_teleport_position(&self, position: Vec3) -> Vec3 {
         let boundary_min = self.transform.translation - self.transform.scale / 2.0;
         let boundary_max = self.transform.translation + self.transform.scale / 2.0;
@@ -237,7 +237,8 @@ impl Boundary {
         let rotation_axis = current_normal.cross(target_normal).normalize();
 
         // Find the closest point on the rotation axis to the current position
-        let rotation_point = self.find_closest_point_on_edge(position, current_normal, target_normal);
+        let rotation_point =
+            self.find_closest_point_on_edge(position, current_normal, target_normal);
 
         // Create a rotation quaternion (90 degrees around the rotation axis)
         let rotation = Quat::from_axis_angle(rotation_axis, std::f32::consts::FRAC_PI_2);
@@ -334,7 +335,12 @@ impl Boundary {
 
         // Draw the arc
         gizmos
-            .arc_3d(angle, radius, Isometry3d::new(center, final_rotation), color)
+            .arc_3d(
+                angle,
+                radius,
+                Isometry3d::new(center, final_rotation),
+                color,
+            )
             .resolution(resolution);
 
         // Debug visualization
@@ -423,7 +429,9 @@ impl Boundary {
                 let mut update_t_min = |boundary: f32| {
                     let t = (boundary - start) / dir;
                     let point = origin + direction * t;
-                    if t > 0.0 && t < t_min && is_in_bounds(point, start, origin, boundary_min, boundary_max)
+                    if t > 0.0
+                        && t < t_min
+                        && is_in_bounds(point, start, origin, boundary_min, boundary_max)
                     {
                         t_min = t;
                     }
@@ -454,7 +462,13 @@ impl Boundary {
     pub fn scale(&self) -> Vec3 { self.scalar * self.cell_count.as_vec3() }
 }
 
-fn is_in_bounds(point: Vec3, start: f32, origin: Vec3, boundary_min: Vec3, boundary_max: Vec3) -> bool {
+fn is_in_bounds(
+    point: Vec3,
+    start: f32,
+    origin: Vec3,
+    boundary_min: Vec3,
+    boundary_max: Vec3,
+) -> bool {
     if start == origin.x {
         point.y >= boundary_min.y
             && point.y <= boundary_max.y

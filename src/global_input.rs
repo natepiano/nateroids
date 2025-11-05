@@ -87,7 +87,9 @@ impl GlobalAction {
             Self::PlanesInspector => insert_shift_input(input_map, action, KeyCode::KeyP),
             Self::PortalInspector => insert_shift_input(input_map, action, KeyCode::KeyG),
             Self::SpaceshipInspector => insert_shift_input(input_map, action, KeyCode::Digit3),
-            Self::SpaceshipControlInspector => insert_shift_input(input_map, action, KeyCode::Digit4),
+            Self::SpaceshipControlInspector => {
+                insert_shift_input(input_map, action, KeyCode::Digit4)
+            },
             Self::Stars => input_map.with(action, KeyCode::F3),
             Self::SuppressNateroids => input_map.with(action, KeyCode::F4),
         })

@@ -73,12 +73,12 @@ impl Plugin for ActorSpawner {
 
 fn propagate_render_layers_on_spawn(
     add: On<Add, Children>,
-    q_parents: Query<&RenderLayers, With<ActorKind>>,
+    q_parents: Query<&RenderLayers, Or<(With<Missile>, With<Nateroid>, With<Spaceship>)>>,
     children_query: Query<&Children>,
     mut commands: Commands,
 ) {
-    // Only process if this entity has ActorKind (scene children added to actor
-    // parent)
+    // Only process if this entity has one of our actor marker components (scene
+    // children added to actor parent)
     if let Ok(parent_layers) = q_parents.get(add.entity) {
         // Recursively propagate to all descendants
         propagate_to_descendants(add.entity, parent_layers, &children_query, &mut commands);
@@ -299,7 +299,11 @@ impl ActorConfig {
 // both parent and actor_config.rotation are optional so we have to unpack both
 // and use one, both or none
 // extracted here for readability
-fn apply_rotations(config: &ActorConfig, parent_transform: Option<&Transform>, transform: &mut Transform) {
+fn apply_rotations(
+    config: &ActorConfig,
+    parent_transform: Option<&Transform>,
+    transform: &mut Transform,
+) {
     let final_rotation = parent_transform
         .map(|t| t.rotation)
         .map(|parent_rot| {
@@ -365,6 +369,59 @@ impl fmt::Display for ActorKind {
         }
     }
 }
+
+// Helper functions for required component constructors
+fn locked_axes_2d() -> LockedAxes { LockedAxes::new().lock_translation_z() }
+
+fn locked_axes_spaceship() -> LockedAxes {
+    LockedAxes::new()
+        .lock_rotation_x()
+        .lock_rotation_y()
+        .lock_translation_z()
+}
+
+fn zero_gravity() -> GravityScale { GravityScale(0.) }
+
+// Marker components with required components
+// These automatically bring along common physics and gameplay components
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
+#[require(
+    Transform,
+    Teleporter,
+    ActorPortals,
+    CollisionEventsEnabled,
+    RigidBody::Dynamic,
+    GravityScale = zero_gravity(),
+    LockedAxes = locked_axes_2d()
+)]
+pub struct Missile;
+
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
+#[require(
+    Transform,
+    Teleporter,
+    ActorPortals,
+    CollisionEventsEnabled,
+    RigidBody::Dynamic,
+    GravityScale = zero_gravity(),
+    LockedAxes = locked_axes_2d()
+)]
+pub struct Nateroid;
+
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
+#[require(
+    Transform,
+    Teleporter,
+    ActorPortals,
+    CollisionEventsEnabled,
+    RigidBody::Dynamic,
+    GravityScale = zero_gravity(),
+    LockedAxes = locked_axes_spaceship()
+)]
+pub struct Spaceship;
 
 fn initialize_actor_configs(
     mut commands: Commands,
@@ -461,7 +518,8 @@ pub fn spawn_actor<'a>(
     let parent_aabb = parent.map(|(_, _, a)| a);
 
     // Calculate spawn transform
-    let mut transform = config.calculate_spawn_transform(parent_transform.zip(parent_aabb), boundary);
+    let mut transform =
+        config.calculate_spawn_transform(parent_transform.zip(parent_aabb), boundary);
 
     // Apply rotation logic using existing helper function
     // NOTE: This preserves current behavior where rotation application happens in
@@ -479,20 +537,22 @@ pub fn spawn_actor<'a>(
         .velocity_behavior
         .calculate_velocity(parent_velocity, parent_transform);
 
-    // Spawn with component tuple (replacing bundle)
-    // Note: Split into spawn + insert because Bevy's Bundle trait is only
-    // implemented for tuples up to 15 elements
-    let entity = commands
-        .spawn((
+    // Spawn with marker component which brings required components automatically:
+    // Transform, Teleporter, ActorPortals, CollisionEventsEnabled, RigidBody,
+    // GravityScale, LockedAxes
+    //
+    // Note: When we provide components explicitly (like Transform), they override
+    // the required component defaults
+    let entity = match config.actor_kind {
+        ActorKind::Missile => commands.spawn((
+            Missile,
             config.actor_kind,
+            transform,
             config.aabb.clone(),
             config.collider.clone(),
             CollisionDamage(config.collision_damage),
             config.collision_layers,
-            GravityScale(config.gravity_scale),
             Health(config.health),
-            config.locked_axes,
-            config.rigid_body,
             Restitution {
                 coefficient:  config.restitution,
                 combine_rule: config.restitution_combine_rule,
@@ -500,17 +560,52 @@ pub fn spawn_actor<'a>(
             Mass(config.mass),
             RenderLayers::from_layers(config.render_layer.layers()),
             SceneRoot(config.scene.clone()),
-            Teleporter::default(),
-            transform,
-        ))
-        .insert((
             linear_velocity,
             angular_velocity,
-            ActorPortals::default(),
-            Name::new(config.actor_kind.to_string()),
-            CollisionEventsEnabled,
-        ))
-        .id();
+            Name::new("Missile"),
+        )),
+        ActorKind::Nateroid => commands.spawn((
+            Nateroid,
+            config.actor_kind,
+            transform,
+            config.aabb.clone(),
+            config.collider.clone(),
+            CollisionDamage(config.collision_damage),
+            config.collision_layers,
+            Health(config.health),
+            Restitution {
+                coefficient:  config.restitution,
+                combine_rule: config.restitution_combine_rule,
+            },
+            Mass(config.mass),
+            RenderLayers::from_layers(config.render_layer.layers()),
+            SceneRoot(config.scene.clone()),
+            linear_velocity,
+            angular_velocity,
+            Name::new("Nateroid"),
+        )),
+        ActorKind::Spaceship => commands.spawn((
+            Spaceship,
+            config.actor_kind,
+            transform,
+            config.aabb.clone(),
+            config.collider.clone(),
+            CollisionDamage(config.collision_damage),
+            config.collision_layers,
+            Health(config.health),
+            Restitution {
+                coefficient:  config.restitution,
+                combine_rule: config.restitution_combine_rule,
+            },
+            Mass(config.mass),
+            RenderLayers::from_layers(config.render_layer.layers()),
+            SceneRoot(config.scene.clone()),
+            linear_velocity,
+            angular_velocity,
+            Name::new("Spaceship"),
+        )),
+    }
+    .id();
 
     commands.entity(entity)
 }

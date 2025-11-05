@@ -65,7 +65,10 @@ impl Plugin for PortalPlugin {
 #[derive(Debug, Default, Reflect, GizmoConfigGroup)]
 pub struct PortalGizmo {}
 
-fn update_portal_config(mut config_store: ResMut<GizmoConfigStore>, portal_config: Res<PortalConfig>) {
+fn update_portal_config(
+    mut config_store: ResMut<GizmoConfigStore>,
+    portal_config: Res<PortalConfig>,
+) {
     let (config, _) = config_store.config_mut::<PortalGizmo>();
     config.line.width = portal_config.line_width;
     config.line.joints = GizmoLineJoint::Round(portal_config.line_joints);
@@ -157,7 +160,13 @@ impl Default for Portal {
 }
 
 fn init_portals(
-    mut q_actor: Query<(&Aabb, &Transform, &LinearVelocity, &Teleporter, &mut ActorPortals)>,
+    mut q_actor: Query<(
+        &Aabb,
+        &Transform,
+        &LinearVelocity,
+        &Teleporter,
+        &mut ActorPortals,
+    )>,
     boundary: Res<Boundary>,
     portal_config: Res<PortalConfig>,
     time: Res<Time>,
@@ -173,7 +182,8 @@ fn init_portals(
     let boundary_distance_shrink = boundary_size * portal_config.distance_shrink;
 
     for (aabb, transform, velocity, teleporter, mut visual) in q_actor.iter_mut() {
-        let radius = aabb.max_dimension().max(portal_config.portal_smallest) * portal_config.portal_scalar;
+        let radius =
+            aabb.max_dimension().max(portal_config.portal_smallest) * portal_config.portal_scalar;
 
         let portal_position = transform.translation;
         let actor_direction = velocity.normalize_or_zero();
@@ -187,8 +197,20 @@ fn init_portals(
             ..default()
         };
 
-        handle_approaching_visual(&boundary, portal.clone(), &portal_config, &time, &mut visual);
-        handle_emerging_visual(portal.clone(), &portal_config, teleporter, &time, &mut visual);
+        handle_approaching_visual(
+            &boundary,
+            portal.clone(),
+            &portal_config,
+            &time,
+            &mut visual,
+        );
+        handle_emerging_visual(
+            portal.clone(),
+            &portal_config,
+            teleporter,
+            &time,
+            &mut visual,
+        );
     }
 }
 
@@ -229,7 +251,8 @@ fn handle_approaching_visual(
     time: &Res<Time>,
     visual: &mut Mut<ActorPortals>,
 ) {
-    if let Some(collision_point) = boundary.find_edge_point(portal.position, portal.actor_direction) {
+    if let Some(collision_point) = boundary.find_edge_point(portal.position, portal.actor_direction)
+    {
         let actor_distance_to_wall = portal.position.distance(collision_point);
 
         if actor_distance_to_wall <= portal.boundary_distance_approach {
@@ -262,8 +285,7 @@ fn handle_approaching_visual(
 // 1. if you switch direction on approach, the circle used to jump away fast
 // implemented a smoothing factor to alleviate this
 //
-// 2. with the smoothing factor, it can cause the circle to draw on the wrong
-//    wall if
+// 2. with the smoothing factor, it can cause the circle to draw on the wrong wall if
 // you are close to two walls and switch from the one to the other
 // so we need to switch to the new collision point in that case
 //
@@ -281,7 +303,9 @@ fn smooth_circle_position(
         // Only smooth the position if the normal hasn't changed significantly
         // circle_direction_change_factor = threshold for considering normals "similar"
         // approaching carries the last normal, current carries this frame's normal
-        if approaching.normal.dot(current_boundary_wall_normal.as_vec3())
+        if approaching
+            .normal
+            .dot(current_boundary_wall_normal.as_vec3())
             > portal_config.direction_change_factor
         {
             approaching.position.lerp(collision_point, smoothing_factor)
@@ -353,8 +377,9 @@ fn get_approaching_radius(approaching: &mut Portal) -> f32 {
     if approaching.actor_distance_to_wall > approaching.boundary_distance_shrink {
         max_radius
     } else {
-        let scale_factor =
-            (approaching.actor_distance_to_wall / approaching.boundary_distance_shrink).clamp(0.0, 1.0);
+        let scale_factor = (approaching.actor_distance_to_wall
+            / approaching.boundary_distance_shrink)
+            .clamp(0.0, 1.0);
         min_radius + (max_radius - min_radius) * scale_factor
     }
 }

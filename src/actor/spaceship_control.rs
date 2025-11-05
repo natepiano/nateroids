@@ -41,8 +41,10 @@ impl Plugin for SpaceshipControlPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<SpaceshipControlConfig>()
             .add_plugins(
-                ResourceInspectorPlugin::<SpaceshipControlConfig>::default()
-                    .run_if(toggle_active(false, GlobalAction::SpaceshipControlInspector)),
+                ResourceInspectorPlugin::<SpaceshipControlConfig>::default().run_if(toggle_active(
+                    false,
+                    GlobalAction::SpaceshipControlInspector,
+                )),
             )
             .init_resource::<SpaceshipControlConfig>()
             // spaceship will have input attached to it when spawning a spaceship
@@ -110,7 +112,10 @@ impl SpaceshipControl {
 }
 
 fn spaceship_movement_controls(
-    mut q_spaceship: Query<(&mut Transform, &mut LinearVelocity, &mut AngularVelocity), With<Spaceship>>,
+    mut q_spaceship: Query<
+        (&mut Transform, &mut LinearVelocity, &mut AngularVelocity),
+        With<Spaceship>,
+    >,
     q_camera: Query<&Transform, (With<PanOrbitCamera>, Without<Spaceship>)>,
     q_input_map: Query<&ActionState<SpaceshipControl>>,
     spaceship_config: Res<SpaceshipConfig>,
@@ -213,7 +218,14 @@ fn apply_acceleration(
 #[allow(clippy::type_complexity)]
 fn toggle_continuous_fire(
     mut commands: Commands,
-    q_spaceship: Query<(Entity, &ActionState<SpaceshipControl>, Option<&ContinuousFire>), With<Spaceship>>,
+    q_spaceship: Query<
+        (
+            Entity,
+            &ActionState<SpaceshipControl>,
+            Option<&ContinuousFire>,
+        ),
+        With<Spaceship>,
+    >,
 ) {
     if let Ok((entity, control, continuous)) = q_spaceship.single()
         && control.just_pressed(&SpaceshipControl::ContinuousFire)

@@ -71,7 +71,11 @@ impl Default for NateroidConfig {
             collision_damage: 10.,
             collision_layers: CollisionLayers::new(
                 [GameLayer::Asteroid],
-                [GameLayer::Asteroid, GameLayer::Missile, GameLayer::Spaceship],
+                [
+                    GameLayer::Asteroid,
+                    GameLayer::Missile,
+                    GameLayer::Spaceship,
+                ],
             ),
             health: 200.,
             mass: 1.0,

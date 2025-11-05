@@ -14,7 +14,9 @@ use rand::{
 pub struct StarsPlugin;
 
 impl Plugin for StarsPlugin {
-    fn build(&self, app: &mut App) { app.add_systems(Startup, (spawn_stars, setup_star_rendering).chain()); }
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, (spawn_stars, setup_star_rendering).chain());
+    }
 }
 
 #[derive(Debug, Clone, Reflect, Resource)]
@@ -89,7 +91,11 @@ fn spawn_stars(mut commands: Commands, config: Res<StarConfig>, boundary_config:
     }
 }
 
-fn get_star_position(inner_sphere_radius: f32, outer_sphere_radius: f32, rng: &mut ThreadRng) -> Vec3 {
+fn get_star_position(
+    inner_sphere_radius: f32,
+    outer_sphere_radius: f32,
+    rng: &mut ThreadRng,
+) -> Vec3 {
     let u: f32 = rng.random_range(0.0..1.0);
     let v: f32 = rng.random_range(0.0..1.0);
     let theta = u * std::f32::consts::PI * 2.0;
@@ -147,7 +153,12 @@ fn setup_star_rendering(
 
     for (entity, star) in stars.iter() {
         let material = materials.add(StandardMaterial {
-            emissive: LinearRgba::new(star.emissive.x, star.emissive.y, star.emissive.z, star.emissive.w),
+            emissive: LinearRgba::new(
+                star.emissive.x,
+                star.emissive.y,
+                star.emissive.z,
+                star.emissive.w,
+            ),
             ..default()
         });
 
@@ -155,6 +166,8 @@ fn setup_star_rendering(
             .entity(entity)
             .insert(Mesh3d(mesh.clone()))
             .insert(MeshMaterial3d(material))
-            .insert(Transform::from_translation(star.position).with_scale(Vec3::splat(star.radius)));
+            .insert(
+                Transform::from_translation(star.position).with_scale(Vec3::splat(star.radius)),
+            );
     }
 }

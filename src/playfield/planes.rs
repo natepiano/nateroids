@@ -159,8 +159,11 @@ fn manage_box_planes(
         return;
     }
 
-    let plane_specifications =
-        get_plane_specifications(&planes_config, boundary.transform.scale, &orientation.config);
+    let plane_specifications = get_plane_specifications(
+        &planes_config,
+        boundary.transform.scale,
+        &orientation.config,
+    );
 
     for (plane_type, enabled, size, position, axis) in plane_specifications {
         let existing_plane = planes.iter().find(|(_, bp)| bp.plane_type == plane_type);

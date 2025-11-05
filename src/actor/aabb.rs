@@ -69,7 +69,11 @@ fn draw_aabb_system(mut gizmos: Gizmos<AabbGizmo>, query: Query<(&Transform, &Aa
     }
 }
 
-pub fn get_scene_aabb(scenes: &Assets<Scene>, meshes: &Assets<Mesh>, handle: &Handle<Scene>) -> Aabb {
+pub fn get_scene_aabb(
+    scenes: &Assets<Scene>,
+    meshes: &Assets<Mesh>,
+    handle: &Handle<Scene>,
+) -> Aabb {
     if let Some(scene) = scenes.get(handle) {
         let mut aabb = None;
         if let Some(mut query_state) = scene.world.try_query::<EntityRef>() {

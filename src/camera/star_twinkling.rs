@@ -56,7 +56,10 @@ fn get_random_indices(count: usize, range: usize) -> Vec<usize> {
 }
 
 fn extract_elements_at_indices<T: Clone>(vec: &[T], indices: &[usize]) -> Vec<T> {
-    indices.iter().filter_map(|&i| vec.get(i).cloned()).collect()
+    indices
+        .iter()
+        .filter_map(|&i| vec.get(i).cloned())
+        .collect()
 }
 
 // yeah - but how can the query below be much simpler?
@@ -103,10 +106,12 @@ fn start_twinkling(
                 material.emissive.blue,
                 material.emissive.alpha,
             );
-            let intensity = rng.random_range(config.twinkle_intensity.start..config.twinkle_intensity.end);
+            let intensity =
+                rng.random_range(config.twinkle_intensity.start..config.twinkle_intensity.end);
             let target_emissive = original_emissive * intensity;
 
-            let duration = rng.random_range(config.twinkle_duration.start..config.twinkle_duration.end);
+            let duration =
+                rng.random_range(config.twinkle_duration.start..config.twinkle_duration.end);
 
             commands.entity(entity).insert(Twinkling {
                 original_emissive,
@@ -127,8 +132,8 @@ fn update_twinkling(
         twinkling.twinkle_timer.tick(time.delta());
 
         if let Some(material) = materials.get_mut(material_handle) {
-            let progress =
-                twinkling.twinkle_timer.elapsed_secs() / twinkling.twinkle_timer.duration().as_secs_f32();
+            let progress = twinkling.twinkle_timer.elapsed_secs()
+                / twinkling.twinkle_timer.duration().as_secs_f32();
             // .5 -> brighten until halfway and then dim back
             // .2 in the lerp -> used to make sure full range of the lerp function is used
             // in each                   half of the animation - so we go from
@@ -142,8 +147,12 @@ fn update_twinkling(
                     .target_emissive
                     .lerp(twinkling.original_emissive, (progress - 0.5) * 2.0)
             };
-            material.emissive =
-                LinearRgba::new(new_emissive.x, new_emissive.y, new_emissive.z, new_emissive.w);
+            material.emissive = LinearRgba::new(
+                new_emissive.x,
+                new_emissive.y,
+                new_emissive.z,
+                new_emissive.w,
+            );
         }
 
         if twinkling.twinkle_timer.is_finished() {

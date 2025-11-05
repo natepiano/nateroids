@@ -32,15 +32,22 @@ impl Plugin for CamerasPlugin {
             .add_systems(Startup, spawn_star_camera.before(spawn_panorbit_camera))
             .add_systems(Startup, spawn_panorbit_camera)
             .add_systems(Update, home_camera.run_if(just_pressed(GlobalAction::Home)))
-            .add_systems(Update, (toggle_stars, update_bloom_settings, update_clear_color));
+            .add_systems(
+                Update,
+                (toggle_stars, update_bloom_settings, update_clear_color),
+            );
     }
 }
 
-pub fn home_camera(boundary: Res<Boundary>, mut camera_query: Query<(&mut PanOrbitCamera, &Projection)>) {
+pub fn home_camera(
+    boundary: Res<Boundary>,
+    mut camera_query: Query<(&mut PanOrbitCamera, &Projection)>,
+) {
     if let Ok((mut pan_orbit, Projection::Perspective(perspective))) = camera_query.single_mut() {
         let grid_size = boundary.scale();
 
-        let target_radius = calculate_camera_radius(grid_size, perspective.fov, perspective.aspect_ratio);
+        let target_radius =
+            calculate_camera_radius(grid_size, perspective.fov, perspective.aspect_ratio);
 
         // Set the camera's orbit parameters
         pan_orbit.target_focus = Vec3::ZERO;
@@ -142,7 +149,9 @@ fn toggle_stars(
             (entity, None) => {
                 if user_input.just_pressed(&GlobalAction::Stars) {
                     println!("stars on");
-                    commands.entity(entity).insert(get_bloom_settings(camera_config));
+                    commands
+                        .entity(entity)
+                        .insert(get_bloom_settings(camera_config));
                 }
             },
         }
@@ -207,6 +216,8 @@ pub fn spawn_panorbit_camera(
 // by bevy_inspector_egui
 fn update_clear_color(camera_config: Res<CameraConfig>, mut clear_color: ResMut<ClearColor>) {
     if camera_config.is_changed() {
-        clear_color.0 = camera_config.clear_color.darker(camera_config.darkening_factor);
+        clear_color.0 = camera_config
+            .clear_color
+            .darker(camera_config.darkening_factor);
     }
 }
