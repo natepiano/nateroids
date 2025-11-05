@@ -29,7 +29,7 @@ use crate::actor::actor_spawner::ActorKind;
 /// a new bundle is constructed on each spawn and if the inspector changed
 /// anything, it will be reflected in the newly created entity. each of these
 /// can be thought of as an ActorConfig
-use crate::actor::actor_spawner::SpawnPositionBehavior;
+use crate::actor::actor_spawner::SpawnPosition;
 /// this file is separated from actor_spawner just for the convenience of
 /// editing default values all the logic is in actor_spawner the reason we
 /// don't only use a bundle is we want to use an inspector to change defaults so
@@ -72,11 +72,13 @@ impl Default for MissileConfig {
             mass: 0.1,
             // #todo: #handle3d
             rotation: Some(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)),
-            spawn_position_behavior: SpawnPositionBehavior::ForwardFromParent { distance: 0.5 },
-            scalar: 2.5,
+            spawn_position: SpawnPosition::Missile {
+                forward_distance_scalar: 7.0,
+            },
+            mesh_scalar: 2.5,
             spawn_timer_seconds: Some(1.0 / 20.0),
             velocity_behavior: VelocityBehavior::RelativeToParent {
-                base_velocity:           85.0,
+                base_velocity: 85.0,
                 inherit_parent_velocity: true,
             },
             ..default()
@@ -101,7 +103,7 @@ impl Default for NateroidConfig {
             health: 200.,
             mass: 1.0,
             restitution: 0.3,
-            spawn_position_behavior: SpawnPositionBehavior::RandomWithinBounds {
+            spawn_position: SpawnPosition::Asteroid {
                 scale_factor: Vec3::new(0.5, 0.5, 0.0),
             },
             velocity_behavior: VelocityBehavior::Random {
@@ -132,8 +134,8 @@ impl Default for SpaceshipConfig {
             restitution: 0.1,
             // #todo: #handle3d
             rotation: Some(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2)),
-            scalar: 0.8,
-            spawn_position_behavior: SpawnPositionBehavior::Fixed(Vec3::new(0.0, -20.0, 0.0)),
+            mesh_scalar: 0.8,
+            spawn_position: SpawnPosition::Spaceship(Vec3::new(0.0, -20.0, 0.0)),
             velocity_behavior: VelocityBehavior::Fixed(Vec3::ZERO),
             ..default()
         })

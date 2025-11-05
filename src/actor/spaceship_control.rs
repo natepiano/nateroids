@@ -49,9 +49,9 @@ impl Plugin for SpaceshipControlPlugin {
 #[reflect(Resource, InspectorOptions)]
 pub struct SpaceshipControlConfig {
     #[inspector(min = 30., max = 300.0, display = NumberDisplay::Slider)]
-    pub acceleration:   f32,
+    pub acceleration: f32,
     #[inspector(min = 50., max = 300.0, display = NumberDisplay::Slider)]
-    pub max_speed:      f32,
+    pub max_speed: f32,
     #[inspector(min = 1.0, max = 10.0, display = NumberDisplay::Slider)]
     pub rotation_speed: f32,
 }
@@ -59,9 +59,9 @@ pub struct SpaceshipControlConfig {
 impl Default for SpaceshipControlConfig {
     fn default() -> Self {
         Self {
-            acceleration:   60.,
+            acceleration: 60.,
             rotation_speed: 5.0,
-            max_speed:      80.,
+            max_speed: 80.,
         }
     }
 }
@@ -115,7 +115,7 @@ fn spaceship_movement_controls(
             q_spaceship.single_mut()
         {
             // dynamically update from inspector while game is running to change size
-            spaceship_transform.scale = Vec3::splat(spaceship_config.0.scalar);
+            spaceship_transform.scale = Vec3::splat(spaceship_config.0.mesh_scalar);
 
             if let Ok(controls) = q_input_map.single() {
                 let mut rotation = 0.0;
