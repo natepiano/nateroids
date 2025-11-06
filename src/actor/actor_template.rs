@@ -78,7 +78,7 @@ impl Default for MissileConfig {
             mesh_scalar: 2.5,
             spawn_timer_seconds: Some(1.0 / 20.0),
             velocity_behavior: VelocityBehavior::RelativeToParent {
-                base_velocity: 85.0,
+                base_velocity:           85.0,
                 inherit_parent_velocity: true,
             },
             ..default()

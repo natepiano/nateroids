@@ -28,10 +28,10 @@ impl Plugin for MissilePlugin {
 #[reflect(Component)]
 pub struct Missile {
     // velocity:               Vec3,
-    pub total_distance: f32,
-    pub traveled_distance: f32,
-    remaining_distance: f32,
-    pub last_position: Option<Vec3>,
+    pub total_distance:     f32,
+    pub traveled_distance:  f32,
+    remaining_distance:     f32,
+    pub last_position:      Option<Vec3>,
     last_teleport_position: Option<Vec3>, // Add this field
 }
 
