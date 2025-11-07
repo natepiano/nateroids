@@ -5,8 +5,8 @@ use bevy::prelude::*;
 use rand::Rng;
 
 use super::Teleporter;
-use super::actor_spawner::LOCKED_AXES_2D;
-use super::actor_spawner::insert_configured_components;
+use super::actor_config::LOCKED_AXES_2D;
+use super::actor_config::insert_configured_components;
 use super::actor_template::NateroidConfig;
 use crate::global_input::GlobalAction;
 use crate::global_input::toggle_active;

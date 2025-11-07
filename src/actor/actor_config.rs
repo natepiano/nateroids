@@ -48,58 +48,6 @@ impl Plugin for ActorConfigPlugin {
     }
 }
 
-type ActorRenderLayersQuery<'w, 'a> =
-    Query<'w, 'a, &'static RenderLayers, Or<(With<Missile>, With<Nateroid>, With<Spaceship>)>>;
-
-/// ensures that the game camera can see the spawned actor
-fn propagate_render_layers_on_spawn(
-    add: On<Add, Children>,
-    q_parents: ActorRenderLayersQuery,
-    children_query: Query<&Children>,
-    mut commands: Commands,
-) {
-    // Only process if this entity has one of our actor marker components (scene
-    // children added to actor parent)
-    if let Ok(parent_layers) = q_parents.get(add.entity) {
-        // Recursively propagate to all descendants
-        propagate_to_descendants(add.entity, parent_layers, &children_query, &mut commands);
-    }
-}
-
-fn propagate_to_descendants(
-    entity: Entity,
-    parent_layers: &RenderLayers,
-    children_query: &Query<&Children>,
-    commands: &mut Commands,
-) {
-    if let Ok(children) = children_query.get(entity) {
-        for child in children.iter() {
-            commands.entity(child).insert(parent_layers.clone());
-
-            // Recursively propagate to grandchildren
-            propagate_to_descendants(child, parent_layers, children_query, commands);
-        }
-    }
-}
-
-#[derive(Reflect, Component, Clone, Debug)]
-#[reflect(Component)]
-pub struct GameActor;
-
-#[derive(Reflect, Component, Clone, Debug)]
-#[reflect(Component)]
-pub struct Health(pub f32);
-
-#[derive(Reflect, Component, Clone, Debug)]
-#[reflect(Component)]
-pub struct CollisionDamage(pub f32);
-
-#[derive(Reflect, Debug, Clone, PartialEq, Eq)]
-pub enum ColliderType {
-    Ball,
-    Cuboid,
-}
-
 #[derive(Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(InspectorOptions)]
 pub struct ActorConfig {
@@ -156,6 +104,55 @@ impl Default for ActorConfig {
         }
     }
 }
+
+#[derive(Reflect, Component, Clone, Debug)]
+#[reflect(Component)]
+pub struct Health(pub f32);
+
+#[derive(Reflect, Component, Clone, Debug)]
+#[reflect(Component)]
+pub struct CollisionDamage(pub f32);
+
+#[derive(Reflect, Debug, Clone, PartialEq, Eq)]
+pub enum ColliderType {
+    Ball,
+    Cuboid,
+}
+
+type ActorRenderLayersQuery<'w, 'a> =
+    Query<'w, 'a, &'static RenderLayers, Or<(With<Missile>, With<Nateroid>, With<Spaceship>)>>;
+
+/// ensures that the game camera can see the spawned actor
+fn propagate_render_layers_on_spawn(
+    add: On<Add, Children>,
+    q_parents: ActorRenderLayersQuery,
+    children_query: Query<&Children>,
+    mut commands: Commands,
+) {
+    // Only process if this entity has one of our actor marker components (scene
+    // children added to actor parent)
+    if let Ok(parent_layers) = q_parents.get(add.entity) {
+        // Recursively propagate to all descendants
+        propagate_to_descendants(add.entity, parent_layers, &children_query, &mut commands);
+    }
+}
+
+fn propagate_to_descendants(
+    entity: Entity,
+    parent_layers: &RenderLayers,
+    children_query: &Query<&Children>,
+    commands: &mut Commands,
+) {
+    if let Ok(children) = children_query.get(entity) {
+        for child in children.iter() {
+            commands.entity(child).insert(parent_layers.clone());
+
+            // Recursively propagate to grandchildren
+            propagate_to_descendants(child, parent_layers, children_query, commands);
+        }
+    }
+}
+
 
 #[derive(Component, Reflect, Copy, Clone, Debug, Default)]
 pub enum ActorKind {
