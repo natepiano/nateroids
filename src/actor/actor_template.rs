@@ -71,7 +71,7 @@ impl Default for NateroidConfig {
             health: 200.,
             mass: 1.0,
             restitution: 0.3,
-            spawn_position: SpawnPosition::Asteroid {
+            spawn_position: SpawnPosition::Nateroid {
                 scale_factor: Vec3::new(0.5, 0.5, 0.0),
             },
             velocity_behavior: VelocityBehavior::Nateroid {
