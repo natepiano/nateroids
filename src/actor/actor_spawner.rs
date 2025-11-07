@@ -113,7 +113,7 @@ pub enum VelocityBehavior {
         angvel: f32,
     },
     RelativeToParent {
-        base_velocity:           f32,
+        base_velocity: f32,
         inherit_parent_velocity: bool,
     },
 }
@@ -158,64 +158,64 @@ impl VelocityBehavior {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 pub struct ActorConfig {
-    pub spawnable:                bool,
+    pub spawnable: bool,
     #[reflect(ignore)]
-    pub aabb:                     Aabb,
+    pub aabb: Aabb,
     #[reflect(ignore)]
-    pub actor_kind:               ActorKind,
+    pub actor_kind: ActorKind,
     #[reflect(ignore)]
-    pub collider:                 Collider,
-    pub collider_type:            ColliderType,
-    pub collision_damage:         f32,
+    pub collider: Collider,
+    pub collider_type: ColliderType,
+    pub collision_damage: f32,
     #[reflect(ignore)]
-    pub collision_layers:         CollisionLayers,
-    pub gravity_scale:            f32,
-    pub health:                   f32,
-    pub locked_axes:              LockedAxes,
+    pub collision_layers: CollisionLayers,
+    pub gravity_scale: f32,
+    pub health: f32,
+    pub locked_axes: LockedAxes,
     #[inspector(min = 0.0, max = 20.0, display = NumberDisplay::Slider)]
-    pub mass:                     f32,
-    pub render_layer:             RenderLayer,
+    pub mass: f32,
+    pub render_layer: RenderLayer,
     #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
-    pub restitution:              f32,
+    pub restitution: f32,
     pub restitution_combine_rule: CoefficientCombine,
-    pub rigid_body:               RigidBody,
-    pub rotation:                 Option<Quat>,
+    pub rigid_body: RigidBody,
+    pub rotation: Option<Quat>,
     #[inspector(min = 0.1, max = 10.0, display = NumberDisplay::Slider)]
-    pub mesh_scalar:              f32,
+    pub mesh_scalar: f32,
     #[reflect(ignore)]
-    pub scene:                    Handle<Scene>,
-    pub spawn_position:           SpawnPosition,
-    pub spawn_timer_seconds:      Option<f32>,
+    pub scene: Handle<Scene>,
+    pub spawn_position: SpawnPosition,
+    pub spawn_timer_seconds: Option<f32>,
     #[reflect(ignore)]
-    pub spawn_timer:              Option<Timer>,
-    pub velocity_behavior:        VelocityBehavior,
+    pub spawn_timer: Option<Timer>,
+    pub velocity_behavior: VelocityBehavior,
 }
 
 impl Default for ActorConfig {
     fn default() -> Self {
         Self {
-            spawnable:                true,
-            actor_kind:               ActorKind::default(),
-            aabb:                     Aabb::default(),
-            collider:                 Collider::cuboid(1., 1., 1.),
-            collider_type:            ColliderType::Cuboid,
-            collision_damage:         0.,
-            collision_layers:         CollisionLayers::default(),
-            gravity_scale:            0.,
-            health:                   0.,
-            locked_axes:              LockedAxes::new().lock_translation_z(),
-            mass:                     1.,
-            render_layer:             RenderLayer::Game,
-            restitution:              1.,
+            spawnable: true,
+            actor_kind: ActorKind::default(),
+            aabb: Aabb::default(),
+            collider: Collider::cuboid(1., 1., 1.),
+            collider_type: ColliderType::Cuboid,
+            collision_damage: 0.,
+            collision_layers: CollisionLayers::default(),
+            gravity_scale: 0.,
+            health: 0.,
+            locked_axes: LockedAxes::new().lock_translation_z(),
+            mass: 1.,
+            render_layer: RenderLayer::Game,
+            restitution: 1.,
             restitution_combine_rule: CoefficientCombine::Max,
-            rigid_body:               RigidBody::Dynamic,
-            rotation:                 None,
-            mesh_scalar:              1.,
-            scene:                    Handle::default(),
-            spawn_position:           SpawnPosition::Spaceship(Vec3::ZERO),
-            spawn_timer_seconds:      None,
-            spawn_timer:              None,
-            velocity_behavior:        VelocityBehavior::Fixed(Vec3::ZERO),
+            rigid_body: RigidBody::Dynamic,
+            rotation: None,
+            mesh_scalar: 1.,
+            scene: Handle::default(),
+            spawn_position: SpawnPosition::Spaceship(Vec3::ZERO),
+            spawn_timer_seconds: None,
+            spawn_timer: None,
+            velocity_behavior: VelocityBehavior::Fixed(Vec3::ZERO),
         }
     }
 }
@@ -351,7 +351,9 @@ impl fmt::Display for ActorKind {
 }
 
 // Helper functions for required component constructors
-fn locked_axes_2d() -> LockedAxes { LockedAxes::new().lock_translation_z() }
+fn locked_axes_2d() -> LockedAxes {
+    LockedAxes::new().lock_translation_z()
+}
 
 fn locked_axes_spaceship() -> LockedAxes {
     LockedAxes::new()
@@ -360,7 +362,9 @@ fn locked_axes_spaceship() -> LockedAxes {
         .lock_translation_z()
 }
 
-fn zero_gravity() -> GravityScale { GravityScale(0.) }
+fn zero_gravity() -> GravityScale {
+    GravityScale(0.)
+}
 
 // Marker components with required components
 // These automatically bring along common physics and gameplay components
@@ -495,7 +499,6 @@ pub fn spawn_actor<'a>(
     // Extract parent components
     let parent_transform = parent.map(|(t, _, _)| t);
     let parent_velocity = parent.map(|(_, v, _)| v);
-    let parent_aabb = parent.map(|(_, _, a)| a);
 
     // Calculate spawn transform
     let mut transform = config.calculate_spawn_transform(parent_transform, boundary);
@@ -533,7 +536,7 @@ pub fn spawn_actor<'a>(
             config.collision_layers,
             Health(config.health),
             Restitution {
-                coefficient:  config.restitution,
+                coefficient: config.restitution,
                 combine_rule: config.restitution_combine_rule,
             },
             Mass(config.mass),
@@ -553,7 +556,7 @@ pub fn spawn_actor<'a>(
             config.collision_layers,
             Health(config.health),
             Restitution {
-                coefficient:  config.restitution,
+                coefficient: config.restitution,
                 combine_rule: config.restitution_combine_rule,
             },
             Mass(config.mass),
@@ -573,7 +576,7 @@ pub fn spawn_actor<'a>(
             config.collision_layers,
             Health(config.health),
             Restitution {
-                coefficient:  config.restitution,
+                coefficient: config.restitution,
                 combine_rule: config.restitution_combine_rule,
             },
             Mass(config.mass),

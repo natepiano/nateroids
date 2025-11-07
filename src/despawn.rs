@@ -19,7 +19,7 @@ impl Plugin for DespawnPlugin {
 }
 
 fn despawn_missiles(mut commands: Commands, query: Query<(Entity, &Missile)>) {
-    for (entity, &missile) in query.iter() {
+    for (entity, missile) in query.iter() {
         if missile.traveled_distance >= missile.total_distance {
             despawn(&mut commands, entity);
         }
