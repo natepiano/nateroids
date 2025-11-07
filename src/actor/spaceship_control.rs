@@ -11,9 +11,9 @@ use leafwing_input_manager::plugin::InputManagerPlugin;
 use strum::EnumIter;
 use strum::IntoEnumIterator;
 
-use crate::actor::actor_template::SpaceshipConfig;
-use crate::actor::spaceship::ContinuousFire;
-use crate::actor::spaceship::Spaceship;
+use super::actor_template::SpaceshipConfig;
+use super::spaceship::ContinuousFire;
+use super::spaceship::Spaceship;
 use crate::global_input::GlobalAction;
 use crate::global_input::toggle_active;
 use crate::orientation::CameraOrientation;
@@ -24,24 +24,23 @@ pub struct SpaceshipControlPlugin;
 
 impl Plugin for SpaceshipControlPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<SpaceshipControlConfig>()
-            .add_plugins(
-                ResourceInspectorPlugin::<SpaceshipControlConfig>::default().run_if(toggle_active(
-                    false,
-                    GlobalAction::SpaceshipControlInspector,
-                )),
-            )
-            .init_resource::<SpaceshipControlConfig>()
-            // spaceship will have input attached to it when spawning a spaceship
-            .add_plugins(InputManagerPlugin::<SpaceshipControl>::default())
-            .init_resource::<ActionState<SpaceshipControl>>()
-            .insert_resource(SpaceshipControl::generate_input_map())
-            .add_systems(
-                Update,
-                (spaceship_movement_controls, toggle_continuous_fire)
-                    .chain()
-                    .in_set(InGameSet::UserInput),
-            );
+        app.add_plugins(
+            ResourceInspectorPlugin::<SpaceshipControlConfig>::default().run_if(toggle_active(
+                false,
+                GlobalAction::SpaceshipControlInspector,
+            )),
+        )
+        .init_resource::<SpaceshipControlConfig>()
+        // spaceship will have input attached to it when spawning a spaceship
+        .add_plugins(InputManagerPlugin::<SpaceshipControl>::default())
+        .init_resource::<ActionState<SpaceshipControl>>()
+        .insert_resource(SpaceshipControl::generate_input_map())
+        .add_systems(
+            Update,
+            (spaceship_movement_controls, toggle_continuous_fire)
+                .chain()
+                .in_set(InGameSet::UserInput),
+        );
     }
 }
 

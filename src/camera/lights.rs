@@ -20,7 +20,6 @@ impl Plugin for DirectionalLightsPlugin {
                     .run_if(toggle_active(false, GlobalAction::LightsInspector)),
             )
             .init_resource::<LightConfig>()
-            .register_type::<LightConfig>()
             .add_systems(Update, manage_lighting);
     }
 }

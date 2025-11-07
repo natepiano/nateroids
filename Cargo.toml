@@ -10,7 +10,12 @@ bevy = { version = "0.17.2", features = [
   "bevy_dev_tools",
   "bevy_remote",
 ] }
-avian3d = { version = "0.4.1", features = ["simd", "debug-plugin", "parallel"] }
+avian3d = { version = "0.4.1", features = [
+  "simd",
+  "collider-from-mesh",
+  "debug-plugin",
+  "parallel",
+] }
 bevy_panorbit_camera = { version = "0.32.0", features = ["bevy_egui"] }
 leafwing-input-manager = "0.19.0"
 bevy-inspector-egui = "0.35.0"

@@ -20,7 +20,6 @@ impl Plugin for BoundaryPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Boundary>()
             .init_gizmo_group::<BoundaryGizmo>()
-            .register_type::<Boundary>()
             .add_plugins(
                 ResourceInspectorPlugin::<Boundary>::default()
                     .run_if(toggle_active(false, GlobalAction::BoundaryInspector)),

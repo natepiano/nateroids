@@ -15,7 +15,6 @@ pub struct PlanesPlugin;
 impl Plugin for PlanesPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, manage_box_planes)
-            .register_type::<PlaneConfig>()
             .init_resource::<PlaneConfig>()
             .add_plugins(
                 ResourceInspectorPlugin::<PlaneConfig>::default()

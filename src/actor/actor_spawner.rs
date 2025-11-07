@@ -10,18 +10,19 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use rand::Rng;
 
-use crate::actor::Aabb;
-use crate::actor::Teleporter;
-use crate::actor::actor_template::MissileConfig;
-use crate::actor::actor_template::NateroidConfig;
-use crate::actor::actor_template::SpaceshipConfig;
-use crate::actor::get_scene_aabb;
+use super::Aabb;
+use super::Missile;
+use super::aabb;
+use super::actor_template::MissileConfig;
+use super::actor_template::NateroidConfig;
+use super::actor_template::SpaceshipConfig;
+use super::nateroid::Nateroid;
+use super::spaceship::Spaceship;
 use crate::asset_loader::AssetsState;
 use crate::asset_loader::SceneAssets;
 use crate::camera::RenderLayer;
 use crate::global_input::GlobalAction;
 use crate::global_input::toggle_active;
-use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 
 // this is how far off we are from blender for the assets we're loading
@@ -34,10 +35,7 @@ pub struct ActorSpawner;
 
 impl Plugin for ActorSpawner {
     fn build(&self, app: &mut App) {
-        app.register_type::<MissileConfig>()
-            .register_type::<NateroidConfig>()
-            .register_type::<SpaceshipConfig>()
-            .add_systems(OnEnter(AssetsState::Loaded), initialize_actor_configs)
+        app.add_systems(OnEnter(AssetsState::Loaded), initialize_actor_configs)
             .add_observer(propagate_render_layers_on_spawn)
             .add_plugins(
                 ResourceInspectorPlugin::<MissileConfig>::default()
@@ -54,9 +52,13 @@ impl Plugin for ActorSpawner {
     }
 }
 
+type ActorRenderLayersQuery<'w, 'a> =
+    Query<'w, 'a, &'static RenderLayers, Or<(With<Missile>, With<Nateroid>, With<Spaceship>)>>;
+
+/// ensures that the game camera can see the spawned actor
 fn propagate_render_layers_on_spawn(
     add: On<Add, Children>,
-    q_parents: Query<&RenderLayers, Or<(With<Missile>, With<Nateroid>, With<Spaceship>)>>,
+    q_parents: ActorRenderLayersQuery,
     children_query: Query<&Children>,
     mut commands: Commands,
 ) {
@@ -96,6 +98,7 @@ pub struct CollisionDamage(pub f32);
 pub enum ColliderType {
     Ball,
     Cuboid,
+    //   Mesh,
 }
 
 #[derive(Reflect, Debug, Clone)]
@@ -107,26 +110,25 @@ pub enum SpawnPosition {
 
 #[derive(Reflect, Debug, Clone)]
 pub enum VelocityBehavior {
-    Fixed(Vec3),
-    Random {
-        linvel: f32,
-        angvel: f32,
-    },
-    RelativeToParent {
-        base_velocity: f32,
-        inherit_parent_velocity: bool,
-    },
+    /// fixed
+    Spaceship(Vec3),
+    /// random
+    Nateroid { linvel: f32, angvel: f32 },
+    /// relative to parent
+    Missile { base_velocity: f32 },
 }
 
 impl VelocityBehavior {
-    fn calculate_velocity(
+    pub fn calculate_velocity(
         &self,
         parent_linear_velocity: Option<&LinearVelocity>,
         parent_transform: Option<&Transform>,
     ) -> (LinearVelocity, AngularVelocity) {
         match self {
-            VelocityBehavior::Fixed(velocity) => (LinearVelocity(*velocity), AngularVelocity::ZERO),
-            VelocityBehavior::Random { linvel, angvel } => (
+            VelocityBehavior::Spaceship(velocity) => {
+                (LinearVelocity(*velocity), AngularVelocity::ZERO)
+            },
+            VelocityBehavior::Nateroid { linvel, angvel } => (
                 LinearVelocity(random_vec3(-*linvel..*linvel, -*linvel..*linvel, 0.0..0.0)),
                 AngularVelocity(random_vec3(
                     -*angvel..*angvel,
@@ -134,18 +136,13 @@ impl VelocityBehavior {
                     -*angvel..*angvel,
                 )),
             ),
-            VelocityBehavior::RelativeToParent {
-                base_velocity,
-                inherit_parent_velocity,
-            } => {
+            VelocityBehavior::Missile { base_velocity } => {
                 if let (Some(parent_linear_velocity), Some(parent_transform)) =
                     (parent_linear_velocity, parent_transform)
                 {
                     let forward = -parent_transform.forward();
                     let mut velocity = forward * *base_velocity;
-                    if *inherit_parent_velocity {
-                        velocity += **parent_linear_velocity;
-                    }
+                    velocity += **parent_linear_velocity;
                     (LinearVelocity(velocity), AngularVelocity::ZERO)
                 } else {
                     (LinearVelocity::ZERO, AngularVelocity::ZERO)
@@ -158,70 +155,70 @@ impl VelocityBehavior {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 pub struct ActorConfig {
-    pub spawnable: bool,
+    pub spawnable:                bool,
     #[reflect(ignore)]
-    pub aabb: Aabb,
+    pub aabb:                     Aabb,
     #[reflect(ignore)]
-    pub actor_kind: ActorKind,
+    pub actor_kind:               ActorKind,
     #[reflect(ignore)]
-    pub collider: Collider,
-    pub collider_type: ColliderType,
-    pub collision_damage: f32,
+    pub collider:                 Collider,
+    pub collider_type:            ColliderType,
+    pub collision_damage:         f32,
     #[reflect(ignore)]
-    pub collision_layers: CollisionLayers,
-    pub gravity_scale: f32,
-    pub health: f32,
-    pub locked_axes: LockedAxes,
+    pub collision_layers:         CollisionLayers,
+    pub gravity_scale:            f32,
+    pub health:                   f32,
+    pub locked_axes:              LockedAxes,
     #[inspector(min = 0.0, max = 20.0, display = NumberDisplay::Slider)]
-    pub mass: f32,
-    pub render_layer: RenderLayer,
+    pub mass:                     f32,
+    pub render_layer:             RenderLayer,
     #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
-    pub restitution: f32,
+    pub restitution:              f32,
     pub restitution_combine_rule: CoefficientCombine,
-    pub rigid_body: RigidBody,
-    pub rotation: Option<Quat>,
+    pub rigid_body:               RigidBody,
+    pub rotation:                 Option<Quat>,
     #[inspector(min = 0.1, max = 10.0, display = NumberDisplay::Slider)]
-    pub mesh_scalar: f32,
+    pub mesh_scalar:              f32,
     #[reflect(ignore)]
-    pub scene: Handle<Scene>,
-    pub spawn_position: SpawnPosition,
-    pub spawn_timer_seconds: Option<f32>,
+    pub scene:                    Handle<Scene>,
+    pub spawn_position:           SpawnPosition,
+    pub spawn_timer_seconds:      Option<f32>,
     #[reflect(ignore)]
-    pub spawn_timer: Option<Timer>,
-    pub velocity_behavior: VelocityBehavior,
+    pub spawn_timer:              Option<Timer>,
+    pub velocity_behavior:        VelocityBehavior,
 }
 
 impl Default for ActorConfig {
     fn default() -> Self {
         Self {
-            spawnable: true,
-            actor_kind: ActorKind::default(),
-            aabb: Aabb::default(),
-            collider: Collider::cuboid(1., 1., 1.),
-            collider_type: ColliderType::Cuboid,
-            collision_damage: 0.,
-            collision_layers: CollisionLayers::default(),
-            gravity_scale: 0.,
-            health: 0.,
-            locked_axes: LockedAxes::new().lock_translation_z(),
-            mass: 1.,
-            render_layer: RenderLayer::Game,
-            restitution: 1.,
+            spawnable:                true,
+            actor_kind:               ActorKind::default(),
+            aabb:                     Aabb::default(),
+            collider:                 Collider::cuboid(1., 1., 1.),
+            collider_type:            ColliderType::Cuboid,
+            collision_damage:         0.,
+            collision_layers:         CollisionLayers::default(),
+            gravity_scale:            0.,
+            health:                   0.,
+            locked_axes:              LockedAxes::new().lock_translation_z(),
+            mass:                     1.,
+            render_layer:             RenderLayer::Game,
+            restitution:              1.,
             restitution_combine_rule: CoefficientCombine::Max,
-            rigid_body: RigidBody::Dynamic,
-            rotation: None,
-            mesh_scalar: 1.,
-            scene: Handle::default(),
-            spawn_position: SpawnPosition::Spaceship(Vec3::ZERO),
-            spawn_timer_seconds: None,
-            spawn_timer: None,
-            velocity_behavior: VelocityBehavior::Fixed(Vec3::ZERO),
+            rigid_body:               RigidBody::Dynamic,
+            rotation:                 None,
+            mesh_scalar:              1.,
+            scene:                    Handle::default(),
+            spawn_position:           SpawnPosition::Spaceship(Vec3::ZERO),
+            spawn_timer_seconds:      None,
+            spawn_timer:              None,
+            velocity_behavior:        VelocityBehavior::Spaceship(Vec3::ZERO),
         }
     }
 }
 
 impl ActorConfig {
-    fn calculate_spawn_transform(
+    pub fn calculate_spawn_transform(
         &self,
         parent: Option<&Transform>,
         boundary: Option<Res<Boundary>>,
@@ -279,7 +276,7 @@ impl ActorConfig {
 // both parent and actor_config.rotation are optional so we have to unpack both
 // and use one, both or none
 // extracted here for readability
-fn apply_rotations(
+pub fn apply_rotations(
     config: &ActorConfig,
     parent_transform: Option<&Transform>,
     transform: &mut Transform,
@@ -350,62 +347,13 @@ impl fmt::Display for ActorKind {
     }
 }
 
-// Helper functions for required component constructors
-fn locked_axes_2d() -> LockedAxes {
-    LockedAxes::new().lock_translation_z()
-}
-
-fn locked_axes_spaceship() -> LockedAxes {
-    LockedAxes::new()
-        .lock_rotation_x()
-        .lock_rotation_y()
-        .lock_translation_z()
-}
-
-fn zero_gravity() -> GravityScale {
-    GravityScale(0.)
-}
-
-// Marker components with required components
-// These automatically bring along common physics and gameplay components
-#[derive(Component, Default, Reflect)]
-#[reflect(Component)]
-#[require(
-    Transform,
-    Teleporter,
-    ActorPortals,
-    CollisionEventsEnabled,
-    RigidBody::Dynamic,
-    GravityScale = zero_gravity(),
-    LockedAxes = locked_axes_2d()
-)]
-pub struct Missile;
-
-#[derive(Component, Default, Reflect)]
-#[reflect(Component)]
-#[require(
-    Transform,
-    Teleporter,
-    ActorPortals,
-    CollisionEventsEnabled,
-    RigidBody::Dynamic,
-    GravityScale = zero_gravity(),
-    LockedAxes = locked_axes_2d()
-)]
-pub struct Nateroid;
-
-#[derive(Component, Default, Reflect)]
-#[reflect(Component)]
-#[require(
-    Transform,
-    Teleporter,
-    ActorPortals,
-    CollisionEventsEnabled,
-    RigidBody::Dynamic,
-    GravityScale = zero_gravity(),
-    LockedAxes = locked_axes_spaceship()
-)]
-pub struct Spaceship;
+// Public constants for physics configuration (used by missile.rs, spaceship.rs, nateroid.rs)
+pub const ZERO_GRAVITY: GravityScale = GravityScale(0.0);
+pub const LOCKED_AXES_2D: LockedAxes = LockedAxes::new().lock_translation_z();
+pub const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
+    .lock_rotation_x()
+    .lock_rotation_y()
+    .lock_translation_z();
 
 fn initialize_actor_configs(
     mut commands: Commands,
@@ -438,13 +386,17 @@ fn initialize_actor_configs(
     commands.insert_resource(SpaceshipConfig(spaceship_config));
 }
 
+pub fn create_spawn_timer(spawn_timer_seconds: Option<f32>) -> Option<Timer> {
+    spawn_timer_seconds.map(|seconds| Timer::from_seconds(seconds, TimerMode::Repeating))
+}
+
 fn initialize_actor_config(
     mut config: ActorConfig,
     scenes: &Assets<Scene>,
     meshes: &Assets<Mesh>,
     scene_handle: &Handle<Scene>,
 ) -> ActorConfig {
-    let aabb = get_scene_aabb(scenes, meshes, scene_handle);
+    let aabb = aabb::get_scene_aabb(scenes, meshes, scene_handle);
     let adjusted_aabb = aabb.scale(BLENDER_SCALE);
 
     // Calculate the size based on the adjusted AABB
@@ -456,15 +408,14 @@ fn initialize_actor_config(
             Collider::sphere(radius)
         },
         ColliderType::Cuboid => Collider::cuboid(size.x, size.y, size.z),
+        // ColliderType::Mesh => {
+        //     Collider::trimesh_from_mesh(meshes.get(&scene_handle).unwrap().mesh.clone())
+        // },
     };
-
-    let spawn_timer = config
-        .spawn_timer_seconds
-        .map(|seconds| Timer::from_seconds(seconds, TimerMode::Repeating));
 
     config.aabb = adjusted_aabb;
     config.collider = collider;
-    config.spawn_timer = spawn_timer;
+    config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);
     config.scene = scene_handle.clone();
     config
 }
@@ -527,7 +478,7 @@ pub fn spawn_actor<'a>(
     // the required component defaults
     let entity = match config.actor_kind {
         ActorKind::Missile => commands.spawn((
-            Missile,
+            Missile::new(0.0), // Placeholder - caller should insert proper Missile component
             config.actor_kind,
             transform,
             config.aabb.clone(),
@@ -536,7 +487,7 @@ pub fn spawn_actor<'a>(
             config.collision_layers,
             Health(config.health),
             Restitution {
-                coefficient: config.restitution,
+                coefficient:  config.restitution,
                 combine_rule: config.restitution_combine_rule,
             },
             Mass(config.mass),
@@ -556,7 +507,7 @@ pub fn spawn_actor<'a>(
             config.collision_layers,
             Health(config.health),
             Restitution {
-                coefficient: config.restitution,
+                coefficient:  config.restitution,
                 combine_rule: config.restitution_combine_rule,
             },
             Mass(config.mass),
@@ -576,7 +527,7 @@ pub fn spawn_actor<'a>(
             config.collision_layers,
             Health(config.health),
             Restitution {
-                coefficient: config.restitution,
+                coefficient:  config.restitution,
                 combine_rule: config.restitution_combine_rule,
             },
             Mass(config.mass),

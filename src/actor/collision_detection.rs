@@ -1,8 +1,8 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use crate::actor::Health;
-use crate::actor::actor_spawner::CollisionDamage;
+use super::Health;
+use super::actor_spawner::CollisionDamage;
 use crate::schedule::InGameSet;
 
 pub struct CollisionDetectionPlugin;

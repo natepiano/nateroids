@@ -5,11 +5,15 @@ use leafwing_input_manager::prelude::*;
 use crate::actor::Teleporter;
 use crate::actor::aabb::Aabb;
 use crate::actor::actor_spawner::ActorConfig;
+use crate::actor::actor_spawner::LOCKED_AXES_2D;
+use crate::actor::actor_spawner::ZERO_GRAVITY;
+use crate::actor::actor_spawner::create_spawn_timer;
 use crate::actor::actor_spawner::spawn_actor;
 use crate::actor::actor_template::MissileConfig;
 use crate::actor::spaceship::ContinuousFire;
 use crate::actor::spaceship::Spaceship;
 use crate::actor::spaceship_control::SpaceshipControl;
+use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 
@@ -24,8 +28,17 @@ impl Plugin for MissilePlugin {
 
 // todo: #rustquestion - how can i make it so that new has to be used and
 // DrawDirection isn't constructed directly - i still need the fields visible
-#[derive(Reflect, Copy, Clone, Component, Debug)]
+#[derive(Component, Reflect, Copy, Clone, Debug)]
 #[reflect(Component)]
+#[require(
+    Transform,
+    Teleporter,
+    ActorPortals,
+    CollisionEventsEnabled,
+    RigidBody::Dynamic,
+    GravityScale = ZERO_GRAVITY,
+    LockedAxes = LOCKED_AXES_2D
+)]
 pub struct Missile {
     // velocity:               Vec3,
     pub total_distance:     f32,
@@ -36,7 +49,7 @@ pub struct Missile {
 }
 
 impl Missile {
-    fn new(total_distance: f32) -> Self {
+    pub fn new(total_distance: f32) -> Self {
         Missile {
             // velocity,
             total_distance,
@@ -107,15 +120,17 @@ fn fire_missile(
         return;
     }
 
+    let parent = (spaceship_transform, spaceship_linear_velocity, aabb);
     let missile = Missile::new(boundary_config.max_missile_distance());
 
-    spawn_actor(
-        &mut commands,
-        &missile_config.0,
-        None,
-        Some((spaceship_transform, spaceship_linear_velocity, aabb)),
-    )
-    .insert(missile);
+    // Spawn actor with placeholder Missile component
+    let mut entity = spawn_actor(&mut commands, &missile_config.0, None, Some(parent));
+
+    // Insert the properly initialized Missile component
+    entity.insert(missile);
+
+    // Recreate timer from spawn_timer_seconds to pick up inspector changes
+    missile_config.0.spawn_timer = create_spawn_timer(missile_config.0.spawn_timer_seconds);
 }
 
 /// we update missile movement so that it can be despawned after it has traveled

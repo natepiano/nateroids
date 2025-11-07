@@ -1,11 +1,30 @@
+use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use crate::actor::actor_spawner::spawn_actor;
-use crate::actor::actor_template::NateroidConfig;
+use super::Teleporter;
+use super::actor_spawner::LOCKED_AXES_2D;
+use super::actor_spawner::ZERO_GRAVITY;
+use super::actor_spawner::create_spawn_timer;
+use super::actor_spawner::spawn_actor;
+use super::actor_template::NateroidConfig;
 use crate::global_input::GlobalAction;
 use crate::global_input::toggle_active;
+use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
+
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+#[require(
+    Transform,
+    Teleporter,
+    ActorPortals,
+    CollisionEventsEnabled,
+    RigidBody::Dynamic,
+    GravityScale = ZERO_GRAVITY,
+    LockedAxes = LOCKED_AXES_2D
+)]
+pub struct Nateroid;
 
 pub struct NateroidPlugin;
 
@@ -40,4 +59,7 @@ fn spawn_nateroid(
     }
 
     spawn_actor(&mut commands, nateroid_config, Some(boundary), None);
+
+    // Recreate timer from spawn_timer_seconds to pick up inspector changes
+    nateroid_config.spawn_timer = create_spawn_timer(nateroid_config.spawn_timer_seconds);
 }

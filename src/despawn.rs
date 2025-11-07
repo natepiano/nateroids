@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::actor::Health;
-use crate::actor::missile::Missile;
+use crate::actor::Missile;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
 
@@ -31,9 +31,6 @@ pub fn despawn(commands: &mut Commands, entity: Entity) { commands.entity(entity
 fn despawn_dead_entities(mut commands: Commands, query: Query<(Entity, &Health, &Name)>) {
     for (entity, health, _name) in query.iter() {
         if health.0 <= 0.0 {
-            // if !name.contains("Missile") {
-            //     println!("{:?} died from poor health: {:?}\n", _name, health);
-            // }
             despawn(&mut commands, entity);
         }
     }

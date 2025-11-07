@@ -27,7 +27,6 @@ impl Plugin for PortalPlugin {
     fn build(&self, app: &mut App) {
         app.init_gizmo_group::<PortalGizmo>()
             .init_resource::<PortalConfig>()
-            .register_type::<PortalConfig>()
             .add_plugins(
                 ResourceInspectorPlugin::<PortalConfig>::default()
                     .run_if(toggle_active(false, GlobalAction::PortalInspector)),

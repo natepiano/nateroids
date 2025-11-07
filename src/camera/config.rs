@@ -11,12 +11,11 @@ pub struct CameraConfigPlugin;
 
 impl Plugin for CameraConfigPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<CameraConfig>()
-            .add_plugins(
-                ResourceInspectorPlugin::<CameraConfig>::default()
-                    .run_if(toggle_active(false, GlobalAction::CameraConfigInspector)),
-            )
-            .init_resource::<CameraConfig>();
+        app.add_plugins(
+            ResourceInspectorPlugin::<CameraConfig>::default()
+                .run_if(toggle_active(false, GlobalAction::CameraConfigInspector)),
+        )
+        .init_resource::<CameraConfig>();
     }
 }
 
@@ -39,7 +38,7 @@ impl Default for CameraConfig {
         Self {
             clear_color:               Color::from(tailwind::SLATE_900),
             darkening_factor:          0.002,
-            bloom_intensity:           0.9,
+            bloom_intensity:           0.5,
             bloom_low_frequency_boost: 0.5,
             bloom_high_pass_frequency: 0.5,
         }

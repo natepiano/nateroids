@@ -1,13 +1,27 @@
+use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use crate::actor::actor_spawner::spawn_actor;
-use crate::actor::actor_template::SpaceshipConfig;
-use crate::actor::spaceship_control::SpaceshipControl;
+use super::Teleporter;
+use super::actor_spawner::LOCKED_AXES_SPACESHIP;
+use super::actor_spawner::ZERO_GRAVITY;
+use super::actor_spawner::spawn_actor;
+use super::actor_template::SpaceshipConfig;
+use super::spaceship_control::SpaceshipControl;
+use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
 
-#[derive(Reflect, Component, Debug)]
+#[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
+#[require(
+    Transform,
+    Teleporter,
+    ActorPortals,
+    CollisionEventsEnabled,
+    RigidBody::Dynamic,
+    GravityScale = ZERO_GRAVITY,
+    LockedAxes = LOCKED_AXES_SPACESHIP
+)]
 pub struct Spaceship;
 
 #[derive(Component, Default)]
@@ -31,8 +45,7 @@ fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipConfig
     }
 
     spawn_actor(&mut commands, &spaceship_config.0, None, None)
-        .insert(SpaceshipControl::generate_input_map())
-        .insert(Spaceship);
+        .insert(SpaceshipControl::generate_input_map());
 }
 
 // check if spaceship exists or not - query if get_single()

@@ -1,42 +1,18 @@
+//! this file is separated from actor_spawner just for the convenience of
+//! editing default values all the logic is in actor_spawner -
+//! we want to use an inspector to change defaults so
+//! a new bundle is constructed on each spawn and if the inspector changed
+//! anything, it will be reflected in the newly created entity. each of these
+//! can be thought of as an ActorConfig
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
 
-/// this file is separated from actor_spawner just for the convenience of
-/// editing default values all the logic is in actor_spawner the reason we
-/// don't only use a bundle is we want to use an inspector to change defaults so
-/// a new bundle is constructed on each spawn and if the inspector changed
-/// anything, it will be reflected in the newly created entity. each of these
-/// can be thought of as an ActorConfig
-use crate::actor::ColliderType;
-/// this file is separated from actor_spawner just for the convenience of
-/// editing default values all the logic is in actor_spawner the reason we
-/// don't only use a bundle is we want to use an inspector to change defaults so
-/// a new bundle is constructed on each spawn and if the inspector changed
-/// anything, it will be reflected in the newly created entity. each of these
-/// can be thought of as an ActorConfig
-use crate::actor::actor_spawner::ActorConfig;
-/// this file is separated from actor_spawner just for the convenience of
-/// editing default values all the logic is in actor_spawner the reason we
-/// don't only use a bundle is we want to use an inspector to change defaults so
-/// a new bundle is constructed on each spawn and if the inspector changed
-/// anything, it will be reflected in the newly created entity. each of these
-/// can be thought of as an ActorConfig
-use crate::actor::actor_spawner::ActorKind;
-/// this file is separated from actor_spawner just for the convenience of
-/// editing default values all the logic is in actor_spawner the reason we
-/// don't only use a bundle is we want to use an inspector to change defaults so
-/// a new bundle is constructed on each spawn and if the inspector changed
-/// anything, it will be reflected in the newly created entity. each of these
-/// can be thought of as an ActorConfig
-use crate::actor::actor_spawner::SpawnPosition;
-/// this file is separated from actor_spawner just for the convenience of
-/// editing default values all the logic is in actor_spawner the reason we
-/// don't only use a bundle is we want to use an inspector to change defaults so
-/// a new bundle is constructed on each spawn and if the inspector changed
-/// anything, it will be reflected in the newly created entity. each of these
-/// can be thought of as an ActorConfig
-use crate::actor::actor_spawner::VelocityBehavior;
+use super::actor_spawner::ActorConfig;
+use super::actor_spawner::ActorKind;
+use super::actor_spawner::ColliderType;
+use super::actor_spawner::SpawnPosition;
+use super::actor_spawner::VelocityBehavior;
 
 #[derive(PhysicsLayer, Clone, Copy, Debug, Default)]
 pub enum GameLayer {
@@ -52,16 +28,6 @@ pub enum GameLayer {
 #[reflect(Resource)]
 pub struct MissileConfig(pub ActorConfig);
 
-#[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
-#[reflect(Resource)]
-pub struct NateroidConfig(pub ActorConfig);
-
-#[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
-#[reflect(Resource)]
-pub struct SpaceshipConfig(pub ActorConfig);
-
-// todo: #rustquestion - why isn't rustfmt lining these up? it does if i get of
-// default
 impl Default for MissileConfig {
     fn default() -> Self {
         Self(ActorConfig {
@@ -70,27 +36,29 @@ impl Default for MissileConfig {
             collision_layers: CollisionLayers::new([GameLayer::Missile], [GameLayer::Asteroid]),
             health: 1.,
             mass: 0.1,
-            // #todo: #handle3d
             rotation: Some(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)),
             spawn_position: SpawnPosition::Missile {
                 forward_distance_scalar: 7.0,
             },
             mesh_scalar: 2.5,
             spawn_timer_seconds: Some(1.0 / 20.0),
-            velocity_behavior: VelocityBehavior::RelativeToParent {
-                base_velocity:           85.0,
-                inherit_parent_velocity: true,
+            velocity_behavior: VelocityBehavior::Missile {
+                base_velocity: 85.0,
             },
             ..default()
         })
     }
 }
 
+#[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
+#[reflect(Resource)]
+pub struct NateroidConfig(pub ActorConfig);
+
 impl Default for NateroidConfig {
     fn default() -> Self {
         Self(ActorConfig {
             actor_kind: ActorKind::Nateroid,
-            collider_type: ColliderType::Cuboid,
+            collider_type: ColliderType::Ball,
             collision_damage: 10.,
             collision_layers: CollisionLayers::new(
                 [GameLayer::Asteroid],
@@ -106,7 +74,7 @@ impl Default for NateroidConfig {
             spawn_position: SpawnPosition::Asteroid {
                 scale_factor: Vec3::new(0.5, 0.5, 0.0),
             },
-            velocity_behavior: VelocityBehavior::Random {
+            velocity_behavior: VelocityBehavior::Nateroid {
                 linvel: 30.0,
                 angvel: 4.0,
             },
@@ -115,6 +83,10 @@ impl Default for NateroidConfig {
         })
     }
 }
+
+#[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
+#[reflect(Resource)]
+pub struct SpaceshipConfig(pub ActorConfig);
 
 impl Default for SpaceshipConfig {
     fn default() -> Self {
@@ -136,7 +108,7 @@ impl Default for SpaceshipConfig {
             rotation: Some(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2)),
             mesh_scalar: 0.8,
             spawn_position: SpawnPosition::Spaceship(Vec3::new(0.0, -20.0, 0.0)),
-            velocity_behavior: VelocityBehavior::Fixed(Vec3::ZERO),
+            velocity_behavior: VelocityBehavior::Spaceship(Vec3::ZERO),
             ..default()
         })
     }
