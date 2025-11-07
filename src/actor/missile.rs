@@ -3,9 +3,9 @@ use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
 use crate::actor::Teleporter;
-use crate::actor::actor_spawner::ActorConfig;
-use crate::actor::actor_spawner::LOCKED_AXES_2D;
-use crate::actor::actor_spawner::insert_configured_components;
+use crate::actor::actor_config::ActorConfig;
+use crate::actor::actor_config::LOCKED_AXES_2D;
+use crate::actor::actor_config::insert_configured_components;
 use crate::actor::actor_template::MissileConfig;
 use crate::actor::spaceship::ContinuousFire;
 use crate::actor::spaceship::Spaceship;

@@ -11,9 +11,9 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
 
-use super::actor_spawner::ActorConfig;
-use super::actor_spawner::ActorKind;
-use super::actor_spawner::ColliderType;
+use super::actor_config::ActorConfig;
+use super::actor_config::ActorKind;
+use super::actor_config::ColliderType;
 
 #[derive(PhysicsLayer, Clone, Copy, Debug, Default)]
 pub enum GameLayer {

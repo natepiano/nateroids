@@ -1,5 +1,5 @@
 mod aabb;
-mod actor_spawner;
+mod actor_config;
 mod actor_template;
 mod collision_detection;
 mod missile;
@@ -10,8 +10,8 @@ mod teleport;
 
 pub use aabb::Aabb;
 use aabb::AabbPlugin;
-use actor_spawner::ActorSpawnerPlugin;
-pub use actor_spawner::Health;
+use actor_config::ActorConfigPlugin;
+pub use actor_config::Health;
 use bevy::prelude::*;
 use collision_detection::CollisionDetectionPlugin;
 use missile::MissilePlugin;
@@ -27,7 +27,7 @@ pub struct ActorPlugin;
 impl Plugin for ActorPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(AabbPlugin)
-            .add_plugins(ActorSpawnerPlugin)
+            .add_plugins(ActorConfigPlugin)
             .add_plugins(CollisionDetectionPlugin)
             .add_plugins(MissilePlugin)
             .add_plugins(NateroidPlugin)

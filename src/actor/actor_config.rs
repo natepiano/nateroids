@@ -27,9 +27,9 @@ const BLENDER_SCALE: f32 = 100.;
 
 // call flow is to initialize the ensemble config which has the defaults
 // for an actor - configure defaults in initial_actor_config.rs
-pub struct ActorSpawnerPlugin;
+pub struct ActorConfigPlugin;
 
-impl Plugin for ActorSpawnerPlugin {
+impl Plugin for ActorConfigPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AssetsState::Loaded), initialize_actor_configs)
             .add_observer(propagate_render_layers_on_spawn)
