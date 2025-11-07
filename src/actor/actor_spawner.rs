@@ -98,7 +98,6 @@ pub struct CollisionDamage(pub f32);
 pub enum ColliderType {
     Ball,
     Cuboid,
-    //   Mesh,
 }
 
 #[derive(Reflect, Debug, Clone)]
@@ -408,9 +407,6 @@ fn initialize_actor_config(
             Collider::sphere(radius)
         },
         ColliderType::Cuboid => Collider::cuboid(size.x, size.y, size.z),
-        // ColliderType::Mesh => {
-        //     Collider::trimesh_from_mesh(meshes.get(&scene_handle).unwrap().mesh.clone())
-        // },
     };
 
     config.aabb = adjusted_aabb;
