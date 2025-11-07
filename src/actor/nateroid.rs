@@ -13,19 +13,6 @@ use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-#[require(
-    Transform,
-    Teleporter,
-    ActorPortals,
-    CollisionEventsEnabled,
-    RigidBody::Dynamic,
-    GravityScale = ZERO_GRAVITY,
-    LockedAxes = LOCKED_AXES_2D
-)]
-pub struct Nateroid;
-
 pub struct NateroidPlugin;
 
 impl Plugin for NateroidPlugin {
@@ -38,6 +25,19 @@ impl Plugin for NateroidPlugin {
         );
     }
 }
+
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+#[require(
+    Transform,
+    Teleporter,
+    ActorPortals,
+    CollisionEventsEnabled,
+    RigidBody::Dynamic,
+    GravityScale = ZERO_GRAVITY,
+    LockedAxes = LOCKED_AXES_2D
+)]
+pub struct Nateroid;
 
 fn spawn_nateroid(
     mut commands: Commands,

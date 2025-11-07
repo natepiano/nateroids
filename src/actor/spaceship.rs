@@ -11,6 +11,23 @@ use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
 
+pub struct SpaceshipPlugin;
+
+impl Plugin for SpaceshipPlugin {
+    // make sure this is done after asset_loader has run
+    fn build(&self, app: &mut App) {
+        // we can enter InGame a couple of ways - when we do, spawn a spaceship
+        app.add_observer(initialize_spaceship_input)
+            .add_systems(OnExit(GameState::Splash), spawn_spaceship)
+            .add_systems(OnExit(GameState::GameOver), spawn_spaceship)
+            // check if spaceship is destroyed...this will change the GameState
+            .add_systems(Update, spaceship_destroyed.in_set(InGameSet::EntityUpdates));
+    }
+}
+
+#[derive(Component, Default)]
+pub struct ContinuousFire;
+
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 #[require(
@@ -24,27 +41,17 @@ use crate::state::GameState;
 )]
 pub struct Spaceship;
 
-#[derive(Component, Default)]
-pub struct ContinuousFire;
-
-pub struct SpaceshipPlugin;
-impl Plugin for SpaceshipPlugin {
-    // make sure this is done after asset_loader has run
-    fn build(&self, app: &mut App) {
-        // we can enter InGame a couple of ways - when we do, spawn a spaceship
-        app.add_systems(OnExit(GameState::Splash), spawn_spaceship)
-            .add_systems(OnExit(GameState::GameOver), spawn_spaceship)
-            // check if spaceship is destroyed...this will change the GameState
-            .add_systems(Update, spaceship_destroyed.in_set(InGameSet::EntityUpdates));
-    }
-}
-
 fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipConfig>) {
     if !spaceship_config.0.spawnable {
         return;
     }
 
-    spawn_actor(&mut commands, &spaceship_config.0, None, None)
+    spawn_actor(&mut commands, &spaceship_config.0, None, None);
+}
+
+fn initialize_spaceship_input(spaceship: On<Add, Spaceship>, mut commands: Commands) {
+    commands
+        .entity(spaceship.entity)
         .insert(SpaceshipControl::generate_input_map());
 }
 

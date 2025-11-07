@@ -21,7 +21,8 @@ pub struct MissilePlugin;
 
 impl Plugin for MissilePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, fire_missile.in_set(InGameSet::UserInput))
+        app.add_observer(initialize_missile_position)
+            .add_systems(Update, fire_missile.in_set(InGameSet::UserInput))
             .add_systems(Update, missile_movement.in_set(InGameSet::EntityUpdates));
     }
 }
@@ -39,19 +40,21 @@ impl Plugin for MissilePlugin {
     GravityScale = ZERO_GRAVITY,
     LockedAxes = LOCKED_AXES_2D
 )]
-pub struct Missile {
-    // velocity:               Vec3,
-    pub total_distance:     f32,
-    pub traveled_distance:  f32,
-    remaining_distance:     f32,
-    pub last_position:      Option<Vec3>,
+pub struct Missile;
+
+#[derive(Component, Reflect, Copy, Clone, Debug, Default)]
+#[reflect(Component)]
+pub struct MissilePosition {
+    pub total_distance: f32,
+    pub traveled_distance: f32,
+    remaining_distance: f32,
+    pub last_position: Option<Vec3>,
     last_teleport_position: Option<Vec3>, // Add this field
 }
 
-impl Missile {
+impl MissilePosition {
     pub fn new(total_distance: f32) -> Self {
-        Missile {
-            // velocity,
+        MissilePosition {
             total_distance,
             traveled_distance: 0.,
             remaining_distance: 0.,
@@ -68,66 +71,66 @@ fn should_fire(
     continuous_fire: Option<&ContinuousFire>,
     missile_config: &mut ActorConfig,
     time: Res<Time>,
-    q_input_map: Query<&ActionState<SpaceshipControl>>,
+    fire_button: Single<&ActionState<SpaceshipControl>>,
 ) -> bool {
     if !missile_config.spawnable {
         return false;
     }
 
-    if let Ok(action_state) = q_input_map.single() {
-        if continuous_fire.is_some() {
-            // We know the timer exists, so we can safely unwrap it
-            let timer = missile_config.spawn_timer.as_mut().expect(
-                "configure missile spawn timer here: impl Default for
-InitialEnsembleConfig",
-            );
-            timer.tick(time.delta());
-            if !timer.just_finished() {
-                return false;
-            }
-            action_state.pressed(&SpaceshipControl::Fire)
-        } else {
-            action_state.just_pressed(&SpaceshipControl::Fire)
+    if continuous_fire.is_some() {
+        // We know the timer exists, so we can safely unwrap it
+        let timer = missile_config
+            .spawn_timer
+            .as_mut()
+            .expect("configure missile spawn timer here: impl Default for InitialEnsembleConfig");
+        timer.tick(time.delta());
+        if !timer.just_finished() {
+            return false;
         }
+
+        fire_button.pressed(&SpaceshipControl::Fire)
     } else {
-        false
+        fire_button.just_pressed(&SpaceshipControl::Fire)
     }
 }
 
-// todo: #bevyquestion - in an object oriented world i think of attaching fire
-// as a method to                       the spaceship - but there's a lot of
-// missile logic so i have it setup in missile                       so should i
-// have a simple fire method in method in spaceship that in turn calls this
-//                       fn or is having it here fine?
+fn initialize_missile_position(
+    add: On<Add, Missile>,
+    mut commands: Commands,
+    boundary_config: Res<Boundary>,
+) {
+    let missile_position = MissilePosition::new(boundary_config.max_missile_distance());
+    commands.entity(add.entity).insert(missile_position);
+}
+
 fn fire_missile(
     mut commands: Commands,
-    q_input_map: Query<&ActionState<SpaceshipControl>>,
     q_spaceship: Query<
         (&Transform, &LinearVelocity, &Aabb, Option<&ContinuousFire>),
         With<Spaceship>,
     >,
-    boundary_config: Res<Boundary>,
     mut missile_config: ResMut<MissileConfig>,
+    fire_button: Single<&ActionState<SpaceshipControl>>,
     time: Res<Time>,
 ) {
-    let Ok((spaceship_transform, spaceship_linear_velocity, aabb, continuous_fire)) =
+    let Ok((spaceship_transform, spaceship_linear_velocity, aabb, continuous_fire_enabled)) =
         q_spaceship.single()
     else {
         return;
     };
 
-    if !should_fire(continuous_fire, &mut missile_config.0, time, q_input_map) {
+    if !should_fire(
+        continuous_fire_enabled,
+        &mut missile_config.0,
+        time,
+        fire_button,
+    ) {
         return;
     }
 
     let parent = (spaceship_transform, spaceship_linear_velocity, aabb);
-    let missile = Missile::new(boundary_config.max_missile_distance());
 
-    // Spawn actor with placeholder Missile component
-    let mut entity = spawn_actor(&mut commands, &missile_config.0, None, Some(parent));
-
-    // Insert the properly initialized Missile component
-    entity.insert(missile);
+    spawn_actor(&mut commands, &missile_config.0, None, Some(parent));
 
     // Recreate timer from spawn_timer_seconds to pick up inspector changes
     missile_config.0.spawn_timer = create_spawn_timer(missile_config.0.spawn_timer_seconds);
@@ -135,7 +138,7 @@ fn fire_missile(
 
 /// we update missile movement so that it can be despawned after it has traveled
 /// its total distance
-fn missile_movement(mut query: Query<(&Transform, &mut Missile, &Teleporter)>) {
+fn missile_movement(mut query: Query<(&Transform, &mut MissilePosition, &Teleporter)>) {
     for (transform, mut missile, teleporter) in query.iter_mut() {
         let current_position = transform.translation;
 

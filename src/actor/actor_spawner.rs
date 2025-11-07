@@ -3,7 +3,6 @@ use std::ops::Range;
 
 use avian3d::prelude::*;
 use bevy::camera::visibility::RenderLayers;
-use bevy::ecs::system::EntityCommands;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
@@ -11,11 +10,11 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use rand::Rng;
 
 use super::Aabb;
-use super::Missile;
 use super::aabb;
 use super::actor_template::MissileConfig;
 use super::actor_template::NateroidConfig;
 use super::actor_template::SpaceshipConfig;
+use super::missile::Missile;
 use super::nateroid::Nateroid;
 use super::spaceship::Spaceship;
 use crate::asset_loader::AssetsState;
@@ -268,30 +267,24 @@ impl ActorConfig {
             transform.with_scale(Vec3::splat(self.mesh_scalar))
         }
     }
-}
+    // Combine rotations from optional parent with optional supplied rotation
+    // missiles need this to get oriented correctly
+    // both parent and actor_config.rotation are optional so we have to unpack both
+    // and use one, both or none
+    // extracted here for readability
+    pub fn apply_rotations(&self, parent_transform: Option<&Transform>, transform: &mut Transform) {
+        let final_rotation = parent_transform
+            .map(|t| t.rotation)
+            .map(|parent_rot| {
+                self.rotation
+                    .map(|initial_rot| parent_rot * initial_rot)
+                    .unwrap_or(parent_rot)
+            })
+            .or(self.rotation);
 
-// Combine rotations from optional parent with optional supplied rotation
-// missiles need this to get oriented correctly
-// both parent and actor_config.rotation are optional so we have to unpack both
-// and use one, both or none
-// extracted here for readability
-pub fn apply_rotations(
-    config: &ActorConfig,
-    parent_transform: Option<&Transform>,
-    transform: &mut Transform,
-) {
-    let final_rotation = parent_transform
-        .map(|t| t.rotation)
-        .map(|parent_rot| {
-            config
-                .rotation
-                .map(|initial_rot| parent_rot * initial_rot)
-                .unwrap_or(parent_rot)
-        })
-        .or(config.rotation);
-
-    if let Some(rotation) = final_rotation {
-        transform.rotation = rotation;
+        if let Some(rotation) = final_rotation {
+            transform.rotation = rotation;
+        }
     }
 }
 
@@ -437,12 +430,12 @@ pub fn random_vec3(range_x: Range<f32>, range_y: Range<f32>, range_z: Range<f32>
     Vec3::new(x, y, z)
 }
 
-pub fn spawn_actor<'a>(
-    commands: &'a mut Commands,
+pub fn spawn_actor(
+    commands: &mut Commands,
     config: &ActorConfig,
     boundary: Option<Res<Boundary>>,
     parent: Option<(&Transform, &LinearVelocity, &Aabb)>,
-) -> EntityCommands<'a> {
+) {
     // Extract parent components
     let parent_transform = parent.map(|(t, _, _)| t);
     let parent_velocity = parent.map(|(_, v, _)| v);
@@ -451,15 +444,14 @@ pub fn spawn_actor<'a>(
     let mut transform = config.calculate_spawn_transform(parent_transform, boundary);
 
     // Apply rotation logic using existing helper function
-    // NOTE: This preserves current behavior where rotation application happens in
-    // two phases:
+    //
     // 1. calculate_spawn_transform applies config.rotation (if present)
     // 2. apply_rotations may overwrite it when combining with parent rotation
     // For missiles: calculate_spawn_transform sets config rotation, then
     // apply_rotations overwrites with (spaceship_rotation * config_rotation).
     // The intermediate application is redundant but functionally correct - this
     // is how the current code works.
-    apply_rotations(config, parent_transform, &mut transform);
+    config.apply_rotations(parent_transform, &mut transform);
 
     // Calculate velocities (from ActorBundle::new)
     let (linear_velocity, angular_velocity) = config
@@ -472,69 +464,29 @@ pub fn spawn_actor<'a>(
     //
     // Note: When we provide components explicitly (like Transform), they override
     // the required component defaults
-    let entity = match config.actor_kind {
-        ActorKind::Missile => commands.spawn((
-            Missile::new(0.0), // Placeholder - caller should insert proper Missile component
-            config.actor_kind,
-            transform,
-            config.aabb.clone(),
-            config.collider.clone(),
-            CollisionDamage(config.collision_damage),
-            config.collision_layers,
-            Health(config.health),
-            Restitution {
-                coefficient: config.restitution,
-                combine_rule: config.restitution_combine_rule,
-            },
-            Mass(config.mass),
-            RenderLayers::from_layers(config.render_layer.layers()),
-            SceneRoot(config.scene.clone()),
-            linear_velocity,
-            angular_velocity,
-            Name::new("Missile"),
-        )),
-        ActorKind::Nateroid => commands.spawn((
-            Nateroid,
-            config.actor_kind,
-            transform,
-            config.aabb.clone(),
-            config.collider.clone(),
-            CollisionDamage(config.collision_damage),
-            config.collision_layers,
-            Health(config.health),
-            Restitution {
-                coefficient: config.restitution,
-                combine_rule: config.restitution_combine_rule,
-            },
-            Mass(config.mass),
-            RenderLayers::from_layers(config.render_layer.layers()),
-            SceneRoot(config.scene.clone()),
-            linear_velocity,
-            angular_velocity,
-            Name::new("Nateroid"),
-        )),
-        ActorKind::Spaceship => commands.spawn((
-            Spaceship,
-            config.actor_kind,
-            transform,
-            config.aabb.clone(),
-            config.collider.clone(),
-            CollisionDamage(config.collision_damage),
-            config.collision_layers,
-            Health(config.health),
-            Restitution {
-                coefficient: config.restitution,
-                combine_rule: config.restitution_combine_rule,
-            },
-            Mass(config.mass),
-            RenderLayers::from_layers(config.render_layer.layers()),
-            SceneRoot(config.scene.clone()),
-            linear_velocity,
-            angular_velocity,
-            Name::new("Spaceship"),
-        )),
+    let actor_entity = match config.actor_kind {
+        ActorKind::Missile => commands.spawn((Missile, Name::new("Missile"))),
+        ActorKind::Nateroid => commands.spawn((Nateroid, Name::new("Nateroid"))),
+        ActorKind::Spaceship => commands.spawn((Spaceship, Name::new("Spaceship"))),
     }
     .id();
 
-    commands.entity(entity)
+    commands.entity(actor_entity).insert((
+        config.actor_kind,
+        transform,
+        config.aabb.clone(),
+        config.collider.clone(),
+        CollisionDamage(config.collision_damage),
+        config.collision_layers,
+        Health(config.health),
+        Restitution {
+            coefficient: config.restitution,
+            combine_rule: config.restitution_combine_rule,
+        },
+        Mass(config.mass),
+        RenderLayers::from_layers(config.render_layer.layers()),
+        SceneRoot(config.scene.clone()),
+        linear_velocity,
+        angular_velocity,
+    ));
 }

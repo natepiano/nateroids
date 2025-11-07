@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::actor::Health;
-use crate::actor::Missile;
+use crate::actor::MissilePosition;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
 
@@ -18,7 +18,7 @@ impl Plugin for DespawnPlugin {
     }
 }
 
-fn despawn_missiles(mut commands: Commands, query: Query<(Entity, &Missile)>) {
+fn despawn_missiles(mut commands: Commands, query: Query<(Entity, &MissilePosition)>) {
     for (entity, missile) in query.iter() {
         if missile.traveled_distance >= missile.total_distance {
             despawn(&mut commands, entity);
