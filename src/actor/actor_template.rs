@@ -12,7 +12,6 @@ use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
 
 use super::actor_config::ActorConfig;
-use super::actor_config::ActorKind;
 use super::actor_config::ColliderType;
 
 #[derive(PhysicsLayer, Clone, Copy, Debug, Default)]
@@ -37,7 +36,6 @@ impl Default for MissileConfig {
     fn default() -> Self {
         Self {
             actor_config:            ActorConfig {
-                actor_kind: ActorKind::Missile,
                 collision_damage: 50.,
                 collision_layers: CollisionLayers::new([GameLayer::Missile], [GameLayer::Asteroid]),
                 health: 1.,
@@ -77,7 +75,6 @@ impl Default for NateroidConfig {
     fn default() -> Self {
         Self {
             actor_config: ActorConfig {
-                actor_kind: ActorKind::Nateroid,
                 collider_type: ColliderType::Ball,
                 collision_damage: 10.,
                 collision_layers: CollisionLayers::new(
@@ -117,7 +114,6 @@ pub struct SpaceshipConfig(pub ActorConfig);
 impl Default for SpaceshipConfig {
     fn default() -> Self {
         Self(ActorConfig {
-            actor_kind: ActorKind::Spaceship,
             collision_damage: 50.,
             collision_layers: CollisionLayers::new(
                 [GameLayer::Spaceship],

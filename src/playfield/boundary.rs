@@ -486,8 +486,8 @@ fn draw_boundary(mut boundary: ResMut<Boundary>, mut gizmos: Gizmos<BoundaryGizm
             boundary.cell_count,
             Vec3::splat(boundary.scalar),
             boundary.color,
-        )
-        .outer_edges();
+        );
+        // .outer_edges();
 }
 
 pub fn intersect_circle_with_rectangle(portal: &Portal, rectangle_points: &[Vec3; 4]) -> Vec<Vec3> {

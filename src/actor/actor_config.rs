@@ -1,5 +1,3 @@
-use std::fmt;
-
 use avian3d::prelude::*;
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
@@ -55,8 +53,6 @@ pub struct ActorConfig {
     #[reflect(ignore)]
     pub aabb:                     Aabb,
     #[reflect(ignore)]
-    pub actor_kind:               ActorKind,
-    #[reflect(ignore)]
     pub collider:                 Collider,
     pub collider_type:            ColliderType,
     pub collision_damage:         f32,
@@ -83,7 +79,6 @@ impl Default for ActorConfig {
     fn default() -> Self {
         Self {
             spawnable:                true,
-            actor_kind:               ActorKind::default(),
             aabb:                     Aabb::default(),
             collider:                 Collider::cuboid(1., 1., 1.),
             collider_type:            ColliderType::Cuboid,
@@ -153,24 +148,6 @@ fn propagate_to_descendants(
     }
 }
 
-
-#[derive(Component, Reflect, Copy, Clone, Debug, Default)]
-pub enum ActorKind {
-    #[default]
-    Missile,
-    Nateroid,
-    Spaceship,
-}
-
-impl fmt::Display for ActorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ActorKind::Missile => write!(f, "Missile"),
-            ActorKind::Nateroid => write!(f, "Nateroid"),
-            ActorKind::Spaceship => write!(f, "Spaceship"),
-        }
-    }
-}
 
 // Public constants for physics configuration (used by missile.rs, spaceship.rs, nateroid.rs)
 pub const LOCKED_AXES_2D: LockedAxes = LockedAxes::new().lock_translation_z();
@@ -252,7 +229,6 @@ pub fn insert_configured_components(
     actor_entity: Entity,
 ) {
     commands.entity(actor_entity).insert((
-        config.actor_kind,
         config.aabb.clone(),
         config.collider.clone(),
         CollisionDamage(config.collision_damage),
