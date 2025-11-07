@@ -60,7 +60,8 @@
       "mcp__brp__brp_set_tracing_level",
       "Bash(rm:*)",
       "mcp__brp__world_remove_components",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "mcp__brp__world_spawn_entity"
     ],
     "deny": [],
     "ask": []

@@ -1,11 +1,12 @@
+use std::ops::Range;
+
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use rand::Rng;
 
 use super::Teleporter;
 use super::actor_spawner::LOCKED_AXES_2D;
-use super::actor_spawner::ZERO_GRAVITY;
-use super::actor_spawner::create_spawn_timer;
-use super::actor_spawner::spawn_actor;
+use super::actor_spawner::insert_configured_components;
 use super::actor_template::NateroidConfig;
 use crate::global_input::GlobalAction;
 use crate::global_input::toggle_active;
@@ -13,11 +14,14 @@ use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 
+// half the size of the boundary and only in the x,y plane
+const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
+
 pub struct NateroidPlugin;
 
 impl Plugin for NateroidPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
+        app.add_observer(initialize_nateroid).add_systems(
             Update,
             spawn_nateroid
                 .in_set(InGameSet::EntityUpdates)
@@ -29,22 +33,15 @@ impl Plugin for NateroidPlugin {
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 #[require(
-    Transform,
     Teleporter,
     ActorPortals,
     CollisionEventsEnabled,
     RigidBody::Dynamic,
-    GravityScale = ZERO_GRAVITY,
     LockedAxes = LOCKED_AXES_2D
 )]
 pub struct Nateroid;
 
-fn spawn_nateroid(
-    mut commands: Commands,
-    mut config: ResMut<NateroidConfig>,
-    boundary: Res<Boundary>,
-    time: Res<Time>,
-) {
+fn spawn_nateroid(mut commands: Commands, mut config: ResMut<NateroidConfig>, time: Res<Time>) {
     if !config.spawnable {
         return;
     }
@@ -56,8 +53,104 @@ fn spawn_nateroid(
         return;
     }
 
-    spawn_actor(&mut commands, &config, Some(boundary), None);
+    commands.spawn((Nateroid, Name::new("Nateroid")));
+}
 
-    // Recreate timer from spawn_timer_seconds to pick up inspector changes
-    config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);
+fn initialize_nateroid(
+    nateroid: On<Add, Nateroid>,
+    mut commands: Commands,
+    boundary: Res<Boundary>,
+    mut config: ResMut<NateroidConfig>,
+) {
+    let transform = initialize_transform(&boundary, config.actor_config.transform.scale);
+
+    // Calculate random velocities for nateroid
+    let (linear_velocity, angular_velocity) =
+        calculate_nateroid_velocity(config.linvel, config.angvel);
+
+    commands
+        .entity(nateroid.entity)
+        .insert(transform)
+        .insert(linear_velocity)
+        .insert(angular_velocity);
+
+    insert_configured_components(&mut commands, &mut config.actor_config, nateroid.entity);
+}
+
+fn initialize_transform(boundary: &Boundary, scale: Vec3) -> Transform {
+    let bounds = Transform {
+        translation: boundary.transform.translation,
+        scale: boundary.transform.scale * SPAWN_WINDOW,
+        ..default()
+    };
+
+    let position = get_random_position_within_bounds(&bounds);
+    let rotation = get_random_rotation();
+
+    Transform::from_translation(position)
+        .with_rotation(rotation)
+        .with_scale(scale)
+}
+
+fn get_random_position_within_bounds(bounds: &Transform) -> Vec3 {
+    let mut rng = rand::rng();
+    let half_scale = bounds.scale.abs() / 2.0; // Use absolute value to ensure positive scale
+    let min = bounds.translation - half_scale;
+    let max = bounds.translation + half_scale;
+
+    Vec3::new(
+        get_random_component(min.x, max.x, &mut rng),
+        get_random_component(min.y, max.y, &mut rng),
+        get_random_component(min.z, max.z, &mut rng),
+    )
+}
+
+fn get_random_component(min: f32, max: f32, rng: &mut impl Rng) -> f32 {
+    if (max - min).abs() < f32::EPSILON {
+        min // If the range is effectively zero, just return the min value
+    } else {
+        rng.random_range(min.min(max)..=min.max(max)) // Ensure min is always less than max
+    }
+}
+
+fn get_random_rotation() -> Quat {
+    let mut rng = rand::rng();
+    Quat::from_euler(
+        EulerRot::XYZ,
+        rng.random_range(-std::f32::consts::PI..std::f32::consts::PI),
+        rng.random_range(-std::f32::consts::PI..std::f32::consts::PI),
+        rng.random_range(-std::f32::consts::PI..std::f32::consts::PI),
+    )
+}
+
+fn random_vec3(range_x: Range<f32>, range_y: Range<f32>, range_z: Range<f32>) -> Vec3 {
+    let mut rng = rand::rng();
+    let x = if range_x.start < range_x.end {
+        rng.random_range(range_x)
+    } else {
+        0.0
+    };
+    let y = if range_y.start < range_y.end {
+        rng.random_range(range_y)
+    } else {
+        0.0
+    };
+    let z = if range_z.start < range_z.end {
+        rng.random_range(range_z)
+    } else {
+        0.0
+    };
+
+    Vec3::new(x, y, z)
+}
+
+fn calculate_nateroid_velocity(linvel: f32, angvel: f32) -> (LinearVelocity, AngularVelocity) {
+    (
+        LinearVelocity(random_vec3(-linvel..linvel, -linvel..linvel, 0.0..0.0)),
+        AngularVelocity(random_vec3(
+            -angvel..angvel,
+            -angvel..angvel,
+            -angvel..angvel,
+        )),
+    )
 }

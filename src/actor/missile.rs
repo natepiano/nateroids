@@ -5,9 +5,7 @@ use leafwing_input_manager::prelude::*;
 use crate::actor::Teleporter;
 use crate::actor::actor_spawner::ActorConfig;
 use crate::actor::actor_spawner::LOCKED_AXES_2D;
-use crate::actor::actor_spawner::ZERO_GRAVITY;
-use crate::actor::actor_spawner::create_spawn_timer;
-use crate::actor::actor_spawner::spawn_actor;
+use crate::actor::actor_spawner::insert_configured_components;
 use crate::actor::actor_template::MissileConfig;
 use crate::actor::spaceship::ContinuousFire;
 use crate::actor::spaceship::Spaceship;
@@ -31,12 +29,10 @@ impl Plugin for MissilePlugin {
 #[derive(Component, Reflect, Copy, Clone, Debug)]
 #[reflect(Component)]
 #[require(
-    Transform,
     Teleporter,
     ActorPortals,
     CollisionEventsEnabled,
     RigidBody::Dynamic,
-    GravityScale = ZERO_GRAVITY,
     LockedAxes = LOCKED_AXES_2D
 )]
 pub struct Missile;
@@ -94,24 +90,61 @@ fn should_fire(
 }
 
 fn initialize_missile(
-    add: On<Add, Missile>,
+    missile: On<Add, Missile>,
     mut commands: Commands,
-    boundary_config: Res<Boundary>,
+    boundary: Res<Boundary>,
+    mut config: ResMut<MissileConfig>,
+    transform_and_linvel: Single<(&Transform, &LinearVelocity), With<Spaceship>>,
 ) {
-    let missile_position = MissilePosition::new(boundary_config.max_missile_distance());
-    commands.entity(add.entity).insert(missile_position);
+    let missile_position = MissilePosition::new(boundary.max_missile_distance());
+
+    let (spaceship_transform, spaceship_velocity) = *transform_and_linvel;
+
+    let transform = initialize_transform(spaceship_transform, &config);
+
+    // Calculate velocity: forward direction * base_velocity + spaceship velocity
+    let (linear_velocity, angular_velocity) = calculate_missile_velocity(
+        spaceship_transform,
+        spaceship_velocity,
+        config.base_velocity,
+    );
+
+    commands
+        .entity(missile.entity)
+        .insert(missile_position)
+        .insert(transform)
+        .insert(linear_velocity)
+        .insert(angular_velocity);
+
+    insert_configured_components(&mut commands, &mut config.actor_config, missile.entity);
+}
+
+fn initialize_transform(
+    spaceship_transform: &Transform,
+    missile_config: &MissileConfig,
+) -> Transform {
+    // Calculate transform and velocity from spaceship position
+    let forward = -spaceship_transform.forward();
+    let spawn_position =
+        spaceship_transform.translation + forward * missile_config.forward_distance_scalar;
+
+    // Combine rotations: spaceship rotation * missile config rotation
+    let combined_rotation =
+        spaceship_transform.rotation * missile_config.actor_config.transform.rotation;
+
+    Transform::from_translation(spawn_position)
+        .with_rotation(combined_rotation)
+        .with_scale(missile_config.actor_config.transform.scale)
 }
 
 fn fire_missile(
     mut commands: Commands,
-    q_spaceship: Query<(&Transform, &LinearVelocity, Option<&ContinuousFire>), With<Spaceship>>,
+    q_spaceship: Query<Option<&ContinuousFire>, With<Spaceship>>,
     mut missile_config: ResMut<MissileConfig>,
     fire_button: Single<&ActionState<SpaceshipControl>>,
     time: Res<Time>,
 ) {
-    let Ok((spaceship_transform, spaceship_linear_velocity, continuous_fire_enabled)) =
-        q_spaceship.single()
-    else {
+    let Ok(continuous_fire_enabled) = q_spaceship.single() else {
         return;
     };
 
@@ -124,12 +157,7 @@ fn fire_missile(
         return;
     }
 
-    let parent = (spaceship_transform, spaceship_linear_velocity);
-
-    spawn_actor(&mut commands, &missile_config, None, Some(parent));
-
-    // Recreate timer from spawn_timer_seconds to pick up inspector changes
-    missile_config.spawn_timer = create_spawn_timer(missile_config.spawn_timer_seconds);
+    commands.spawn((Missile, Name::new("Missile")));
 }
 
 /// we update missile movement so that it can be despawned after it has traveled
@@ -159,4 +187,15 @@ fn missile_movement(mut query: Query<(&Transform, &mut MissilePosition, &Telepor
         // Always update last_position
         missile.last_position = Some(current_position);
     }
+}
+
+fn calculate_missile_velocity(
+    spaceship_transform: &Transform,
+    spaceship_velocity: &LinearVelocity,
+    base_velocity: f32,
+) -> (LinearVelocity, AngularVelocity) {
+    let forward = -spaceship_transform.forward();
+    let mut velocity = forward * base_velocity;
+    velocity += **spaceship_velocity;
+    (LinearVelocity(velocity), AngularVelocity::ZERO)
 }

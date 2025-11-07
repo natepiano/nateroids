@@ -113,7 +113,7 @@ fn spaceship_movement_controls(
         q_spaceship.single_mut()
     {
         // dynamically update from inspector while game is running to change size
-        spaceship_transform.scale = Vec3::splat(spaceship_config.mesh_scalar);
+        spaceship_transform.scale = spaceship_config.transform.scale;
 
         let mut rotation = 0.0;
         let delta_seconds = time.delta_secs();
