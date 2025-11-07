@@ -30,9 +30,9 @@ const BLENDER_SCALE: f32 = 100.;
 
 // call flow is to initialize the ensemble config which has the defaults
 // for an actor - configure defaults in initial_actor_config.rs
-pub struct ActorSpawner;
+pub struct ActorSpawnerPlugin;
 
-impl Plugin for ActorSpawner {
+impl Plugin for ActorSpawnerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AssetsState::Loaded), initialize_actor_configs)
             .add_observer(propagate_render_layers_on_spawn)
@@ -87,6 +87,10 @@ fn propagate_to_descendants(
 
 #[derive(Reflect, Component, Clone, Debug)]
 #[reflect(Component)]
+pub struct GameActor;
+
+#[derive(Reflect, Component, Clone, Debug)]
+#[reflect(Component)]
 pub struct Health(pub f32);
 
 #[derive(Reflect, Component, Clone, Debug)]
@@ -101,7 +105,7 @@ pub enum ColliderType {
 
 #[derive(Reflect, Debug, Clone)]
 pub enum SpawnPosition {
-    Spaceship(Vec3),
+    Spaceship { launch_position: Vec3 },
     Nateroid { scale_factor: Vec3 },
     Missile { forward_distance_scalar: f32 },
 }
@@ -207,7 +211,9 @@ impl Default for ActorConfig {
             rotation: None,
             mesh_scalar: 1.,
             scene: Handle::default(),
-            spawn_position: SpawnPosition::Spaceship(Vec3::ZERO),
+            spawn_position: SpawnPosition::Spaceship {
+                launch_position: Vec3::ZERO,
+            },
             spawn_timer_seconds: None,
             spawn_timer: None,
             velocity_behavior: VelocityBehavior::Spaceship(Vec3::ZERO),
@@ -222,7 +228,9 @@ impl ActorConfig {
         boundary: Option<Res<Boundary>>,
     ) -> Transform {
         let transform = match &self.spawn_position {
-            SpawnPosition::Spaceship(position) => Transform::from_translation(*position),
+            SpawnPosition::Spaceship {
+                launch_position: position,
+            } => Transform::from_translation(*position),
 
             SpawnPosition::Nateroid { scale_factor } => {
                 let boundary = boundary
@@ -434,11 +442,11 @@ pub fn spawn_actor(
     commands: &mut Commands,
     config: &ActorConfig,
     boundary: Option<Res<Boundary>>,
-    parent: Option<(&Transform, &LinearVelocity, &Aabb)>,
+    parent: Option<(&Transform, &LinearVelocity)>,
 ) {
     // Extract parent components
-    let parent_transform = parent.map(|(t, _, _)| t);
-    let parent_velocity = parent.map(|(_, v, _)| v);
+    let parent_transform = parent.map(|(t, _)| t);
+    let parent_velocity = parent.map(|(_, v)| v);
 
     // Calculate spawn transform
     let mut transform = config.calculate_spawn_transform(parent_transform, boundary);

@@ -4,6 +4,9 @@
 //! a new bundle is constructed on each spawn and if the inspector changed
 //! anything, it will be reflected in the newly created entity. each of these
 //! can be thought of as an ActorConfig
+use std::ops::Deref;
+use std::ops::DerefMut;
+
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
@@ -50,6 +53,20 @@ impl Default for MissileConfig {
     }
 }
 
+impl Deref for MissileConfig {
+    type Target = ActorConfig;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for MissileConfig {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
 pub struct NateroidConfig(pub ActorConfig);
@@ -84,6 +101,20 @@ impl Default for NateroidConfig {
     }
 }
 
+impl Deref for NateroidConfig {
+    type Target = ActorConfig;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for NateroidConfig {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
 pub struct SpaceshipConfig(pub ActorConfig);
@@ -104,12 +135,27 @@ impl Default for SpaceshipConfig {
                 .lock_rotation_y()
                 .lock_translation_z(),
             restitution: 0.1,
-            // #todo: #handle3d
             rotation: Some(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2)),
             mesh_scalar: 0.8,
-            spawn_position: SpawnPosition::Spaceship(Vec3::new(0.0, -20.0, 0.0)),
+            spawn_position: SpawnPosition::Spaceship {
+                launch_position: Vec3::new(0.0, -20.0, 0.0),
+            },
             velocity_behavior: VelocityBehavior::Spaceship(Vec3::ZERO),
             ..default()
         })
+    }
+}
+
+impl Deref for SpaceshipConfig {
+    type Target = ActorConfig;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for SpaceshipConfig {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }

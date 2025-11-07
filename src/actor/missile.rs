@@ -3,7 +3,6 @@ use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
 use crate::actor::Teleporter;
-use crate::actor::aabb::Aabb;
 use crate::actor::actor_spawner::ActorConfig;
 use crate::actor::actor_spawner::LOCKED_AXES_2D;
 use crate::actor::actor_spawner::ZERO_GRAVITY;
@@ -21,7 +20,7 @@ pub struct MissilePlugin;
 
 impl Plugin for MissilePlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(initialize_missile_position)
+        app.add_observer(initialize_missile)
             .add_systems(Update, fire_missile.in_set(InGameSet::UserInput))
             .add_systems(Update, missile_movement.in_set(InGameSet::EntityUpdates));
     }
@@ -45,10 +44,10 @@ pub struct Missile;
 #[derive(Component, Reflect, Copy, Clone, Debug, Default)]
 #[reflect(Component)]
 pub struct MissilePosition {
-    pub total_distance: f32,
-    pub traveled_distance: f32,
-    remaining_distance: f32,
-    pub last_position: Option<Vec3>,
+    pub total_distance:     f32,
+    pub traveled_distance:  f32,
+    remaining_distance:     f32,
+    pub last_position:      Option<Vec3>,
     last_teleport_position: Option<Vec3>, // Add this field
 }
 
@@ -94,7 +93,7 @@ fn should_fire(
     }
 }
 
-fn initialize_missile_position(
+fn initialize_missile(
     add: On<Add, Missile>,
     mut commands: Commands,
     boundary_config: Res<Boundary>,
@@ -105,15 +104,12 @@ fn initialize_missile_position(
 
 fn fire_missile(
     mut commands: Commands,
-    q_spaceship: Query<
-        (&Transform, &LinearVelocity, &Aabb, Option<&ContinuousFire>),
-        With<Spaceship>,
-    >,
+    q_spaceship: Query<(&Transform, &LinearVelocity, Option<&ContinuousFire>), With<Spaceship>>,
     mut missile_config: ResMut<MissileConfig>,
     fire_button: Single<&ActionState<SpaceshipControl>>,
     time: Res<Time>,
 ) {
-    let Ok((spaceship_transform, spaceship_linear_velocity, aabb, continuous_fire_enabled)) =
+    let Ok((spaceship_transform, spaceship_linear_velocity, continuous_fire_enabled)) =
         q_spaceship.single()
     else {
         return;
@@ -121,19 +117,19 @@ fn fire_missile(
 
     if !should_fire(
         continuous_fire_enabled,
-        &mut missile_config.0,
+        &mut missile_config,
         time,
         fire_button,
     ) {
         return;
     }
 
-    let parent = (spaceship_transform, spaceship_linear_velocity, aabb);
+    let parent = (spaceship_transform, spaceship_linear_velocity);
 
-    spawn_actor(&mut commands, &missile_config.0, None, Some(parent));
+    spawn_actor(&mut commands, &missile_config, None, Some(parent));
 
     // Recreate timer from spawn_timer_seconds to pick up inspector changes
-    missile_config.0.spawn_timer = create_spawn_timer(missile_config.0.spawn_timer_seconds);
+    missile_config.spawn_timer = create_spawn_timer(missile_config.spawn_timer_seconds);
 }
 
 /// we update missile movement so that it can be despawned after it has traveled

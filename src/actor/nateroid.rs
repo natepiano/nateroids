@@ -45,21 +45,19 @@ fn spawn_nateroid(
     boundary: Res<Boundary>,
     time: Res<Time>,
 ) {
-    let nateroid_config = &mut config.0;
-
-    if !nateroid_config.spawnable {
+    if !config.spawnable {
         return;
     }
 
-    let spawn_timer = nateroid_config.spawn_timer.as_mut().unwrap();
+    let spawn_timer = config.spawn_timer.as_mut().unwrap();
     spawn_timer.tick(time.delta());
 
     if !spawn_timer.just_finished() {
         return;
     }
 
-    spawn_actor(&mut commands, nateroid_config, Some(boundary), None);
+    spawn_actor(&mut commands, &config, Some(boundary), None);
 
     // Recreate timer from spawn_timer_seconds to pick up inspector changes
-    nateroid_config.spawn_timer = create_spawn_timer(nateroid_config.spawn_timer_seconds);
+    config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);
 }

@@ -3,6 +3,7 @@ use bevy::prelude::*;
 
 use super::Teleporter;
 use super::actor_spawner::LOCKED_AXES_SPACESHIP;
+use super::actor_spawner::SpawnPosition;
 use super::actor_spawner::ZERO_GRAVITY;
 use super::actor_spawner::spawn_actor;
 use super::actor_template::SpaceshipConfig;
@@ -17,7 +18,7 @@ impl Plugin for SpaceshipPlugin {
     // make sure this is done after asset_loader has run
     fn build(&self, app: &mut App) {
         // we can enter InGame a couple of ways - when we do, spawn a spaceship
-        app.add_observer(initialize_spaceship_input)
+        app.add_observer(initialize_spaceship)
             .add_systems(OnExit(GameState::Splash), spawn_spaceship)
             .add_systems(OnExit(GameState::GameOver), spawn_spaceship)
             // check if spaceship is destroyed...this will change the GameState
@@ -31,7 +32,6 @@ pub struct ContinuousFire;
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 #[require(
-    Transform,
     Teleporter,
     ActorPortals,
     CollisionEventsEnabled,
@@ -42,17 +42,24 @@ pub struct ContinuousFire;
 pub struct Spaceship;
 
 fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipConfig>) {
-    if !spaceship_config.0.spawnable {
+    if !spaceship_config.spawnable {
         return;
     }
 
-    spawn_actor(&mut commands, &spaceship_config.0, None, None);
+    spawn_actor(&mut commands, &spaceship_config, None, None);
 }
 
-fn initialize_spaceship_input(spaceship: On<Add, Spaceship>, mut commands: Commands) {
-    commands
-        .entity(spaceship.entity)
-        .insert(SpaceshipControl::generate_input_map());
+fn initialize_spaceship(
+    spaceship: On<Add, Spaceship>,
+    mut commands: Commands,
+    spaceship_config: Res<SpaceshipConfig>,
+) {
+    if let SpawnPosition::Spaceship { launch_position } = spaceship_config.spawn_position {
+        commands
+            .entity(spaceship.entity)
+            .insert(Transform::from_translation(launch_position))
+            .insert(SpaceshipControl::generate_input_map());
+    }
 }
 
 // check if spaceship exists or not - query if get_single()
