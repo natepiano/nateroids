@@ -148,7 +148,6 @@ fn propagate_to_descendants(
     }
 }
 
-
 // Public constants for physics configuration (used by missile.rs, spaceship.rs, nateroid.rs)
 pub const LOCKED_AXES_2D: LockedAxes = LockedAxes::new().lock_translation_z();
 pub const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()

@@ -61,7 +61,11 @@
       "Bash(rm:*)",
       "mcp__brp__world_remove_components",
       "Bash(ls:*)",
-      "mcp__brp__world_spawn_entity"
+      "mcp__brp__world_spawn_entity",
+      "mcp__brp__world_mutate_resources",
+      "mcp__brp__brp_extras_send_keys",
+      "Bash(git -C /Users/natemccoy/rust/nateroids status)",
+      "Bash(git -C /Users/natemccoy/rust/nateroids diff)"
     ],
     "deny": [],
     "ask": []

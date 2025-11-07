@@ -19,7 +19,8 @@ pub struct BoundaryPlugin;
 impl Plugin for BoundaryPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Boundary>()
-            .init_gizmo_group::<BoundaryGizmo>()
+            .init_gizmo_group::<BoundaryGridGizmo>()
+            .init_gizmo_group::<OuterBoundaryGizmo>()
             .add_plugins(
                 ResourceInspectorPlugin::<Boundary>::default()
                     .run_if(toggle_active(false, GlobalAction::BoundaryInspector)),
@@ -30,12 +31,19 @@ impl Plugin for BoundaryPlugin {
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
-struct BoundaryGizmo {}
+struct BoundaryGridGizmo {}
+
+#[derive(Default, Reflect, GizmoConfigGroup)]
+struct OuterBoundaryGizmo {}
 
 fn update_gizmos_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Res<Boundary>) {
-    let (config, _) = config_store.config_mut::<BoundaryGizmo>();
+    let (config, _) = config_store.config_mut::<BoundaryGridGizmo>();
     config.line.width = boundary.line_width;
     config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+
+    let (outer_config, _) = config_store.config_mut::<OuterBoundaryGizmo>();
+    outer_config.line.width = boundary.outer_line_width;
+    outer_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
 // circle_direction_change_factor:
@@ -50,13 +58,16 @@ fn update_gizmos_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Re
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 pub struct Boundary {
-    pub cell_count: UVec3,
-    pub color:      Color,
+    pub cell_count:       UVec3,
+    pub grid_color:       Color,
+    pub outer_color:      Color,
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
-    pub line_width: f32,
+    pub line_width:       f32,
+    #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
+    pub outer_line_width: f32,
     #[inspector(min = 50., max = 300., display = NumberDisplay::Slider)]
-    pub scalar:     f32,
-    pub transform:  Transform,
+    pub scalar:           f32,
+    pub transform:        Transform,
 }
 
 impl Default for Boundary {
@@ -66,8 +77,10 @@ impl Default for Boundary {
 
         Self {
             cell_count,
-            color: Color::from(tailwind::BLUE_300),
-            line_width: 4.,
+            grid_color: Color::from(tailwind::BLUE_300).with_alpha(0.25),
+            outer_color: Color::from(tailwind::BLUE_500),
+            line_width: 3.,
+            outer_line_width: 3.,
             scalar,
             transform: Transform::from_scale(scalar * cell_count.as_vec3()),
         }
@@ -473,21 +486,32 @@ fn is_in_bounds(
     }
 }
 
-fn draw_boundary(mut boundary: ResMut<Boundary>, mut gizmos: Gizmos<BoundaryGizmo>) {
+fn draw_boundary(
+    mut boundary: ResMut<Boundary>,
+    mut grid_gizmo: Gizmos<BoundaryGridGizmo>,
+    mut outer_boundary_gizmo: Gizmos<OuterBoundaryGizmo>,
+) {
     // updating the boundary resource transform from its configuration so it can be
     // dynamically changed with the inspector while the game is running
     // the boundary transform is used both for position but also
     // so the fixed camera can be positioned based on the boundary scale
     boundary.transform.scale = boundary.scale();
 
-    gizmos
+    grid_gizmo
         .grid_3d(
             Isometry3d::new(boundary.transform.translation, Quat::IDENTITY),
             boundary.cell_count,
             Vec3::splat(boundary.scalar),
-            boundary.color,
-        );
-        // .outer_edges();
+            boundary.grid_color,
+        )
+        .outer_edges();
+
+    // Draw outer boundary cuboid with thicker line
+    outer_boundary_gizmo.primitive_3d(
+        &Cuboid::from_size(boundary.transform.scale),
+        Isometry3d::new(boundary.transform.translation, Quat::IDENTITY),
+        boundary.outer_color,
+    );
 }
 
 pub fn intersect_circle_with_rectangle(portal: &Portal, rectangle_points: &[Vec3; 4]) -> Vec<Vec3> {
