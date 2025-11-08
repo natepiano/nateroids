@@ -89,6 +89,7 @@ impl Default for NateroidConfig {
                 mass: 1.0,
                 restitution: 0.3,
                 spawn_timer_seconds: Some(2.),
+                spawnable: false,
                 ..default()
             },
             linvel:       30.0,
@@ -128,7 +129,7 @@ impl Default for SpaceshipConfig {
             restitution: 0.1,
             transform: Transform::from_translation(Vec3::new(0.0, -20.0, 0.0))
                 .with_rotation(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2))
-                .with_scale(Vec3::splat(0.8)),
+                .with_scale(Vec3::splat(1.0)),
             ..default()
         })
     }
