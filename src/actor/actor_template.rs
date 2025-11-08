@@ -93,7 +93,7 @@ impl Default for NateroidConfig {
                 mass: 1.0,
                 restitution: 0.3,
                 spawn_timer_seconds: Some(0.1),
-                spawnable: false,
+                spawnable: true,
                 ..default()
             },
             linear_velocity:  35.0,

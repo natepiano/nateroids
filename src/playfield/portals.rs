@@ -200,6 +200,26 @@ fn init_portals(
     }
 }
 
+/// Checks if a position is way beyond the boundary (physics burst)
+fn is_physics_burst(position: Vec3, boundary: &Boundary) -> bool {
+    let boundary_half_size = boundary.transform.scale / 2.0;
+    let max_distance_from_center = position.distance(boundary.transform.translation);
+    let boundary_diagonal = boundary_half_size.length();
+    max_distance_from_center > boundary_diagonal * 2.0
+}
+
+/// Snaps position to boundary and calculates the correct normal and face for the snapped position
+fn snap_and_get_normal(
+    position: Vec3,
+    initial_normal: Dir3,
+    boundary: &Boundary,
+) -> (Vec3, Dir3, Option<BoundaryFace>) {
+    let snapped_position = boundary.snap_position_to_boundary_face(position, initial_normal);
+    let final_normal = boundary.get_normal_for_position(snapped_position);
+    let face = BoundaryFace::from_normal(final_normal);
+    (snapped_position, final_normal, face)
+}
+
 fn handle_emerging_visual(
     portal: Portal,
     portal_config: &Res<PortalConfig>,
@@ -214,13 +234,20 @@ fn handle_emerging_visual(
             if let Some(face) = BoundaryFace::from_normal(normal)
                 && let Some(teleported_position) = teleporter.last_teleported_position
             {
-                let snapped_position =
-                    boundary.snap_position_to_boundary_face(teleported_position, normal);
+                // If actor burst way past boundary, don't create emerging portal
+                if is_physics_burst(teleported_position, boundary) {
+                    visual.emerging = None;
+                    return;
+                }
+
+                // Snap to boundary face and recalculate normal to prevent corner glitches
+                let (snapped_position, final_normal, final_face) =
+                    snap_and_get_normal(teleported_position, normal, boundary);
 
                 visual.emerging = Some(Portal {
                     actor_distance_to_wall: 0.0,
-                    face,
-                    normal,
+                    face: final_face.unwrap_or(face),
+                    normal: final_normal,
                     position: snapped_position,
                     fade_out_started: Some(time.elapsed_secs()),
                     ..portal
@@ -250,14 +277,19 @@ fn handle_approaching_visual(
 
         if actor_distance_to_wall <= portal.boundary_distance_approach {
             let normal = boundary.get_normal_for_position(collision_point);
-            let position = smooth_circle_position(visual, collision_point, normal, portal_config);
+            let smoothed_position =
+                smooth_circle_position(visual, collision_point, normal, portal_config);
 
-            if let Some(face) = BoundaryFace::from_normal(normal) {
+            // Snap to boundary face and recalculate normal to prevent corner glitches
+            let (snapped_position, final_normal, face) =
+                snap_and_get_normal(smoothed_position, normal, boundary);
+
+            if let Some(face) = face {
                 visual.approaching = Some(Portal {
                     actor_distance_to_wall,
                     face,
-                    normal,
-                    position,
+                    normal: final_normal,
+                    position: snapped_position,
                     ..portal
                 });
                 return;
@@ -265,12 +297,16 @@ fn handle_approaching_visual(
         }
     }
 
-    // If we reach this point, we've teleported
-    if let Some(approaching) = &mut visual.approaching
-        && approaching.fade_out_started.is_none()
-    {
-        // Start fade-out
-        approaching.fade_out_started = Some(time.elapsed_secs());
+    // If we reach this point, actor is not approaching
+    // Check if actor burst way beyond boundary (physics stress) or teleported normally
+    if let Some(approaching) = &mut visual.approaching {
+        if is_physics_burst(portal.position, boundary) {
+            // Actor burst way past boundary - immediately remove
+            visual.approaching = None;
+        } else if approaching.fade_out_started.is_none() {
+            // Normal teleport - start fadeout
+            approaching.fade_out_started = Some(time.elapsed_secs());
+        }
     }
 }
 

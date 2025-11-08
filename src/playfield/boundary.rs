@@ -72,7 +72,7 @@ pub struct Boundary {
 
 impl Default for Boundary {
     fn default() -> Self {
-        let cell_count = UVec3::new(3, 1, 1);
+        let cell_count = UVec3::new(1, 1, 1);
         let scalar = 110.;
 
         Self {
