@@ -36,7 +36,7 @@ impl Plugin for SpaceshipControlPlugin {
         .init_resource::<ActionState<SpaceshipControl>>()
         .insert_resource(SpaceshipControl::generate_input_map())
         .add_systems(
-            Update,
+            FixedUpdate,
             (spaceship_movement_controls, toggle_continuous_fire)
                 .chain()
                 .in_set(InGameSet::UserInput),
@@ -115,29 +115,29 @@ fn spaceship_movement_controls(
         // dynamically update from inspector while game is running to change size
         spaceship_transform.scale = spaceship_config.transform.scale;
 
-        let mut rotation = 0.0;
         let delta_seconds = time.delta_secs();
         let rotation_speed = movement_config.rotation_speed;
 
+        // Set angular velocity based on input
+        let mut target_angular_velocity = 0.0;
         if controls.pressed(&SpaceshipControl::TurnRight) {
-            // right
-            angular_velocity.z = 0.0;
-            rotation = rotation_speed * delta_seconds;
+            target_angular_velocity = rotation_speed;
         } else if controls.pressed(&SpaceshipControl::TurnLeft) {
-            // left
-            angular_velocity.z = 0.0;
-            rotation = -rotation_speed * delta_seconds;
+            target_angular_velocity = -rotation_speed;
         }
 
+        // Flip rotation direction if camera is facing opposite
         let camera_forward = camera_transform.forward();
         let facing_opposite = camera_forward.dot(Vec3::new(0.0, 0.0, -1.0)) > 0.0;
-
         if facing_opposite {
-            rotation = -rotation;
+            target_angular_velocity = -target_angular_velocity;
         }
 
-        // rotate around the z-axis
-        spaceship_transform.rotate_z(rotation);
+        // Apply angular velocity through physics engine
+        // Explicitly enforce 2D rotation by zeroing X/Y components
+        angular_velocity.x = 0.0;
+        angular_velocity.y = 0.0;
+        angular_velocity.z = target_angular_velocity;
 
         let max_speed = movement_config.max_speed;
         let accel = movement_config.acceleration;
@@ -145,7 +145,7 @@ fn spaceship_movement_controls(
         if controls.pressed(&SpaceshipControl::Accelerate) {
             apply_acceleration(
                 &mut linear_velocity,
-                -spaceship_transform.forward().as_vec3(),
+                spaceship_transform.forward().as_vec3(),
                 accel,
                 max_speed,
                 delta_seconds,

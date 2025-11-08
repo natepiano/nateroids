@@ -137,24 +137,77 @@ impl Boundary {
         let mut teleport_position = position;
 
         if position.x >= boundary_max.x {
-            teleport_position.x = boundary_min.x;
+            let offset = position.x - boundary_max.x;
+            teleport_position.x = boundary_min.x + offset;
         } else if position.x <= boundary_min.x {
-            teleport_position.x = boundary_max.x;
+            let offset = boundary_min.x - position.x;
+            teleport_position.x = boundary_max.x - offset;
         }
 
         if position.y >= boundary_max.y {
-            teleport_position.y = boundary_min.y;
+            let offset = position.y - boundary_max.y;
+            teleport_position.y = boundary_min.y + offset;
         } else if position.y <= boundary_min.y {
-            teleport_position.y = boundary_max.y;
+            let offset = boundary_min.y - position.y;
+            teleport_position.y = boundary_max.y - offset;
         }
 
         if position.z >= boundary_max.z {
-            teleport_position.z = boundary_min.z;
+            let offset = position.z - boundary_max.z;
+            teleport_position.z = boundary_min.z + offset;
         } else if position.z <= boundary_min.z {
-            teleport_position.z = boundary_max.z;
+            let offset = boundary_min.z - position.z;
+            teleport_position.z = boundary_max.z - offset;
         }
 
         teleport_position
+    }
+
+    /// Snaps a position to the exact boundary face based on the normal.
+    /// Sets the primary axis to the exact boundary edge, and clamps
+    /// the perpendicular axes to handle corner/edge teleportation cases.
+    pub fn snap_position_to_boundary_face(&self, position: Vec3, normal: Dir3) -> Vec3 {
+        let boundary_min = self.transform.translation - self.transform.scale / 2.0;
+        let boundary_max = self.transform.translation + self.transform.scale / 2.0;
+
+        let mut snapped_position = position;
+
+        // Set primary axis to exact boundary face and clamp perpendicular axes
+        match normal {
+            Dir3::X => {
+                snapped_position.x = boundary_max.x;
+                snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
+                snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
+            },
+            Dir3::NEG_X => {
+                snapped_position.x = boundary_min.x;
+                snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
+                snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
+            },
+            Dir3::Y => {
+                snapped_position.y = boundary_max.y;
+                snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
+                snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
+            },
+            Dir3::NEG_Y => {
+                snapped_position.y = boundary_min.y;
+                snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
+                snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
+            },
+            Dir3::Z => {
+                snapped_position.z = boundary_max.z;
+                snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
+                snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
+            },
+            Dir3::NEG_Z => {
+                snapped_position.z = boundary_min.z;
+                snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
+                snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
+            },
+            _ => {},
+        }
+
+        snapped_position
     }
 
     pub fn draw_portal(
@@ -393,22 +446,35 @@ impl Boundary {
         let boundary_min = self.transform.translation - half_size;
         let boundary_max = self.transform.translation + half_size;
 
-        let epsilon = 0.001; // Small value to account for floating-point imprecision
+        // Find the closest boundary face by comparing distances
+        let dist_to_min_x = (position.x - boundary_min.x).abs();
+        let dist_to_max_x = (position.x - boundary_max.x).abs();
+        let dist_to_min_y = (position.y - boundary_min.y).abs();
+        let dist_to_max_y = (position.y - boundary_max.y).abs();
+        let dist_to_min_z = (position.z - boundary_min.z).abs();
+        let dist_to_max_z = (position.z - boundary_max.z).abs();
 
-        if (position.x - boundary_min.x).abs() < epsilon {
+        let min_dist = dist_to_min_x
+            .min(dist_to_max_x)
+            .min(dist_to_min_y)
+            .min(dist_to_max_y)
+            .min(dist_to_min_z)
+            .min(dist_to_max_z);
+
+        if (dist_to_min_x - min_dist).abs() < 0.001 {
             Dir3::NEG_X
-        } else if (position.x - boundary_max.x).abs() < epsilon {
+        } else if (dist_to_max_x - min_dist).abs() < 0.001 {
             Dir3::X
-        } else if (position.y - boundary_min.y).abs() < epsilon {
+        } else if (dist_to_min_y - min_dist).abs() < 0.001 {
             Dir3::NEG_Y
-        } else if (position.y - boundary_max.y).abs() < epsilon {
+        } else if (dist_to_max_y - min_dist).abs() < 0.001 {
             Dir3::Y
-        } else if (position.z - boundary_min.z).abs() < epsilon {
+        } else if (dist_to_min_z - min_dist).abs() < 0.001 {
             Dir3::NEG_Z
-        } else if (position.z - boundary_max.z).abs() < epsilon {
+        } else if (dist_to_max_z - min_dist).abs() < 0.001 {
             Dir3::Z
         } else {
-            // Default to Y if not on a boundary face
+            // Fallback to Y
             Dir3::Y
         }
     }

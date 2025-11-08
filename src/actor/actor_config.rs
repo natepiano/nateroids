@@ -23,6 +23,10 @@ use crate::global_input::toggle_active;
 // we need to get them scaled up to generate a usable aabb
 const BLENDER_SCALE: f32 = 100.;
 
+// Spaceship model orientation correction: rotates the model so nose points +Y
+// Shared between initial spawn and runtime 2D enforcement
+pub const GLTF_ROTATION_X: f32 = std::f32::consts::FRAC_PI_2; // +90°
+
 // call flow is to initialize the ensemble config which has the defaults
 // for an actor - configure defaults in initial_actor_config.rs
 pub struct ActorConfigPlugin;
@@ -52,6 +56,8 @@ pub struct ActorConfig {
     pub spawnable:                bool,
     #[reflect(ignore)]
     pub aabb:                     Aabb,
+    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    pub angular_damping:          Option<f32>,
     #[reflect(ignore)]
     pub collider:                 Collider,
     pub collider_type:            ColliderType,
@@ -59,6 +65,8 @@ pub struct ActorConfig {
     pub collision_layers:         CollisionLayers,
     pub gravity_scale:            f32,
     pub health:                   f32,
+    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    pub linear_damping:           Option<f32>,
     pub locked_axes:              LockedAxes,
     #[inspector(min = 0.0, max = 20.0, display = NumberDisplay::Slider)]
     pub mass:                     f32,
@@ -80,16 +88,18 @@ impl Default for ActorConfig {
         Self {
             spawnable:                true,
             aabb:                     Aabb::default(),
+            angular_damping:          None,
             collider:                 Collider::cuboid(1., 1., 1.),
             collider_type:            ColliderType::Cuboid,
             collision_damage:         0.,
             collision_layers:         CollisionLayers::default(),
             gravity_scale:            0.,
             health:                   0.,
+            linear_damping:           None,
             locked_axes:              LockedAxes::new().lock_translation_z(),
             mass:                     1.,
             render_layer:             RenderLayer::Game,
-            restitution:              1.,
+            restitution:              0.1,
             restitution_combine_rule: CoefficientCombine::Max,
             rigid_body:               RigidBody::Dynamic,
             scene:                    Handle::default(),
@@ -242,6 +252,16 @@ pub fn insert_configured_components(
         RenderLayers::from_layers(config.render_layer.layers()),
         SceneRoot(config.scene.clone()),
     ));
+
+    // Apply damping if configured
+    if let Some(linear) = config.linear_damping {
+        commands.entity(actor_entity).insert(LinearDamping(linear));
+    }
+    if let Some(angular) = config.angular_damping {
+        commands
+            .entity(actor_entity)
+            .insert(AngularDamping(angular));
+    }
 
     // reset the timer if there is a configured spawn_timer_seconds
     config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);

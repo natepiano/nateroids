@@ -8,6 +8,7 @@ use super::Teleporter;
 use super::actor_config::LOCKED_AXES_2D;
 use super::actor_config::insert_configured_components;
 use super::actor_template::NateroidConfig;
+use super::spaceship::Spaceship;
 use crate::global_input::GlobalAction;
 use crate::global_input::toggle_active;
 use crate::playfield::ActorPortals;
@@ -16,17 +17,27 @@ use crate::schedule::InGameSet;
 
 // half the size of the boundary and only in the x,y plane
 const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
+// Maximum allowed velocities to prevent physics explosions
+const MAX_NATEROID_LINEAR_VELOCITY: f32 = 200.0;
+const MAX_NATEROID_ANGULAR_VELOCITY: f32 = 50.0;
 
 pub struct NateroidPlugin;
 
 impl Plugin for NateroidPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(initialize_nateroid).add_systems(
-            Update,
-            spawn_nateroid
-                .in_set(InGameSet::EntityUpdates)
-                .run_if(toggle_active(true, GlobalAction::SuppressNateroids)),
-        );
+        app.add_observer(initialize_nateroid)
+            .add_systems(
+                Update,
+                spawn_nateroid
+                    .in_set(InGameSet::EntityUpdates)
+                    .run_if(toggle_active(true, GlobalAction::SuppressNateroids)),
+            )
+            .add_systems(
+                FixedUpdate,
+                clamp_nateroid_velocity
+                    .after(PhysicsSystems::StepSimulation)
+                    .in_set(InGameSet::EntityUpdates),
+            );
     }
 }
 
@@ -66,7 +77,7 @@ fn initialize_nateroid(
 
     // Calculate random velocities for nateroid
     let (linear_velocity, angular_velocity) =
-        calculate_nateroid_velocity(config.linvel, config.angvel);
+        calculate_nateroid_velocity(config.linear_velocity, config.angular_velocity);
 
     commands
         .entity(nateroid.entity)
@@ -153,4 +164,26 @@ fn calculate_nateroid_velocity(linvel: f32, angvel: f32) -> (LinearVelocity, Ang
             -angvel..angvel,
         )),
     )
+}
+
+/// Clamp velocities to prevent physics explosions from collision accumulation
+fn clamp_nateroid_velocity(
+    mut entities: Query<
+        (&mut LinearVelocity, &mut AngularVelocity),
+        Or<(With<Nateroid>, With<Spaceship>)>,
+    >,
+) {
+    for (mut linear_velocity, mut angular_velocity) in entities.iter_mut() {
+        // Clamp linear velocity
+        let linear_speed = linear_velocity.length();
+        if linear_speed > MAX_NATEROID_LINEAR_VELOCITY {
+            **linear_velocity = linear_velocity.normalize() * MAX_NATEROID_LINEAR_VELOCITY;
+        }
+
+        // Clamp angular velocity
+        let angular_speed = angular_velocity.length();
+        if angular_speed > MAX_NATEROID_ANGULAR_VELOCITY {
+            **angular_velocity = angular_velocity.normalize() * MAX_NATEROID_ANGULAR_VELOCITY;
+        }
+    }
 }

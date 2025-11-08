@@ -11,6 +11,7 @@ mod schedule;
 mod splash;
 mod state;
 
+use bevy::gltf::GltfPlugin;
 use bevy::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use bevy::window::PresentMode;
@@ -35,11 +36,18 @@ fn main() {
     let mut app = App::new();
 
     #[cfg(not(target_arch = "wasm32"))]
-    app.add_plugins(DefaultPlugins);
+    app.add_plugins(DefaultPlugins.set(GltfPlugin {
+        use_model_forward_direction: true,
+        ..default()
+    }));
 
     #[cfg(target_arch = "wasm32")]
     app.add_plugins(
         DefaultPlugins
+            .set(GltfPlugin {
+                use_model_forward_direction: true,
+                ..default()
+            })
             .set(ImagePlugin::default_nearest())
             .set(WindowPlugin {
                 primary_window: Some(Window {

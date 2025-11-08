@@ -19,8 +19,11 @@ pub struct MissilePlugin;
 impl Plugin for MissilePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(initialize_missile)
-            .add_systems(Update, fire_missile.in_set(InGameSet::UserInput))
-            .add_systems(Update, missile_movement.in_set(InGameSet::EntityUpdates));
+            .add_systems(FixedUpdate, fire_missile.in_set(InGameSet::UserInput))
+            .add_systems(
+                FixedUpdate,
+                missile_movement.in_set(InGameSet::EntityUpdates),
+            );
     }
 }
 
@@ -124,7 +127,7 @@ fn initialize_transform(
     missile_config: &MissileConfig,
 ) -> Transform {
     // Calculate transform and velocity from spaceship position
-    let forward = -spaceship_transform.forward();
+    let forward = spaceship_transform.forward();
     let spawn_position =
         spaceship_transform.translation + forward * missile_config.forward_distance_scalar;
 
@@ -194,7 +197,7 @@ fn calculate_missile_velocity(
     spaceship_velocity: &LinearVelocity,
     base_velocity: f32,
 ) -> (LinearVelocity, AngularVelocity) {
-    let forward = -spaceship_transform.forward();
+    let forward = spaceship_transform.forward();
     let mut velocity = forward * base_velocity;
     velocity += **spaceship_velocity;
     (LinearVelocity(velocity), AngularVelocity::ZERO)

@@ -13,6 +13,7 @@ use bevy_inspector_egui::InspectorOptions;
 
 use super::actor_config::ActorConfig;
 use super::actor_config::ColliderType;
+use super::actor_config::GLTF_ROTATION_X;
 
 #[derive(PhysicsLayer, Clone, Copy, Debug, Default)]
 pub enum GameLayer {
@@ -41,9 +42,10 @@ impl Default for MissileConfig {
                 health: 1.,
                 mass: 0.1,
                 spawn_timer_seconds: Some(1.0 / 20.0),
-                transform: Transform::from_rotation(Quat::from_rotation_x(
-                    std::f32::consts::FRAC_PI_2,
-                ))
+                transform: Transform::from_rotation(
+                    Quat::from_rotation_x(GLTF_ROTATION_X)
+                        * Quat::from_rotation_z(std::f32::consts::PI),
+                )
                 .with_scale(Vec3::splat(2.5)),
                 ..default()
             },
@@ -66,17 +68,18 @@ impl DerefMut for MissileConfig {
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
 pub struct NateroidConfig {
-    pub actor_config: ActorConfig,
-    pub linvel:       f32,
-    pub angvel:       f32,
+    pub actor_config:     ActorConfig,
+    pub linear_velocity:  f32,
+    pub angular_velocity: f32,
 }
 
 impl Default for NateroidConfig {
     fn default() -> Self {
         Self {
-            actor_config: ActorConfig {
+            actor_config:     ActorConfig {
+                angular_damping: Some(0.2),
                 collider_type: ColliderType::Ball,
-                collision_damage: 10.,
+                collision_damage: 0.1,
                 collision_layers: CollisionLayers::new(
                     [GameLayer::Asteroid],
                     [
@@ -86,14 +89,15 @@ impl Default for NateroidConfig {
                     ],
                 ),
                 health: 200.,
+                linear_damping: Some(0.1),
                 mass: 1.0,
                 restitution: 0.3,
-                spawn_timer_seconds: Some(2.),
+                spawn_timer_seconds: Some(0.1),
                 spawnable: false,
                 ..default()
             },
-            linvel:       30.0,
-            angvel:       4.0,
+            linear_velocity:  35.0,
+            angular_velocity: 4.5,
         }
     }
 }
@@ -115,12 +119,14 @@ pub struct SpaceshipConfig(pub ActorConfig);
 impl Default for SpaceshipConfig {
     fn default() -> Self {
         Self(ActorConfig {
+            angular_damping: Some(0.1),
             collision_damage: 50.,
             collision_layers: CollisionLayers::new(
                 [GameLayer::Spaceship],
                 [GameLayer::Asteroid, GameLayer::Boundary],
             ),
             health: 500.,
+            linear_damping: Some(0.05),
             mass: 10.0,
             locked_axes: LockedAxes::new()
                 .lock_rotation_x()
@@ -128,7 +134,7 @@ impl Default for SpaceshipConfig {
                 .lock_translation_z(),
             restitution: 0.1,
             transform: Transform::from_translation(Vec3::new(0.0, -20.0, 0.0))
-                .with_rotation(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2))
+                .with_rotation(Quat::from_rotation_x(GLTF_ROTATION_X))
                 .with_scale(Vec3::splat(1.0)),
             ..default()
         })

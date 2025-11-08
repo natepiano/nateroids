@@ -16,6 +16,7 @@ use bevy::prelude::*;
 use collision_detection::CollisionDetectionPlugin;
 use missile::MissilePlugin;
 pub use missile::MissilePosition;
+pub use nateroid::Nateroid;
 use nateroid::NateroidPlugin;
 use spaceship::SpaceshipPlugin;
 use spaceship_control::SpaceshipControlPlugin;

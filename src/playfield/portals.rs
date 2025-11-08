@@ -19,6 +19,7 @@ use crate::global_input::toggle_active;
 use crate::orientation::CameraOrientation;
 use crate::playfield::Boundary;
 use crate::playfield::boundary_face::BoundaryFace;
+use crate::state::IsPaused;
 use crate::state::PlayingGame;
 
 pub struct PortalPlugin;
@@ -34,12 +35,14 @@ impl Plugin for PortalPlugin {
             .add_systems(
                 Update,
                 (
-                    update_portal_config,
-                    init_portals,
-                    draw_approaching_portals,
-                    draw_emerging_portals,
+                    update_portal_config.run_if(in_state(PlayingGame)),
+                    init_portals.run_if(in_state(IsPaused::NotPaused)),
+                    update_approaching_portals.run_if(in_state(IsPaused::NotPaused)),
+                    update_emerging_portals.run_if(in_state(IsPaused::NotPaused)),
+                    draw_approaching_portals.run_if(in_state(PlayingGame)),
+                    draw_emerging_portals.run_if(in_state(PlayingGame)),
                 )
-                    .run_if(in_state(PlayingGame)),
+                    .chain(),
             );
     }
 }
@@ -192,6 +195,7 @@ fn init_portals(
             teleporter,
             &time,
             &mut visual,
+            &boundary,
         );
     }
 }
@@ -202,15 +206,22 @@ fn handle_emerging_visual(
     teleporter: &Teleporter,
     time: &Res<Time>,
     visual: &mut Mut<ActorPortals>,
+    boundary: &Res<Boundary>,
 ) {
     if teleporter.just_teleported {
         if let Some(normal) = teleporter.last_teleported_normal {
             // establish the existence of an emerging
-            if let Some(face) = BoundaryFace::from_normal(normal) {
+            if let Some(face) = BoundaryFace::from_normal(normal)
+                && let Some(teleported_position) = teleporter.last_teleported_position
+            {
+                let snapped_position =
+                    boundary.snap_position_to_boundary_face(teleported_position, normal);
+
                 visual.emerging = Some(Portal {
                     actor_distance_to_wall: 0.0,
                     face,
                     normal,
+                    position: snapped_position,
                     fade_out_started: Some(time.elapsed_secs()),
                     ..portal
                 });
@@ -300,13 +311,10 @@ fn smooth_circle_position(
     }
 }
 
-fn draw_approaching_portals(
+fn update_approaching_portals(
     time: Res<Time>,
-    boundary: Res<Boundary>,
     config: Res<PortalConfig>,
-    orientation: Res<CameraOrientation>,
     mut q_portals: Query<&mut ActorPortals>,
-    mut gizmos: Gizmos<PortalGizmo>,
 ) {
     for mut portal in q_portals.iter_mut() {
         if let Some(ref mut approaching) = portal.approaching {
@@ -333,8 +341,20 @@ fn draw_approaching_portals(
                 // Apply the normal proximity-based scaling
                 approaching.radius = radius;
             }
+        }
+    }
+}
 
-            // Draw the portal with the updated radius
+fn draw_approaching_portals(
+    boundary: Res<Boundary>,
+    config: Res<PortalConfig>,
+    orientation: Res<CameraOrientation>,
+    q_portals: Query<&ActorPortals>,
+    mut gizmos: Gizmos<PortalGizmo>,
+) {
+    for portal in q_portals.iter() {
+        if let Some(ref approaching) = portal.approaching {
+            // Draw the portal with the current radius
             boundary.draw_portal(
                 &mut gizmos,
                 approaching,
@@ -366,13 +386,10 @@ fn get_approaching_radius(approaching: &mut Portal) -> f32 {
     }
 }
 
-fn draw_emerging_portals(
+fn update_emerging_portals(
     time: Res<Time>,
-    boundary: Res<Boundary>,
     config: Res<PortalConfig>,
-    orientation: Res<CameraOrientation>,
     mut q_portals: Query<&mut ActorPortals>,
-    mut gizmos: Gizmos<PortalGizmo>,
 ) {
     for mut portal in q_portals.iter_mut() {
         if let Some(ref mut emerging) = portal.emerging
@@ -393,19 +410,32 @@ fn draw_emerging_portals(
 
             if radius > 0.0 {
                 emerging.radius = radius;
-                boundary.draw_portal(
-                    &mut gizmos,
-                    emerging,
-                    config.color_emerging,
-                    config.resolution,
-                    &orientation,
-                );
             }
 
             // Remove visual after the emerging duration is complete
             if elapsed_time >= emerging_duration {
                 portal.emerging = None;
             }
+        }
+    }
+}
+
+fn draw_emerging_portals(
+    boundary: Res<Boundary>,
+    config: Res<PortalConfig>,
+    orientation: Res<CameraOrientation>,
+    q_portals: Query<&ActorPortals>,
+    mut gizmos: Gizmos<PortalGizmo>,
+) {
+    for portal in q_portals.iter() {
+        if let Some(ref emerging) = portal.emerging {
+            boundary.draw_portal(
+                &mut gizmos,
+                emerging,
+                config.color_emerging,
+                config.resolution,
+                &orientation,
+            );
         }
     }
 }
