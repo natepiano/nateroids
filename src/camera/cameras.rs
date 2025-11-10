@@ -11,7 +11,7 @@ use leafwing_input_manager::prelude::*;
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
 use crate::camera::config::CameraConfig;
-use crate::global_input::GlobalAction;
+use crate::global_input::GameAction;
 use crate::global_input::just_pressed;
 use crate::playfield::Boundary;
 
@@ -22,7 +22,7 @@ impl Plugin for CamerasPlugin {
         app.add_plugins(PanOrbitCameraPlugin)
             .add_systems(Startup, spawn_star_camera.before(spawn_panorbit_camera))
             .add_systems(Startup, spawn_panorbit_camera)
-            .add_systems(Update, home_camera.run_if(just_pressed(GlobalAction::Home)))
+            .add_systems(Update, home_camera.run_if(just_pressed(GameAction::Home)))
             .add_systems(
                 Update,
                 (toggle_stars, update_bloom_settings, update_clear_color),
@@ -126,19 +126,19 @@ fn get_bloom_settings(camera_config: Res<CameraConfig>) -> Bloom {
 fn toggle_stars(
     mut commands: Commands,
     mut camera: Query<(Entity, Option<&mut Bloom>), With<StarsCamera>>,
-    user_input: Res<ActionState<GlobalAction>>,
+    user_input: Res<ActionState<GameAction>>,
     camera_config: Res<CameraConfig>,
 ) {
     if let Ok(current_bloom_settings) = camera.single_mut() {
         match current_bloom_settings {
             (entity, Some(_)) => {
-                if user_input.just_pressed(&GlobalAction::Stars) {
+                if user_input.just_pressed(&GameAction::Stars) {
                     println!("stars off");
                     commands.entity(entity).remove::<Bloom>();
                 }
             },
             (entity, None) => {
-                if user_input.just_pressed(&GlobalAction::Stars) {
+                if user_input.just_pressed(&GameAction::Stars) {
                     println!("stars on");
                     commands
                         .entity(entity)

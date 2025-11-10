@@ -13,6 +13,7 @@ impl Plugin for DespawnPlugin {
             Update,
             (despawn_dead_entities, despawn_missiles).in_set(InGameSet::DespawnEntities),
         )
+        .add_systems(OnEnter(GameState::Splash), despawn_all_entities)
         .add_systems(OnEnter(GameState::GameOver), despawn_all_entities)
         .add_systems(OnExit(GameState::Splash), despawn_splash);
     }

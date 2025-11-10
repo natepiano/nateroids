@@ -7,7 +7,7 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 
 use crate::camera::RenderLayer;
-use crate::global_input::GlobalAction;
+use crate::global_input::GameAction;
 use crate::global_input::toggle_active;
 use crate::orientation::CameraOrientation;
 use crate::playfield::boundary_face::BoundaryFace;
@@ -24,7 +24,7 @@ impl Plugin for BoundaryPlugin {
             .init_gizmo_group::<OuterBoundaryGizmo>()
             .add_plugins(
                 ResourceInspectorPlugin::<Boundary>::default()
-                    .run_if(toggle_active(false, GlobalAction::BoundaryInspector)),
+                    .run_if(toggle_active(false, GameAction::BoundaryInspector)),
             )
             .add_systems(Update, update_gizmos_config)
             .add_systems(Update, draw_boundary.run_if(in_state(PlayingGame)));

@@ -16,7 +16,7 @@ use super::spaceship::Spaceship;
 use crate::asset_loader::AssetsState;
 use crate::asset_loader::SceneAssets;
 use crate::camera::RenderLayer;
-use crate::global_input::GlobalAction;
+use crate::global_input::GameAction;
 use crate::global_input::toggle_active;
 
 // this is how far off we are from blender for the assets we're loading
@@ -37,15 +37,15 @@ impl Plugin for ActorConfigPlugin {
             .add_observer(propagate_render_layers_on_spawn)
             .add_plugins(
                 ResourceInspectorPlugin::<MissileConfig>::default()
-                    .run_if(toggle_active(false, GlobalAction::MissileInspector)),
+                    .run_if(toggle_active(false, GameAction::MissileInspector)),
             )
             .add_plugins(
                 ResourceInspectorPlugin::<NateroidConfig>::default()
-                    .run_if(toggle_active(false, GlobalAction::NateroidInspector)),
+                    .run_if(toggle_active(false, GameAction::NateroidInspector)),
             )
             .add_plugins(
                 ResourceInspectorPlugin::<SpaceshipConfig>::default()
-                    .run_if(toggle_active(false, GlobalAction::SpaceshipInspector)),
+                    .run_if(toggle_active(false, GameAction::SpaceshipInspector)),
             );
     }
 }
@@ -61,7 +61,7 @@ pub struct ActorConfig {
     #[reflect(ignore)]
     pub collider:                 Collider,
     #[inspector(min = 0.1, max = 3.0, display = NumberDisplay::Slider)]
-    pub collider_buffer:          f32,
+    pub collider_margin:          f32,
     pub collider_type:            ColliderType,
     pub collision_damage:         f32,
     pub collision_layers:         CollisionLayers,
@@ -92,7 +92,7 @@ impl Default for ActorConfig {
             aabb:                     Aabb::default(),
             angular_damping:          None,
             collider:                 Collider::cuboid(1., 1., 1.),
-            collider_buffer:          1.0,
+            collider_margin:          1.0,
             collider_type:            ColliderType::Cuboid,
             collision_damage:         0.,
             collision_layers:         CollisionLayers::default(),
@@ -223,13 +223,13 @@ fn initialize_actor_config(
 
     let collider = match config.collider_type {
         ColliderType::Ball => {
-            let radius = size.length() * config.collider_buffer;
+            let radius = size.length() * config.collider_margin;
             Collider::sphere(radius)
         },
         ColliderType::Cuboid => Collider::cuboid(
-            size.x * config.collider_buffer,
-            size.y * config.collider_buffer,
-            size.z * config.collider_buffer,
+            size.x * config.collider_margin,
+            size.y * config.collider_margin,
+            size.z * config.collider_margin,
         ),
     };
 

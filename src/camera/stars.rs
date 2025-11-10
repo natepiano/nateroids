@@ -7,13 +7,22 @@ use rand::prelude::ThreadRng;
 
 use crate::camera::RenderLayer;
 use crate::playfield::Boundary;
+use crate::state::GameState;
 use crate::traits::TransformExt;
 
 pub struct StarsPlugin;
 
 impl Plugin for StarsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (spawn_stars, setup_star_rendering).chain());
+        app.add_systems(Startup, (spawn_stars, setup_star_rendering).chain())
+            .add_systems(
+                OnEnter(GameState::Splash),
+                (despawn_stars, spawn_stars, setup_star_rendering).chain(),
+            )
+            .add_systems(
+                OnEnter(GameState::GameOver),
+                (despawn_stars, spawn_stars, setup_star_rendering).chain(),
+            );
     }
 }
 
@@ -62,6 +71,12 @@ pub struct Star {
     position:     Vec3,
     radius:       f32,
     pub emissive: Vec4,
+}
+
+fn despawn_stars(mut commands: Commands, stars: Query<Entity, With<Star>>) {
+    for entity in stars.iter() {
+        commands.entity(entity).despawn();
+    }
 }
 
 // just set up the entities with their positions - we'll add an emissive

@@ -3,7 +3,7 @@ use bevy::dev_tools::states::*;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 
-use crate::global_input::GlobalAction;
+use crate::global_input::GameAction;
 
 pub struct StatePlugin;
 
@@ -16,6 +16,8 @@ impl Plugin for StatePlugin {
                 Update,
                 (
                     toggle_pause.run_if(in_state(PlayingGame)),
+                    restart_game.run_if(in_state(PlayingGame)),
+                    restart_with_splash.run_if(in_state(PlayingGame)),
                     transition_to_in_game.run_if(in_state(GameState::GameOver)),
                 ),
             )
@@ -93,17 +95,45 @@ impl ComputedStates for IsPaused {
 }
 
 fn toggle_pause(
-    user_input: Res<ActionState<GlobalAction>>,
+    user_input: Res<ActionState<GameAction>>,
     mut next_state: ResMut<NextState<GameState>>,
     state: Res<State<GameState>>,
 ) {
-    if user_input.just_pressed(&GlobalAction::Pause)
+    if user_input.just_pressed(&GameAction::Pause)
         && let GameState::InGame { paused, inspecting } = state.get()
     {
         next_state.set(GameState::InGame {
             paused:     !*paused,
             inspecting: *inspecting,
         });
+    }
+}
+
+fn restart_game(
+    user_input: Res<ActionState<GameAction>>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    // Quick restart flow (Cmd+Shift+N):
+    // 1. InGame → GameOver: Stars regenerate, actors despawn
+    // 2. GameOver → InGame: No star regeneration (stars from step 1 persist)
+    // 3. Fresh game starts with stars already generated
+    if user_input.just_pressed(&GameAction::RestartGame) {
+        println!("Restarting game (quick)");
+        next_state.set(GameState::GameOver);
+    }
+}
+
+fn restart_with_splash(
+    user_input: Res<ActionState<GameAction>>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    // Full restart with splash flow (Cmd+Shift+S):
+    // 1. InGame → Splash: Stars regenerate, actors despawn, splash timer resets
+    // 2. Splash → InGame: No star regeneration (stars from step 1 persist)
+    // 3. Game starts with stars that were generated during splash
+    if user_input.just_pressed(&GameAction::RestartWithSplash) {
+        println!("Restarting game with splash screen");
+        next_state.set(GameState::Splash);
     }
 }
 

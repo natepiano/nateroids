@@ -6,7 +6,7 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use crate::camera::RenderLayer;
-use crate::global_input::GlobalAction;
+use crate::global_input::GameAction;
 use crate::global_input::toggle_active;
 use crate::orientation::CameraOrientation;
 
@@ -17,7 +17,7 @@ impl Plugin for DirectionalLightsPlugin {
         app.init_resource::<AmbientLight>()
             .add_plugins(
                 ResourceInspectorPlugin::<LightConfig>::default()
-                    .run_if(toggle_active(false, GlobalAction::LightsInspector)),
+                    .run_if(toggle_active(false, GameAction::LightsInspector)),
             )
             .init_resource::<LightConfig>()
             .add_systems(Update, manage_lighting);

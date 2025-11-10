@@ -21,10 +21,15 @@ impl Plugin for SplashPlugin {
         app.insert_resource(SplashTimer {
             timer: Timer::from_seconds(SPLASH_TIME, TimerMode::Once),
         })
-        .add_systems(OnEnter(GameState::Splash), splash_screen)
+        .add_systems(
+            OnEnter(GameState::Splash),
+            (reset_splash_timer, splash_screen),
+        )
         .add_systems(Update, run_splash.run_if(in_state(GameState::Splash)));
     }
 }
+
+fn reset_splash_timer(mut splash_timer: ResMut<SplashTimer>) { splash_timer.timer.reset(); }
 
 fn splash_screen(mut commands: Commands) {
     commands.spawn((

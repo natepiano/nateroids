@@ -7,15 +7,15 @@ pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(InputManagerPlugin::<GlobalAction>::default())
-            .init_resource::<ActionState<GlobalAction>>()
-            .insert_resource(GlobalAction::global_input_map());
+        app.add_plugins(InputManagerPlugin::<GameAction>::default())
+            .init_resource::<ActionState<GameAction>>()
+            .insert_resource(GameAction::global_input_map());
     }
 }
 
 // inspector windows don't open full size
 #[derive(Actionlike, EnumIter, Reflect, PartialEq, Eq, Clone, Copy, Hash, Debug)]
-pub enum GlobalAction {
+pub enum GameAction {
     AABBs,
     BoundaryInspector,
     CameraConfigInspector,
@@ -28,6 +28,8 @@ pub enum GlobalAction {
     PlanesInspector,
     PortalInspector,
     Pause,
+    RestartGame,
+    RestartWithSplash,
     SpaceshipInspector,
     SpaceshipControlInspector,
     Stars,
@@ -52,13 +54,13 @@ pub enum GlobalAction {
 /// press it    }
 /// }
 /// ```
-impl GlobalAction {
+impl GameAction {
     pub fn global_input_map() -> InputMap<Self> {
         fn insert_shift_input(
-            input_map: InputMap<GlobalAction>,
-            action: GlobalAction,
+            input_map: InputMap<GameAction>,
+            action: GameAction,
             key: KeyCode,
-        ) -> InputMap<GlobalAction> {
+        ) -> InputMap<GameAction> {
             input_map.with_one_to_many(
                 action,
                 [
@@ -84,6 +86,24 @@ impl GlobalAction {
             Self::PhysicsAABB => input_map.with(action, KeyCode::F2),
             Self::PlanesInspector => insert_shift_input(input_map, action, KeyCode::KeyP),
             Self::PortalInspector => insert_shift_input(input_map, action, KeyCode::KeyG),
+            Self::RestartGame => input_map.with_one_to_many(
+                action,
+                [
+                    ButtonlikeChord::new([KeyCode::SuperLeft, KeyCode::ShiftLeft])
+                        .with(KeyCode::KeyN),
+                    ButtonlikeChord::new([KeyCode::SuperRight, KeyCode::ShiftRight])
+                        .with(KeyCode::KeyN),
+                ],
+            ),
+            Self::RestartWithSplash => input_map.with_one_to_many(
+                action,
+                [
+                    ButtonlikeChord::new([KeyCode::SuperLeft, KeyCode::ShiftLeft])
+                        .with(KeyCode::KeyS),
+                    ButtonlikeChord::new([KeyCode::SuperRight, KeyCode::ShiftRight])
+                        .with(KeyCode::KeyS),
+                ],
+            ),
             Self::SpaceshipInspector => insert_shift_input(input_map, action, KeyCode::Digit3),
             Self::SpaceshipControlInspector => {
                 insert_shift_input(input_map, action, KeyCode::Digit4)
@@ -110,9 +130,9 @@ impl GlobalAction {
 /// is rocket science to me- i don't know how it knows to do this but it does
 pub fn toggle_active(
     default: bool,
-    action: GlobalAction,
-) -> impl Fn(Res<ActionState<GlobalAction>>, Local<ToggleState>) -> bool {
-    move |action_state: Res<ActionState<GlobalAction>>, mut state: Local<ToggleState>| {
+    action: GameAction,
+) -> impl Fn(Res<ActionState<GameAction>>, Local<ToggleState>) -> bool {
+    move |action_state: Res<ActionState<GameAction>>, mut state: Local<ToggleState>| {
         if action_state.just_pressed(&action) {
             state.state = !state.state;
         }

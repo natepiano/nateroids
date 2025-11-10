@@ -4,7 +4,7 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
-use crate::global_input::GlobalAction;
+use crate::global_input::GameAction;
 use crate::global_input::toggle_active;
 
 pub struct CameraConfigPlugin;
@@ -13,7 +13,7 @@ impl Plugin for CameraConfigPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(
             ResourceInspectorPlugin::<CameraConfig>::default()
-                .run_if(toggle_active(false, GlobalAction::CameraConfigInspector)),
+                .run_if(toggle_active(false, GameAction::CameraConfigInspector)),
         )
         .init_resource::<CameraConfig>();
     }

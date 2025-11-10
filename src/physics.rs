@@ -7,7 +7,7 @@ use leafwing_input_manager::action_state::ActionState;
 
 use crate::actor::Nateroid;
 use crate::camera::RenderLayer;
-use crate::global_input::GlobalAction;
+use crate::global_input::GameAction;
 
 pub struct PhysicsPlugin;
 
@@ -38,10 +38,10 @@ fn init_physics_debug_aabb(mut config_store: ResMut<GizmoConfigStore>) {
 }
 
 fn toggle_physics_debug(
-    user_input: Res<ActionState<GlobalAction>>,
+    user_input: Res<ActionState<GameAction>>,
     mut config_store: ResMut<GizmoConfigStore>,
 ) {
-    if user_input.just_pressed(&GlobalAction::PhysicsAABB) {
+    if user_input.just_pressed(&GameAction::PhysicsAABB) {
         let (config, _) = config_store.config_mut::<PhysicsGizmos>();
         config.enabled = !config.enabled;
         println!("Physics debug: {}", config.enabled);
@@ -75,8 +75,15 @@ fn monitor_physics_health(
         .and_then(|fps| fps.smoothed())
         .unwrap_or(0.0);
 
-    // Detect potential physics breakdown
-    let physics_struggling = fps < 40.0 || avg_speed > 200.0;
+    // Detect potential physics breakdown with hysteresis to prevent oscillation
+    // Use different thresholds for entering vs exiting stress state
+    let physics_struggling = if state.is_stressed {
+        // When already stressed, need FPS > 45.0 to exit
+        fps < 45.0 || avg_speed > 200.0
+    } else {
+        // When not stressed, need FPS < 35.0 to enter
+        fps < 35.0 || avg_speed > 200.0
+    };
 
     let current_time = time.elapsed_secs_f64();
 

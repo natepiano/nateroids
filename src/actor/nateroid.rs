@@ -7,9 +7,10 @@ use rand::Rng;
 use super::Teleporter;
 use super::actor_config::LOCKED_AXES_2D;
 use super::actor_config::insert_configured_components;
+use super::actor_template::GameLayer;
 use super::actor_template::NateroidConfig;
 use super::spaceship::Spaceship;
-use crate::global_input::GlobalAction;
+use crate::global_input::GameAction;
 use crate::global_input::toggle_active;
 use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
@@ -23,16 +24,24 @@ const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
 pub const MAX_NATEROID_LINEAR_VELOCITY: f32 = 80.0;
 pub const MAX_NATEROID_ANGULAR_VELOCITY: f32 = 20.0;
 
+#[derive(Resource, Default)]
+struct NateroidSpawnStats {
+    attempts:          u32,
+    successes:         u32,
+    last_warning_time: f32,
+}
+
 pub struct NateroidPlugin;
 
 impl Plugin for NateroidPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(initialize_nateroid)
+        app.init_resource::<NateroidSpawnStats>()
+            .add_observer(initialize_nateroid)
             .add_systems(
                 Update,
                 spawn_nateroid
                     .in_set(InGameSet::EntityUpdates)
-                    .run_if(toggle_active(true, GlobalAction::SuppressNateroids)),
+                    .run_if(toggle_active(true, GameAction::SuppressNateroids)),
             )
             .add_systems(
                 FixedUpdate,
@@ -74,8 +83,54 @@ fn initialize_nateroid(
     mut commands: Commands,
     boundary: Res<Boundary>,
     mut config: ResMut<NateroidConfig>,
+    spatial_query: SpatialQuery,
+    mut spawn_stats: ResMut<NateroidSpawnStats>,
+    time: Res<Time>,
 ) {
-    let transform = initialize_transform(&boundary, &config);
+    spawn_stats.attempts += 1;
+    let current_time = time.elapsed_secs();
+
+    let Some(transform) = initialize_transform(&boundary, &config, &spatial_query) else {
+        commands.entity(nateroid.entity).despawn();
+
+        // Check if we should output warning (once per second)
+        if current_time - spawn_stats.last_warning_time >= 1.0 {
+            let success_rate = if spawn_stats.attempts > 0 {
+                (spawn_stats.successes as f32 / spawn_stats.attempts as f32) * 100.0
+            } else {
+                0.0
+            };
+            warn!(
+                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last second",
+                spawn_stats.successes, spawn_stats.attempts, success_rate
+            );
+            spawn_stats.attempts = 0;
+            spawn_stats.successes = 0;
+            spawn_stats.last_warning_time = current_time;
+        }
+        return;
+    };
+
+    spawn_stats.successes += 1;
+
+    // Check if we should output stats (once per second, even on success)
+    if current_time - spawn_stats.last_warning_time >= 1.0 {
+        let success_rate = if spawn_stats.attempts > 0 {
+            (spawn_stats.successes as f32 / spawn_stats.attempts as f32) * 100.0
+        } else {
+            0.0
+        };
+        // Only warn if there were failures
+        if spawn_stats.successes < spawn_stats.attempts {
+            warn!(
+                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last second",
+                spawn_stats.successes, spawn_stats.attempts, success_rate
+            );
+        }
+        spawn_stats.attempts = 0;
+        spawn_stats.successes = 0;
+        spawn_stats.last_warning_time = current_time;
+    }
 
     // Calculate random velocities for nateroid
     let (linear_velocity, angular_velocity) =
@@ -92,7 +147,13 @@ fn initialize_nateroid(
     insert_configured_components(&mut commands, &mut config.actor_config, nateroid.entity);
 }
 
-fn initialize_transform(boundary: &Boundary, nateroid_config: &NateroidConfig) -> Transform {
+fn initialize_transform(
+    boundary: &Boundary,
+    nateroid_config: &NateroidConfig,
+    spatial_query: &SpatialQuery,
+) -> Option<Transform> {
+    const MAX_ATTEMPTS: u32 = 20;
+
     let bounds = Transform {
         translation: boundary.transform.translation,
         scale: boundary.transform.scale * SPAWN_WINDOW,
@@ -100,10 +161,26 @@ fn initialize_transform(boundary: &Boundary, nateroid_config: &NateroidConfig) -
     };
 
     let scale = nateroid_config.actor_config.transform.scale;
-    let position = get_random_position_within_bounds(&bounds);
-    let rotation = get_random_rotation();
+    let filter =
+        SpatialQueryFilter::from_mask(LayerMask::from([GameLayer::Spaceship, GameLayer::Asteroid]));
 
-    Transform::from_trs(position, rotation, scale)
+    for _ in 0..MAX_ATTEMPTS {
+        let position = get_random_position_within_bounds(&bounds);
+        let rotation = get_random_rotation();
+
+        let intersections = spatial_query.shape_intersections(
+            &nateroid_config.actor_config.collider,
+            position,
+            rotation,
+            &filter,
+        );
+
+        if intersections.is_empty() {
+            return Some(Transform::from_trs(position, rotation, scale));
+        }
+    }
+
+    None
 }
 
 fn get_random_position_within_bounds(bounds: &Transform) -> Vec3 {

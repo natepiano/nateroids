@@ -14,7 +14,7 @@ use strum::IntoEnumIterator;
 use super::actor_template::SpaceshipConfig;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
-use crate::global_input::GlobalAction;
+use crate::global_input::GameAction;
 use crate::global_input::toggle_active;
 use crate::orientation::CameraOrientation;
 use crate::orientation::OrientationType;
@@ -25,10 +25,8 @@ pub struct SpaceshipControlPlugin;
 impl Plugin for SpaceshipControlPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(
-            ResourceInspectorPlugin::<SpaceshipControlConfig>::default().run_if(toggle_active(
-                false,
-                GlobalAction::SpaceshipControlInspector,
-            )),
+            ResourceInspectorPlugin::<SpaceshipControlConfig>::default()
+                .run_if(toggle_active(false, GameAction::SpaceshipControlInspector)),
         )
         .init_resource::<SpaceshipControlConfig>()
         // spaceship will have input attached to it when spawning a spaceship

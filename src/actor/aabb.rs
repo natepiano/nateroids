@@ -3,7 +3,7 @@ use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 
 use crate::camera::RenderLayer;
-use crate::global_input::GlobalAction;
+use crate::global_input::GameAction;
 use crate::global_input::toggle_active;
 use crate::traits::TransformExt;
 
@@ -14,7 +14,7 @@ impl Plugin for AabbPlugin {
             .add_systems(Startup, init_aabb_gizmo_config)
             .add_systems(
                 Update,
-                draw_aabb_system.run_if(toggle_active(false, GlobalAction::AABBs)),
+                draw_aabb_system.run_if(toggle_active(false, GameAction::AABBs)),
             );
     }
 }

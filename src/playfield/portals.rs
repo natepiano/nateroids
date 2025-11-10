@@ -14,7 +14,7 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use crate::actor::Aabb;
 use crate::actor::Teleporter;
 use crate::camera::RenderLayer;
-use crate::global_input::GlobalAction;
+use crate::global_input::GameAction;
 use crate::global_input::toggle_active;
 use crate::orientation::CameraOrientation;
 use crate::playfield::Boundary;
@@ -30,7 +30,7 @@ impl Plugin for PortalPlugin {
             .init_resource::<PortalConfig>()
             .add_plugins(
                 ResourceInspectorPlugin::<PortalConfig>::default()
-                    .run_if(toggle_active(false, GlobalAction::PortalInspector)),
+                    .run_if(toggle_active(false, GameAction::PortalInspector)),
             )
             .add_systems(
                 Update,

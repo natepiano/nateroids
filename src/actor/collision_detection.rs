@@ -2,7 +2,9 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 
 use super::Health;
+use super::Teleporter;
 use super::actor_config::CollisionDamage;
+use super::spaceship::Spaceship;
 use crate::schedule::InGameSet;
 
 pub struct CollisionDetectionPlugin;
@@ -20,20 +22,48 @@ fn handle_collision_events(
     mut collision_events: MessageReader<CollisionStart>,
     mut health_query: Query<&mut Health>,
     collision_damage_query: Query<&CollisionDamage>,
+    spaceship_query: Query<(Entity, &Teleporter), With<Spaceship>>,
 ) {
+    // Check if spaceship just teleported
+    let spaceship_just_teleported = spaceship_query
+        .single()
+        .map(|(entity, teleporter)| (entity, teleporter.just_teleported))
+        .ok();
+
     for event in collision_events.read() {
-        apply_collision_damage(
-            &mut health_query,
-            &collision_damage_query,
-            event.collider1,
-            event.collider2,
-        );
-        apply_collision_damage(
-            &mut health_query,
-            &collision_damage_query,
-            event.collider2,
-            event.collider1,
-        );
+        // Check if either entity is the spaceship that just teleported
+        let entity1_is_invincible_spaceship = spaceship_just_teleported
+            .map(|(ship_entity, just_teleported)| just_teleported && event.collider1 == ship_entity)
+            .unwrap_or(false);
+        let entity2_is_invincible_spaceship = spaceship_just_teleported
+            .map(|(ship_entity, just_teleported)| just_teleported && event.collider2 == ship_entity)
+            .unwrap_or(false);
+
+        if entity1_is_invincible_spaceship {
+            // Spaceship just teleported and collided - instantly kill entity2
+            if let Ok(mut health) = health_query.get_mut(event.collider2) {
+                health.0 = -1.0; // Instant death
+            }
+        } else if entity2_is_invincible_spaceship {
+            // Spaceship just teleported and collided - instantly kill entity1
+            if let Ok(mut health) = health_query.get_mut(event.collider1) {
+                health.0 = -1.0; // Instant death
+            }
+        } else {
+            // Normal collision handling
+            apply_collision_damage(
+                &mut health_query,
+                &collision_damage_query,
+                event.collider1,
+                event.collider2,
+            );
+            apply_collision_damage(
+                &mut health_query,
+                &collision_damage_query,
+                event.collider2,
+                event.collider1,
+            );
+        }
     }
 }
 
