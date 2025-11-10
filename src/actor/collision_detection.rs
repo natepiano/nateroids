@@ -40,15 +40,29 @@ fn handle_collision_events(
             .unwrap_or(false);
 
         if entity1_is_invincible_spaceship {
-            // Spaceship just teleported and collided - instantly kill entity2
+            // Spaceship just teleported - instantly kill entity2
             if let Ok(mut health) = health_query.get_mut(event.collider2) {
                 health.0 = -1.0; // Instant death
             }
+            // Spaceship still takes normal damage
+            apply_collision_damage(
+                &mut health_query,
+                &collision_damage_query,
+                event.collider2,
+                event.collider1,
+            );
         } else if entity2_is_invincible_spaceship {
-            // Spaceship just teleported and collided - instantly kill entity1
+            // Spaceship just teleported - instantly kill entity1
             if let Ok(mut health) = health_query.get_mut(event.collider1) {
                 health.0 = -1.0; // Instant death
             }
+            // Spaceship still takes normal damage
+            apply_collision_damage(
+                &mut health_query,
+                &collision_damage_query,
+                event.collider1,
+                event.collider2,
+            );
         } else {
             // Normal collision handling
             apply_collision_damage(

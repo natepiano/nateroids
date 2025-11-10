@@ -82,7 +82,7 @@ impl Default for NateroidConfig {
                 angular_damping: Some(0.001),
                 collider_margin: 1.0 / 3.0,
                 collider_type: ColliderType::Ball,
-                collision_damage: 10.,
+                collision_damage: 0.1,
                 collision_layers: CollisionLayers::new(
                     [GameLayer::Asteroid],
                     [
@@ -95,7 +95,7 @@ impl Default for NateroidConfig {
                 linear_damping: Some(0.001),
                 mass: 1.0,
                 restitution: 0.3,
-                spawn_timer_seconds: Some(1.5),
+                spawn_timer_seconds: Some(0.1),
                 spawnable: true,
                 ..default()
             },
