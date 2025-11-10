@@ -12,6 +12,7 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use crate::actor::Aabb;
+use crate::actor::Deaderoid;
 use crate::actor::Teleporter;
 use crate::camera::RenderLayer;
 use crate::global_input::GameAction;
@@ -64,6 +65,7 @@ fn update_portal_config(
 #[reflect(Resource, InspectorOptions)]
 struct PortalConfig {
     color_approaching:             Color,
+    color_approaching_deaderoid:   Color,
     color_emerging:                Color,
     #[inspector(min = 0.0, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
     pub direction_change_factor:   f32,
@@ -92,19 +94,20 @@ struct PortalConfig {
 impl Default for PortalConfig {
     fn default() -> Self {
         Self {
-            color_approaching:         Color::from(tailwind::BLUE_600),
-            color_emerging:            Color::from(tailwind::YELLOW_800),
-            direction_change_factor:   0.75,
-            distance_approach:         0.5,
-            distance_shrink:           0.25,
-            fadeout_duration:          14.,
-            line_joints:               4,
-            line_width:                2.,
-            minimum_radius:            0.1,
-            movement_smoothing_factor: 0.08,
-            portal_scalar:             2.,
-            portal_smallest:           5.,
-            resolution:                128,
+            color_approaching:           Color::from(tailwind::BLUE_600),
+            color_approaching_deaderoid: Color::from(tailwind::RED_600),
+            color_emerging:              Color::from(tailwind::YELLOW_800),
+            direction_change_factor:     0.75,
+            distance_approach:           0.5,
+            distance_shrink:             0.25,
+            fadeout_duration:            14.,
+            line_joints:                 4,
+            line_width:                  2.,
+            minimum_radius:              0.1,
+            movement_smoothing_factor:   0.08,
+            portal_scalar:               2.,
+            portal_smallest:             5.,
+            resolution:                  128,
         }
     }
 }
@@ -121,6 +124,7 @@ pub struct Portal {
     pub actor_distance_to_wall:     f32,
     pub boundary_distance_approach: f32,
     pub boundary_distance_shrink:   f32,
+    pub color:                      Color,
     pub face:                       BoundaryFace,
     fade_out_started:               Option<f32>,
     pub normal:                     Dir3,
@@ -135,6 +139,7 @@ impl Default for Portal {
             actor_distance_to_wall:     0.,
             boundary_distance_approach: 0.,
             boundary_distance_shrink:   0.,
+            color:                      Color::WHITE,
             face:                       BoundaryFace::Right,
             fade_out_started:           None,
             normal:                     Dir3::X,
@@ -151,6 +156,7 @@ fn init_portals(
         &LinearVelocity,
         &Teleporter,
         &mut ActorPortals,
+        Option<&Deaderoid>,
     )>,
     boundary: Res<Boundary>,
     portal_config: Res<PortalConfig>,
@@ -166,18 +172,25 @@ fn init_portals(
     let boundary_distance_approach = boundary_size * portal_config.distance_approach;
     let boundary_distance_shrink = boundary_size * portal_config.distance_shrink;
 
-    for (aabb, transform, velocity, teleporter, mut visual) in q_actor.iter_mut() {
+    for (aabb, transform, velocity, teleporter, mut visual, deaderoid) in q_actor.iter_mut() {
         let radius =
             aabb.max_dimension().max(portal_config.portal_smallest) * portal_config.portal_scalar;
 
         let portal_position = transform.translation;
         let actor_direction = velocity.normalize_or_zero();
 
+        let color = if deaderoid.is_some() {
+            portal_config.color_approaching_deaderoid
+        } else {
+            portal_config.color_approaching
+        };
+
         let portal = Portal {
             actor_direction,
             position: portal_position,
             boundary_distance_approach,
             boundary_distance_shrink,
+            color,
             radius,
             ..default()
         };
@@ -397,7 +410,7 @@ fn draw_approaching_portals(
             boundary.draw_portal(
                 &mut gizmos,
                 approaching,
-                config.color_approaching,
+                approaching.color,
                 config.resolution,
                 &orientation,
             );

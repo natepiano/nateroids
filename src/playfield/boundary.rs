@@ -15,6 +15,10 @@ use crate::playfield::portals::Portal;
 use crate::playfield::portals::PortalGizmo;
 use crate::state::PlayingGame;
 
+// Epsilon values for boundary position snapping and portal overextension detection
+const BOUNDARY_SNAP_EPSILON: f32 = 0.01;
+const BOUNDARY_OVEREXTENSION_EPSILON: f32 = BOUNDARY_SNAP_EPSILON * 2.0;
+
 pub struct BoundaryPlugin;
 
 impl Plugin for BoundaryPlugin {
@@ -172,7 +176,7 @@ impl Boundary {
         let boundary_max = self.transform.translation + self.transform.scale / 2.0;
 
         // Without this offset, portals on exact boundary would be flagged as overextended
-        let epsilon = 0.01;
+        let epsilon = BOUNDARY_SNAP_EPSILON;
 
         let mut snapped_position = position;
 
@@ -238,39 +242,24 @@ impl Boundary {
             return;
         }
 
-        // todo #handle3d - with all likelihood this doesn't exactly make sense
-        // when there's a corner so you may need a match to output both sets of points
-        // for the extensions and only output the draw_portal_arc once..
+        // Draw primary arc only once using first valid intersection points
+        let mut primary_arc_drawn = false;
+
         for (face, points) in over_extended_intersection_points {
             if points.len() >= 2 {
                 let rotated_position =
                     self.rotate_portal_center_to_target_face(portal.position, portal.normal, face);
 
-                // keep this around if you need to debug 3d later on
-                // gizmos.sphere(portal.position, Quat::IDENTITY,1.,
-                // Color::from(tailwind::PURPLE_500)).resolution(resolution);
-                // gizmos.sphere(rotated_position, Quat::IDENTITY,1.,
-                // Color::from(tailwind::PURPLE_500)).resolution(resolution);
-                //
-                // let rotation_point = self.find_closest_point_on_edge(portal.position,
-                // portal.normal.as_vec3(), face.get_normal());
-                // let rotation_axis =
-                // portal.normal.as_vec3().cross(face.get_normal()).normalize();
-                // gizmos.line(rotation_point, rotation_point + rotation_axis * 30.0,
-                // Color::from(tailwind::YELLOW_500));
-                // gizmos.line(rotation_point, portal.position, Color::from(tailwind::RED_500));
-                // gizmos.line(rotation_point, rotated_position,
-                // Color::from(tailwind::GREEN_500));
-
+                // Draw the wrapped arc on the adjacent face
                 gizmos
-                    .short_arc_3d_between(
-                        rotated_position,
-                        points[0],
-                        points[1],
-                        color, // Color::from(tailwind::GREEN_800),
-                    )
+                    .short_arc_3d_between(rotated_position, points[0], points[1], color)
                     .resolution(resolution);
-                self.draw_primary_arc(gizmos, portal, color, resolution, points[0], points[1]);
+
+                // Draw primary arc only once (use first valid intersection points)
+                if !primary_arc_drawn {
+                    self.draw_primary_arc(gizmos, portal, color, resolution, points[0], points[1]);
+                    primary_arc_drawn = true;
+                }
             }
         }
     }
@@ -427,7 +416,7 @@ impl Boundary {
 
         // Portals are snapped 0.01 inside boundary - without this margin, they'd be incorrectly
         // detected as overextended, triggering broken corner wrapping math
-        let epsilon = 0.02; // Slightly larger than snap epsilon (0.01) to provide margin
+        let epsilon = BOUNDARY_OVEREXTENSION_EPSILON;
 
         // Check all faces - only truly overextended if beyond boundary + epsilon
         if portal.position.x - radius < min.x - epsilon {

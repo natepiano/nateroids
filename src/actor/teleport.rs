@@ -1,8 +1,14 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use super::actor_template::SpaceshipConfig;
+use super::Deaderoid;
+use super::Health;
+use super::Nateroid;
+use super::NateroidSpawnStats;
+use super::actor_template::GameLayer;
+use super::actor_template::NateroidConfig;
 use super::spaceship::Spaceship;
+use crate::despawn::despawn;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 
@@ -10,11 +16,18 @@ pub struct TeleportPlugin;
 
 impl Plugin for TeleportPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            FixedUpdate,
-            teleport_at_boundary.in_set(InGameSet::EntityUpdates),
-        );
+        app.init_resource::<TeleportCollisionState>()
+            .add_observer(on_teleported)
+            .add_systems(
+                FixedUpdate,
+                teleport_at_boundary.in_set(InGameSet::EntityUpdates),
+            );
     }
+}
+
+#[derive(Resource, Default)]
+struct TeleportCollisionState {
+    last_field_crowded: Option<bool>,
 }
 
 #[derive(Component, Reflect, Debug, Default, Clone)]
@@ -24,19 +37,112 @@ pub struct Teleporter {
     pub last_teleported_normal:   Option<Dir3>,
 }
 
+#[derive(EntityEvent)]
+struct Teleported {
+    entity:   Entity,
+    position: Vec3,
+    rotation: Quat,
+    collider: Collider,
+}
+
+fn on_teleported(
+    event: On<Teleported>,
+    mut params: ParamSet<(
+        SpatialQuery,
+        Query<(&mut CollisionLayers, &mut Health), With<Nateroid>>,
+    )>,
+    spawn_stats: Res<NateroidSpawnStats>,
+    config: Res<NateroidConfig>,
+    mut collision_state: ResMut<TeleportCollisionState>,
+) {
+    // First, do all spatial queries (collect results before mutating)
+    let asteroid_filter = SpatialQueryFilter::from_mask(LayerMask::from([GameLayer::Asteroid]));
+    let spaceship_filter = SpatialQueryFilter::from_mask(LayerMask::from([GameLayer::Spaceship]));
+
+    let overlapping_asteroids = params.p0().shape_intersections(
+        &event.collider,
+        event.position,
+        event.rotation,
+        &asteroid_filter,
+    );
+
+    let overlapping_spaceship = params.p0().shape_intersections(
+        &event.collider,
+        event.position,
+        event.rotation,
+        &spaceship_filter,
+    );
+
+    // Then, mutate nateroid health/collision layers
+    let mut nateroid_query = params.p1();
+
+    // Check if we should be aggressive based on spawn success rate
+    // Lower spawn success rate = field is crowded = be more aggressive
+    let spawn_success_rate = spawn_stats.success_rate();
+    let field_is_crowded = spawn_success_rate < config.kill_on_teleport_if_under_this_success_rate;
+
+    // Kill overlapping asteroids (but not the teleporting entity)
+    // Only kill nateroid-on-nateroid overlaps if field is crowded
+    let is_teleporting_nateroid = nateroid_query.get(event.entity).is_ok();
+
+    // Debug logging - only log when crowded state changes
+    if (!overlapping_asteroids.is_empty() || !overlapping_spaceship.is_empty())
+        && collision_state.last_field_crowded != Some(field_is_crowded)
+    {
+        info!(
+            "🔍 Teleport collision detected - attempts: {}, successes: {}, rate: {:.1}%, threshold: {:.1}%, crowded: {}, is_nateroid: {}",
+            spawn_stats.attempts_count(),
+            spawn_stats.successes_count(),
+            spawn_success_rate * 100.0,
+            config.kill_on_teleport_if_under_this_success_rate * 100.0,
+            field_is_crowded,
+            is_teleporting_nateroid
+        );
+        collision_state.last_field_crowded = Some(field_is_crowded);
+    }
+
+    for entity in overlapping_asteroids {
+        if entity == event.entity {
+            continue;
+        }
+
+        if let Ok((mut collision_layers, mut health)) = nateroid_query.get_mut(entity) {
+            // Always kill if spaceship teleported, or if field is crowded
+            if !is_teleporting_nateroid || field_is_crowded {
+                info!(
+                    "💀 Killing overlapping nateroid - spaceship_teleported: {}, field_crowded: {}",
+                    !is_teleporting_nateroid, field_is_crowded
+                );
+                *collision_layers = CollisionLayers::NONE;
+                health.0 = -1.0;
+            }
+        }
+    }
+
+    // If a nateroid teleported onto the spaceship, always kill the nateroid
+    if is_teleporting_nateroid && !overlapping_spaceship.is_empty() {
+        if let Ok((mut collision_layers, mut health)) = nateroid_query.get_mut(event.entity) {
+            info!("💀 Nateroid teleported onto spaceship - killing nateroid");
+            *collision_layers = CollisionLayers::NONE;
+            health.0 = -1.0;
+        }
+    }
+}
+
 pub fn teleport_at_boundary(
     boundary: Res<Boundary>,
     mut commands: Commands,
-    spaceship_config: Res<SpaceshipConfig>,
     mut teleporting_entities: Query<(
         Entity,
         &mut Transform,
         &mut Teleporter,
+        &Collider,
         Option<&Name>,
         Option<&Spaceship>,
+        Option<&Deaderoid>,
     )>,
 ) {
-    for (entity, mut transform, mut teleporter, name, is_spaceship) in
+    for (entity, mut transform, mut teleporter, collider, name, is_spaceship, is_deaderoid) in
         teleporting_entities.iter_mut()
     {
         let original_position = transform.translation;
@@ -44,6 +150,12 @@ pub fn teleport_at_boundary(
         let teleported_position = boundary.calculate_teleport_position(original_position);
 
         if teleported_position != original_position {
+            // If this is a dying nateroid, despawn it instead of teleporting
+            if is_deaderoid.is_some() {
+                despawn(&mut commands, entity);
+                continue;
+            }
+
             // Only log spaceship teleports
             if is_spaceship.is_some() {
                 let entity_name = name.map(|n| (*n).as_str()).unwrap_or("Spaceship");
@@ -57,9 +169,6 @@ pub fn teleport_at_boundary(
                     teleported_position.y,
                     teleported_position.z
                 );
-
-                // Disable collisions for spaceship during teleport
-                commands.entity(entity).insert(CollisionLayers::NONE);
             }
 
             transform.translation = teleported_position;
@@ -67,14 +176,15 @@ pub fn teleport_at_boundary(
             teleporter.last_teleported_position = Some(teleported_position);
             teleporter.last_teleported_normal =
                 Some(boundary.get_normal_for_position(teleported_position));
-        } else {
-            // Restore collisions for spaceship
-            if is_spaceship.is_some() {
-                commands
-                    .entity(entity)
-                    .insert(spaceship_config.actor_config.collision_layers);
-            }
 
+            // Trigger event to handle overlapping entities
+            commands.trigger(Teleported {
+                entity,
+                position: teleported_position,
+                rotation: transform.rotation,
+                collider: collider.clone(),
+            });
+        } else {
             teleporter.just_teleported = false;
             teleporter.last_teleported_position = None;
             teleporter.last_teleported_normal = None;

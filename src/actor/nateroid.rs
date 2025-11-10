@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::ops::Range;
 
 use avian3d::prelude::*;
@@ -9,6 +10,8 @@ use super::actor_config::LOCKED_AXES_2D;
 use super::actor_config::insert_configured_components;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidConfig;
+use super::constants::MAX_NATEROID_ANGULAR_VELOCITY;
+use super::constants::MAX_NATEROID_LINEAR_VELOCITY;
 use super::spaceship::Spaceship;
 use crate::global_input::GameAction;
 use crate::global_input::toggle_active;
@@ -19,16 +22,47 @@ use crate::traits::TransformExt;
 
 // half the size of the boundary and only in the x,y plane
 const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
-// Maximum allowed velocities to prevent physics explosions.
-// Lower limits needed with SubstepCount(1) to prevent popcorn bursts.
-pub const MAX_NATEROID_LINEAR_VELOCITY: f32 = 80.0;
-pub const MAX_NATEROID_ANGULAR_VELOCITY: f32 = 20.0;
 
-#[derive(Resource, Default)]
-struct NateroidSpawnStats {
-    attempts:          u32,
-    successes:         u32,
-    last_warning_time: f32,
+#[derive(Resource)]
+pub struct NateroidSpawnStats {
+    /// Ring buffer tracking last N spawn attempts (true = success, false = failure)
+    pub attempts:          VecDeque<bool>,
+    pub last_warning_time: f32,
+}
+
+impl Default for NateroidSpawnStats {
+    fn default() -> Self {
+        Self {
+            attempts:          VecDeque::with_capacity(50),
+            last_warning_time: 0.0,
+        }
+    }
+}
+
+impl NateroidSpawnStats {
+    const MAX_ATTEMPTS: usize = 50;
+
+    pub fn record_attempt(&mut self, success: bool) {
+        self.attempts.push_back(success);
+        if self.attempts.len() > Self::MAX_ATTEMPTS {
+            self.attempts.pop_front();
+        }
+    }
+
+    pub fn success_rate(&self) -> f32 {
+        if self.attempts.is_empty() {
+            1.0 // No data - assume field is not crowded
+        } else {
+            let successes = self.attempts.iter().filter(|&&success| success).count();
+            successes as f32 / self.attempts.len() as f32
+        }
+    }
+
+    pub fn attempts_count(&self) -> usize { self.attempts.len() }
+
+    pub fn successes_count(&self) -> usize {
+        self.attempts.iter().filter(|&&success| success).count()
+    }
 }
 
 pub struct NateroidPlugin;
@@ -63,6 +97,14 @@ impl Plugin for NateroidPlugin {
 )]
 pub struct Nateroid;
 
+#[derive(Component, Debug)]
+pub struct Deaderoid {
+    pub initial_scale:  Vec3,
+    pub target_shrink:  f32,
+    pub shrink_rate:    f32,
+    pub current_shrink: f32,
+}
+
 fn spawn_nateroid(mut commands: Commands, mut config: ResMut<NateroidConfig>, time: Res<Time>) {
     if !config.spawnable {
         return;
@@ -87,48 +129,42 @@ fn initialize_nateroid(
     mut spawn_stats: ResMut<NateroidSpawnStats>,
     time: Res<Time>,
 ) {
-    spawn_stats.attempts += 1;
     let current_time = time.elapsed_secs();
 
     let Some(transform) = initialize_transform(&boundary, &config, &spatial_query) else {
+        spawn_stats.record_attempt(false);
         commands.entity(nateroid.entity).despawn();
 
         // Check if we should output warning (once per second)
         if current_time - spawn_stats.last_warning_time >= 1.0 {
-            let success_rate = if spawn_stats.attempts > 0 {
-                (spawn_stats.successes as f32 / spawn_stats.attempts as f32) * 100.0
-            } else {
-                0.0
-            };
+            let success_rate = spawn_stats.success_rate() * 100.0;
             warn!(
-                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last second",
-                spawn_stats.successes, spawn_stats.attempts, success_rate
+                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last {} spawns",
+                spawn_stats.successes_count(),
+                spawn_stats.attempts_count(),
+                success_rate,
+                spawn_stats.attempts_count()
             );
-            spawn_stats.attempts = 0;
-            spawn_stats.successes = 0;
             spawn_stats.last_warning_time = current_time;
         }
         return;
     };
 
-    spawn_stats.successes += 1;
+    spawn_stats.record_attempt(true);
 
     // Check if we should output stats (once per second, even on success)
     if current_time - spawn_stats.last_warning_time >= 1.0 {
-        let success_rate = if spawn_stats.attempts > 0 {
-            (spawn_stats.successes as f32 / spawn_stats.attempts as f32) * 100.0
-        } else {
-            0.0
-        };
+        let success_rate = spawn_stats.success_rate() * 100.0;
+        let successes = spawn_stats.successes_count();
+        let attempts = spawn_stats.attempts_count();
+
         // Only warn if there were failures
-        if spawn_stats.successes < spawn_stats.attempts {
+        if successes < attempts {
             warn!(
-                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last second",
-                spawn_stats.successes, spawn_stats.attempts, success_rate
+                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last {} spawns",
+                successes, attempts, success_rate, attempts
             );
         }
-        spawn_stats.attempts = 0;
-        spawn_stats.successes = 0;
         spawn_stats.last_warning_time = current_time;
     }
 

@@ -6,8 +6,8 @@ use super::actor_config::GLTF_ROTATION_X;
 use super::actor_config::LOCKED_AXES_SPACESHIP;
 use super::actor_config::insert_configured_components;
 use super::actor_template::SpaceshipConfig;
-use super::nateroid::MAX_NATEROID_ANGULAR_VELOCITY;
-use super::nateroid::MAX_NATEROID_LINEAR_VELOCITY;
+use super::constants::MAX_SPACESHIP_ANGULAR_VELOCITY;
+use super::constants::MAX_SPACESHIP_LINEAR_VELOCITY;
 use super::spaceship_control::SpaceshipControl;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
@@ -66,8 +66,8 @@ fn initialize_spaceship(
         .entity(spaceship.entity)
         .insert(spaceship_config.transform)
         .insert(SpaceshipControl::generate_input_map())
-        .insert(MaxLinearSpeed(MAX_NATEROID_LINEAR_VELOCITY))
-        .insert(MaxAngularSpeed(MAX_NATEROID_ANGULAR_VELOCITY));
+        .insert(MaxLinearSpeed(MAX_SPACESHIP_LINEAR_VELOCITY))
+        .insert(MaxAngularSpeed(MAX_SPACESHIP_ANGULAR_VELOCITY));
 
     insert_configured_components(
         &mut commands,

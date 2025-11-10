@@ -70,15 +70,18 @@ impl DerefMut for MissileConfig {
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
 pub struct NateroidConfig {
-    pub actor_config:     ActorConfig,
-    pub linear_velocity:  f32,
-    pub angular_velocity: f32,
+    pub actor_config:                                ActorConfig,
+    pub linear_velocity:                             f32,
+    pub angular_velocity:                            f32,
+    pub death_duration_secs:                         f32,
+    pub death_shrink_pct:                            f32,
+    pub kill_on_teleport_if_under_this_success_rate: f32,
 }
 
 impl Default for NateroidConfig {
     fn default() -> Self {
         Self {
-            actor_config:     ActorConfig {
+            actor_config:                                ActorConfig {
                 angular_damping: Some(0.001),
                 collider_margin: 1.0 / 3.0,
                 collider_type: ColliderType::Ball,
@@ -99,8 +102,11 @@ impl Default for NateroidConfig {
                 spawnable: true,
                 ..default()
             },
-            linear_velocity:  35.0,
-            angular_velocity: 4.5,
+            linear_velocity:                             35.0,
+            angular_velocity:                            4.5,
+            death_duration_secs:                         3.,
+            death_shrink_pct:                            0.3,
+            kill_on_teleport_if_under_this_success_rate: 0.01,
         }
     }
 }

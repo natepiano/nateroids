@@ -42,6 +42,9 @@ fn handle_collision_events(
         if entity1_is_invincible_spaceship {
             // Spaceship just teleported - instantly kill entity2
             if let Ok(mut health) = health_query.get_mut(event.collider2) {
+                info!(
+                    "💀 Spaceship invincibility: killing nateroid that collided with just-teleported spaceship"
+                );
                 health.0 = -1.0; // Instant death
             }
             // Spaceship still takes normal damage
@@ -54,6 +57,9 @@ fn handle_collision_events(
         } else if entity2_is_invincible_spaceship {
             // Spaceship just teleported - instantly kill entity1
             if let Ok(mut health) = health_query.get_mut(event.collider1) {
+                info!(
+                    "💀 Spaceship invincibility: killing nateroid that collided with just-teleported spaceship"
+                );
                 health.0 = -1.0; // Instant death
             }
             // Spaceship still takes normal damage

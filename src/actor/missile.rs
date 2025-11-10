@@ -7,6 +7,8 @@ use crate::actor::actor_config::ActorConfig;
 use crate::actor::actor_config::LOCKED_AXES_2D;
 use crate::actor::actor_config::insert_configured_components;
 use crate::actor::actor_template::MissileConfig;
+use crate::actor::constants::MAX_MISSILE_ANGULAR_VELOCITY;
+use crate::actor::constants::MAX_MISSILE_LINEAR_VELOCITY;
 use crate::actor::spaceship::ContinuousFire;
 use crate::actor::spaceship::Spaceship;
 use crate::actor::spaceship_control::SpaceshipControl;
@@ -14,10 +16,6 @@ use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 use crate::traits::TransformExt;
-
-// Missile max velocity = spaceship max speed (80) + missile base velocity (85)
-pub const MAX_MISSILE_LINEAR_VELOCITY: f32 = 300.0;
-pub const MAX_MISSILE_ANGULAR_VELOCITY: f32 = 20.0;
 
 pub struct MissilePlugin;
 
