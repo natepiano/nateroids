@@ -10,6 +10,7 @@ mod playfield;
 mod schedule;
 mod splash;
 mod state;
+mod traits;
 
 use bevy::gltf::GltfPlugin;
 use bevy::prelude::*;

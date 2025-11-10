@@ -6,6 +6,7 @@ mod missile;
 mod nateroid;
 mod spaceship;
 mod spaceship_control;
+mod spaceship_diagnostics;
 mod teleport;
 
 pub use aabb::Aabb;
@@ -19,7 +20,9 @@ pub use missile::MissilePosition;
 pub use nateroid::Nateroid;
 use nateroid::NateroidPlugin;
 use spaceship::SpaceshipPlugin;
+pub use spaceship::SpaceshipSpawnBuffer;
 use spaceship_control::SpaceshipControlPlugin;
+use spaceship_diagnostics::SpaceshipDiagnosticsPlugin;
 use teleport::TeleportPlugin;
 pub use teleport::Teleporter;
 
@@ -34,6 +37,7 @@ impl Plugin for ActorPlugin {
             .add_plugins(NateroidPlugin)
             .add_plugins(SpaceshipPlugin)
             .add_plugins(SpaceshipControlPlugin)
+            .add_plugins(SpaceshipDiagnosticsPlugin)
             .add_plugins(TeleportPlugin);
     }
 }

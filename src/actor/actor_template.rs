@@ -14,6 +14,7 @@ use bevy_inspector_egui::InspectorOptions;
 use super::actor_config::ActorConfig;
 use super::actor_config::ColliderType;
 use super::actor_config::GLTF_ROTATION_X;
+use crate::traits::TransformExt;
 
 #[derive(PhysicsLayer, Clone, Copy, Debug, Default)]
 pub enum GameLayer {
@@ -77,9 +78,9 @@ impl Default for NateroidConfig {
     fn default() -> Self {
         Self {
             actor_config:     ActorConfig {
-                angular_damping: Some(0.2),
+                angular_damping: Some(0.001),
                 collider_type: ColliderType::Ball,
-                collision_damage: 0.1,
+                collision_damage: 10.,
                 collision_layers: CollisionLayers::new(
                     [GameLayer::Asteroid],
                     [
@@ -89,10 +90,10 @@ impl Default for NateroidConfig {
                     ],
                 ),
                 health: 200.,
-                linear_damping: Some(0.1),
+                linear_damping: Some(0.001),
                 mass: 1.0,
                 restitution: 0.3,
-                spawn_timer_seconds: Some(0.1),
+                spawn_timer_seconds: Some(1.5),
                 spawnable: true,
                 ..default()
             },
@@ -114,39 +115,47 @@ impl DerefMut for NateroidConfig {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
-pub struct SpaceshipConfig(pub ActorConfig);
+pub struct SpaceshipConfig {
+    pub actor_config: ActorConfig,
+    pub spawn_buffer: f32,
+}
 
 impl Default for SpaceshipConfig {
     fn default() -> Self {
-        Self(ActorConfig {
-            angular_damping: Some(0.1),
-            collision_damage: 50.,
-            collision_layers: CollisionLayers::new(
-                [GameLayer::Spaceship],
-                [GameLayer::Asteroid, GameLayer::Boundary],
-            ),
-            health: 500.,
-            linear_damping: Some(0.05),
-            mass: 10.0,
-            locked_axes: LockedAxes::new()
-                .lock_rotation_x()
-                .lock_rotation_y()
-                .lock_translation_z(),
-            restitution: 0.1,
-            transform: Transform::from_translation(Vec3::new(0.0, -20.0, 0.0))
-                .with_rotation(Quat::from_rotation_x(GLTF_ROTATION_X))
-                .with_scale(Vec3::splat(1.0)),
-            ..default()
-        })
+        Self {
+            actor_config: ActorConfig {
+                angular_damping: Some(0.1),
+                collision_damage: 50.,
+                collision_layers: CollisionLayers::new(
+                    [GameLayer::Spaceship],
+                    [GameLayer::Asteroid, GameLayer::Boundary],
+                ),
+                health: 500.,
+                linear_damping: Some(0.05),
+                mass: 10.0,
+                locked_axes: LockedAxes::new()
+                    .lock_rotation_x()
+                    .lock_rotation_y()
+                    .lock_translation_z(),
+                restitution: 0.1,
+                transform: Transform::from_trs(
+                    Vec3::new(0.0, -20.0, 0.0),
+                    Quat::from_rotation_x(GLTF_ROTATION_X),
+                    Vec3::splat(2.0),
+                ),
+                ..default()
+            },
+            spawn_buffer: 0.25,
+        }
     }
 }
 
 impl Deref for SpaceshipConfig {
     type Target = ActorConfig;
 
-    fn deref(&self) -> &Self::Target { &self.0 }
+    fn deref(&self) -> &Self::Target { &self.actor_config }
 }
 
 impl DerefMut for SpaceshipConfig {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.0 }
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_config }
 }

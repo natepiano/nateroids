@@ -21,7 +21,7 @@ pub struct Teleporter {
     pub last_teleported_normal:   Option<Dir3>,
 }
 
-fn teleport_at_boundary(
+pub(super) fn teleport_at_boundary(
     boundary: Res<Boundary>,
     mut teleporting_entities: Query<(&mut Transform, &mut Teleporter)>,
 ) {

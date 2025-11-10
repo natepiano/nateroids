@@ -200,7 +200,8 @@ fn init_portals(
     }
 }
 
-/// Checks if a position is way beyond the boundary (physics burst)
+/// Checks if a position is way beyond the boundary (physics burst).
+/// Prevents drawing portals when actors burst past boundary due to high physics stress.
 fn is_physics_burst(position: Vec3, boundary: &Boundary) -> bool {
     let boundary_half_size = boundary.transform.scale / 2.0;
     let max_distance_from_center = position.distance(boundary.transform.translation);
@@ -208,7 +209,9 @@ fn is_physics_burst(position: Vec3, boundary: &Boundary) -> bool {
     max_distance_from_center > boundary_diagonal * 2.0
 }
 
-/// Snaps position to boundary and calculates the correct normal and face for the snapped position
+/// Snaps position to boundary and calculates the correct normal and face for the snapped position.
+/// Recalculates normal because snapping can move position to a different face (especially at
+/// corners).
 fn snap_and_get_normal(
     position: Vec3,
     initial_normal: Dir3,

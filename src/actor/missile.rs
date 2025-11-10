@@ -13,6 +13,11 @@ use crate::actor::spaceship_control::SpaceshipControl;
 use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
+use crate::traits::TransformExt;
+
+// Missile max velocity = spaceship max speed (80) + missile base velocity (85)
+pub const MAX_MISSILE_LINEAR_VELOCITY: f32 = 300.0;
+pub const MAX_MISSILE_ANGULAR_VELOCITY: f32 = 20.0;
 
 pub struct MissilePlugin;
 
@@ -117,7 +122,9 @@ fn initialize_missile(
         .insert(missile_position)
         .insert(transform)
         .insert(linear_velocity)
-        .insert(angular_velocity);
+        .insert(angular_velocity)
+        .insert(MaxLinearSpeed(MAX_MISSILE_LINEAR_VELOCITY))
+        .insert(MaxAngularSpeed(MAX_MISSILE_ANGULAR_VELOCITY));
 
     insert_configured_components(&mut commands, &mut config.actor_config, missile.entity);
 }
@@ -135,9 +142,11 @@ fn initialize_transform(
     let combined_rotation =
         spaceship_transform.rotation * missile_config.actor_config.transform.rotation;
 
-    Transform::from_translation(spawn_position)
-        .with_rotation(combined_rotation)
-        .with_scale(missile_config.actor_config.transform.scale)
+    Transform::from_trs(
+        spawn_position,
+        combined_rotation,
+        missile_config.actor_config.transform.scale,
+    )
 }
 
 fn fire_missile(

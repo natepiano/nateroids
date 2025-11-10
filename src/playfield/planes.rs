@@ -9,6 +9,7 @@ use crate::global_input::toggle_active;
 use crate::orientation::CameraOrientation;
 use crate::orientation::OrientationConfig;
 use crate::playfield::Boundary;
+use crate::traits::TransformExt;
 
 pub struct PlanesPlugin;
 
@@ -117,7 +118,7 @@ fn create_or_update_plane(
     let mesh = meshes.add(Mesh::from(cuboid));
     let material_handle = get_plane_material(materials, planes_config);
     let rotation = Quat::from_axis_angle(axis, 0.);
-    let transform = Transform::from_translation(position).with_rotation(rotation);
+    let transform = Transform::from_trs(position, rotation, Vec3::ONE);
 
     if let Some(entity) = existing_entity {
         commands

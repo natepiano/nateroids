@@ -7,6 +7,7 @@ use rand::prelude::ThreadRng;
 
 use crate::camera::RenderLayer;
 use crate::playfield::Boundary;
+use crate::traits::TransformExt;
 
 pub struct StarsPlugin;
 
@@ -163,8 +164,10 @@ fn setup_star_rendering(
             .entity(entity)
             .insert(Mesh3d(mesh.clone()))
             .insert(MeshMaterial3d(material))
-            .insert(
-                Transform::from_translation(star.position).with_scale(Vec3::splat(star.radius)),
-            );
+            .insert(Transform::from_trs(
+                star.position,
+                Quat::IDENTITY,
+                Vec3::splat(star.radius),
+            ));
     }
 }

@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+use bevy_panorbit_camera::PanOrbitCamera;
 
 use crate::camera::RenderLayer;
 use crate::global_input::GlobalAction;
@@ -72,15 +73,15 @@ pub struct Boundary {
 
 impl Default for Boundary {
     fn default() -> Self {
-        let cell_count = UVec3::new(1, 1, 1);
+        let cell_count = UVec3::new(3, 1, 1);
         let scalar = 110.;
 
         Self {
             cell_count,
-            grid_color: Color::from(tailwind::BLUE_300).with_alpha(0.25),
-            outer_color: Color::from(tailwind::BLUE_500),
-            line_width: 3.,
-            outer_line_width: 3.,
+            grid_color: Color::from(tailwind::BLUE_500).with_alpha(0.25),
+            outer_color: Color::from(tailwind::BLUE_500).with_alpha(1.0),
+            line_width: 1.5,
+            outer_line_width: 6.,
             scalar,
             transform: Transform::from_scale(scalar * cell_count.as_vec3()),
         }
@@ -163,44 +164,47 @@ impl Boundary {
         teleport_position
     }
 
-    /// Snaps a position to the exact boundary face based on the normal.
-    /// Sets the primary axis to the exact boundary edge, and clamps
-    /// the perpendicular axes to handle corner/edge teleportation cases.
+    /// Snaps a position to slightly inside the boundary face based on the normal.
+    /// Offsets by epsilon to prevent false-positive overextension detection that would trigger
+    /// corner wrapping arcs. Clamps perpendicular axes to handle corner/edge teleportation cases.
     pub fn snap_position_to_boundary_face(&self, position: Vec3, normal: Dir3) -> Vec3 {
         let boundary_min = self.transform.translation - self.transform.scale / 2.0;
         let boundary_max = self.transform.translation + self.transform.scale / 2.0;
 
+        // Without this offset, portals on exact boundary would be flagged as overextended
+        let epsilon = 0.01;
+
         let mut snapped_position = position;
 
-        // Set primary axis to exact boundary face and clamp perpendicular axes
+        // Set primary axis slightly inside boundary face and clamp perpendicular axes
         match normal {
             Dir3::X => {
-                snapped_position.x = boundary_max.x;
+                snapped_position.x = boundary_max.x - epsilon;
                 snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
                 snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
             },
             Dir3::NEG_X => {
-                snapped_position.x = boundary_min.x;
+                snapped_position.x = boundary_min.x + epsilon;
                 snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
                 snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
             },
             Dir3::Y => {
-                snapped_position.y = boundary_max.y;
+                snapped_position.y = boundary_max.y - epsilon;
                 snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
                 snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
             },
             Dir3::NEG_Y => {
-                snapped_position.y = boundary_min.y;
+                snapped_position.y = boundary_min.y + epsilon;
                 snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
                 snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
             },
             Dir3::Z => {
-                snapped_position.z = boundary_max.z;
+                snapped_position.z = boundary_max.z - epsilon;
                 snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
                 snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
             },
             Dir3::NEG_Z => {
-                snapped_position.z = boundary_min.z;
+                snapped_position.z = boundary_min.z + epsilon;
                 snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
                 snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
             },
@@ -282,7 +286,6 @@ impl Boundary {
         target_face: BoundaryFace,
     ) -> Vec3 {
         let current_normal = normal.as_vec3();
-
         let target_normal = target_face.get_normal();
 
         // The rotation axis is the cross product of the current and target normals
@@ -299,8 +302,23 @@ impl Boundary {
         let relative_pos = position - rotation_point;
         let rotated_pos = rotation * relative_pos;
 
-        // Return the rotated position in world space
-        rotation_point + rotated_pos
+        let mut result = rotation_point + rotated_pos;
+
+        // Rotation math at corners can produce off-plane positions - force result onto target
+        // face's plane
+        let half_extents = self.transform.scale / 2.0;
+        let center = self.transform.translation;
+
+        match target_face {
+            BoundaryFace::Right => result.x = center.x + half_extents.x,
+            BoundaryFace::Left => result.x = center.x - half_extents.x,
+            BoundaryFace::Top => result.y = center.y + half_extents.y,
+            BoundaryFace::Bottom => result.y = center.y - half_extents.y,
+            BoundaryFace::Front => result.z = center.z + half_extents.z,
+            BoundaryFace::Back => result.z = center.z - half_extents.z,
+        }
+
+        result
     }
 
     fn find_closest_point_on_edge(&self, position: Vec3, normal1: Vec3, normal2: Vec3) -> Vec3 {
@@ -407,23 +425,27 @@ impl Boundary {
         let max = self.transform.translation + half_size;
         let radius = portal.radius;
 
-        // Check all faces regardless of the portal's normal
-        if portal.position.x - radius < min.x {
+        // Portals are snapped 0.01 inside boundary - without this margin, they'd be incorrectly
+        // detected as overextended, triggering broken corner wrapping math
+        let epsilon = 0.02; // Slightly larger than snap epsilon (0.01) to provide margin
+
+        // Check all faces - only truly overextended if beyond boundary + epsilon
+        if portal.position.x - radius < min.x - epsilon {
             overextended_faces.push(BoundaryFace::Left);
         }
-        if portal.position.x + radius > max.x {
+        if portal.position.x + radius > max.x + epsilon {
             overextended_faces.push(BoundaryFace::Right);
         }
-        if portal.position.y - radius < min.y {
+        if portal.position.y - radius < min.y - epsilon {
             overextended_faces.push(BoundaryFace::Bottom);
         }
-        if portal.position.y + radius > max.y {
+        if portal.position.y + radius > max.y + epsilon {
             overextended_faces.push(BoundaryFace::Top);
         }
-        if portal.position.z - radius < min.z {
+        if portal.position.z - radius < min.z - epsilon {
             overextended_faces.push(BoundaryFace::Back);
         }
-        if portal.position.z + radius > max.z {
+        if portal.position.z + radius > max.z + epsilon {
             overextended_faces.push(BoundaryFace::Front);
         }
 
@@ -441,12 +463,15 @@ impl Boundary {
         overextended_faces.retain(|&face| face != face_to_remove);
         overextended_faces
     }
+    /// Returns the normal of the closest boundary face to a position.
+    /// Uses distance-based matching because teleported positions have offsets (e.g., -54.97 instead
+    /// of -55.0) that break simple epsilon matching.
     pub fn get_normal_for_position(&self, position: Vec3) -> Dir3 {
         let half_size = self.transform.scale / 2.0;
         let boundary_min = self.transform.translation - half_size;
         let boundary_max = self.transform.translation + half_size;
 
-        // Find the closest boundary face by comparing distances
+        // Calculate distance to all 6 faces and return normal of closest
         let dist_to_min_x = (position.x - boundary_min.x).abs();
         let dist_to_max_x = (position.x - boundary_max.x).abs();
         let dist_to_min_y = (position.y - boundary_min.y).abs();
@@ -556,6 +581,7 @@ fn draw_boundary(
     mut boundary: ResMut<Boundary>,
     mut grid_gizmo: Gizmos<BoundaryGridGizmo>,
     mut outer_boundary_gizmo: Gizmos<OuterBoundaryGizmo>,
+    camera_query: Query<(&Camera, &Projection, &GlobalTransform), With<PanOrbitCamera>>,
 ) {
     // updating the boundary resource transform from its configuration so it can be
     // dynamically changed with the inspector while the game is running
@@ -572,9 +598,31 @@ fn draw_boundary(
         )
         .outer_edges();
 
-    // Draw outer boundary cuboid with thicker line
+    // Calculate world-space offset based on camera projection
+    let Ok((camera, projection, camera_transform)) = camera_query.single() else {
+        panic!("No camera found");
+    };
+    let Projection::Perspective(perspective) = projection else {
+        panic!("Expected perspective camera");
+    };
+
+    let viewport_size = camera
+        .logical_viewport_size()
+        .unwrap_or(Vec2::new(1920.0, 1080.0));
+    let camera_distance = camera_transform
+        .translation()
+        .distance(boundary.transform.translation);
+    let world_height_at_boundary = 2.0 * camera_distance * (perspective.fov / 2.0).tan();
+    let world_units_per_pixel = world_height_at_boundary / viewport_size.y;
+
+    // Gizmo lines are centered on edges
+    // Empirically tuned multiplier to account for gizmo rendering
+    let total_line_width = boundary.line_width + boundary.outer_line_width;
+    let outer_scale =
+        boundary.transform.scale + Vec3::splat(total_line_width * world_units_per_pixel * 0.1);
+
     outer_boundary_gizmo.primitive_3d(
-        &Cuboid::from_size(boundary.transform.scale),
+        &Cuboid::from_size(outer_scale),
         Isometry3d::new(boundary.transform.translation, Quat::IDENTITY),
         boundary.outer_color,
     );

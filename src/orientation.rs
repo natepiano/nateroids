@@ -58,7 +58,7 @@ impl CameraOrientation {
         axis_mundi:       Vec3::ZERO,
         axis_orbis:       Vec3::ZERO,
         axis_profundus:   Vec3::ZERO,
-        locus:            Transform::from_translation(Vec3::ZERO),
+        locus:            Transform::IDENTITY,
         nexus:            Vec3::ZERO,
         spaceship_offset: Vec3::new(0.0, 5.0, -10.0),
     };

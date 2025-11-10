@@ -26,7 +26,9 @@ fn despawn_missiles(mut commands: Commands, query: Query<(Entity, &MissilePositi
     }
 }
 
-pub fn despawn(commands: &mut Commands, entity: Entity) { commands.entity(entity).despawn(); }
+/// Uses `try_despawn` because entities can be queued for despawn multiple times in a frame
+/// (e.g., missile reaching max distance AND taking lethal damage simultaneously)
+pub fn despawn(commands: &mut Commands, entity: Entity) { commands.entity(entity).try_despawn(); }
 
 fn despawn_dead_entities(mut commands: Commands, query: Query<(Entity, &Health, &Name)>) {
     for (entity, health, _name) in query.iter() {

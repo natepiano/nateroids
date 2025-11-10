@@ -1,4 +1,5 @@
 use avian3d::prelude::*;
+use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
 
 use super::Teleporter;
@@ -6,7 +7,10 @@ use super::actor_config::GLTF_ROTATION_X;
 use super::actor_config::LOCKED_AXES_SPACESHIP;
 use super::actor_config::insert_configured_components;
 use super::actor_template::SpaceshipConfig;
+use super::nateroid::MAX_NATEROID_ANGULAR_VELOCITY;
+use super::nateroid::MAX_NATEROID_LINEAR_VELOCITY;
 use super::spaceship_control::SpaceshipControl;
+use crate::camera::RenderLayer;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
@@ -36,6 +40,10 @@ pub struct ContinuousFire;
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
+pub struct SpaceshipSpawnBuffer;
+
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
 #[require(
     Teleporter,
     ActorPortals,
@@ -51,7 +59,22 @@ fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipConfig
     if !spaceship_config.spawnable {
         return;
     }
-    commands.spawn((Spaceship, Name::new("Spaceship")));
+
+    // Parent: SpaceshipSpawnBuffer with position only (no rotation/scale)
+    let buffer_scale = 1.0 + spaceship_config.spawn_buffer;
+    let buffer_aabb = spaceship_config.actor_config.aabb.scale(buffer_scale);
+    let render_layers =
+        RenderLayers::from_layers(spaceship_config.actor_config.render_layer.layers());
+
+    commands
+        .spawn((
+            SpaceshipSpawnBuffer,
+            buffer_aabb,
+            Transform::from_translation(spaceship_config.transform.translation),
+            render_layers,
+            Name::new("SpaceshipSpawnBuffer"),
+        ))
+        .with_child((Spaceship, Name::new("Spaceship")));
 }
 
 fn initialize_spaceship(
@@ -59,10 +82,19 @@ fn initialize_spaceship(
     mut commands: Commands,
     mut spaceship_config: ResMut<SpaceshipConfig>,
 ) {
+    // Child gets local transform with rotation and scale (parent has position)
+    let local_transform = Transform {
+        translation: Vec3::ZERO,
+        rotation:    spaceship_config.transform.rotation,
+        scale:       spaceship_config.transform.scale,
+    };
+
     commands
         .entity(spaceship.entity)
-        .insert(spaceship_config.transform)
-        .insert(SpaceshipControl::generate_input_map());
+        .insert(local_transform)
+        .insert(SpaceshipControl::generate_input_map())
+        .insert(MaxLinearSpeed(MAX_NATEROID_LINEAR_VELOCITY))
+        .insert(MaxAngularSpeed(MAX_NATEROID_ANGULAR_VELOCITY));
 
     insert_configured_components(&mut commands, &mut spaceship_config, spaceship.entity);
 }

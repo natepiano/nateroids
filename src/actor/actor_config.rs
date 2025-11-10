@@ -191,13 +191,15 @@ fn initialize_actor_configs(
     missile_defaults.actor_config = missile_actor_config;
     commands.insert_resource(missile_defaults);
 
-    let spaceship_config = initialize_actor_config(
-        SpaceshipConfig::default().0,
+    let mut spaceship_defaults = SpaceshipConfig::default();
+    let spaceship_actor_config = initialize_actor_config(
+        spaceship_defaults.actor_config.clone(),
         &scenes,
         &meshes,
         &scene_assets.spaceship,
     );
-    commands.insert_resource(SpaceshipConfig(spaceship_config));
+    spaceship_defaults.actor_config = spaceship_actor_config;
+    commands.insert_resource(spaceship_defaults);
 }
 
 pub fn create_spawn_timer(spawn_timer_seconds: Option<f32>) -> Option<Timer> {
