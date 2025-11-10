@@ -20,7 +20,6 @@ pub use missile::MissilePosition;
 pub use nateroid::Nateroid;
 use nateroid::NateroidPlugin;
 use spaceship::SpaceshipPlugin;
-pub use spaceship::SpaceshipSpawnBuffer;
 use spaceship_control::SpaceshipControlPlugin;
 use spaceship_diagnostics::SpaceshipDiagnosticsPlugin;
 use teleport::TeleportPlugin;

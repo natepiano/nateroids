@@ -38,6 +38,7 @@ impl Default for MissileConfig {
     fn default() -> Self {
         Self {
             actor_config:            ActorConfig {
+                collider_buffer: 1.0,
                 collision_damage: 50.,
                 collision_layers: CollisionLayers::new([GameLayer::Missile], [GameLayer::Asteroid]),
                 health: 1.,
@@ -79,6 +80,7 @@ impl Default for NateroidConfig {
         Self {
             actor_config:     ActorConfig {
                 angular_damping: Some(0.001),
+                collider_buffer: 1.0 / 3.0,
                 collider_type: ColliderType::Ball,
                 collision_damage: 10.,
                 collision_layers: CollisionLayers::new(
@@ -117,7 +119,6 @@ impl DerefMut for NateroidConfig {
 #[reflect(Resource)]
 pub struct SpaceshipConfig {
     pub actor_config: ActorConfig,
-    pub spawn_buffer: f32,
 }
 
 impl Default for SpaceshipConfig {
@@ -125,6 +126,7 @@ impl Default for SpaceshipConfig {
         Self {
             actor_config: ActorConfig {
                 angular_damping: Some(0.1),
+                collider_buffer: 1.5,
                 collision_damage: 50.,
                 collision_layers: CollisionLayers::new(
                     [GameLayer::Spaceship],
@@ -145,7 +147,6 @@ impl Default for SpaceshipConfig {
                 ),
                 ..default()
             },
-            spawn_buffer: 0.25,
         }
     }
 }

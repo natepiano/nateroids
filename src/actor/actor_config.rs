@@ -60,6 +60,8 @@ pub struct ActorConfig {
     pub angular_damping:          Option<f32>,
     #[reflect(ignore)]
     pub collider:                 Collider,
+    #[inspector(min = 0.1, max = 3.0, display = NumberDisplay::Slider)]
+    pub collider_buffer:          f32,
     pub collider_type:            ColliderType,
     pub collision_damage:         f32,
     pub collision_layers:         CollisionLayers,
@@ -90,6 +92,7 @@ impl Default for ActorConfig {
             aabb:                     Aabb::default(),
             angular_damping:          None,
             collider:                 Collider::cuboid(1., 1., 1.),
+            collider_buffer:          1.0,
             collider_type:            ColliderType::Cuboid,
             collision_damage:         0.,
             collision_layers:         CollisionLayers::default(),
@@ -220,10 +223,14 @@ fn initialize_actor_config(
 
     let collider = match config.collider_type {
         ColliderType::Ball => {
-            let radius = size.length() / 3.;
+            let radius = size.length() * config.collider_buffer;
             Collider::sphere(radius)
         },
-        ColliderType::Cuboid => Collider::cuboid(size.x, size.y, size.z),
+        ColliderType::Cuboid => Collider::cuboid(
+            size.x * config.collider_buffer,
+            size.y * config.collider_buffer,
+            size.z * config.collider_buffer,
+        ),
     };
 
     config.aabb = adjusted_aabb;
@@ -239,9 +246,15 @@ pub fn insert_configured_components(
     config: &mut ActorConfig,
     actor_entity: Entity,
 ) {
+    // TEMPORARY HARDCODED OFFSET - testing if ColliderTransform works
+    // Based on visual inspection, physics collider appears shifted up
+    let test_offset = Vec3::new(0.0, -10.0, 0.0);
+    let collider_transform = ColliderTransform::from(Transform::from_translation(test_offset));
+
     commands.entity(actor_entity).insert((
         config.aabb.clone(),
         config.collider.clone(),
+        collider_transform,
         CollisionDamage(config.collision_damage),
         config.collision_layers,
         GravityScale(config.gravity_scale),

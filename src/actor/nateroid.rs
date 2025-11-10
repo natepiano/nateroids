@@ -4,8 +4,6 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use rand::Rng;
 
-use super::Aabb;
-use super::SpaceshipSpawnBuffer;
 use super::Teleporter;
 use super::actor_config::LOCKED_AXES_2D;
 use super::actor_config::insert_configured_components;
@@ -76,9 +74,8 @@ fn initialize_nateroid(
     mut commands: Commands,
     boundary: Res<Boundary>,
     mut config: ResMut<NateroidConfig>,
-    spawn_buffers: Query<(&GlobalTransform, &Aabb), With<SpaceshipSpawnBuffer>>,
 ) {
-    let transform = initialize_transform(&boundary, &config, &spawn_buffers);
+    let transform = initialize_transform(&boundary, &config);
 
     // Calculate random velocities for nateroid
     let (linear_velocity, angular_velocity) =
@@ -95,11 +92,7 @@ fn initialize_nateroid(
     insert_configured_components(&mut commands, &mut config.actor_config, nateroid.entity);
 }
 
-fn initialize_transform(
-    boundary: &Boundary,
-    nateroid_config: &NateroidConfig,
-    spawn_buffers: &Query<(&GlobalTransform, &Aabb), With<SpaceshipSpawnBuffer>>,
-) -> Transform {
+fn initialize_transform(boundary: &Boundary, nateroid_config: &NateroidConfig) -> Transform {
     let bounds = Transform {
         translation: boundary.transform.translation,
         scale: boundary.transform.scale * SPAWN_WINDOW,
@@ -107,47 +100,10 @@ fn initialize_transform(
     };
 
     let scale = nateroid_config.actor_config.transform.scale;
-    let nateroid_aabb = &nateroid_config.actor_config.aabb;
+    let position = get_random_position_within_bounds(&bounds);
+    let rotation = get_random_rotation();
 
-    // Try up to 100 times to find a valid spawn position
-    const MAX_ATTEMPTS: usize = 100;
-    let mut attempt = 0;
-    loop {
-        attempt += 1;
-        let position = get_random_position_within_bounds(&bounds);
-        let rotation = get_random_rotation();
-
-        // Transform nateroid AABB to potential spawn position
-        let nateroid_world_aabb = nateroid_aabb.transform(position, scale);
-
-        // Check if this position would intersect with any spawn buffer zones
-        let mut intersects_buffer = false;
-        for (buffer_global_transform, buffer_aabb) in spawn_buffers.iter() {
-            // Transform buffer AABB to world space using GlobalTransform
-            let buffer_world_aabb = buffer_aabb.transform(
-                buffer_global_transform.translation(),
-                buffer_global_transform.scale(),
-            );
-
-            if nateroid_world_aabb.intersects(&buffer_world_aabb) {
-                intersects_buffer = true;
-                break;
-            }
-        }
-
-        if !intersects_buffer {
-            // Valid position found
-            return Transform::from_trs(position, rotation, scale);
-        }
-
-        if attempt >= MAX_ATTEMPTS {
-            warn!(
-                "Failed to find non-intersecting spawn position after {MAX_ATTEMPTS} attempts. \
-                 Spawning anyway at last attempt position."
-            );
-            return Transform::from_trs(position, rotation, scale);
-        }
-    }
+    Transform::from_trs(position, rotation, scale)
 }
 
 fn get_random_position_within_bounds(bounds: &Transform) -> Vec3 {

@@ -80,31 +80,32 @@ fn monitor_physics_health(
 
     let current_time = time.elapsed_secs_f64();
 
-    // if physics_struggling {
-    //     // When stressed, log every 1 second
-    //     let should_log = !state.is_stressed || (current_time - state.last_stress_log >= 1.0);
+    if physics_struggling {
+        // When stressed, log every 1 second
+        let should_log = !state.is_stressed || (current_time - state.last_stress_log >= 1.0);
 
-    //     if should_log {
-    //         warn!(
-    //             "⚠️  PHYSICS STRESS: {} nateroids | avg_speed: {:.1} | FPS: {:.1} | timestep:
-    // {:.3}ms",             nateroid_count,
-    //             avg_speed,
-    //             fps,
-    //             time.delta_secs() * 1000.0
-    //         );
-    //         state.is_stressed = true;
-    //         state.last_stress_log = current_time;
-    //         state.logged_unstressed = false;
-    //     }
-    // } else {
-    //     // When unstressed, log once on entry
-    //     if !state.logged_unstressed {
-    //         info!(
-    //             "Physics healthy: {} nateroids | avg_speed: {:.1} | FPS: {:.1}",
-    //             nateroid_count, avg_speed, fps
-    //         );
-    //         state.logged_unstressed = true;
-    //         state.is_stressed = false;
-    //     }
-    // }
+        if should_log {
+            warn!(
+                "⚠️  PHYSICS STRESS: {} nateroids | avg_speed: {:.1} | FPS: {:.1} | timestep:
+    {:.3}ms",
+                nateroid_count,
+                avg_speed,
+                fps,
+                time.delta_secs() * 1000.0
+            );
+            state.is_stressed = true;
+            state.last_stress_log = current_time;
+            state.logged_unstressed = false;
+        }
+    } else {
+        // When unstressed, log once on entry
+        if !state.logged_unstressed {
+            info!(
+                "Physics healthy: {} nateroids | avg_speed: {:.1} | FPS: {:.1}",
+                nateroid_count, avg_speed, fps
+            );
+            state.logged_unstressed = true;
+            state.is_stressed = false;
+        }
+    }
 }

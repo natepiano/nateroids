@@ -2,7 +2,6 @@ use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 
-use super::spaceship::SpaceshipSpawnBuffer;
 use crate::camera::RenderLayer;
 use crate::global_input::GlobalAction;
 use crate::global_input::toggle_active;
@@ -68,32 +67,14 @@ impl Aabb {
     }
 }
 
-fn draw_aabb_system(
-    mut gizmos: Gizmos<AabbGizmo>,
-    normal_aabbs: Query<(&Transform, &Aabb), Without<SpaceshipSpawnBuffer>>,
-    buffer_aabbs: Query<(&GlobalTransform, &Aabb), With<SpaceshipSpawnBuffer>>,
-) {
-    // Draw normal AABBs in green
-    for (transform, aabb) in normal_aabbs.iter() {
+fn draw_aabb_system(mut gizmos: Gizmos<AabbGizmo>, aabbs: Query<(&Transform, &Aabb)>) {
+    // Draw all AABBs in green
+    for (transform, aabb) in aabbs.iter() {
         let center = transform.transform_point(aabb.center());
 
         gizmos.cuboid(
             Transform::from_trs(center, transform.rotation, aabb.size() * transform.scale),
             Color::from(tailwind::GREEN_800),
-        );
-    }
-
-    // Draw spaceship spawn buffer AABBs in yellow
-    for (global_transform, aabb) in buffer_aabbs.iter() {
-        let center = global_transform.transform_point(aabb.center());
-
-        gizmos.cuboid(
-            Transform::from_trs(
-                center,
-                global_transform.rotation(),
-                aabb.size() * global_transform.scale(),
-            ),
-            Color::from(tailwind::YELLOW_600),
         );
     }
 }
