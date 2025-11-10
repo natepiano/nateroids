@@ -7,8 +7,6 @@ use crate::actor::actor_config::ActorConfig;
 use crate::actor::actor_config::LOCKED_AXES_2D;
 use crate::actor::actor_config::insert_configured_components;
 use crate::actor::actor_template::MissileConfig;
-use crate::actor::constants::MAX_MISSILE_ANGULAR_VELOCITY;
-use crate::actor::constants::MAX_MISSILE_LINEAR_VELOCITY;
 use crate::actor::spaceship::ContinuousFire;
 use crate::actor::spaceship::Spaceship;
 use crate::actor::spaceship_control::SpaceshipControl;
@@ -120,9 +118,7 @@ fn initialize_missile(
         .insert(missile_position)
         .insert(transform)
         .insert(linear_velocity)
-        .insert(angular_velocity)
-        .insert(MaxLinearSpeed(MAX_MISSILE_LINEAR_VELOCITY))
-        .insert(MaxAngularSpeed(MAX_MISSILE_ANGULAR_VELOCITY));
+        .insert(angular_velocity);
 
     insert_configured_components(&mut commands, &mut config.actor_config, missile.entity);
 }

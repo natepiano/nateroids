@@ -72,6 +72,7 @@ fn calculate_death_velocity(position: Vec3, boundary: &Boundary) -> Vec3 {
     direction * 20.0 // Velocity magnitude
 }
 
+#[allow(clippy::type_complexity)]
 fn despawn_dead_entities(
     mut commands: Commands,
     query: Query<

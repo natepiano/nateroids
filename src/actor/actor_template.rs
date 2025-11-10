@@ -11,9 +11,17 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
 
+use super::Aabb;
 use super::actor_config::ActorConfig;
 use super::actor_config::ColliderType;
 use super::actor_config::GLTF_ROTATION_X;
+use super::constants::MAX_MISSILE_ANGULAR_VELOCITY;
+use super::constants::MAX_MISSILE_LINEAR_VELOCITY;
+use super::constants::MAX_NATEROID_ANGULAR_VELOCITY;
+use super::constants::MAX_NATEROID_LINEAR_VELOCITY;
+use super::constants::MAX_SPACESHIP_ANGULAR_VELOCITY;
+use super::constants::MAX_SPACESHIP_LINEAR_VELOCITY;
+use crate::camera::RenderLayer;
 use crate::traits::TransformExt;
 
 #[derive(PhysicsLayer, Clone, Copy, Debug, Default)]
@@ -38,18 +46,36 @@ impl Default for MissileConfig {
     fn default() -> Self {
         Self {
             actor_config:            ActorConfig {
-                collider_margin: 1.0,
-                collision_damage: 50.,
-                collision_layers: CollisionLayers::new([GameLayer::Missile], [GameLayer::Asteroid]),
-                health: 1.,
-                mass: 0.1,
-                spawn_timer_seconds: Some(1.0 / 20.0),
-                transform: Transform::from_rotation(
+                spawnable:                true,
+                aabb:                     Aabb::default(),
+                angular_damping:          None,
+                collider:                 Collider::cuboid(1., 1., 1.),
+                collider_margin:          1.0,
+                collider_type:            ColliderType::Cuboid,
+                collision_damage:         50.,
+                collision_layers:         CollisionLayers::new(
+                    [GameLayer::Missile],
+                    [GameLayer::Asteroid],
+                ),
+                gravity_scale:            0.,
+                health:                   1.,
+                linear_damping:           None,
+                locked_axes:              LockedAxes::new().lock_translation_z(),
+                mass:                     0.1,
+                max_angular_velocity:     MAX_MISSILE_ANGULAR_VELOCITY,
+                max_linear_velocity:      MAX_MISSILE_LINEAR_VELOCITY,
+                render_layer:             RenderLayer::Game,
+                restitution:              0.1,
+                restitution_combine_rule: CoefficientCombine::Max,
+                rigid_body:               RigidBody::Dynamic,
+                scene:                    Handle::default(),
+                spawn_timer_seconds:      Some(1.0 / 20.0),
+                transform:                Transform::from_rotation(
                     Quat::from_rotation_x(GLTF_ROTATION_X)
                         * Quat::from_rotation_z(std::f32::consts::PI),
                 )
                 .with_scale(Vec3::splat(2.5)),
-                ..default()
+                spawn_timer:              None,
             },
             forward_distance_scalar: 7.0,
             base_velocity:           85.0,
@@ -70,23 +96,26 @@ impl DerefMut for MissileConfig {
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
 pub struct NateroidConfig {
-    pub actor_config:                                ActorConfig,
-    pub linear_velocity:                             f32,
-    pub angular_velocity:                            f32,
-    pub death_duration_secs:                         f32,
-    pub death_shrink_pct:                            f32,
-    pub kill_on_teleport_if_under_this_success_rate: f32,
+    pub actor_config:              ActorConfig,
+    pub linear_velocity:           f32,
+    pub angular_velocity:          f32,
+    pub death_duration_secs:       f32,
+    pub death_shrink_pct:          f32,
+    pub density_culling_threshold: f32,
 }
 
 impl Default for NateroidConfig {
     fn default() -> Self {
         Self {
-            actor_config:                                ActorConfig {
-                angular_damping: Some(0.001),
-                collider_margin: 1.0 / 3.0,
-                collider_type: ColliderType::Ball,
-                collision_damage: 0.1,
-                collision_layers: CollisionLayers::new(
+            actor_config:              ActorConfig {
+                spawnable:                true,
+                aabb:                     Aabb::default(),
+                angular_damping:          Some(0.001),
+                collider:                 Collider::cuboid(1., 1., 1.),
+                collider_margin:          1.0 / 3.0,
+                collider_type:            ColliderType::Ball,
+                collision_damage:         0.1,
+                collision_layers:         CollisionLayers::new(
                     [GameLayer::Asteroid],
                     [
                         GameLayer::Asteroid,
@@ -94,19 +123,27 @@ impl Default for NateroidConfig {
                         GameLayer::Spaceship,
                     ],
                 ),
-                health: 200.,
-                linear_damping: Some(0.001),
-                mass: 1.0,
-                restitution: 0.3,
-                spawn_timer_seconds: Some(0.1),
-                spawnable: true,
-                ..default()
+                gravity_scale:            0.,
+                health:                   200.,
+                linear_damping:           Some(0.001),
+                locked_axes:              LockedAxes::new().lock_translation_z(),
+                mass:                     1.0,
+                max_angular_velocity:     MAX_NATEROID_ANGULAR_VELOCITY,
+                max_linear_velocity:      MAX_NATEROID_LINEAR_VELOCITY,
+                render_layer:             RenderLayer::Game,
+                restitution:              0.3,
+                restitution_combine_rule: CoefficientCombine::Max,
+                rigid_body:               RigidBody::Dynamic,
+                scene:                    Handle::default(),
+                spawn_timer_seconds:      Some(0.1),
+                transform:                Transform::default(),
+                spawn_timer:              None,
             },
-            linear_velocity:                             35.0,
-            angular_velocity:                            4.5,
-            death_duration_secs:                         3.,
-            death_shrink_pct:                            0.3,
-            kill_on_teleport_if_under_this_success_rate: 0.01,
+            linear_velocity:           35.0,
+            angular_velocity:          4.5,
+            death_duration_secs:       3.,
+            death_shrink_pct:          0.3,
+            density_culling_threshold: 0.01,
         }
     }
 }
@@ -131,27 +168,39 @@ impl Default for SpaceshipConfig {
     fn default() -> Self {
         Self {
             actor_config: ActorConfig {
-                angular_damping: Some(0.1),
-                collider_margin: 1.0,
-                collision_damage: 50.,
-                collision_layers: CollisionLayers::new(
+                spawnable:                true,
+                aabb:                     Aabb::default(),
+                angular_damping:          Some(0.1),
+                collider:                 Collider::cuboid(1., 1., 1.),
+                collider_margin:          1.0,
+                collider_type:            ColliderType::Cuboid,
+                collision_damage:         50.,
+                collision_layers:         CollisionLayers::new(
                     [GameLayer::Spaceship],
                     [GameLayer::Asteroid, GameLayer::Boundary],
                 ),
-                health: 500.,
-                linear_damping: Some(0.05),
-                mass: 10.0,
-                locked_axes: LockedAxes::new()
+                gravity_scale:            0.,
+                health:                   500.,
+                linear_damping:           Some(0.05),
+                locked_axes:              LockedAxes::new()
                     .lock_rotation_x()
                     .lock_rotation_y()
                     .lock_translation_z(),
-                restitution: 0.1,
-                transform: Transform::from_trs(
+                mass:                     10.0,
+                max_angular_velocity:     MAX_SPACESHIP_ANGULAR_VELOCITY,
+                max_linear_velocity:      MAX_SPACESHIP_LINEAR_VELOCITY,
+                render_layer:             RenderLayer::Game,
+                restitution:              0.1,
+                restitution_combine_rule: CoefficientCombine::Max,
+                rigid_body:               RigidBody::Dynamic,
+                scene:                    Handle::default(),
+                spawn_timer_seconds:      None,
+                transform:                Transform::from_trs(
                     Vec3::new(0.0, -20.0, 0.0),
                     Quat::from_rotation_x(GLTF_ROTATION_X),
                     Vec3::splat(2.0),
                 ),
-                ..default()
+                spawn_timer:              None,
             },
         }
     }

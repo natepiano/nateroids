@@ -72,6 +72,10 @@ pub struct ActorConfig {
     pub locked_axes:              LockedAxes,
     #[inspector(min = 0.0, max = 20.0, display = NumberDisplay::Slider)]
     pub mass:                     f32,
+    #[inspector(min = 0.0, max = 500.0, display = NumberDisplay::Slider)]
+    pub max_angular_velocity:     f32,
+    #[inspector(min = 0.0, max = 500.0, display = NumberDisplay::Slider)]
+    pub max_linear_velocity:      f32,
     pub render_layer:             RenderLayer,
     #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
     pub restitution:              f32,
@@ -83,34 +87,6 @@ pub struct ActorConfig {
     pub transform:                Transform,
     #[reflect(ignore)]
     pub spawn_timer:              Option<Timer>,
-}
-
-impl Default for ActorConfig {
-    fn default() -> Self {
-        Self {
-            spawnable:                true,
-            aabb:                     Aabb::default(),
-            angular_damping:          None,
-            collider:                 Collider::cuboid(1., 1., 1.),
-            collider_margin:          1.0,
-            collider_type:            ColliderType::Cuboid,
-            collision_damage:         0.,
-            collision_layers:         CollisionLayers::default(),
-            gravity_scale:            0.,
-            health:                   0.,
-            linear_damping:           None,
-            locked_axes:              LockedAxes::new().lock_translation_z(),
-            mass:                     1.,
-            render_layer:             RenderLayer::Game,
-            restitution:              0.1,
-            restitution_combine_rule: CoefficientCombine::Max,
-            rigid_body:               RigidBody::Dynamic,
-            scene:                    Handle::default(),
-            spawn_timer_seconds:      None,
-            transform:                Transform::default(),
-            spawn_timer:              None,
-        }
-    }
 }
 
 #[derive(Reflect, Component, Clone, Debug)]
@@ -259,6 +235,8 @@ pub fn insert_configured_components(
             combine_rule: config.restitution_combine_rule,
         },
         Mass(config.mass),
+        MaxAngularSpeed(config.max_angular_velocity),
+        MaxLinearSpeed(config.max_linear_velocity),
         RenderLayers::from_layers(config.render_layer.layers()),
         SceneRoot(config.scene.clone()),
     ));

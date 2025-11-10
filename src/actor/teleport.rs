@@ -45,6 +45,7 @@ struct Teleported {
     collider: Collider,
 }
 
+#[allow(clippy::type_complexity)]
 fn on_teleported(
     event: On<Teleported>,
     mut params: ParamSet<(
@@ -79,7 +80,7 @@ fn on_teleported(
     // Check if we should be aggressive based on spawn success rate
     // Lower spawn success rate = field is crowded = be more aggressive
     let spawn_success_rate = spawn_stats.success_rate();
-    let field_is_crowded = spawn_success_rate < config.kill_on_teleport_if_under_this_success_rate;
+    let field_is_crowded = spawn_success_rate < config.density_culling_threshold;
 
     // Kill overlapping asteroids (but not the teleporting entity)
     // Only kill nateroid-on-nateroid overlaps if field is crowded
@@ -94,7 +95,7 @@ fn on_teleported(
             spawn_stats.attempts_count(),
             spawn_stats.successes_count(),
             spawn_success_rate * 100.0,
-            config.kill_on_teleport_if_under_this_success_rate * 100.0,
+            config.density_culling_threshold * 100.0,
             field_is_crowded,
             is_teleporting_nateroid
         );
@@ -120,15 +121,17 @@ fn on_teleported(
     }
 
     // If a nateroid teleported onto the spaceship, always kill the nateroid
-    if is_teleporting_nateroid && !overlapping_spaceship.is_empty() {
-        if let Ok((mut collision_layers, mut health)) = nateroid_query.get_mut(event.entity) {
-            info!("💀 Nateroid teleported onto spaceship - killing nateroid");
-            *collision_layers = CollisionLayers::NONE;
-            health.0 = -1.0;
-        }
+    if is_teleporting_nateroid
+        && !overlapping_spaceship.is_empty()
+        && let Ok((mut collision_layers, mut health)) = nateroid_query.get_mut(event.entity)
+    {
+        info!("💀 Nateroid teleported onto spaceship - killing nateroid");
+        *collision_layers = CollisionLayers::NONE;
+        health.0 = -1.0;
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn teleport_at_boundary(
     boundary: Res<Boundary>,
     mut commands: Commands,

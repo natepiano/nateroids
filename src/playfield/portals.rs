@@ -149,6 +149,7 @@ impl Default for Portal {
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn init_portals(
     mut q_actor: Query<(
         &Aabb,

@@ -6,12 +6,13 @@ use super::actor_config::GLTF_ROTATION_X;
 use super::actor_config::LOCKED_AXES_SPACESHIP;
 use super::actor_config::insert_configured_components;
 use super::actor_template::SpaceshipConfig;
-use super::constants::MAX_SPACESHIP_ANGULAR_VELOCITY;
-use super::constants::MAX_SPACESHIP_LINEAR_VELOCITY;
 use super::spaceship_control::SpaceshipControl;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
+
+/// Returns the default spaceship rotation: model correction (90° around X)
+fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X) }
 
 pub struct SpaceshipPlugin;
 
@@ -65,9 +66,7 @@ fn initialize_spaceship(
     commands
         .entity(spaceship.entity)
         .insert(spaceship_config.transform)
-        .insert(SpaceshipControl::generate_input_map())
-        .insert(MaxLinearSpeed(MAX_SPACESHIP_LINEAR_VELOCITY))
-        .insert(MaxAngularSpeed(MAX_SPACESHIP_ANGULAR_VELOCITY));
+        .insert(SpaceshipControl::generate_input_map());
 
     insert_configured_components(
         &mut commands,
@@ -107,8 +106,7 @@ fn enforce_spaceship_2d_rotation(
         // Check if rotation quaternion is valid (not NaN or denormalized)
         if !transform.rotation.is_finite() || !transform.rotation.is_normalized() {
             warn!("Spaceship rotation became invalid (NaN or denormalized), resetting to default");
-            transform.rotation =
-                Quat::from_rotation_x(GLTF_ROTATION_X) * Quat::from_rotation_z(0.0);
+            transform.rotation = default_spaceship_rotation();
             return;
         }
 
@@ -119,8 +117,7 @@ fn enforce_spaceship_2d_rotation(
         // Guard against NaN from corrupted transform
         if !up.is_finite() {
             warn!("Spaceship up vector is NaN, resetting rotation");
-            transform.rotation =
-                Quat::from_rotation_x(GLTF_ROTATION_X) * Quat::from_rotation_z(0.0);
+            transform.rotation = default_spaceship_rotation();
             return;
         }
 
@@ -134,8 +131,7 @@ fn enforce_spaceship_2d_rotation(
             // Guard against NaN
             if !forward.is_finite() {
                 warn!("Spaceship forward vector is NaN, resetting rotation");
-                transform.rotation =
-                    Quat::from_rotation_x(GLTF_ROTATION_X) * Quat::from_rotation_z(0.0);
+                transform.rotation = default_spaceship_rotation();
                 return;
             }
 

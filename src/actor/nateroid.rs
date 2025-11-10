@@ -10,9 +10,6 @@ use super::actor_config::LOCKED_AXES_2D;
 use super::actor_config::insert_configured_components;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidConfig;
-use super::constants::MAX_NATEROID_ANGULAR_VELOCITY;
-use super::constants::MAX_NATEROID_LINEAR_VELOCITY;
-use super::spaceship::Spaceship;
 use crate::global_input::GameAction;
 use crate::global_input::toggle_active;
 use crate::playfield::ActorPortals;
@@ -76,12 +73,6 @@ impl Plugin for NateroidPlugin {
                 spawn_nateroid
                     .in_set(InGameSet::EntityUpdates)
                     .run_if(toggle_active(true, GameAction::SuppressNateroids)),
-            )
-            .add_systems(
-                FixedUpdate,
-                clamp_nateroid_velocity
-                    .after(PhysicsSystems::StepSimulation)
-                    .in_set(InGameSet::EntityUpdates),
             );
     }
 }
@@ -176,9 +167,7 @@ fn initialize_nateroid(
         .entity(nateroid.entity)
         .insert(transform)
         .insert(linear_velocity)
-        .insert(angular_velocity)
-        .insert(MaxLinearSpeed(MAX_NATEROID_LINEAR_VELOCITY))
-        .insert(MaxAngularSpeed(MAX_NATEROID_ANGULAR_VELOCITY));
+        .insert(angular_velocity);
 
     insert_configured_components(&mut commands, &mut config.actor_config, nateroid.entity);
 }
@@ -280,26 +269,4 @@ fn calculate_nateroid_velocity(linvel: f32, angvel: f32) -> (LinearVelocity, Ang
             -angvel..angvel,
         )),
     )
-}
-
-/// Clamp velocities to prevent physics explosions from collision accumulation
-fn clamp_nateroid_velocity(
-    mut entities: Query<
-        (&mut LinearVelocity, &mut AngularVelocity),
-        Or<(With<Nateroid>, With<Spaceship>)>,
-    >,
-) {
-    for (mut linear_velocity, mut angular_velocity) in entities.iter_mut() {
-        // Clamp linear velocity
-        let linear_speed = linear_velocity.length();
-        if linear_speed > MAX_NATEROID_LINEAR_VELOCITY {
-            **linear_velocity = linear_velocity.normalize() * MAX_NATEROID_LINEAR_VELOCITY;
-        }
-
-        // Clamp angular velocity
-        let angular_speed = angular_velocity.length();
-        if angular_speed > MAX_NATEROID_ANGULAR_VELOCITY {
-            **angular_velocity = angular_velocity.normalize() * MAX_NATEROID_ANGULAR_VELOCITY;
-        }
-    }
 }
