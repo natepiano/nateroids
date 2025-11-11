@@ -1,10 +1,12 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
+use bevy_panorbit_camera::PanOrbitCamera;
 
 use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
+use crate::playfield::Boundary;
 use crate::traits::TransformExt;
 
 pub struct AabbPlugin;
@@ -15,6 +17,11 @@ impl Plugin for AabbPlugin {
             .add_systems(
                 Update,
                 draw_aabb_system.run_if(toggle_active(false, GameAction::AABBs)),
+            )
+            .add_systems(
+                Update,
+                draw_screen_aligned_boundary_box
+                    .run_if(toggle_active(false, GameAction::BoundaryBox)),
             );
     }
 }
@@ -75,6 +82,92 @@ fn draw_aabb_system(mut gizmos: Gizmos<AabbGizmo>, aabbs: Query<(&Transform, &Aa
         gizmos.cuboid(
             Transform::from_trs(center, transform.rotation, aabb.size() * transform.scale),
             Color::from(tailwind::GREEN_800),
+        );
+    }
+}
+
+fn draw_screen_aligned_boundary_box(
+    mut gizmos: Gizmos<AabbGizmo>,
+    boundary: Res<Boundary>,
+    camera_query: Query<(&Transform, &GlobalTransform, &Projection), With<PanOrbitCamera>>,
+) {
+    let Ok((cam_transform, cam_global, projection)) = camera_query.single() else {
+        return;
+    };
+
+    let Projection::Perspective(_perspective) = projection else {
+        return;
+    };
+
+    // Get boundary corners
+    let grid_size = boundary.scale();
+    let half_size = grid_size / 2.0;
+    let corners = [
+        Vec3::new(-half_size.x, -half_size.y, -half_size.z),
+        Vec3::new(half_size.x, -half_size.y, -half_size.z),
+        Vec3::new(-half_size.x, half_size.y, -half_size.z),
+        Vec3::new(half_size.x, half_size.y, -half_size.z),
+        Vec3::new(-half_size.x, -half_size.y, half_size.z),
+        Vec3::new(half_size.x, -half_size.y, half_size.z),
+        Vec3::new(-half_size.x, half_size.y, half_size.z),
+        Vec3::new(half_size.x, half_size.y, half_size.z),
+    ];
+
+    // Get camera basis vectors
+    let cam_rot = cam_global.rotation();
+    let cam_forward = cam_rot * Vec3::NEG_Z; // Camera looks down -Z
+    let cam_right = cam_rot * Vec3::X;
+    let cam_up = cam_rot * Vec3::Y;
+    let cam_pos = cam_transform.translation;
+
+    // For each corner, compute its normalized screen-space position (accounting for perspective)
+    // Screen position = (x/depth, y/depth)
+    let mut min_norm_x = f32::INFINITY;
+    let mut max_norm_x = f32::NEG_INFINITY;
+    let mut min_norm_y = f32::INFINITY;
+    let mut max_norm_y = f32::NEG_INFINITY;
+    let mut avg_depth = 0.0;
+
+    for corner in &corners {
+        let relative = *corner - cam_pos;
+        let depth = relative.dot(cam_forward).max(0.1); // Ensure positive depth
+        let x = relative.dot(cam_right);
+        let y = relative.dot(cam_up);
+
+        // Normalized screen coordinates (perspective-correct)
+        let norm_x = x / depth;
+        let norm_y = y / depth;
+
+        min_norm_x = min_norm_x.min(norm_x);
+        max_norm_x = max_norm_x.max(norm_x);
+        min_norm_y = min_norm_y.min(norm_y);
+        max_norm_y = max_norm_y.max(norm_y);
+        avg_depth += depth;
+    }
+    avg_depth /= 8.0;
+
+    // Draw the rectangle at average depth, scaling the normalized coords back to world coords
+    let draw_depth = avg_depth;
+    let world_min_x = min_norm_x * draw_depth;
+    let world_max_x = max_norm_x * draw_depth;
+    let world_min_y = min_norm_y * draw_depth;
+    let world_max_y = max_norm_y * draw_depth;
+
+    // Create the 4 corners of the screen-aligned rectangle in world space
+    let rect_corners_world = [
+        cam_pos + cam_right * world_min_x + cam_up * world_min_y + cam_forward * draw_depth,
+        cam_pos + cam_right * world_max_x + cam_up * world_min_y + cam_forward * draw_depth,
+        cam_pos + cam_right * world_max_x + cam_up * world_max_y + cam_forward * draw_depth,
+        cam_pos + cam_right * world_min_x + cam_up * world_max_y + cam_forward * draw_depth,
+    ];
+
+    // Draw the rectangle with thicker lines
+    for i in 0..4 {
+        let next = (i + 1) % 4;
+        gizmos.line(
+            rect_corners_world[i],
+            rect_corners_world[next],
+            Color::from(tailwind::YELLOW_400),
         );
     }
 }

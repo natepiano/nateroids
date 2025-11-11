@@ -17,6 +17,7 @@ impl Plugin for InputPlugin {
 #[derive(Actionlike, EnumIter, Reflect, PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum GameAction {
     AABBs,
+    BoundaryBox,
     BoundaryInspector,
     CameraConfigInspector,
     Debug,
@@ -76,6 +77,7 @@ impl GameAction {
         // accumulation works
         Self::iter().fold(InputMap::default(), |input_map, action| match action {
             Self::AABBs => input_map.with(action, KeyCode::F1),
+            Self::BoundaryBox => input_map.with(action, KeyCode::KeyB),
             Self::BoundaryInspector => insert_shift_input(input_map, action, KeyCode::KeyB),
             Self::CameraConfigInspector => insert_shift_input(input_map, action, KeyCode::KeyC),
             Self::Debug => insert_shift_input(input_map, action, KeyCode::KeyD),
