@@ -38,12 +38,6 @@ impl Plugin for CamerasPlugin {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum ZoomDirection {
-    In,
-    Out,
-}
-
 /// Component for programmatically moving the camera to a specific position
 /// Used for testing zoom-to-fit from various camera angles
 #[derive(Component, Reflect)]
@@ -61,10 +55,11 @@ struct ZoomToFitActive {
     max_iterations:        usize,
     iteration_count:       usize,
     previous_bounds:       Option<(f32, f32, f32, f32)>, // (min_x, max_x, min_y, max_y)
-    last_zoom_direction:   Option<ZoomDirection>,
-    waiting_for_stability: bool, /* True when we've stopped issuing zoom commands, waiting for
-                                  * camera to settle */
-    margin_history:        VecDeque<(f32, f32)>, // Track (radius, margin) pairs for prediction
+    waiting_for_stability: bool,                         /* True when we've stopped issuing
+                                                          * commands, waiting for camera to
+                                                          * settle */
+    // Track (radius, margin, center_x, center_y) for unified prediction
+    state_history:         VecDeque<(f32, f32, f32, f32)>,
 }
 
 /// Screen-space margin information for a boundary
@@ -264,9 +259,8 @@ fn start_zoom_to_fit(mut commands: Commands, camera_query: Query<Entity, With<Pa
             max_iterations:        3000,
             iteration_count:       0,
             previous_bounds:       None,
-            last_zoom_direction:   None,
             waiting_for_stability: false,
-            margin_history:        VecDeque::new(),
+            state_history:         VecDeque::new(),
         });
         println!("Starting zoom-to-fit animation");
     }
@@ -480,178 +474,145 @@ fn update_zoom_to_fit(
         return;
     }
 
-    // Phase 1: Balance first (center the boundary)
-    // Adjust focus until left==right and top==bottom
-    if !balanced {
-        // Move focus in screen-space direction with damping to prevent overshoot
-        const FOCUS_DAMPING: f32 = 0.5; // Only apply 50% of correction each frame
-        let current_radius = pan_orbit.target_radius;
-        let offset_x = center_x * current_radius * half_tan_hfov * FOCUS_DAMPING;
-        let offset_y = center_y * current_radius * half_tan_vfov * FOCUS_DAMPING;
+    // Unified approach: Update BOTH focus and zoom every frame based on errors
+    // Camera smoothly pans and zooms simultaneously until both balanced and fitted
 
-        // Get camera basis vectors for world space offset calculation
-        let cam_rot = cam_global.rotation();
-        let cam_right = cam_rot * Vec3::X;
-        let cam_up = cam_rot * Vec3::Y;
-        let offset_world = cam_right * offset_x + cam_up * offset_y;
+    // Calculate focus offset error (for centering)
+    let focus_error_x = center_x.abs();
+    let focus_error_y = center_y.abs();
+    let focus_error = focus_error_x.max(focus_error_y);
 
-        pan_orbit.target_focus += offset_world;
-        println!(
-            "  Adjusting focus by ({:.3}, {:.3}) in world space",
-            offset_world.x, offset_world.y
-        );
+    // Calculate zoom error (for margin fitting)
+    let h_min = margins.left_margin.min(margins.right_margin);
+    let v_min = margins.top_margin.min(margins.bottom_margin);
+    let h_ratio = h_min / margins.target_margin_x;
+    let v_ratio = v_min / margins.target_margin_y;
+    let (constrained_margin, constrained_target, dimension_name) = if h_ratio < v_ratio {
+        (h_min, margins.target_margin_x, "horizontal")
+    } else {
+        (v_min, margins.target_margin_y, "vertical")
+    };
+    let zoom_error = (constrained_margin - constrained_target).abs();
+    let zoom_error_pct = (zoom_error / constrained_target) * 100.0;
+
+    // Track state history: (radius, margin, center_x, center_y)
+    const HISTORY_SIZE: usize = 3;
+    let current_radius = pan_orbit.radius.unwrap_or(pan_orbit.target_radius);
+    zoom_state
+        .state_history
+        .push_back((current_radius, constrained_margin, center_x, center_y));
+    if zoom_state.state_history.len() > HISTORY_SIZE {
+        zoom_state.state_history.pop_front();
     }
-    // Phase 2: Once balanced, adjust zoom to fit
-    // Zoom until one dimension hits target margin
-    else if !fitted {
-        // Check each dimension against its own target
-        let h_min = margins.left_margin.min(margins.right_margin);
-        let v_min = margins.top_margin.min(margins.bottom_margin);
 
-        // Calculate margin ratios to find the most constrained dimension
-        // Lower ratio = more constrained (closer to minimum required margin)
-        let h_ratio = h_min / margins.target_margin_x;
-        let v_ratio = v_min / margins.target_margin_y;
+    // Predict final state when camera reaches targets
+    let mut predicted_margin = None;
+    let mut predicted_center_x = None;
+    let mut predicted_center_y = None;
 
-        // Determine which dimension is most constrained
-        let (constrained_margin, constrained_target, dimension_name) = if h_ratio < v_ratio {
-            (h_min, margins.target_margin_x, "horizontal")
-        } else {
-            (v_min, margins.target_margin_y, "vertical")
-        };
+    if zoom_state.state_history.len() == HISTORY_SIZE {
+        let (r1, m1, cx1, cy1) = zoom_state.state_history[0];
+        let (r2, m2, cx2, cy2) = zoom_state.state_history[HISTORY_SIZE - 1];
+        let delta_radius = r2 - r1;
 
-        // Calculate error based on the most constrained dimension
-        let error = (constrained_margin - constrained_target).abs();
-        let error_pct = (error / constrained_target) * 100.0;
+        if delta_radius.abs() > 0.01 {
+            // Predict margin
+            let d_margin_d_radius = (m2 - m1) / delta_radius;
+            let remaining_radius_delta = pan_orbit.target_radius - current_radius;
+            predicted_margin =
+                Some(constrained_margin + (remaining_radius_delta * d_margin_d_radius));
 
-        // Track margin history for prediction (keep exactly 3 samples)
-        const HISTORY_SIZE: usize = 3;
-        let current_radius = pan_orbit.radius.unwrap_or(pan_orbit.target_radius);
-        zoom_state
-            .margin_history
-            .push_back((current_radius, constrained_margin));
-        if zoom_state.margin_history.len() > HISTORY_SIZE {
-            zoom_state.margin_history.pop_front();
-        }
+            // Predict focus centering
+            let d_cx_d_radius = (cx2 - cx1) / delta_radius;
+            let d_cy_d_radius = (cy2 - cy1) / delta_radius;
+            predicted_center_x = Some(center_x + (remaining_radius_delta * d_cx_d_radius));
+            predicted_center_y = Some(center_y + (remaining_radius_delta * d_cy_d_radius));
 
-        // Predict final margin when camera reaches target_radius
-        let mut predicted_final_margin = None;
-        if zoom_state.margin_history.len() == HISTORY_SIZE {
-            // Calculate empirical rate: dMargin/dRadius from history
-            let (r1, m1) = zoom_state.margin_history[0];
-            let (r2, m2) = zoom_state.margin_history[HISTORY_SIZE - 1];
-            let delta_radius = r2 - r1;
-            if delta_radius.abs() > 0.01 {
-                let d_margin_d_radius = (m2 - m1) / delta_radius;
-                let remaining_delta = pan_orbit.target_radius - current_radius;
-                predicted_final_margin =
-                    Some(constrained_margin + (remaining_delta * d_margin_d_radius));
-
-                println!(
-                    "  Prediction: current_r={:.1}, target_r={:.1}, delta_r={:.1}, dM/dR={:.4}, predicted_margin={:.3}",
-                    current_radius,
-                    pan_orbit.target_radius,
-                    remaining_delta,
-                    d_margin_d_radius,
-                    predicted_final_margin.unwrap()
-                );
-            }
-        }
-
-        // If we're waiting for stability, don't issue new zoom commands
-        // Just continue logging and checking if bounds have stabilized
-        if zoom_state.waiting_for_stability {
             println!(
-                "  Waiting for stability ({} constrained: {:.3}/{:.3}, error={:.2}%)",
-                dimension_name, constrained_margin, constrained_target, error_pct
+                "  Prediction: r={:.1}→{:.1}, margin={:.3}→{:.3}, center=({:.3},{:.3})→({:.3},{:.3})",
+                current_radius,
+                pan_orbit.target_radius,
+                constrained_margin,
+                predicted_margin.unwrap(),
+                center_x,
+                center_y,
+                predicted_center_x.unwrap(),
+                predicted_center_y.unwrap()
             );
+        }
+    }
+
+    // If waiting for stability, just monitor
+    if zoom_state.waiting_for_stability {
+        println!(
+            "  Waiting for stability: zoom_err={:.2}%, focus_err={:.3}, balanced={}, fitted={}",
+            zoom_error_pct, focus_error, balanced, fitted
+        );
+        pan_orbit.force_update = true;
+        zoom_state.iteration_count += 1;
+        return;
+    }
+
+    // Check if predicted final state is acceptable
+    if let (Some(pred_margin), Some(pred_cx), Some(pred_cy)) =
+        (predicted_margin, predicted_center_x, predicted_center_y)
+    {
+        let pred_zoom_error =
+            ((pred_margin - constrained_target).abs() / constrained_target) * 100.0;
+        let pred_focus_error = pred_cx.abs().max(pred_cy.abs());
+
+        if pred_zoom_error <= 20.0 && pred_focus_error <= 0.01 {
+            println!(
+                "  Predicted final state acceptable: zoom_err={:.1}%, focus_err={:.3}, stopping commands",
+                pred_zoom_error, pred_focus_error
+            );
+            zoom_state.waiting_for_stability = true;
             pan_orbit.force_update = true;
             zoom_state.iteration_count += 1;
             return;
         }
+    }
 
-        // Use prediction to decide when to stop issuing new zoom commands
-        // If predicted final margin is within acceptable range (±20% of target), stop
-        if let Some(predicted_margin) = predicted_final_margin {
-            let predicted_error =
-                ((predicted_margin - constrained_target).abs() / constrained_target) * 100.0;
+    // Update focus if needed (apply correction proportional to error)
+    if focus_error > 0.001 {
+        let cam_rot = cam_global.rotation();
+        let cam_right = cam_rot * Vec3::X;
+        let cam_up = cam_rot * Vec3::Y;
+        let offset_x = center_x * current_radius * half_tan_hfov;
+        let offset_y = center_y * current_radius * half_tan_vfov;
+        let offset_world = cam_right * offset_x + cam_up * offset_y;
+        pan_orbit.target_focus += offset_world;
+        println!(
+            "  Adjusting focus by ({:.3}, {:.3})",
+            offset_world.x, offset_world.y
+        );
+    }
 
-            if predicted_error <= 20.0 {
-                println!(
-                    "  Predicted final margin acceptable: {:.3}/{:.3} (error={:.1}%), stopping new zoom commands",
-                    predicted_margin, constrained_target, predicted_error
-                );
-                zoom_state.waiting_for_stability = true;
-                pan_orbit.force_update = true;
-                zoom_state.iteration_count += 1;
-                return;
-            }
-        }
-
-        let zoom_rate = if error_pct > 20.0 {
-            0.02 // 2% when far from target
-        } else if error_pct > 5.0 {
-            0.01 // 1% when medium distance
-        } else if error_pct > 2.0 {
-            0.005 // 0.5% when close
+    // Update zoom if needed (apply correction proportional to error)
+    if zoom_error_pct > 0.5 {
+        let zoom_rate = if zoom_error_pct > 20.0 {
+            0.02
+        } else if zoom_error_pct > 5.0 {
+            0.01
+        } else if zoom_error_pct > 2.0 {
+            0.005
         } else {
-            0.0025 // 0.25% when very close
+            0.0025
         };
 
-        // Determine zoom direction
-        let desired_direction = if constrained_margin < constrained_target * 0.99 {
-            ZoomDirection::Out
+        let radius_adjustment = if constrained_margin < constrained_target {
+            1.0 + zoom_rate // Zoom out
         } else {
-            ZoomDirection::In
-        };
-
-        // Detect oscillation: if direction changed, we're overshooting due to interpolation
-        // Stop issuing new zoom commands but keep logging until camera settles
-        if let Some(last_direction) = zoom_state.last_zoom_direction {
-            if last_direction != desired_direction {
-                println!(
-                    "  Oscillation detected: last={:?}, desired={:?} ({} constrained: \
-                     {:.3}/{:.3}, h={:.3}, v={:.3})",
-                    last_direction,
-                    desired_direction,
-                    dimension_name,
-                    constrained_margin,
-                    constrained_target,
-                    h_min,
-                    v_min
-                );
-                println!("  Stopping zoom commands, waiting for camera to stabilize...");
-                zoom_state.waiting_for_stability = true;
-                pan_orbit.force_update = true;
-                zoom_state.iteration_count += 1;
-                return;
-            }
-        }
-
-        // Record this zoom direction
-        zoom_state.last_zoom_direction = Some(desired_direction);
-
-        // Perform the zoom
-        let (radius_adjustment, direction_str) = match desired_direction {
-            ZoomDirection::Out => (1.0 + zoom_rate, "OUT"),
-            ZoomDirection::In => (1.0 - zoom_rate, "IN"),
+            1.0 - zoom_rate // Zoom in
         };
 
         pan_orbit.target_radius = current_radius * radius_adjustment;
-        let percentage_change = (radius_adjustment - 1.0).abs() * 100.0;
-
         println!(
-            "  Zooming {} by {:.2}% to {:.1} ({} constrained: {:.3}/{:.3}, h={:.3}, v={:.3}, \
-             error={:.1}%)",
-            direction_str,
-            percentage_change,
-            current_radius * radius_adjustment,
+            "  Zooming {} by {:.2}% ({} err={:.1}%)",
+            if radius_adjustment > 1.0 { "OUT" } else { "IN" },
+            (radius_adjustment - 1.0).abs() * 100.0,
             dimension_name,
-            constrained_margin,
-            constrained_target,
-            h_min,
-            v_min,
-            error_pct
+            zoom_error_pct
         );
     }
 
