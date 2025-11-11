@@ -1,0 +1,109 @@
+name: CI
+
+# Combined CI workflow for all testing
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+# Cancel duplicate runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Fast format check on one OS
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo +nightly fmt -- --check
+
+  # Clippy
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Install mold linker
+        uses: rui314/setup-mold@v1
+
+      - name: Install and cache Linux dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libudev-dev libasound2-dev pkg-config clang libwayland-dev libxkbcommon-dev
+          version: 1.0
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "clippy"
+
+      - name: Run clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  # Test suite
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+
+    env:
+      # Reduce memory usage during compilation and linking (from Bevy CI)
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_INCREMENTAL: 0
+      RUSTFLAGS: "-C debuginfo=0"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Install mold linker
+        uses: rui314/setup-mold@v1
+
+      - name: Install and cache Linux dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libudev-dev libasound2-dev pkg-config clang libwayland-dev libxkbcommon-dev
+          version: 1.0
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "test"
+
+      - name: Run all tests
+        run: cargo nextest run --all-features --workspace
+        env:
+          # Disable GPU/windowing for headless testing
+          WGPU_BACKEND: "gl"
+          WINIT_UNIX_BACKEND: "x11"

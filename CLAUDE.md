@@ -1,0 +1,1 @@
+- use cargo nextest run for testing
