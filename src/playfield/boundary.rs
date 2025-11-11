@@ -311,44 +311,41 @@ impl Boundary {
     }
 
     fn find_closest_point_on_edge(&self, position: Vec3, normal1: Vec3, normal2: Vec3) -> Vec3 {
-        // Calculate the direction of the intersection line (edge)
-        let edge_direction = normal1.cross(normal2).normalize();
-
-        // Compute the half extents and center of the cuboid
-        let half_extents = self.transform.scale / 2.0;
+        let half = self.transform.scale / 2.0;
         let center = self.transform.translation;
+        let min = center - half;
+        let max = center + half;
 
-        // Determine the correct anchor point on the edge formed by the two normals
-        let mut anchor_point = center;
+        // For axis-aligned cuboid, the edge between two faces runs along one axis
+        // with the other two coordinates fixed at the boundary planes.
+        // For each axis: if either normal points along it, fix at that boundary;
+        // otherwise the edge runs along that axis, so use position's coordinate.
 
-        // Adjust the anchor point based on which planes are intersecting
-        if normal1.x != 0.0 {
-            anchor_point.x += normal1.x * half_extents.x;
-        }
-        if normal1.y != 0.0 {
-            anchor_point.y += normal1.y * half_extents.y;
-        }
-        if normal1.z != 0.0 {
-            anchor_point.z += normal1.z * half_extents.z;
-        }
+        let x = if normal1.x != 0.0 {
+            if normal1.x > 0.0 { max.x } else { min.x }
+        } else if normal2.x != 0.0 {
+            if normal2.x > 0.0 { max.x } else { min.x }
+        } else {
+            position.x // Edge runs along X axis
+        };
 
-        if normal2.x != 0.0 {
-            anchor_point.x += normal2.x * half_extents.x;
-        }
-        if normal2.y != 0.0 {
-            anchor_point.y += normal2.y * half_extents.y;
-        }
-        if normal2.z != 0.0 {
-            anchor_point.z += normal2.z * half_extents.z;
-        }
+        let y = if normal1.y != 0.0 {
+            if normal1.y > 0.0 { max.y } else { min.y }
+        } else if normal2.y != 0.0 {
+            if normal2.y > 0.0 { max.y } else { min.y }
+        } else {
+            position.y // Edge runs along Y axis
+        };
 
-        // Calculate vector from anchor point to position
-        let to_position = position - anchor_point;
+        let z = if normal1.z != 0.0 {
+            if normal1.z > 0.0 { max.z } else { min.z }
+        } else if normal2.z != 0.0 {
+            if normal2.z > 0.0 { max.z } else { min.z }
+        } else {
+            position.z // Edge runs along Z axis
+        };
 
-        // Project this onto the edge direction
-        let projection_length = to_position.dot(edge_direction);
-
-        anchor_point + projection_length * edge_direction
+        Vec3::new(x, y, z)
     }
 
     // arc_3d has these assumptions:
