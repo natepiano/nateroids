@@ -68,7 +68,9 @@
       "Bash(git -C /Users/natemccoy/rust/nateroids diff)",
       "WebFetch(domain:parry.rs)",
       "Bash(truncate:*)",
-      "Bash(git -C /Users/natemccoy/rust/nateroids diff src/camera/cameras.rs)"
+      "Bash(git -C /Users/natemccoy/rust/nateroids diff src/camera/cameras.rs)",
+      "Bash(git rev-parse:*)",
+      "Bash(git worktree:*)"
     ],
     "deny": [],
     "ask": []
