@@ -41,7 +41,9 @@ For each step in the implementation sequence:
 
 ## INTERACTIVE IMPLEMENTATION SEQUENCE
 
-### STEP 1: Add Helper Functions ⏳ PENDING
+### STEP 1: Add Helper Functions ✅ COMPLETED (via test infrastructure)
+
+**Note**: This step was completed as part of test infrastructure setup documented in `portal-test.md`. The three helper functions (`constrain_intersection_points()`, `point_within_boundary_for_face()`, `faces_share_axis()`) are implemented as production code in `boundary.rs` starting around line 658.
 
 **Objective**: Add three new constraint filtering helper functions to boundary.rs
 
