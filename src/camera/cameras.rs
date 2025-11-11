@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use bevy::camera::visibility::RenderLayers;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::light::AmbientLight;
@@ -52,14 +50,11 @@ pub struct MoveMe {
 
 #[derive(Component)]
 struct ZoomToFitActive {
-    max_iterations:        usize,
-    iteration_count:       usize,
-    previous_bounds:       Option<(f32, f32, f32, f32)>, // (min_x, max_x, min_y, max_y)
-    waiting_for_stability: bool,                         /* True when we've stopped issuing
-                                                          * commands, waiting for camera to
-                                                          * settle */
-    // Track (radius, margin, center_x, center_y) for unified prediction
-    state_history:         VecDeque<(f32, f32, f32, f32)>,
+    max_iterations:       usize,
+    iteration_count:      usize,
+    previous_bounds:      Option<(f32, f32, f32, f32)>, // (min_x, max_x, min_y, max_y)
+    original_zoom_smooth: f32,
+    original_pan_smooth:  f32,
 }
 
 /// Screen-space margin information for a boundary
@@ -253,16 +248,30 @@ pub fn home_camera(
 }
 
 // Start the zoom-to-fit animation
-fn start_zoom_to_fit(mut commands: Commands, camera_query: Query<Entity, With<PanOrbitCamera>>) {
-    if let Ok(camera_entity) = camera_query.single() {
+fn start_zoom_to_fit(
+    mut commands: Commands,
+    mut camera_query: Query<(Entity, &mut PanOrbitCamera), With<PanOrbitCamera>>,
+) {
+    if let Ok((camera_entity, mut pan_orbit)) = camera_query.single_mut() {
+        // Store original smoothness values
+        let original_zoom_smooth = pan_orbit.zoom_smoothness;
+        let original_pan_smooth = pan_orbit.pan_smoothness;
+
+        // Disable smoothing so targets apply immediately
+        pan_orbit.zoom_smoothness = 0.0;
+        pan_orbit.pan_smoothness = 0.0;
+
         commands.entity(camera_entity).insert(ZoomToFitActive {
-            max_iterations:        3000,
-            iteration_count:       0,
-            previous_bounds:       None,
-            waiting_for_stability: false,
-            state_history:         VecDeque::new(),
+            max_iterations: 3000,
+            iteration_count: 0,
+            previous_bounds: None,
+            original_zoom_smooth,
+            original_pan_smooth,
         });
-        println!("Starting zoom-to-fit animation");
+        println!(
+            "Starting zoom-to-fit animation (stored smoothness: zoom={:.2}, pan={:.2})",
+            original_zoom_smooth, original_pan_smooth
+        );
     }
 }
 
@@ -415,8 +424,8 @@ fn update_zoom_to_fit(
         );
     }
 
-    const BALANCE_TOLERANCE: f32 = 0.001; // Tight tolerance for margin balance (left==right, top==bottom)
-    const AT_TARGET_TOLERANCE: f32 = 0.003; // Looser tolerance for "at target" check to avoid oscillation
+    const BALANCE_TOLERANCE: f32 = 0.02; // Relaxed tolerance for margin balance
+    const AT_TARGET_TOLERANCE: f32 = 0.01; // Relaxed tolerance for "at target" check
 
     println!(
         "  Balanced: h_diff={:.3}, v_diff={:.3}, is_balanced={}, is_fitted={}",
@@ -431,35 +440,21 @@ fn update_zoom_to_fit(
     let fitted = margins.is_fitted(BALANCE_TOLERANCE, AT_TARGET_TOLERANCE);
 
     // Check if bounds have actually changed since last frame (detect camera stabilization)
-    const BOUNDS_TOLERANCE: f32 = 0.0001;
+    // Track bounds for debugging
     let current_bounds = (
         margins.min_norm_x,
         margins.max_norm_x,
         margins.min_norm_y,
         margins.max_norm_y,
     );
-    let bounds_changed = if let Some(prev) = zoom_state.previous_bounds {
-        (margins.min_norm_x - prev.0).abs() > BOUNDS_TOLERANCE
-            || (margins.max_norm_x - prev.1).abs() > BOUNDS_TOLERANCE
-            || (margins.min_norm_y - prev.2).abs() > BOUNDS_TOLERANCE
-            || (margins.max_norm_y - prev.3).abs() > BOUNDS_TOLERANCE
-    } else {
-        true // First frame always counts as "changed"
-    };
     zoom_state.previous_bounds = Some(current_bounds);
 
-    // Once bounds are stable (unchanged), check if we're done
-    // If waiting for stability, bounds stable means camera finished interpolating
-    // Otherwise, need to be balanced AND fitted too
-    if !bounds_changed && (zoom_state.waiting_for_stability || (balanced && fitted)) {
-        println!(
-            "  Camera stabilized: bounds unchanged, balanced={}, fitted={}",
-            balanced, fitted
-        );
-        println!(
-            "Zoom-to-fit complete! balanced={}, fitted={}",
-            balanced, fitted
-        );
+    // Check completion
+    if balanced && fitted {
+        println!("  Zoom-to-fit complete! balanced={balanced}, fitted={fitted}");
+        // Restore original smoothness
+        pan_orbit.zoom_smoothness = zoom_state.original_zoom_smooth;
+        pan_orbit.pan_smoothness = zoom_state.original_pan_smooth;
         commands.entity(entity).remove::<ZoomToFitActive>();
         return;
     }
@@ -470,153 +465,64 @@ fn update_zoom_to_fit(
             "Zoom-to-fit stopped at max iterations! balanced={}, fitted={}",
             balanced, fitted
         );
+        // Restore original smoothness even on failure
+        pan_orbit.zoom_smoothness = zoom_state.original_zoom_smooth;
+        pan_orbit.pan_smoothness = zoom_state.original_pan_smooth;
         commands.entity(entity).remove::<ZoomToFitActive>();
         return;
     }
 
-    // Unified approach: Update BOTH focus and zoom every frame based on errors
-    // Camera smoothly pans and zooms simultaneously until both balanced and fitted
+    // Adjust focus and radius simultaneously with dynamic speeds
+    let current_radius = pan_orbit.radius.unwrap_or(pan_orbit.target_radius);
 
-    // Calculate focus offset error (for centering)
-    let focus_error_x = center_x.abs();
-    let focus_error_y = center_y.abs();
-    let focus_error = focus_error_x.max(focus_error_y);
+    // Calculate focus correction based on current center offset
+    let cam_rot = cam_global.rotation();
+    let cam_right = cam_rot * Vec3::X;
+    let cam_up = cam_rot * Vec3::Y;
+    let offset_x = center_x * current_radius * half_tan_hfov;
+    let offset_y = center_y * current_radius * half_tan_vfov;
+    let offset_world = cam_right * offset_x + cam_up * offset_y;
 
-    // Calculate zoom error (for margin fitting)
+    // Linear dynamic focus speed: fast when far, slow when close
+    let focus_error = (center_x.abs() + center_y.abs()) * 0.5;
+    let focus_speed = (focus_error * 10.0 + 0.02).min(1.0);
+    pan_orbit.target_focus += offset_world * focus_speed;
+
+    // Calculate radius correction based on current margins
     let h_min = margins.left_margin.min(margins.right_margin);
     let v_min = margins.top_margin.min(margins.bottom_margin);
-    let h_ratio = h_min / margins.target_margin_x;
-    let v_ratio = v_min / margins.target_margin_y;
-    let (constrained_margin, constrained_target, dimension_name) = if h_ratio < v_ratio {
-        (h_min, margins.target_margin_x, "horizontal")
+
+    let (current_margin, target_margin) = if h_min < v_min {
+        (h_min, margins.target_margin_x)
     } else {
-        (v_min, margins.target_margin_y, "vertical")
+        (v_min, margins.target_margin_y)
     };
-    let zoom_error = (constrained_margin - constrained_target).abs();
-    let zoom_error_pct = (zoom_error / constrained_target) * 100.0;
 
-    // Track state history: (radius, margin, center_x, center_y)
-    const HISTORY_SIZE: usize = 3;
-    let current_radius = pan_orbit.radius.unwrap_or(pan_orbit.target_radius);
-    zoom_state
-        .state_history
-        .push_back((current_radius, constrained_margin, center_x, center_y));
-    if zoom_state.state_history.len() > HISTORY_SIZE {
-        zoom_state.state_history.pop_front();
-    }
+    let target_radius = if current_margin < 0.0 {
+        current_radius * 1.25 // Zoom out more aggressively when boundary is outside
+    } else {
+        // Calculate proportionally with fixed tight bounds
+        let raw_ratio = target_margin / current_margin.max(0.001);
+        let ratio = raw_ratio.max(0.98).min(1.02);
+        current_radius * ratio
+    };
 
-    // Predict final state when camera reaches targets
-    let mut predicted_margin = None;
-    let mut predicted_center_x = None;
-    let mut predicted_center_y = None;
+    // Linear dynamic radius speed: fast when far, slow when close
+    let margin_error = (current_margin - target_margin).abs() / target_margin;
+    let radius_speed = (margin_error * 10.0 + 0.02).min(1.0);
 
-    if zoom_state.state_history.len() == HISTORY_SIZE {
-        let (r1, m1, cx1, cy1) = zoom_state.state_history[0];
-        let (r2, m2, cx2, cy2) = zoom_state.state_history[HISTORY_SIZE - 1];
-        let delta_radius = r2 - r1;
-
-        if delta_radius.abs() > 0.01 {
-            // Predict margin
-            let d_margin_d_radius = (m2 - m1) / delta_radius;
-            let remaining_radius_delta = pan_orbit.target_radius - current_radius;
-            predicted_margin =
-                Some(constrained_margin + (remaining_radius_delta * d_margin_d_radius));
-
-            // Predict focus centering
-            let d_cx_d_radius = (cx2 - cx1) / delta_radius;
-            let d_cy_d_radius = (cy2 - cy1) / delta_radius;
-            predicted_center_x = Some(center_x + (remaining_radius_delta * d_cx_d_radius));
-            predicted_center_y = Some(center_y + (remaining_radius_delta * d_cy_d_radius));
-
-            println!(
-                "  Prediction: r={:.1}→{:.1}, margin={:.3}→{:.3}, center=({:.3},{:.3})→({:.3},{:.3})",
-                current_radius,
-                pan_orbit.target_radius,
-                constrained_margin,
-                predicted_margin.unwrap(),
-                center_x,
-                center_y,
-                predicted_center_x.unwrap(),
-                predicted_center_y.unwrap()
-            );
-        }
-    }
-
-    // If waiting for stability, just monitor
-    if zoom_state.waiting_for_stability {
-        println!(
-            "  Waiting for stability: zoom_err={:.2}%, focus_err={:.3}, balanced={}, fitted={}",
-            zoom_error_pct, focus_error, balanced, fitted
-        );
-        pan_orbit.force_update = true;
-        zoom_state.iteration_count += 1;
-        return;
-    }
-
-    // Check if predicted final state is acceptable
-    if let (Some(pred_margin), Some(pred_cx), Some(pred_cy)) =
-        (predicted_margin, predicted_center_x, predicted_center_y)
-    {
-        let pred_zoom_error =
-            ((pred_margin - constrained_target).abs() / constrained_target) * 100.0;
-        let pred_focus_error = pred_cx.abs().max(pred_cy.abs());
-
-        if pred_zoom_error <= 20.0 && pred_focus_error <= 0.01 {
-            println!(
-                "  Predicted final state acceptable: zoom_err={:.1}%, focus_err={:.3}, stopping commands",
-                pred_zoom_error, pred_focus_error
-            );
-            zoom_state.waiting_for_stability = true;
-            pan_orbit.force_update = true;
-            zoom_state.iteration_count += 1;
-            return;
-        }
-    }
-
-    // Update focus if needed (apply correction proportional to error)
-    if focus_error > 0.001 {
-        let cam_rot = cam_global.rotation();
-        let cam_right = cam_rot * Vec3::X;
-        let cam_up = cam_rot * Vec3::Y;
-        let offset_x = center_x * current_radius * half_tan_hfov;
-        let offset_y = center_y * current_radius * half_tan_vfov;
-        let offset_world = cam_right * offset_x + cam_up * offset_y;
-        pan_orbit.target_focus += offset_world;
-        println!(
-            "  Adjusting focus by ({:.3}, {:.3})",
-            offset_world.x, offset_world.y
-        );
-    }
-
-    // Update zoom if needed (apply correction proportional to error)
-    if zoom_error_pct > 0.5 {
-        let zoom_rate = if zoom_error_pct > 20.0 {
-            0.02
-        } else if zoom_error_pct > 5.0 {
-            0.01
-        } else if zoom_error_pct > 2.0 {
-            0.005
-        } else {
-            0.0025
-        };
-
-        let radius_adjustment = if constrained_margin < constrained_target {
-            1.0 + zoom_rate // Zoom out
-        } else {
-            1.0 - zoom_rate // Zoom in
-        };
-
-        pan_orbit.target_radius = current_radius * radius_adjustment;
-        println!(
-            "  Zooming {} by {:.2}% ({} err={:.1}%)",
-            if radius_adjustment > 1.0 { "OUT" } else { "IN" },
-            (radius_adjustment - 1.0).abs() * 100.0,
-            dimension_name,
-            zoom_error_pct
-        );
-    }
+    let radius_delta = (target_radius - current_radius) * radius_speed;
+    pan_orbit.target_radius = current_radius + radius_delta;
 
     pan_orbit.force_update = true;
+
+    println!(
+        "  Adjusting: focus_offset=({:.3},{:.3}), radius_delta={:.1}",
+        offset_world.x * focus_speed,
+        offset_world.y * focus_speed,
+        radius_delta
+    );
+
     zoom_state.iteration_count += 1;
 }
 
