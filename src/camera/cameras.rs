@@ -28,6 +28,7 @@ impl Plugin for CamerasPlugin {
                 start_zoom_to_fit.run_if(just_pressed(GameAction::ZoomToFit)),
             )
             .add_systems(Update, update_zoom_to_fit)
+            .add_systems(Update, move_camera_system)
             .add_systems(
                 Update,
                 (toggle_stars, update_bloom_settings, update_clear_color),
@@ -35,11 +36,125 @@ impl Plugin for CamerasPlugin {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum ZoomDirection {
+    In,
+    Out,
+}
+
+/// Component for programmatically moving the camera to a specific position
+/// Used for testing zoom-to-fit from various camera angles
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+pub struct MoveMe {
+    pub target_focus:  Vec3,
+    pub target_radius: f32,
+    pub target_yaw:    f32, // Rotation around vertical axis (in radians)
+    pub target_pitch:  f32, // Rotation up/down (in radians)
+    pub speed:         f32, // Interpolation speed (0.0-1.0, higher = faster)
+}
+
 #[derive(Component)]
 struct ZoomToFitActive {
-    max_iterations:     usize,
-    iteration_count:    usize,
-    stable_frame_count: usize,
+    max_iterations:      usize,
+    iteration_count:     usize,
+    previous_bounds:     Option<(f32, f32, f32, f32)>, // (min_x, max_x, min_y, max_y)
+    last_zoom_direction: Option<ZoomDirection>,
+}
+
+/// Screen-space margin information for a boundary
+struct ScreenSpaceMargins {
+    /// Distance from left edge (positive = inside, negative = outside)
+    left_margin:     f32,
+    /// Distance from right edge (positive = inside, negative = outside)
+    right_margin:    f32,
+    /// Distance from top edge (positive = inside, negative = outside)
+    top_margin:      f32,
+    /// Distance from bottom edge (positive = inside, negative = outside)
+    bottom_margin:   f32,
+    /// Target margin for horizontal (in screen-space units)
+    target_margin_x: f32,
+    /// Target margin for vertical (in screen-space units)
+    target_margin_y: f32,
+}
+
+impl ScreenSpaceMargins {
+    fn new(
+        min_norm_x: f32,
+        max_norm_x: f32,
+        min_norm_y: f32,
+        max_norm_y: f32,
+        half_tan_hfov: f32,
+        half_tan_vfov: f32,
+        zoom_multiplier: f32,
+    ) -> Self {
+        // Screen edges are at ±half_tan_hfov and ±half_tan_vfov
+        // Target edges (with margin) are at ±(half_tan_hfov / zoom_multiplier)
+        let target_edge_x = half_tan_hfov / zoom_multiplier;
+        let target_edge_y = half_tan_vfov / zoom_multiplier;
+
+        // Calculate margins as distance from bounds to screen edges
+        // Positive = within screen, negative = outside
+        let left_margin = min_norm_x - (-half_tan_hfov);
+        let right_margin = half_tan_hfov - max_norm_x;
+        let bottom_margin = min_norm_y - (-half_tan_vfov);
+        let top_margin = half_tan_vfov - max_norm_y;
+
+        // Target margins are the difference between screen edge and target edge
+        let target_margin_x = half_tan_hfov - target_edge_x;
+        let target_margin_y = half_tan_vfov - target_edge_y;
+
+        Self {
+            left_margin,
+            right_margin,
+            top_margin,
+            bottom_margin,
+            target_margin_x,
+            target_margin_y,
+        }
+    }
+
+    /// Returns the minimum margin across all sides
+    fn min_margin(&self) -> f32 {
+        self.left_margin
+            .min(self.right_margin)
+            .min(self.top_margin)
+            .min(self.bottom_margin)
+    }
+
+    /// Returns true if the margins are balanced (opposite sides are equal)
+    fn is_balanced(&self, tolerance: f32) -> bool {
+        let horizontal_balanced = (self.left_margin - self.right_margin).abs() < tolerance;
+        let vertical_balanced = (self.top_margin - self.bottom_margin).abs() < tolerance;
+        horizontal_balanced && vertical_balanced
+    }
+
+    /// Returns true if properly fitted with correct margins
+    /// Requirements:
+    /// - All margins >= target (no margin below target)
+    /// - One dimension at target, other dimension >= target
+    /// - Margins are balanced (left==right, top==bottom)
+    fn is_fitted(&self, balance_tolerance: f32, at_target_tolerance: f32) -> bool {
+        // All margins must be >= their respective targets (can't have any below)
+        let h_min = self.left_margin.min(self.right_margin);
+        let v_min = self.top_margin.min(self.bottom_margin);
+        let all_margins_sufficient =
+            h_min >= self.target_margin_x * 0.99 && v_min >= self.target_margin_y * 0.99;
+
+        // Check if horizontal dimension is at target (use looser tolerance to avoid oscillation)
+        let h_at_target = (h_min - self.target_margin_x).abs() < at_target_tolerance;
+
+        // Check if vertical dimension is at target
+        let v_at_target = (v_min - self.target_margin_y).abs() < at_target_tolerance;
+
+        // At least one dimension should be at target
+        let one_dimension_at_target = h_at_target || v_at_target;
+
+        // Must be balanced (use tight tolerance)
+        let balanced = self.is_balanced(balance_tolerance);
+
+        all_margins_sufficient && one_dimension_at_target && balanced
+    }
 }
 
 pub fn home_camera(
@@ -71,9 +186,10 @@ pub fn home_camera(
 fn start_zoom_to_fit(mut commands: Commands, camera_query: Query<Entity, With<PanOrbitCamera>>) {
     if let Ok(camera_entity) = camera_query.single() {
         commands.entity(camera_entity).insert(ZoomToFitActive {
-            max_iterations:     3000,
-            iteration_count:    0,
-            stable_frame_count: 0,
+            max_iterations:      3000,
+            iteration_count:     0,
+            previous_bounds:     None,
+            last_zoom_direction: None,
         });
         println!("Starting zoom-to-fit animation");
     }
@@ -198,64 +314,118 @@ fn update_zoom_to_fit(
         min_norm_y,
         max_norm_y
     );
+    println!(
+        "  Screen edges: h_fov=±{:.3}, v_fov=±{:.3}, aspect={:.3}, zoom_mult={:.3}",
+        half_tan_hfov,
+        half_tan_vfov,
+        aspect_ratio,
+        camera_config.zoom_multiplier()
+    );
 
-    const TOLERANCE: f32 = 0.01;
+    // Create margin struct for comparison
+    let margins = ScreenSpaceMargins::new(
+        min_norm_x,
+        max_norm_x,
+        min_norm_y,
+        max_norm_y,
+        half_tan_hfov,
+        half_tan_vfov,
+        camera_config.zoom_multiplier(),
+    );
 
-    // Check if we're done
-    let centered = center_x.abs() < TOLERANCE && center_y.abs() < TOLERANCE;
+    println!(
+        "  Margins: left={:.3}, right={:.3}, top={:.3}, bottom={:.3}, target_x={:.3}, target_y={:.3}, min={:.3}",
+        margins.left_margin,
+        margins.right_margin,
+        margins.top_margin,
+        margins.bottom_margin,
+        margins.target_margin_x,
+        margins.target_margin_y,
+        margins.min_margin()
+    );
 
-    // Check if boundary fits within screen edges (with margin)
-    let target_edge_x = half_tan_hfov / camera_config.zoom_multiplier();
-    let target_edge_y = half_tan_vfov / camera_config.zoom_multiplier();
+    // Use Camera's official world_to_viewport to verify if any corners are outside
+    if let Some(viewport_size) = camera.logical_viewport_size() {
+        let mut any_outside = false;
+        let mut min_vp_x = f32::INFINITY;
+        let mut max_vp_x = f32::NEG_INFINITY;
+        let mut min_vp_y = f32::INFINITY;
+        let mut max_vp_y = f32::NEG_INFINITY;
 
-    // Check if we're outside viewport (need to zoom out)
-    let outside_x = max_norm_x.abs() > half_tan_hfov || min_norm_x.abs() > half_tan_hfov;
-    let outside_y = max_norm_y.abs() > half_tan_vfov || min_norm_y.abs() > half_tan_vfov;
+        for corner in &boundary_corners {
+            if let Ok(viewport_pos) = camera.world_to_viewport(cam_global, *corner) {
+                min_vp_x = min_vp_x.min(viewport_pos.x);
+                max_vp_x = max_vp_x.max(viewport_pos.x);
+                min_vp_y = min_vp_y.min(viewport_pos.y);
+                max_vp_y = max_vp_y.max(viewport_pos.y);
 
-    // Check if either dimension is at target (within 0.1% tolerance)
-    let x_at_target =
-        max_norm_x.abs() > target_edge_x * 0.999 || min_norm_x.abs() > target_edge_x * 0.999;
-    let y_at_target =
-        max_norm_y.abs() > target_edge_y * 0.999 || min_norm_y.abs() > target_edge_y * 0.999;
-
-    let fitted = (x_at_target || y_at_target) && !outside_x && !outside_y;
-
-    // Require 5 consecutive stable frames before declaring complete
-    const REQUIRED_STABLE_FRAMES: usize = 5;
-
-    if centered && fitted {
-        zoom_state.stable_frame_count += 1;
-        if zoom_state.stable_frame_count >= REQUIRED_STABLE_FRAMES {
-            println!(
-                "Zoom-to-fit complete! centered={}, fitted={}, outside=({},{}), at_target=({},{}), stable_frames={}",
-                centered,
-                fitted,
-                outside_x,
-                outside_y,
-                x_at_target,
-                y_at_target,
-                zoom_state.stable_frame_count
-            );
-            commands.entity(entity).remove::<ZoomToFitActive>();
-            return;
+                if viewport_pos.x < 0.0
+                    || viewport_pos.x > viewport_size.x
+                    || viewport_pos.y < 0.0
+                    || viewport_pos.y > viewport_size.y
+                {
+                    any_outside = true;
+                }
+            }
         }
-    } else {
-        // Reset counter if we're not centered and fitted
-        zoom_state.stable_frame_count = 0;
+        println!(
+            "  Camera.world_to_viewport check: viewport={}x{}, bounds=[{:.1},{:.1}]x[{:.1},{:.1}], outside={}",
+            viewport_size.x, viewport_size.y, min_vp_x, max_vp_x, min_vp_y, max_vp_y, any_outside
+        );
     }
 
-    // Stop if we hit max iterations
-    if zoom_state.iteration_count >= zoom_state.max_iterations {
+    const BALANCE_TOLERANCE: f32 = 0.001; // Tight tolerance for margin balance (left==right, top==bottom)
+    const AT_TARGET_TOLERANCE: f32 = 0.003; // Looser tolerance for "at target" check to avoid oscillation
+
+    println!(
+        "  Balanced: h_diff={:.3}, v_diff={:.3}, is_balanced={}, is_fitted={}",
+        (margins.left_margin - margins.right_margin).abs(),
+        (margins.top_margin - margins.bottom_margin).abs(),
+        margins.is_balanced(BALANCE_TOLERANCE),
+        margins.is_fitted(BALANCE_TOLERANCE, AT_TARGET_TOLERANCE)
+    );
+
+    // Use margins struct for proper centered and fitted checks
+    let balanced = margins.is_balanced(BALANCE_TOLERANCE);
+    let fitted = margins.is_fitted(BALANCE_TOLERANCE, AT_TARGET_TOLERANCE);
+
+    // Check if bounds have actually changed since last frame (detect camera stabilization)
+    const BOUNDS_TOLERANCE: f32 = 0.0001;
+    let current_bounds = (min_norm_x, max_norm_x, min_norm_y, max_norm_y);
+    let bounds_changed = if let Some(prev) = zoom_state.previous_bounds {
+        (min_norm_x - prev.0).abs() > BOUNDS_TOLERANCE
+            || (max_norm_x - prev.1).abs() > BOUNDS_TOLERANCE
+            || (min_norm_y - prev.2).abs() > BOUNDS_TOLERANCE
+            || (max_norm_y - prev.3).abs() > BOUNDS_TOLERANCE
+    } else {
+        true // First frame always counts as "changed"
+    };
+    zoom_state.previous_bounds = Some(current_bounds);
+
+    // Once bounds are stable (unchanged) AND balanced AND fitted, we're done
+    if balanced && fitted && !bounds_changed {
+        println!("  Camera stabilized: bounds unchanged, balanced, and fitted");
         println!(
-            "Zoom-to-fit stopped at max iterations! centered={}, fitted={}, outside=({},{}), at_target=({},{})",
-            centered, fitted, outside_x, outside_y, x_at_target, y_at_target
+            "Zoom-to-fit complete! balanced={}, fitted={}",
+            balanced, fitted
         );
         commands.entity(entity).remove::<ZoomToFitActive>();
         return;
     }
 
-    // Adjust focus to center the boundary
-    if !centered {
+    // Stop if we hit max iterations
+    if zoom_state.iteration_count >= zoom_state.max_iterations {
+        println!(
+            "Zoom-to-fit stopped at max iterations! balanced={}, fitted={}",
+            balanced, fitted
+        );
+        commands.entity(entity).remove::<ZoomToFitActive>();
+        return;
+    }
+
+    // Phase 1: Balance first (center the boundary)
+    // Adjust focus until left==right and top==bottom
+    if !balanced {
         // Move focus in screen-space direction with damping to prevent overshoot
         const FOCUS_DAMPING: f32 = 0.5; // Only apply 50% of correction each frame
         let current_radius = pan_orbit.target_radius;
@@ -269,35 +439,159 @@ fn update_zoom_to_fit(
             offset_world.x, offset_world.y
         );
     }
-
-    // Adjust radius to fit the boundary
-    if !fitted {
+    // Phase 2: Once balanced, adjust zoom to fit
+    // Zoom until one dimension hits target margin
+    else if !fitted {
         let current_radius = pan_orbit.target_radius;
 
-        // Use symmetric 0.25% zoom rates for smooth convergence
-        if outside_x || outside_y {
-            let radius_adjustment = 1.0025; // 0.25% out
-            pan_orbit.target_radius = current_radius * radius_adjustment;
+        // Check each dimension against its own target
+        let h_min = margins.left_margin.min(margins.right_margin);
+        let v_min = margins.top_margin.min(margins.bottom_margin);
+
+        // Calculate margin ratios to find the most constrained dimension
+        // Lower ratio = more constrained (closer to minimum required margin)
+        let h_ratio = h_min / margins.target_margin_x;
+        let v_ratio = v_min / margins.target_margin_y;
+
+        // Determine which dimension is most constrained
+        let (constrained_margin, constrained_target, dimension_name) = if h_ratio < v_ratio {
+            (h_min, margins.target_margin_x, "horizontal")
+        } else {
+            (v_min, margins.target_margin_y, "vertical")
+        };
+
+        // Calculate error based on the most constrained dimension
+        let error = (constrained_margin - constrained_target).abs();
+        let error_pct = (error / constrained_target) * 100.0;
+
+        // Dead zone: if error is very small, stop zooming to avoid oscillation
+        if error_pct < 1.0 {
             println!(
-                "  Zooming OUT by {:.2}% to {:.1}",
-                (radius_adjustment - 1.0) * 100.0,
-                current_radius * radius_adjustment
+                "  In dead zone ({} constrained: {:.3}/{:.3}, error={:.2}%), allowing camera to \
+                 stabilize",
+                dimension_name, constrained_margin, constrained_target, error_pct
             );
+            pan_orbit.force_update = true;
+            zoom_state.iteration_count += 1;
+            return;
         }
-        // If inside viewport and not at target, zoom in
-        else if !x_at_target && !y_at_target {
-            let radius_adjustment = 0.9975; // 0.25% in (symmetric)
-            pan_orbit.target_radius = current_radius * radius_adjustment;
-            println!(
-                "  Zooming IN by {:.2}% to {:.1}",
-                (1.0 - radius_adjustment) * 100.0,
-                current_radius * radius_adjustment
-            );
+
+        let zoom_rate = if error_pct > 20.0 {
+            0.02 // 2% when far from target
+        } else if error_pct > 5.0 {
+            0.01 // 1% when medium distance
+        } else if error_pct > 2.0 {
+            0.005 // 0.5% when close
+        } else {
+            0.0025 // 0.25% when very close
+        };
+
+        // Determine zoom direction
+        let desired_direction = if constrained_margin < constrained_target * 0.99 {
+            ZoomDirection::Out
+        } else {
+            ZoomDirection::In
+        };
+
+        // Detect oscillation: if direction changed, we're overshooting due to interpolation
+        if let Some(last_direction) = zoom_state.last_zoom_direction {
+            if last_direction != desired_direction {
+                println!(
+                    "  Oscillation detected: last={:?}, desired={:?} ({} constrained: \
+                     {:.3}/{:.3}, h={:.3}, v={:.3})",
+                    last_direction,
+                    desired_direction,
+                    dimension_name,
+                    constrained_margin,
+                    constrained_target,
+                    h_min,
+                    v_min
+                );
+                println!("  Stopping zoom to prevent oscillation");
+                println!(
+                    "Zoom-to-fit complete! balanced={}, fitted={}",
+                    balanced, fitted
+                );
+                commands.entity(entity).remove::<ZoomToFitActive>();
+                return;
+            }
         }
+
+        // Record this zoom direction
+        zoom_state.last_zoom_direction = Some(desired_direction);
+
+        // Perform the zoom
+        let (radius_adjustment, direction_str) = match desired_direction {
+            ZoomDirection::Out => (1.0 + zoom_rate, "OUT"),
+            ZoomDirection::In => (1.0 - zoom_rate, "IN"),
+        };
+
+        pan_orbit.target_radius = current_radius * radius_adjustment;
+        let percentage_change = (radius_adjustment - 1.0).abs() * 100.0;
+
+        println!(
+            "  Zooming {} by {:.2}% to {:.1} ({} constrained: {:.3}/{:.3}, h={:.3}, v={:.3}, \
+             error={:.1}%)",
+            direction_str,
+            percentage_change,
+            current_radius * radius_adjustment,
+            dimension_name,
+            constrained_margin,
+            constrained_target,
+            h_min,
+            v_min,
+            error_pct
+        );
     }
 
     pan_orbit.force_update = true;
     zoom_state.iteration_count += 1;
+}
+
+fn move_camera_system(
+    mut commands: Commands,
+    mut camera_query: Query<(Entity, &mut PanOrbitCamera, &MoveMe), With<Camera>>,
+) {
+    for (entity, mut pan_orbit, move_me) in camera_query.iter_mut() {
+        // Interpolate towards target values
+        let focus_diff = move_me.target_focus - pan_orbit.target_focus;
+        let radius_diff = move_me.target_radius - pan_orbit.target_radius;
+        let yaw_diff = move_me.target_yaw - pan_orbit.target_yaw;
+        let pitch_diff = move_me.target_pitch - pan_orbit.target_pitch;
+
+        // Check if we're close enough to target
+        let close_enough = focus_diff.length() < 0.001
+            && radius_diff.abs() < 0.1
+            && yaw_diff.abs() < 0.001
+            && pitch_diff.abs() < 0.001;
+
+        if close_enough {
+            // Snap to exact target
+            pan_orbit.target_focus = move_me.target_focus;
+            pan_orbit.target_radius = move_me.target_radius;
+            pan_orbit.target_yaw = move_me.target_yaw;
+            pan_orbit.target_pitch = move_me.target_pitch;
+            pan_orbit.force_update = true;
+
+            println!(
+                "Camera reached target position: focus={:?}, radius={:.1}, yaw={:.2}, pitch={:.2}",
+                move_me.target_focus,
+                move_me.target_radius,
+                move_me.target_yaw,
+                move_me.target_pitch
+            );
+
+            // Remove MoveMe component
+            commands.entity(entity).remove::<MoveMe>();
+        } else {
+            // Interpolate towards target
+            pan_orbit.target_focus += focus_diff * move_me.speed;
+            pan_orbit.target_radius += radius_diff * move_me.speed;
+            pan_orbit.target_yaw += yaw_diff * move_me.speed;
+            pan_orbit.target_pitch += pitch_diff * move_me.speed;
+            pan_orbit.force_update = true;
+        }
+    }
 }
 
 fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32, buffer: f32) -> f32 {
@@ -314,215 +608,9 @@ fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32, buffer:
     // For Z dimension (depth)
     let z_half_depth = grid_size.z / 2.0;
 
-    // The total required distance
-    let total_distance = xy_distance + z_half_depth;
-
-    // Apply configured margin
-    total_distance * buffer
-}
-
-// Helper function that matches the yellow box calculation exactly
-fn compute_screen_space_bounds(
-    boundary_corners: &[Vec3; 8],
-    camera_pos: Vec3,
-    camera_rotation: Quat,
-) -> (f32, f32, f32, f32) {
-    // Get camera basis vectors (matches yellow box code)
-    let cam_forward = camera_rotation * Vec3::NEG_Z;
-    let cam_right = camera_rotation * Vec3::X;
-    let cam_up = camera_rotation * Vec3::Y;
-
-    let mut min_norm_x = f32::INFINITY;
-    let mut max_norm_x = f32::NEG_INFINITY;
-    let mut min_norm_y = f32::INFINITY;
-    let mut max_norm_y = f32::NEG_INFINITY;
-
-    for corner in boundary_corners {
-        let relative = *corner - camera_pos;
-        let depth = relative.dot(cam_forward).max(0.1);
-        let x = relative.dot(cam_right);
-        let y = relative.dot(cam_up);
-
-        let norm_x = x / depth;
-        let norm_y = y / depth;
-
-        min_norm_x = min_norm_x.min(norm_x);
-        max_norm_x = max_norm_x.max(norm_x);
-        min_norm_y = min_norm_y.min(norm_y);
-        max_norm_y = max_norm_y.max(norm_y);
-    }
-
-    (min_norm_x, max_norm_x, min_norm_y, max_norm_y)
-}
-
-fn calculate_camera_radius_and_focus_for_angle(
-    boundary: &Boundary,
-    fov: f32,
-    aspect_ratio: f32,
-    yaw: f32,
-    pitch: f32,
-    buffer: f32,
-) -> (f32, Vec3) {
-    // Calculate half-angle tangents
-    let half_tan_vfov = (fov * 0.5).tan();
-    let half_tan_hfov = half_tan_vfov * aspect_ratio;
-
-    // Get boundary corners using the same method as the yellow box code
-    let grid_size = boundary.scale();
-    let half_size = grid_size / 2.0;
-    let boundary_corners = [
-        Vec3::new(-half_size.x, -half_size.y, -half_size.z),
-        Vec3::new(half_size.x, -half_size.y, -half_size.z),
-        Vec3::new(-half_size.x, half_size.y, -half_size.z),
-        Vec3::new(half_size.x, half_size.y, -half_size.z),
-        Vec3::new(-half_size.x, -half_size.y, half_size.z),
-        Vec3::new(half_size.x, -half_size.y, half_size.z),
-        Vec3::new(-half_size.x, half_size.y, half_size.z),
-        Vec3::new(half_size.x, half_size.y, half_size.z),
-    ];
-
-    // Compute geometric center of boundary
-    let mut boundary_center = Vec3::ZERO;
-    for corner in &boundary_corners {
-        boundary_center += corner;
-    }
-    boundary_center /= boundary_corners.len() as f32;
-
-    // Build camera rotation (yaw then pitch)
-    let yaw_quat = Quat::from_rotation_y(yaw);
-    let pitch_quat = Quat::from_rotation_x(pitch);
-    let camera_rotation = yaw_quat * pitch_quat;
-    let view_rotation = camera_rotation.inverse();
-
-    // Find the maximum distance of any corner from the boundary center in view space
-    // to ensure we start from a position where all corners are in front of camera
-    let mut max_corner_distance = 0.0f32;
-    for corner in &boundary_corners {
-        let corner_in_view = view_rotation * (corner - boundary_center);
-        // We care about the z-distance (depth)
-        max_corner_distance = max_corner_distance.max(corner_in_view.z.abs());
-    }
-
-    // Start from boundary center, then offset backward along view direction
-    // by the max corner distance plus margin to ensure all corners are in front
-    let view_forward = camera_rotation * Vec3::NEG_Z;
-    let initial_focus = boundary_center - view_forward * (max_corner_distance * 1.5);
-
-    // Iteratively center the boundary in screen space
-    let mut optimal_focus = initial_focus;
-    const MAX_ITERATIONS: usize = 10;
-    const TOLERANCE: f32 = 0.001;
-
-    // We need to iterate adjusting both focus and radius together
-    let mut current_radius = max_corner_distance * 2.0; // Initial estimate
-
-    for iteration in 0..MAX_ITERATIONS {
-        // Camera position in orbit camera: focus + (rotation * Vec3::Z * radius)
-        // Camera looks down -Z, so it's at +Z from focus
-        let camera_pos = optimal_focus + (camera_rotation * Vec3::Z * current_radius);
-
-        // Project corners to view space relative to camera position (matches yellow box)
-        let view_corners: Vec<Vec3> = boundary_corners
-            .iter()
-            .map(|corner| view_rotation * (corner - camera_pos))
-            .collect();
-
-        // Compute screen-space bounding box using same projection as yellow box
-        // norm_x = x / depth, norm_y = y / depth (no FOV division yet)
-        let mut min_norm_x = f32::INFINITY;
-        let mut max_norm_x = f32::NEG_INFINITY;
-        let mut min_norm_y = f32::INFINITY;
-        let mut max_norm_y = f32::NEG_INFINITY;
-        let mut sum_depth = 0.0;
-        let mut min_z = f32::INFINITY;
-        let mut max_z = f32::NEG_INFINITY;
-
-        for v in &view_corners {
-            let depth = -v.z; // positive depth
-            let norm_x = v.x / depth;
-            let norm_y = v.y / depth;
-
-            min_norm_x = min_norm_x.min(norm_x);
-            max_norm_x = max_norm_x.max(norm_x);
-            min_norm_y = min_norm_y.min(norm_y);
-            max_norm_y = max_norm_y.max(norm_y);
-            sum_depth += depth;
-            min_z = min_z.min(v.z);
-            max_z = max_z.max(v.z);
-        }
-
-        let avg_depth = sum_depth / view_corners.len() as f32;
-
-        // Center of screen-space bounding box
-        let center_x = (min_norm_x + max_norm_x) * 0.5;
-        let center_y = (min_norm_y + max_norm_y) * 0.5;
-
-        println!(
-            "Iteration {iteration}: screen-space center = ({center_x:.6}, {center_y:.6}), bounds = \
-             x:[{min_norm_x:.3}, {max_norm_x:.3}] y:[{min_norm_y:.3}, {max_norm_y:.3}], \
-             z:[{min_z:.1}, {max_z:.1}], avg_depth={avg_depth:.1}"
-        );
-
-        // Check if we're centered enough
-        if center_x.abs() < TOLERANCE && center_y.abs() < TOLERANCE {
-            println!("Converged! Final center: ({center_x:.6}, {center_y:.6})");
-            break;
-        }
-
-        // Convert screen-space offset to view-space shift with FOV scaling
-        // Positive center_x means boundary is right of screen center, so move focus right
-        let offset_x_view = center_x * avg_depth * half_tan_hfov;
-        let offset_y_view = center_y * avg_depth * half_tan_vfov;
-        let offset_world = camera_rotation * Vec3::new(offset_x_view, offset_y_view, 0.0);
-
-        println!("  Applying offset: view_space=({offset_x_view:.3}, {offset_y_view:.3})");
-
-        // Update focus
-        optimal_focus += offset_world;
-
-        // Recalculate radius for next iteration based on new focus
-        let mut next_radius = 0.0f32;
-        for corner in &boundary_corners {
-            let p = view_rotation * (corner - optimal_focus);
-            let depth = -p.z;
-            let norm_x = p.x / depth;
-            let norm_y = p.y / depth;
-            let scale = (norm_x.abs() / half_tan_hfov).max(norm_y.abs() / half_tan_vfov);
-            next_radius = next_radius.max(depth * scale);
-        }
-        current_radius = next_radius;
-    }
-
-    // Final convergence check using actual camera position
-    let final_camera_pos = optimal_focus + (camera_rotation * Vec3::Z * current_radius);
-    let final_view_corners: Vec<Vec3> = boundary_corners
-        .iter()
-        .map(|corner| view_rotation * (corner - final_camera_pos))
-        .collect();
-
-    let mut final_min_x = f32::INFINITY;
-    let mut final_max_x = f32::NEG_INFINITY;
-    let mut final_min_y = f32::INFINITY;
-    let mut final_max_y = f32::NEG_INFINITY;
-
-    for v in &final_view_corners {
-        let depth = -v.z;
-        let norm_x = v.x / depth;
-        let norm_y = v.y / depth;
-        final_min_x = final_min_x.min(norm_x);
-        final_max_x = final_max_x.max(norm_x);
-        final_min_y = final_min_y.min(norm_y);
-        final_max_y = final_max_y.max(norm_y);
-    }
-
-    let final_center_x = (final_min_x + final_max_x) * 0.5;
-    let final_center_y = (final_min_y + final_max_y) * 0.5;
-    println!("Final: center = ({final_center_x:.6}, {final_center_y:.6})");
-
-    // Use the radius calculated during the last iteration, with buffer applied
-    let final_radius = current_radius * buffer;
-
-    (final_radius, optimal_focus)
+    // Apply buffer to XY distance (for screen-space margin), then add Z depth
+    // This ensures buffer represents actual screen-space margin percentage
+    xy_distance * buffer + z_half_depth
 }
 
 #[derive(Component, Reflect)]
