@@ -70,7 +70,9 @@
       "Bash(truncate:*)",
       "Bash(git -C /Users/natemccoy/rust/nateroids diff src/camera/cameras.rs)",
       "Bash(git rev-parse:*)",
-      "Bash(git worktree:*)"
+      "Bash(git worktree:*)",
+      "Bash(git -C /Users/natemccoy/rust/nateroids diff --cached)",
+      "Bash(git -C /Users/natemccoy/rust/nateroids log --oneline -15)"
     ],
     "deny": [],
     "ask": []
