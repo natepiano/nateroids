@@ -1,5 +1,222 @@
 # Portal Rendering Test Suite Implementation Plan
 
+## EXECUTION PROTOCOL
+
+<Instructions>
+For each step in the implementation sequence:
+
+1. **DESCRIBE**: Present the changes with:
+   - Summary of what will change and why
+   - Code examples showing before/after
+   - List of files to be modified
+   - Expected impact on the system
+
+2. **AWAIT APPROVAL**: Stop and wait for user confirmation ("go ahead" or similar)
+
+3. **IMPLEMENT**: Make the changes and stop
+
+4. **BUILD & VALIDATE**: Execute the build process:
+   ```bash
+   cargo build && cargo +nightly fmt
+   ```
+   For test steps, also run:
+   ```bash
+   cargo nextest run portal_render_tests
+   ```
+
+5. **CONFIRM**: Wait for user to confirm the build succeeded
+
+6. **MARK COMPLETE**: Update this document to mark the step as ✅ COMPLETED
+
+7. **PROCEED**: Move to next step only after confirmation
+</Instructions>
+
+<ExecuteImplementation>
+    Find the next ⏳ PENDING step in the INTERACTIVE IMPLEMENTATION SEQUENCE below.
+
+    For the current step:
+    1. Follow the <Instructions/> above for executing the step
+    2. When step is complete, use Edit tool to mark it as ✅ COMPLETED
+    3. Continue to next PENDING step
+
+    If all steps are COMPLETED:
+        Display: "✅ Implementation complete! All steps have been executed."
+</ExecuteImplementation>
+
+## INTERACTIVE IMPLEMENTATION SEQUENCE
+
+### Step 1: Add Helper Functions ⏳ PENDING
+
+**Objective**: Implement 3 constraint helper functions for intersection point filtering
+
+**Changes**:
+- Add `constrain_intersection_points()` - Filters intersection points to only include those within face boundary limits
+- Add `point_within_boundary_for_face()` - Checks if a point extends beyond boundaries
+- Add `faces_share_axis()` - Determines if two faces are perpendicular to the same axis
+
+**Files**: `src/playfield/boundary.rs`
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Expected Result**:
+- ✅ Compiles successfully
+- ⚠️ Dead code warnings expected (functions will be used in portal-upgraded.md Step 2)
+
+**See Implementation Details**: Phase 1 section below
+
+---
+
+### Step 2: Add Test Infrastructure ⏳ PENDING
+
+**Objective**: Implement test-only method and scaffolding for portal rendering tests
+
+**Changes**:
+- Add `#[cfg(test)]` impl block with `calculate_portal_render_data()` method
+- Add `PortalRenderData` enum type for test results
+- Add test module with helper functions (`create_test_boundary()`, `create_portal()`)
+
+**Files**: `src/playfield/boundary.rs`
+
+**Dependencies**: Requires Step 1 (uses helper functions)
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Expected Result**: ✅ Compiles successfully
+
+**See Implementation Details**: Phase 2 section below
+
+---
+
+### Step 3: Add Category 1 & 2 Tests (Too Far + Single Face) ⏳ PENDING
+
+**Objective**: Implement 7 tests for basic portal rendering scenarios
+
+**Changes**:
+- Add 1 "too far" test (portal doesn't reach boundaries)
+- Add 6 "single face" tests (one for each boundary face)
+
+**Files**: `src/playfield/boundary.rs`
+
+**Dependencies**: Requires Step 2 (test infrastructure)
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Test Command**:
+```bash
+cargo nextest run portal_render_tests
+```
+
+**Expected Result**:
+- ✅ Compiles successfully
+- ✅ All 7 tests PASS
+
+**See Implementation Details**: Phase 3, Category 1 & 2 sections below
+
+---
+
+### Step 4: Add Category 3 Tests (Edge Cases) ⏳ PENDING
+
+**Objective**: Implement 12 tests for portal rendering at boundary edges
+
+**Changes**:
+- Add 4 X-axis edge tests (top/bottom + back/front combinations)
+- Add 4 Y-axis edge tests (left/right + back/front combinations)
+- Add 4 Z-axis edge tests (left/right + top/bottom combinations)
+
+**Files**: `src/playfield/boundary.rs`
+
+**Dependencies**: Requires Step 2 (test infrastructure)
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Test Command**:
+```bash
+cargo nextest run portal_render_tests
+```
+
+**Expected Result**:
+- ✅ Compiles successfully
+- ✅ All 12 tests PASS
+
+**See Implementation Details**: Phase 3, Category 3 section below
+
+---
+
+### Step 5: Add Category 4 Tests (Corner Cases) ⏳ PENDING
+
+**Objective**: Implement 8 tests for portal rendering at boundary corners (EXPECTED TO FAIL)
+
+**Changes**:
+- Add 8 corner tests covering all boundary corners
+- These tests document the known corner rendering bug
+
+**Files**: `src/playfield/boundary.rs`
+
+**Dependencies**: Requires Step 2 (test infrastructure)
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Test Command**:
+```bash
+cargo nextest run portal_render_tests
+```
+
+**Expected Result**:
+- ✅ Compiles successfully
+- ❌ All 8 tests FAIL (expected - documents corner rendering bug)
+
+**Note**: These failures are intentional and document the bug that will be fixed by portal-upgraded.md Steps 2-4
+
+**See Implementation Details**: Phase 3, Category 4 section below
+
+---
+
+### Step 6: Final Validation ⏳ PENDING
+
+**Objective**: Run complete test suite and verify expected results
+
+**Tasks**:
+- Run all tests
+- Verify 19 tests pass (categories 1-3)
+- Verify 8 tests fail (category 4 - corner bug)
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Test Command**:
+```bash
+cargo nextest run portal_render_tests
+```
+
+**Expected Results**:
+
+| Category | Tests | Expected Result |
+|----------|-------|-----------------|
+| Too Far  | 1     | ✅ PASS         |
+| Single Face | 6  | ✅ PASS         |
+| Edge (2 faces) | 12 | ✅ PASS      |
+| Corner (3 faces) | 8 | ❌ FAIL       |
+| **Total** | **27** | **19 pass, 8 fail** |
+
+---
+
 ## Overview
 
 Create comprehensive unit tests for portal rendering logic covering 4 scenarios:
@@ -16,6 +233,8 @@ Tests will use `cargo nextest run` and require no Bevy runtime (pure geometry te
 - ❌ Document corner bug with failing tests (scenario 4)
 - ✅ Provide regression suite for portal-upgraded.md implementation
 - ✅ Enable fast, deterministic testing without Bevy systems
+
+---
 
 ## Phase 1: Implement Helper Functions (Portal-Upgraded Step 1)
 
@@ -782,34 +1001,6 @@ fn test_portal_at_right_top_front_corner() {
 ```
 
 **Expected**: ❌ All 8 tests FAIL (confirms corner rendering bug)
-
----
-
-## Phase 4: Build, Format, and Run Tests
-
-### Build and Format
-
-```bash
-cargo build && cargo +nightly fmt
-```
-
-### Run Tests
-
-```bash
-cargo nextest run portal_render_tests
-```
-
-### Expected Results Summary
-
-| Category | Tests | Expected Result |
-|----------|-------|-----------------|
-| Too Far  | 1     | ✅ PASS         |
-| Single Face | 6  | ✅ PASS         |
-| Edge (2 faces) | 12 | ✅ PASS      |
-| Corner (3 faces) | 8 | ❌ FAIL       |
-| **Total** | **27** | **19 pass, 8 fail** |
-
-The 8 failing corner tests document the bug that will be fixed by portal-upgraded.md Steps 2-4.
 
 ---
 
