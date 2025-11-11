@@ -1,1 +1,2 @@
 - use cargo nextest run for testing
+- you don't need to use sleep after send keys or launching the app - it will keep up
