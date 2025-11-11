@@ -11,8 +11,8 @@ use leafwing_input_manager::prelude::*;
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
 use crate::camera::config::CameraConfig;
-use crate::global_input::GameAction;
-use crate::global_input::just_pressed;
+use crate::game_input::GameAction;
+use crate::game_input::just_pressed;
 use crate::playfield::Boundary;
 
 pub struct CamerasPlugin;
@@ -23,6 +23,10 @@ impl Plugin for CamerasPlugin {
             .add_systems(Startup, spawn_star_camera.before(spawn_panorbit_camera))
             .add_systems(Startup, spawn_panorbit_camera)
             .add_systems(Update, home_camera.run_if(just_pressed(GameAction::Home)))
+            .add_systems(
+                Update,
+                zoom_to_fit.run_if(just_pressed(GameAction::ZoomToFit)),
+            )
             .add_systems(
                 Update,
                 (toggle_stars, update_bloom_settings, update_clear_color),
@@ -50,6 +54,29 @@ pub fn home_camera(
     }
 }
 
+pub fn zoom_to_fit(
+    boundary: Res<Boundary>,
+    mut camera_query: Query<(&mut PanOrbitCamera, &Projection)>,
+) {
+    if let Ok((mut pan_orbit, Projection::Perspective(perspective))) = camera_query.single_mut() {
+        let grid_size = boundary.scale();
+
+        let (target_radius, target_focus) = calculate_camera_radius_and_focus_for_angle(
+            grid_size,
+            perspective.fov,
+            perspective.aspect_ratio,
+            pan_orbit.target_yaw,
+            pan_orbit.target_pitch,
+        );
+
+        // Keep current yaw and pitch, adjust focus to center boundary, adjust radius
+        pan_orbit.target_focus = target_focus;
+        pan_orbit.target_radius = target_radius;
+
+        pan_orbit.force_update = true;
+    }
+}
+
 fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32) -> f32 {
     // Calculate horizontal FOV based on aspect ratio
     let horizontal_fov = 2.0 * ((fov / 2.0).tan() * aspect_ratio).atan();
@@ -70,6 +97,85 @@ fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32) -> f32 
     // Apply minimal margin
     let buffer = 1.05; // 5% margin
     total_distance * buffer
+}
+
+fn calculate_camera_radius_and_focus_for_angle(
+    grid_size: Vec3,
+    fov: f32,
+    aspect_ratio: f32,
+    yaw: f32,
+    pitch: f32,
+) -> (f32, Vec3) {
+    // Calculate horizontal FOV
+    let horizontal_fov = 2.0 * ((fov / 2.0).tan() * aspect_ratio).atan();
+    let half_tan_hfov = (horizontal_fov / 2.0).tan();
+    let half_tan_vfov = (fov / 2.0).tan();
+
+    // Generate the 8 corners of the boundary box
+    let half_size = grid_size / 2.0;
+    let corners = [
+        Vec3::new(-half_size.x, -half_size.y, -half_size.z),
+        Vec3::new(half_size.x, -half_size.y, -half_size.z),
+        Vec3::new(-half_size.x, half_size.y, -half_size.z),
+        Vec3::new(half_size.x, half_size.y, -half_size.z),
+        Vec3::new(-half_size.x, -half_size.y, half_size.z),
+        Vec3::new(half_size.x, -half_size.y, half_size.z),
+        Vec3::new(-half_size.x, half_size.y, half_size.z),
+        Vec3::new(half_size.x, half_size.y, half_size.z),
+    ];
+
+    // Build camera rotation (yaw then pitch)
+    let yaw_quat = Quat::from_rotation_y(yaw);
+    let pitch_quat = Quat::from_rotation_x(pitch);
+    let camera_rotation = yaw_quat * pitch_quat;
+    let view_rotation = camera_rotation.inverse();
+
+    // Transform all corners to camera view space and find bounding box
+    let mut min_x = f32::INFINITY;
+    let mut max_x = f32::NEG_INFINITY;
+    let mut min_y = f32::INFINITY;
+    let mut max_y = f32::NEG_INFINITY;
+    let mut min_z = f32::INFINITY;
+    let mut max_z = f32::NEG_INFINITY;
+
+    for corner in &corners {
+        let rotated = view_rotation * (*corner);
+        min_x = min_x.min(rotated.x);
+        max_x = max_x.max(rotated.x);
+        min_y = min_y.min(rotated.y);
+        max_y = max_y.max(rotated.y);
+        min_z = min_z.min(rotated.z);
+        max_z = max_z.max(rotated.z);
+    }
+
+    // Find the center of the bounding box in camera view space
+    let center_in_view = Vec3::new(
+        (min_x + max_x) / 2.0,
+        (min_y + max_y) / 2.0,
+        (min_z + max_z) / 2.0,
+    );
+
+    // Transform back to world space - this is the optimal focus point
+    let optimal_focus = camera_rotation * center_in_view;
+
+    // Now calculate minimum radius needed from this focus point
+    let mut min_radius = 0.0f32;
+
+    for corner in &corners {
+        // Corner relative to new focus
+        let relative = *corner - optimal_focus;
+        let rotated = view_rotation * relative;
+
+        // Calculate radius needed for this corner
+        let r_from_x = rotated.x.abs() / half_tan_hfov + rotated.z;
+        let r_from_y = rotated.y.abs() / half_tan_vfov + rotated.z;
+        let r_for_corner = r_from_x.max(r_from_y);
+
+        min_radius = min_radius.max(r_for_corner);
+    }
+
+    // Small buffer for safety
+    (min_radius * 1.01, optimal_focus)
 }
 
 #[derive(Component, Reflect)]

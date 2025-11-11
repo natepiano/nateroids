@@ -16,8 +16,8 @@ use super::spaceship::Spaceship;
 use crate::asset_loader::AssetsState;
 use crate::asset_loader::SceneAssets;
 use crate::camera::RenderLayer;
-use crate::global_input::GameAction;
-use crate::global_input::toggle_active;
+use crate::game_input::GameAction;
+use crate::game_input::toggle_active;
 
 // this is how far off we are from blender for the assets we're loading
 // we need to get them scaled up to generate a usable aabb

@@ -3,7 +3,7 @@ use bevy::dev_tools::states::*;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 
-use crate::global_input::GameAction;
+use crate::game_input::GameAction;
 
 pub struct StatePlugin;
 

@@ -3,8 +3,8 @@ use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 
 use crate::camera::RenderLayer;
-use crate::global_input::GameAction;
-use crate::global_input::toggle_active;
+use crate::game_input::GameAction;
+use crate::game_input::toggle_active;
 use crate::traits::TransformExt;
 
 pub struct AabbPlugin;

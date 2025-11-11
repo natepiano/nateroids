@@ -7,7 +7,7 @@ use leafwing_input_manager::action_state::ActionState;
 
 use crate::actor::Nateroid;
 use crate::camera::RenderLayer;
-use crate::global_input::GameAction;
+use crate::game_input::GameAction;
 
 pub struct PhysicsPlugin;
 

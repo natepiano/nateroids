@@ -4,8 +4,8 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
-use crate::global_input::GameAction;
-use crate::global_input::toggle_active;
+use crate::game_input::GameAction;
+use crate::game_input::toggle_active;
 
 pub struct CameraConfigPlugin;
 

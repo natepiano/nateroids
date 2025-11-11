@@ -7,8 +7,8 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 
 use crate::camera::RenderLayer;
-use crate::global_input::GameAction;
-use crate::global_input::toggle_active;
+use crate::game_input::GameAction;
+use crate::game_input::toggle_active;
 use crate::orientation::CameraOrientation;
 use crate::playfield::boundary_face::BoundaryFace;
 use crate::playfield::portals::Portal;

@@ -9,7 +9,7 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(InputManagerPlugin::<GameAction>::default())
             .init_resource::<ActionState<GameAction>>()
-            .insert_resource(GameAction::global_input_map());
+            .insert_resource(GameAction::game_input_map());
     }
 }
 
@@ -34,28 +34,29 @@ pub enum GameAction {
     SpaceshipControlInspector,
     Stars,
     SuppressNateroids,
+    ZoomToFit,
 }
 
-/// GlobalActions assign keys to do a lot of obvious stuff. Debug is less
+/// GameActions assign keys to do a lot of obvious stuff. Debug is less
 /// obvious.
 ///
 /// Use Debug like this - invoke it with a system as follows:
 /// ```rust
-/// app.add_systems(Update, my_debug_system.run_if(toggle_active(false, GlobalAction::Debug))
+/// app.add_systems(Update, my_debug_system.run_if(toggle_active(false, GameAction::Debug))
 /// ```
 /// useful when you want to limit the amount of info that is being emitted
 ///
-/// similarly you can also ask for the GlobalAction and use it in your code
+/// similarly you can also ask for the GameAction and use it in your code
 /// directly
 /// ```rust
-/// fn my_system(user_input: Res<ActionState<GlobalAction>>) {
-///    if user_input.pressed(&GlobalAction::Debug) {
+/// fn my_system(user_input: Res<ActionState<GameAction>>) {
+///    if user_input.pressed(&GameAction::Debug) {
 ///       // whatever debug statements you're using will only happen while you
 /// press it    }
 /// }
 /// ```
 impl GameAction {
-    pub fn global_input_map() -> InputMap<Self> {
+    pub fn game_input_map() -> InputMap<Self> {
         fn insert_shift_input(
             input_map: InputMap<GameAction>,
             action: GameAction,
@@ -110,6 +111,7 @@ impl GameAction {
             },
             Self::Stars => input_map.with(action, KeyCode::F3),
             Self::SuppressNateroids => input_map.with(action, KeyCode::F4),
+            Self::ZoomToFit => insert_shift_input(input_map, action, KeyCode::F12),
         })
     }
 }
