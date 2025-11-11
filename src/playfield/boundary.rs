@@ -655,3 +655,668 @@ fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -
 
     intersections
 }
+
+/// Filters intersection points to only include those within the face's boundary limits.
+/// At corners, this prevents arcs from extending into adjacent faces.
+///
+/// Returns filtered vector containing only points within valid region. May be empty
+/// if all points were outside boundaries (e.g., small portal near corner).
+fn constrain_intersection_points(
+    points: Vec<Vec3>,
+    current_face: BoundaryFace,
+    overextended_faces: &[BoundaryFace],
+    min: &Vec3,
+    max: &Vec3,
+) -> Vec<Vec3> {
+    points
+        .into_iter()
+        .filter(|point| {
+            point_within_boundary_for_face(*point, current_face, overextended_faces, min, max)
+        })
+        .collect()
+}
+
+fn point_within_boundary_for_face(
+    point: Vec3,
+    face: BoundaryFace,
+    overextended_faces: &[BoundaryFace],
+    min: &Vec3,
+    max: &Vec3,
+) -> bool {
+    // For each overextended face that's on a different axis, ensure point doesn't
+    // extend beyond that boundary
+    for overextended in overextended_faces {
+        if faces_share_axis(face, *overextended) {
+            continue; // Same axis, no constraint needed (optimization)
+        }
+
+        // Check if point exceeds the boundary this overextended face represents
+        // These are exact comparisons - no epsilon needed for geometric filtering
+        match overextended {
+            BoundaryFace::Left => {
+                if point.x < min.x {
+                    return false;
+                }
+            },
+            BoundaryFace::Right => {
+                if point.x > max.x {
+                    return false;
+                }
+            },
+            BoundaryFace::Bottom => {
+                if point.y < min.y {
+                    return false;
+                }
+            },
+            BoundaryFace::Top => {
+                if point.y > max.y {
+                    return false;
+                }
+            },
+            BoundaryFace::Back => {
+                if point.z < min.z {
+                    return false;
+                }
+            },
+            BoundaryFace::Front => {
+                if point.z > max.z {
+                    return false;
+                }
+            },
+        }
+    }
+
+    true
+}
+
+/// Returns true if two faces are perpendicular to the same axis.
+/// Used to optimize constraint checks by skipping geometrically impossible conditions.
+///
+/// Faces share an axis when they're perpendicular to the same coordinate axis:
+/// - Left/Right: both perpendicular to X-axis (points have fixed X, varying Y/Z)
+/// - Top/Bottom: both perpendicular to Y-axis (points have fixed Y, varying X/Z)
+/// - Front/Back: both perpendicular to Z-axis (points have fixed Z, varying X/Y)
+///
+/// Example: When drawing on Left face (x = -55) with Right overextended (x = 55),
+/// the constraint `point.x > 55` is impossible (point.x is fixed at -55).
+/// Skipping this check is a performance optimization.
+fn faces_share_axis(face1: BoundaryFace, face2: BoundaryFace) -> bool {
+    use BoundaryFace::*;
+    matches!(
+        (face1, face2),
+        // Same face (optimization for redundant self-checks)
+        (Left, Left) | (Right, Right) |
+        (Top, Top) | (Bottom, Bottom) |
+        (Front, Front) | (Back, Back) |
+        // Opposite faces on same axis
+        (Left, Right) | (Right, Left) |
+        (Top, Bottom) | (Bottom, Top) |
+        (Front, Back) | (Back, Front)
+    )
+}
+
+#[cfg(test)]
+impl Boundary {
+    /// Test helper: Get portal rendering data without drawing
+    ///
+    /// This is a self-contained implementation that doesn't depend on
+    /// `get_overextended_intersection_points()` (which will be removed
+    /// in the portal-upgraded.md refactor). It directly calculates
+    /// intersections and applies constraints using the Phase 1 helpers.
+    pub fn calculate_portal_render_data(&self, portal: &Portal) -> PortalRenderData {
+        let overextended_faces = self.get_overextended_faces_for(portal);
+
+        if overextended_faces.is_empty() {
+            return PortalRenderData::SingleCircle {
+                position: portal.position,
+                normal:   portal.normal,
+                radius:   portal.radius,
+            };
+        }
+
+        // Calculate boundary extents for constraint checking
+        let half_size = self.transform.scale / 2.0;
+        let min = self.transform.translation - half_size;
+        let max = self.transform.translation + half_size;
+
+        let primary_face = BoundaryFace::from_normal(portal.normal).unwrap();
+        let mut arc_data = Vec::new();
+
+        // Collect ALL faces that need arcs (primary + overextended)
+        let mut all_faces = vec![primary_face];
+        all_faces.extend(overextended_faces.iter());
+
+        // Calculate intersections for each face
+        for &face in &all_faces {
+            let face_points = face.get_face_points(&min, &max);
+            let mut face_intersections = intersect_circle_with_rectangle(portal, &face_points);
+
+            // Apply constraints: filter out points that extend beyond face boundaries
+            face_intersections = constrain_intersection_points(
+                face_intersections,
+                face,
+                &overextended_faces,
+                &min,
+                &max,
+            );
+
+            if !face_intersections.is_empty() {
+                arc_data.push((face, face_intersections));
+            }
+        }
+
+        PortalRenderData::SplitArcs {
+            primary_face,
+            arc_data,
+        }
+    }
+}
+
+/// Test helper return type that captures complete portal rendering data.
+///
+/// **Design rationale**: This type intentionally includes ALL data that the real
+/// `draw_portal()` function uses, even though current tests only validate subsets:
+///
+/// 1. **Debugging value**: When tests fail, developers can inspect the complete rendering state
+///    (position, radius, normals, intersection points) to understand what went wrong, not just
+///    which assertion failed.
+///
+/// 2. **Future test expansion**: Additional tests may validate position accuracy (e.g., verifying
+///    `snap_position_to_boundary_face()` worked correctly) or radius constraints (e.g., portals
+///    don't exceed max size).
+///
+/// 3. **Mirrors production code**: Type structure matches what `draw_portal()` actually uses,
+///    making it a true "rendering data snapshot" rather than a minimal test assertion type.
+///
+/// **Current test usage**: Tests validate rendering strategy (single circle vs
+/// split arcs) and face selection, using pattern matching with `..` to ignore
+/// geometric parameters that are already known (input values).
+#[cfg(test)]
+#[derive(Debug, PartialEq)]
+pub enum PortalRenderData {
+    SingleCircle {
+        position: Vec3,
+        normal:   Dir3,
+        radius:   f32,
+    },
+    SplitArcs {
+        primary_face: BoundaryFace,
+        arc_data:     Vec<(BoundaryFace, Vec<Vec3>)>,
+    },
+}
+
+#[cfg(test)]
+mod portal_render_tests {
+    use super::*;
+    use crate::playfield::portals::Portal;
+
+    // Note: The following types are available via `use super::*;`:
+    // - Boundary, BoundaryFace (from boundary.rs)
+    // - Vec3, Dir3, UVec3, Transform, default() (from bevy prelude)
+    // - constrain_intersection_points() and other helper functions (from Phase 1)
+
+    fn create_test_boundary() -> Boundary {
+        Boundary {
+            cell_count: UVec3::new(1, 1, 1),
+            scalar: 110.,
+            transform: Transform::from_scale(Vec3::splat(110.)),
+            ..default()
+        }
+        // Boundary extends from -55 to 55 on all axes
+    }
+
+    fn create_portal(position: Vec3, radius: f32, normal: Dir3) -> Portal {
+        let mut portal = Portal::default();
+        portal.position = position;
+        portal.radius = radius;
+        portal.normal = normal;
+        portal
+    }
+
+    // ===== CATEGORY 1: TOO FAR (1 test) =====
+
+    #[test]
+    fn test_portal_too_far_from_boundary_no_overextension() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::ZERO, 10.0, Dir3::X);
+
+        let render_data = boundary.calculate_portal_render_data(&portal);
+
+        match render_data {
+            PortalRenderData::SingleCircle { .. } => {
+                // Expected - portal doesn't reach boundaries
+            },
+            _ => panic!("Expected single circle for portal far from boundaries"),
+        }
+    }
+
+    // ===== CATEGORY 2: SINGLE FACE (6 tests) =====
+
+    #[test]
+    fn test_portal_approaching_single_face_right_wall() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(54.99, 0.0, 0.0), 5.0, Dir3::X);
+
+        let render_data = boundary.calculate_portal_render_data(&portal);
+
+        match render_data {
+            PortalRenderData::SingleCircle { normal, .. } => {
+                assert_eq!(normal, Dir3::X);
+            },
+            _ => panic!("Expected single circle on right face"),
+        }
+    }
+
+    #[test]
+    fn test_portal_approaching_single_face_left_wall() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(-54.99, 0.0, 0.0), 5.0, Dir3::NEG_X);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SingleCircle { normal, .. } => {
+                assert_eq!(normal, Dir3::NEG_X);
+            },
+            _ => panic!("Expected single circle on left face"),
+        }
+    }
+
+    #[test]
+    fn test_portal_approaching_single_face_top_wall() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(0.0, 54.99, 0.0), 5.0, Dir3::Y);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SingleCircle { normal, .. } => {
+                assert_eq!(normal, Dir3::Y);
+            },
+            _ => panic!("Expected single circle on top face"),
+        }
+    }
+
+    #[test]
+    fn test_portal_approaching_single_face_bottom_wall() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(0.0, -54.99, 0.0), 5.0, Dir3::NEG_Y);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SingleCircle { normal, .. } => {
+                assert_eq!(normal, Dir3::NEG_Y);
+            },
+            _ => panic!("Expected single circle on bottom face"),
+        }
+    }
+
+    #[test]
+    fn test_portal_approaching_single_face_front_wall() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(0.0, 0.0, 54.99), 5.0, Dir3::Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SingleCircle { normal, .. } => {
+                assert_eq!(normal, Dir3::Z);
+            },
+            _ => panic!("Expected single circle on front face"),
+        }
+    }
+
+    #[test]
+    fn test_portal_approaching_single_face_back_wall() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(0.0, 0.0, -54.99), 5.0, Dir3::NEG_Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SingleCircle { normal, .. } => {
+                assert_eq!(normal, Dir3::NEG_Z);
+            },
+            _ => panic!("Expected single circle on back face"),
+        }
+    }
+
+    // ===== CATEGORY 3: EDGE CASES (12 tests) =====
+
+    // X-axis Edges (4 tests)
+
+    #[test]
+    fn test_portal_at_top_back_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(0.0, 54.99, -54.99), 15.0, Dir3::NEG_Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2, "Expected 2 faces at edge");
+
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Back));
+                assert!(faces.contains(&BoundaryFace::Top));
+
+                for (face, points) in &arc_data {
+                    assert!(points.len() >= 2, "Face {face:?} needs >= 2 points");
+                }
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_top_front_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(0.0, 54.99, 54.99), 15.0, Dir3::Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Front));
+                assert!(faces.contains(&BoundaryFace::Top));
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_bottom_back_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(0.0, -54.99, -54.99), 15.0, Dir3::NEG_Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Back));
+                assert!(faces.contains(&BoundaryFace::Bottom));
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_bottom_front_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(0.0, -54.99, 54.99), 15.0, Dir3::Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Front));
+                assert!(faces.contains(&BoundaryFace::Bottom));
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    // Y-axis Edges (4 tests)
+
+    #[test]
+    fn test_portal_at_left_back_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(-54.99, 0.0, -54.99), 15.0, Dir3::NEG_Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Back));
+                assert!(faces.contains(&BoundaryFace::Left));
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_left_front_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(-54.99, 0.0, 54.99), 15.0, Dir3::Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Front));
+                assert!(faces.contains(&BoundaryFace::Left));
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_right_back_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(54.99, 0.0, -54.99), 15.0, Dir3::NEG_Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Back));
+                assert!(faces.contains(&BoundaryFace::Right));
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_right_front_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(54.99, 0.0, 54.99), 15.0, Dir3::Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Front));
+                assert!(faces.contains(&BoundaryFace::Right));
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    // Z-axis Edges (4 tests)
+
+    #[test]
+    fn test_portal_at_left_top_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(-54.99, 54.99, 0.0), 15.0, Dir3::NEG_X);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Left));
+                assert!(faces.contains(&BoundaryFace::Top));
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_left_bottom_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(-54.99, -54.99, 0.0), 15.0, Dir3::NEG_X);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Left));
+                assert!(faces.contains(&BoundaryFace::Bottom));
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_right_top_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(54.99, 54.99, 0.0), 15.0, Dir3::X);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Right));
+                assert!(faces.contains(&BoundaryFace::Top));
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_right_bottom_edge() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(54.99, -54.99, 0.0), 15.0, Dir3::X);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 2);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Right));
+                assert!(faces.contains(&BoundaryFace::Bottom));
+            },
+            _ => panic!("Expected split arcs at edge"),
+        }
+    }
+
+    // ===== CATEGORY 4: CORNER CASES (8 tests) - EXPECTED TO FAIL =====
+
+    #[test]
+    fn test_portal_at_left_bottom_back_corner() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(-50.0, -50.0, -54.99), 15.0, Dir3::NEG_Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs {
+                primary_face,
+                arc_data,
+            } => {
+                assert_eq!(primary_face, BoundaryFace::Back);
+                assert_eq!(arc_data.len(), 3, "Expected 3 faces at corner");
+
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Back));
+                assert!(faces.contains(&BoundaryFace::Left));
+                assert!(faces.contains(&BoundaryFace::Bottom));
+            },
+            _ => panic!("Expected split arcs at corner"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_left_bottom_front_corner() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(-50.0, -50.0, 54.99), 15.0, Dir3::Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 3);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Front));
+                assert!(faces.contains(&BoundaryFace::Left));
+                assert!(faces.contains(&BoundaryFace::Bottom));
+            },
+            _ => panic!("Expected split arcs at corner"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_left_top_back_corner() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(-50.0, 50.0, -54.99), 15.0, Dir3::NEG_Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 3);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Back));
+                assert!(faces.contains(&BoundaryFace::Left));
+                assert!(faces.contains(&BoundaryFace::Top));
+            },
+            _ => panic!("Expected split arcs at corner"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_left_top_front_corner() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(-50.0, 50.0, 54.99), 15.0, Dir3::Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 3);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Front));
+                assert!(faces.contains(&BoundaryFace::Left));
+                assert!(faces.contains(&BoundaryFace::Top));
+            },
+            _ => panic!("Expected split arcs at corner"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_right_bottom_back_corner() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(50.0, -50.0, -54.99), 15.0, Dir3::NEG_Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 3);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Back));
+                assert!(faces.contains(&BoundaryFace::Right));
+                assert!(faces.contains(&BoundaryFace::Bottom));
+            },
+            _ => panic!("Expected split arcs at corner"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_right_bottom_front_corner() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(50.0, -50.0, 54.99), 15.0, Dir3::Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 3);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Front));
+                assert!(faces.contains(&BoundaryFace::Right));
+                assert!(faces.contains(&BoundaryFace::Bottom));
+            },
+            _ => panic!("Expected split arcs at corner"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_right_top_back_corner() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(50.0, 50.0, -54.99), 15.0, Dir3::NEG_Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 3);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Back));
+                assert!(faces.contains(&BoundaryFace::Right));
+                assert!(faces.contains(&BoundaryFace::Top));
+            },
+            _ => panic!("Expected split arcs at corner"),
+        }
+    }
+
+    #[test]
+    fn test_portal_at_right_top_front_corner() {
+        let boundary = create_test_boundary();
+        let portal = create_portal(Vec3::new(50.0, 50.0, 54.99), 15.0, Dir3::Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                assert_eq!(arc_data.len(), 3);
+                let faces: Vec<_> = arc_data.iter().map(|(f, _)| *f).collect();
+                assert!(faces.contains(&BoundaryFace::Front));
+                assert!(faces.contains(&BoundaryFace::Right));
+                assert!(faces.contains(&BoundaryFace::Top));
+            },
+            _ => panic!("Expected split arcs at corner"),
+        }
+    }
+}
