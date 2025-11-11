@@ -582,7 +582,7 @@ fn draw_boundary(
             Vec3::splat(boundary.scalar),
             boundary.grid_color,
         )
-    .outer_edges();
+        .outer_edges();
 
     // Calculate world-space offset based on camera projection
     let Ok((camera, projection, camera_transform)) = camera_query.single() else {
