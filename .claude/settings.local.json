@@ -69,7 +69,10 @@
       "WebFetch(domain:parry.rs)",
       "Bash(truncate:*)",
       "Bash(git -C /Users/natemccoy/rust/nateroids diff src/camera/cameras.rs)",
-      "Bash(cargo nextest run:*)"
+      "Bash(cargo nextest run:*)",
+      "Bash(git -C /Users/natemccoy/rust/portal-fix status)",
+      "Bash(git -C /Users/natemccoy/rust/portal-fix diff HEAD)",
+      "Bash(git -C /Users/natemccoy/rust/portal-fix diff --cached)"
     ],
     "deny": [],
     "ask": []

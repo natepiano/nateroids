@@ -108,13 +108,13 @@ impl Default for NateroidConfig {
     fn default() -> Self {
         Self {
             actor_config:              ActorConfig {
-                spawnable:                false,
+                spawnable:                true,
                 aabb:                     Aabb::default(),
                 angular_damping:          Some(0.001),
                 collider:                 Collider::cuboid(1., 1., 1.),
                 collider_margin:          1.0 / 3.0,
                 collider_type:            ColliderType::Ball,
-                collision_damage:         0.1,
+                collision_damage:         10.,
                 collision_layers:         CollisionLayers::new(
                     [GameLayer::Asteroid],
                     [
@@ -135,7 +135,7 @@ impl Default for NateroidConfig {
                 restitution_combine_rule: CoefficientCombine::Max,
                 rigid_body:               RigidBody::Dynamic,
                 scene:                    Handle::default(),
-                spawn_timer_seconds:      Some(0.1),
+                spawn_timer_seconds:      Some(2.0),
                 transform:                Transform::default(),
                 spawn_timer:              None,
             },

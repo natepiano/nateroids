@@ -93,28 +93,6 @@ impl Default for Boundary {
 }
 
 impl Boundary {
-    fn get_overextended_intersection_points(
-        &self,
-        portal: &Portal,
-        overextended_faces: Vec<BoundaryFace>,
-    ) -> Vec<(BoundaryFace, Vec<Vec3>)> {
-        let mut intersections = Vec::new();
-        let half_size = self.transform.scale / 2.0;
-        let min = self.transform.translation - half_size;
-        let max = self.transform.translation + half_size;
-
-        for face in overextended_faces {
-            let face_points = face.get_face_points(&min, &max);
-            let face_intersections = intersect_circle_with_rectangle(portal, &face_points);
-
-            if !face_intersections.is_empty() {
-                intersections.push((face, face_intersections));
-            }
-        }
-
-        intersections
-    }
-
     /// Finds the intersection point of a ray (defined by an origin and
     /// direction) with the edges of a viewable area.
     ///
@@ -228,10 +206,8 @@ impl Boundary {
     ) {
         let overextended_faces = self.get_overextended_faces_for(portal);
 
-        let over_extended_intersection_points =
-            self.get_overextended_intersection_points(portal, overextended_faces);
-
-        if over_extended_intersection_points.is_empty() {
+        // Early return if no overextension - draw full circle
+        if overextended_faces.is_empty() {
             let rotation =
                 Quat::from_rotation_arc(orientation.config.axis_profundus, portal.normal.as_vec3());
             let isometry = Isometry3d::new(portal.position, rotation);
@@ -242,26 +218,117 @@ impl Boundary {
             return;
         }
 
-        // Draw primary arc only once using first valid intersection points
-        let mut primary_arc_drawn = false;
+        // Calculate boundary extents for constraint checking
+        let half_size = self.transform.scale / 2.0;
+        let min = self.transform.translation - half_size;
+        let max = self.transform.translation + half_size;
 
-        for (face, points) in over_extended_intersection_points {
-            if points.len() >= 2 {
-                let rotated_position =
-                    self.rotate_portal_center_to_target_face(portal.position, portal.normal, face);
+        // Safe to unwrap: portals are always created with axis-aligned normals via
+        // snap_position_to_boundary_face(), so from_normal() will always return Some().
+        // This invariant holds until boundary system is redesigned.
+        let primary_face = BoundaryFace::from_normal(portal.normal).unwrap();
 
-                // Draw the wrapped arc on the adjacent face
-                gizmos
-                    .short_arc_3d_between(rotated_position, points[0], points[1], color)
-                    .resolution(resolution);
+        // Collect ALL faces that need arcs (primary + overextended)
+        let mut all_faces_in_corner = vec![primary_face];
+        all_faces_in_corner.extend(overextended_faces.iter());
 
-                // Draw primary arc only once (use first valid intersection points)
-                if !primary_arc_drawn {
-                    self.draw_primary_arc(gizmos, portal, color, resolution, points[0], points[1]);
-                    primary_arc_drawn = true;
-                }
+        let mut face_arcs = Vec::new();
+
+        // Calculate constrained intersections for each face
+        for &face in &all_faces_in_corner {
+            let face_points = face.get_face_points(&min, &max);
+            let raw_intersections = intersect_circle_with_rectangle(portal, &face_points);
+
+            // Apply constraints: filter out points that extend beyond face boundaries
+            // Pass ALL faces so each face can check against all others
+            let constrained_points = constrain_intersection_points(
+                raw_intersections,
+                face,
+                &all_faces_in_corner,
+                &min,
+                &max,
+            );
+
+            if constrained_points.len() >= 2 {
+                face_arcs.push((face, constrained_points));
             }
         }
+
+        // Draw all arcs
+        let is_corner = face_arcs.len() >= 3;
+        for (face, points) in face_arcs {
+            // EXPERIMENT 6: Color-code faces to identify which draws wrong
+            let face_color = if face == primary_face {
+                Color::srgb(1.0, 0.0, 0.0) // Red - primary face
+            } else if is_corner {
+                match face {
+                    BoundaryFace::Left | BoundaryFace::Right => Color::srgb(0.0, 1.0, 0.0), /* Green */
+                    BoundaryFace::Top | BoundaryFace::Bottom => Color::srgb(0.0, 0.5, 1.0), /* Light Blue */
+                    BoundaryFace::Front | BoundaryFace::Back => Color::srgb(1.0, 1.0, 0.0), /* Yellow */
+                }
+            } else {
+                color // Original color for edges
+            };
+
+            // EXPERIMENT 7: Only use draw_arc_with_center_and_normal for edge primary faces, not
+            // corners
+            if face == primary_face && !is_corner {
+                // Primary face at edge uses the complex arc logic with TAU - angle inversion
+                self.draw_arc_with_center_and_normal(
+                    gizmos,
+                    portal.position,
+                    portal.radius,
+                    portal.normal.as_vec3(),
+                    face_color,
+                    resolution,
+                    points[0],
+                    points[1],
+                );
+            } else {
+                // For ALL corner faces (including primary) + edge overextended faces
+                let center = if is_corner {
+                    portal.position
+                } else {
+                    self.rotate_portal_center_to_target_face(portal.position, portal.normal, face)
+                };
+
+                // EXPERIMENT 4: Log corner arcs to identify which face draws incorrectly
+                if is_corner {
+                    println!(
+                        "CORNER ARC: face={face:?}, primary={primary_face:?}, points=({:.1},{:.1},{:.1})->({:.1},{:.1},{:.1})",
+                        points[0].x,
+                        points[0].y,
+                        points[0].z,
+                        points[1].x,
+                        points[1].y,
+                        points[1].z
+                    );
+                }
+
+                gizmos
+                    .short_arc_3d_between(center, points[0], points[1], face_color)
+                    .resolution(resolution);
+            }
+        }
+    }
+
+    // Project a center point directly onto a boundary face's plane
+    fn project_center_onto_face(&self, position: Vec3, target_face: BoundaryFace) -> Vec3 {
+        let half_extents = self.transform.scale / 2.0;
+        let center = self.transform.translation;
+        let mut result = position;
+
+        // Simply set the coordinate for the face's axis to the boundary plane
+        match target_face {
+            BoundaryFace::Right => result.x = center.x + half_extents.x,
+            BoundaryFace::Left => result.x = center.x - half_extents.x,
+            BoundaryFace::Top => result.y = center.y + half_extents.y,
+            BoundaryFace::Bottom => result.y = center.y - half_extents.y,
+            BoundaryFace::Front => result.z = center.z + half_extents.z,
+            BoundaryFace::Back => result.z = center.z - half_extents.z,
+        }
+
+        result
     }
 
     // when we rotate this to the target face we get a new center
@@ -348,26 +415,19 @@ impl Boundary {
         Vec3::new(x, y, z)
     }
 
-    // arc_3d has these assumptions:
-    // rotation: defines orientation of the arc, by default we assume the arc is
-    // contained in a plane parallel to the XZ plane and the default starting
-    // point is (position + Vec3::X)
-    //
-    // so we have to rotate the arc to match up with the actual place it should be
-    // drawn
-    fn draw_primary_arc(
+    // Helper function to draw an arc with explicit center, radius, and normal
+    // Used for primary face arcs - inverts the angle for proper rendering
+    fn draw_arc_with_center_and_normal(
         &self,
         gizmos: &mut Gizmos<PortalGizmo>,
-        portal: &Portal,
+        center: Vec3,
+        radius: f32,
+        normal: Vec3,
         color: Color,
         resolution: u32,
         from: Vec3,
         to: Vec3,
     ) {
-        let center = portal.position;
-        let radius = portal.radius;
-        let normal = portal.normal.as_vec3();
-
         // Calculate vectors from center to intersection points
         let vec_from = (from - center).normalize();
         let vec_to = (to - center).normalize();
@@ -377,6 +437,7 @@ impl Boundary {
         let cross_product = vec_from.cross(vec_to);
         let is_clockwise = cross_product.dot(normal) < 0.0;
 
+        // Invert the angle for arc_3d rendering logic
         angle = std::f32::consts::TAU - angle;
 
         // Calculate the rotation to align the arc with the boundary face
@@ -398,10 +459,48 @@ impl Boundary {
                 color,
             )
             .resolution(resolution);
+    }
 
-        // Debug visualization
-        // gizmos.line(center, from, Color::from(tailwind::GREEN_500));
-        // gizmos.line(center, to, Color::from(tailwind::BLUE_500));
+    // Draw a SHORT arc (no angle inversion) using face normal for direction
+    fn draw_short_arc_with_normal(
+        &self,
+        gizmos: &mut Gizmos<PortalGizmo>,
+        center: Vec3,
+        radius: f32,
+        normal: Vec3,
+        color: Color,
+        resolution: u32,
+        from: Vec3,
+        to: Vec3,
+    ) {
+        // Calculate vectors from center to intersection points
+        let vec_from = (from - center).normalize();
+        let vec_to = (to - center).normalize();
+
+        // Calculate the angle - use the SHORT arc (no inversion)
+        let angle = vec_from.angle_between(vec_to);
+        let cross_product = vec_from.cross(vec_to);
+        let is_clockwise = cross_product.dot(normal) < 0.0;
+
+        // Calculate the rotation to align the arc with the boundary face
+        let face_rotation = Quat::from_rotation_arc(Vec3::Y, normal);
+
+        // Determine the start vector based on clockwise/counterclockwise
+        let start_vec = if is_clockwise { vec_from } else { vec_to };
+        let start_rotation = Quat::from_rotation_arc(face_rotation * Vec3::X, start_vec);
+
+        // Combine rotations
+        let final_rotation = start_rotation * face_rotation;
+
+        // Draw the arc
+        gizmos
+            .arc_3d(
+                angle,
+                radius,
+                Isometry3d::new(center, final_rotation),
+                color,
+            )
+            .resolution(resolution);
     }
 
     fn get_overextended_faces_for(&self, portal: &Portal) -> Vec<BoundaryFace> {
@@ -664,35 +763,37 @@ fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -
 fn constrain_intersection_points(
     points: Vec<Vec3>,
     current_face: BoundaryFace,
-    overextended_faces: &[BoundaryFace],
+    all_faces_in_corner: &[BoundaryFace],
     min: &Vec3,
     max: &Vec3,
 ) -> Vec<Vec3> {
     points
         .into_iter()
         .filter(|point| {
-            point_within_boundary_for_face(*point, current_face, overextended_faces, min, max)
+            point_within_boundary_for_face(*point, current_face, all_faces_in_corner, min, max)
         })
         .collect()
 }
 
 fn point_within_boundary_for_face(
     point: Vec3,
-    face: BoundaryFace,
-    overextended_faces: &[BoundaryFace],
+    current_face: BoundaryFace,
+    all_faces_in_corner: &[BoundaryFace],
     min: &Vec3,
     max: &Vec3,
 ) -> bool {
-    // For each overextended face that's on a different axis, ensure point doesn't
-    // extend beyond that boundary
-    for overextended in overextended_faces {
-        if faces_share_axis(face, *overextended) {
+    // Check that point doesn't extend beyond ANY of the other faces in the corner
+    for &other_face in all_faces_in_corner {
+        if other_face == current_face {
+            continue; // Skip checking against ourselves
+        }
+        if faces_share_axis(current_face, other_face) {
             continue; // Same axis, no constraint needed (optimization)
         }
 
-        // Check if point exceeds the boundary this overextended face represents
+        // Check if point exceeds the boundary this other face represents
         // These are exact comparisons - no epsilon needed for geometric filtering
-        match overextended {
+        match other_face {
             BoundaryFace::Left => {
                 if point.x < min.x {
                     return false;
@@ -792,13 +893,9 @@ impl Boundary {
             let mut face_intersections = intersect_circle_with_rectangle(portal, &face_points);
 
             // Apply constraints: filter out points that extend beyond face boundaries
-            face_intersections = constrain_intersection_points(
-                face_intersections,
-                face,
-                &overextended_faces,
-                &min,
-                &max,
-            );
+            // Pass ALL faces so each face can check against all others
+            face_intersections =
+                constrain_intersection_points(face_intersections, face, &all_faces, &min, &max);
 
             if !face_intersections.is_empty() {
                 arc_data.push((face, face_intersections));
@@ -1230,6 +1327,122 @@ mod portal_render_tests {
                 assert!(faces.contains(&BoundaryFace::Back));
                 assert!(faces.contains(&BoundaryFace::Left));
                 assert!(faces.contains(&BoundaryFace::Top));
+            },
+            _ => panic!("Expected split arcs at corner"),
+        }
+    }
+
+    #[test]
+    fn test_portal_corner_points_are_constrained() {
+        let boundary = create_test_boundary();
+        // Portal at left-top-back corner
+        let portal = create_portal(Vec3::new(-50.0, 50.0, -54.99), 15.0, Dir3::NEG_Z);
+
+        match boundary.calculate_portal_render_data(&portal) {
+            PortalRenderData::SplitArcs { arc_data, .. } => {
+                println!("\n=== Corner Portal Test ===");
+                println!(
+                    "Portal: center=({}, {}, {}), radius={}",
+                    portal.position.x, portal.position.y, portal.position.z, portal.radius
+                );
+                for (face, points) in &arc_data {
+                    println!("\nFace {:?} has {} points:", face, points.len());
+                    for (i, point) in points.iter().enumerate() {
+                        println!(
+                            "  Point {}: ({:.2}, {:.2}, {:.2})",
+                            i, point.x, point.y, point.z
+                        );
+                    }
+                }
+                // Boundary extends from -55 to 55 on all axes
+                let min_bound = -55.0;
+                let max_bound = 55.0;
+
+                for (face, points) in &arc_data {
+                    for point in points {
+                        // ALL points must be within boundary
+                        assert!(
+                            point.x >= min_bound - 0.01 && point.x <= max_bound + 0.01,
+                            "Point {:?} on face {:?} has x={} outside boundary [{}, {}]",
+                            point,
+                            face,
+                            point.x,
+                            min_bound,
+                            max_bound
+                        );
+                        assert!(
+                            point.y >= min_bound - 0.01 && point.y <= max_bound + 0.01,
+                            "Point {:?} on face {:?} has y={} outside boundary [{}, {}]",
+                            point,
+                            face,
+                            point.y,
+                            min_bound,
+                            max_bound
+                        );
+                        assert!(
+                            point.z >= min_bound - 0.01 && point.z <= max_bound + 0.01,
+                            "Point {:?} on face {:?} has z={} outside boundary [{}, {}]",
+                            point,
+                            face,
+                            point.z,
+                            min_bound,
+                            max_bound
+                        );
+
+                        // Face-specific constraints for corner
+                        match face {
+                            BoundaryFace::Back => {
+                                // Back face at z=-55: points should not extend left or up past
+                                // corner
+                                assert!(
+                                    point.x >= min_bound - 0.01,
+                                    "Back face point {:?} extends left past boundary (x={})",
+                                    point,
+                                    point.x
+                                );
+                                assert!(
+                                    point.y <= max_bound + 0.01,
+                                    "Back face point {:?} extends up past boundary (y={})",
+                                    point,
+                                    point.y
+                                );
+                            },
+                            BoundaryFace::Left => {
+                                // Left face at x=-55: points should not extend back or up past
+                                // corner
+                                assert!(
+                                    point.z >= min_bound - 0.01,
+                                    "Left face point {:?} extends back past boundary (z={})",
+                                    point,
+                                    point.z
+                                );
+                                assert!(
+                                    point.y <= max_bound + 0.01,
+                                    "Left face point {:?} extends up past boundary (y={})",
+                                    point,
+                                    point.y
+                                );
+                            },
+                            BoundaryFace::Top => {
+                                // Top face at y=55: points should not extend left or back past
+                                // corner
+                                assert!(
+                                    point.x >= min_bound - 0.01,
+                                    "Top face point {:?} extends left past boundary (x={})",
+                                    point,
+                                    point.x
+                                );
+                                assert!(
+                                    point.z >= min_bound - 0.01,
+                                    "Top face point {:?} extends back past boundary (z={})",
+                                    point,
+                                    point.z
+                                );
+                            },
+                            _ => {},
+                        }
+                    }
+                }
             },
             _ => panic!("Expected split arcs at corner"),
         }
