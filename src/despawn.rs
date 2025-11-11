@@ -92,7 +92,7 @@ fn despawn_dead_entities(
         if health.0 <= 0.0 {
             if nateroid.is_some() {
                 let entity_name = name.map(|n| (*n).as_str()).unwrap_or("Unknown");
-                info!(
+                debug!(
                     "☠️ despawn_dead_entities: Adding Deaderoid to {} (health: {})",
                     entity_name, health.0
                 );

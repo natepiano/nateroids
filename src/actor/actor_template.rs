@@ -108,7 +108,7 @@ impl Default for NateroidConfig {
     fn default() -> Self {
         Self {
             actor_config:              ActorConfig {
-                spawnable:                true,
+                spawnable:                false,
                 aabb:                     Aabb::default(),
                 angular_damping:          Some(0.001),
                 collider:                 Collider::cuboid(1., 1., 1.),

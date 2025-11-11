@@ -25,8 +25,9 @@ impl Plugin for CamerasPlugin {
             .add_systems(Update, home_camera.run_if(just_pressed(GameAction::Home)))
             .add_systems(
                 Update,
-                zoom_to_fit.run_if(just_pressed(GameAction::ZoomToFit)),
+                start_zoom_to_fit.run_if(just_pressed(GameAction::ZoomToFit)),
             )
+            .add_systems(Update, update_zoom_to_fit)
             .add_systems(
                 Update,
                 (toggle_stars, update_bloom_settings, update_clear_color),
@@ -34,15 +35,27 @@ impl Plugin for CamerasPlugin {
     }
 }
 
+#[derive(Component)]
+struct ZoomToFitActive {
+    max_iterations:     usize,
+    iteration_count:    usize,
+    stable_frame_count: usize,
+}
+
 pub fn home_camera(
     boundary: Res<Boundary>,
+    camera_config: Res<CameraConfig>,
     mut camera_query: Query<(&mut PanOrbitCamera, &Projection)>,
 ) {
     if let Ok((mut pan_orbit, Projection::Perspective(perspective))) = camera_query.single_mut() {
         let grid_size = boundary.scale();
 
-        let target_radius =
-            calculate_camera_radius(grid_size, perspective.fov, perspective.aspect_ratio);
+        let target_radius = calculate_camera_radius(
+            grid_size,
+            perspective.fov,
+            perspective.aspect_ratio,
+            camera_config.zoom_multiplier(),
+        );
 
         // Set the camera's orbit parameters
         pan_orbit.target_focus = Vec3::ZERO;
@@ -54,30 +67,240 @@ pub fn home_camera(
     }
 }
 
-pub fn zoom_to_fit(
-    boundary: Res<Boundary>,
-    mut camera_query: Query<(&mut PanOrbitCamera, &Projection)>,
-) {
-    if let Ok((mut pan_orbit, Projection::Perspective(perspective))) = camera_query.single_mut() {
-        let grid_size = boundary.scale();
-
-        let (target_radius, target_focus) = calculate_camera_radius_and_focus_for_angle(
-            grid_size,
-            perspective.fov,
-            perspective.aspect_ratio,
-            pan_orbit.target_yaw,
-            pan_orbit.target_pitch,
-        );
-
-        // Keep current yaw and pitch, adjust focus to center boundary, adjust radius
-        pan_orbit.target_focus = target_focus;
-        pan_orbit.target_radius = target_radius;
-
-        pan_orbit.force_update = true;
+// Start the zoom-to-fit animation
+fn start_zoom_to_fit(mut commands: Commands, camera_query: Query<Entity, With<PanOrbitCamera>>) {
+    if let Ok(camera_entity) = camera_query.single() {
+        commands.entity(camera_entity).insert(ZoomToFitActive {
+            max_iterations:     3000,
+            iteration_count:    0,
+            stable_frame_count: 0,
+        });
+        println!("Starting zoom-to-fit animation");
     }
 }
 
-fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32) -> f32 {
+// Update zoom-to-fit each frame
+fn update_zoom_to_fit(
+    mut commands: Commands,
+    boundary: Res<Boundary>,
+    camera_config: Res<CameraConfig>,
+    mut camera_query: Query<(
+        Entity,
+        &Transform,
+        &GlobalTransform,
+        &mut PanOrbitCamera,
+        &Projection,
+        &Camera,
+        &mut ZoomToFitActive,
+    )>,
+) {
+    let Ok((entity, cam_transform, cam_global, mut pan_orbit, projection, camera, mut zoom_state)) =
+        camera_query.single_mut()
+    else {
+        return;
+    };
+
+    let Projection::Perspective(perspective) = projection else {
+        return;
+    };
+
+    // Get actual viewport aspect ratio
+    let aspect_ratio = if let Some(viewport_size) = camera.logical_viewport_size() {
+        viewport_size.x / viewport_size.y
+    } else {
+        perspective.aspect_ratio
+    };
+
+    let half_tan_vfov = (perspective.fov * 0.5).tan();
+    let half_tan_hfov = half_tan_vfov * aspect_ratio;
+
+    // Get boundary corners using the same method as the yellow box code
+    let grid_size = boundary.scale();
+    let half_size = grid_size / 2.0;
+    let boundary_corners = [
+        Vec3::new(-half_size.x, -half_size.y, -half_size.z),
+        Vec3::new(half_size.x, -half_size.y, -half_size.z),
+        Vec3::new(-half_size.x, half_size.y, -half_size.z),
+        Vec3::new(half_size.x, half_size.y, -half_size.z),
+        Vec3::new(-half_size.x, -half_size.y, half_size.z),
+        Vec3::new(half_size.x, -half_size.y, half_size.z),
+        Vec3::new(-half_size.x, half_size.y, half_size.z),
+        Vec3::new(half_size.x, half_size.y, half_size.z),
+    ];
+
+    // Calculate screen-space bounds using actual camera position (matches yellow box)
+    // CRITICAL: Use GlobalTransform rotation (not Transform) to match yellow box calculation
+    let cam_pos = cam_transform.translation;
+    let cam_rot = cam_global.rotation();
+    let cam_forward = cam_rot * Vec3::NEG_Z;
+    let cam_right = cam_rot * Vec3::X;
+    let cam_up = cam_rot * Vec3::Y;
+
+    let mut min_norm_x = f32::INFINITY;
+    let mut max_norm_x = f32::NEG_INFINITY;
+    let mut min_norm_y = f32::INFINITY;
+    let mut max_norm_y = f32::NEG_INFINITY;
+    let mut all_in_front = true;
+
+    for corner in &boundary_corners {
+        let relative = *corner - cam_pos;
+        let depth = relative.dot(cam_forward);
+
+        // Check if corner is behind camera
+        if depth <= 0.1 {
+            all_in_front = false;
+            break;
+        }
+
+        let x = relative.dot(cam_right);
+        let y = relative.dot(cam_up);
+
+        let norm_x = x / depth;
+        let norm_y = y / depth;
+
+        min_norm_x = min_norm_x.min(norm_x);
+        max_norm_x = max_norm_x.max(norm_x);
+        min_norm_y = min_norm_y.min(norm_y);
+        max_norm_y = max_norm_y.max(norm_y);
+    }
+
+    // If any corner is behind camera, move camera back
+    if !all_in_front {
+        println!(
+            "Iteration {}: Boundary behind camera, moving back",
+            zoom_state.iteration_count
+        );
+        let boundary_center = boundary_corners.iter().sum::<Vec3>() / boundary_corners.len() as f32;
+        pan_orbit.target_focus = boundary_center;
+        pan_orbit.target_radius *= 1.5;
+        pan_orbit.force_update = true;
+        zoom_state.iteration_count += 1;
+        return;
+    }
+
+    // Calculate center of bounding box in screen space
+    let center_x = (min_norm_x + max_norm_x) * 0.5;
+    let center_y = (min_norm_y + max_norm_y) * 0.5;
+
+    // Calculate span of bounding box
+    let span_x = max_norm_x - min_norm_x;
+    let span_y = max_norm_y - min_norm_y;
+
+    println!(
+        "Iteration {}: center=({:.6}, {:.6}), span=({:.3}, {:.3}), bounds x:[{:.3}, {:.3}] y:[{:.3}, {:.3}]",
+        zoom_state.iteration_count,
+        center_x,
+        center_y,
+        span_x,
+        span_y,
+        min_norm_x,
+        max_norm_x,
+        min_norm_y,
+        max_norm_y
+    );
+
+    const TOLERANCE: f32 = 0.01;
+
+    // Check if we're done
+    let centered = center_x.abs() < TOLERANCE && center_y.abs() < TOLERANCE;
+
+    // Check if boundary fits within screen edges (with margin)
+    let target_edge_x = half_tan_hfov / camera_config.zoom_multiplier();
+    let target_edge_y = half_tan_vfov / camera_config.zoom_multiplier();
+
+    // Check if we're outside viewport (need to zoom out)
+    let outside_x = max_norm_x.abs() > half_tan_hfov || min_norm_x.abs() > half_tan_hfov;
+    let outside_y = max_norm_y.abs() > half_tan_vfov || min_norm_y.abs() > half_tan_vfov;
+
+    // Check if either dimension is at target (within 0.1% tolerance)
+    let x_at_target =
+        max_norm_x.abs() > target_edge_x * 0.999 || min_norm_x.abs() > target_edge_x * 0.999;
+    let y_at_target =
+        max_norm_y.abs() > target_edge_y * 0.999 || min_norm_y.abs() > target_edge_y * 0.999;
+
+    let fitted = (x_at_target || y_at_target) && !outside_x && !outside_y;
+
+    // Require 5 consecutive stable frames before declaring complete
+    const REQUIRED_STABLE_FRAMES: usize = 5;
+
+    if centered && fitted {
+        zoom_state.stable_frame_count += 1;
+        if zoom_state.stable_frame_count >= REQUIRED_STABLE_FRAMES {
+            println!(
+                "Zoom-to-fit complete! centered={}, fitted={}, outside=({},{}), at_target=({},{}), stable_frames={}",
+                centered,
+                fitted,
+                outside_x,
+                outside_y,
+                x_at_target,
+                y_at_target,
+                zoom_state.stable_frame_count
+            );
+            commands.entity(entity).remove::<ZoomToFitActive>();
+            return;
+        }
+    } else {
+        // Reset counter if we're not centered and fitted
+        zoom_state.stable_frame_count = 0;
+    }
+
+    // Stop if we hit max iterations
+    if zoom_state.iteration_count >= zoom_state.max_iterations {
+        println!(
+            "Zoom-to-fit stopped at max iterations! centered={}, fitted={}, outside=({},{}), at_target=({},{})",
+            centered, fitted, outside_x, outside_y, x_at_target, y_at_target
+        );
+        commands.entity(entity).remove::<ZoomToFitActive>();
+        return;
+    }
+
+    // Adjust focus to center the boundary
+    if !centered {
+        // Move focus in screen-space direction with damping to prevent overshoot
+        const FOCUS_DAMPING: f32 = 0.5; // Only apply 50% of correction each frame
+        let current_radius = pan_orbit.target_radius;
+        let offset_x = center_x * current_radius * half_tan_hfov * FOCUS_DAMPING;
+        let offset_y = center_y * current_radius * half_tan_vfov * FOCUS_DAMPING;
+        let offset_world = cam_right * offset_x + cam_up * offset_y;
+
+        pan_orbit.target_focus += offset_world;
+        println!(
+            "  Adjusting focus by ({:.3}, {:.3}) in world space",
+            offset_world.x, offset_world.y
+        );
+    }
+
+    // Adjust radius to fit the boundary
+    if !fitted {
+        let current_radius = pan_orbit.target_radius;
+
+        // Use symmetric 0.25% zoom rates for smooth convergence
+        if outside_x || outside_y {
+            let radius_adjustment = 1.0025; // 0.25% out
+            pan_orbit.target_radius = current_radius * radius_adjustment;
+            println!(
+                "  Zooming OUT by {:.2}% to {:.1}",
+                (radius_adjustment - 1.0) * 100.0,
+                current_radius * radius_adjustment
+            );
+        }
+        // If inside viewport and not at target, zoom in
+        else if !x_at_target && !y_at_target {
+            let radius_adjustment = 0.9975; // 0.25% in (symmetric)
+            pan_orbit.target_radius = current_radius * radius_adjustment;
+            println!(
+                "  Zooming IN by {:.2}% to {:.1}",
+                (1.0 - radius_adjustment) * 100.0,
+                current_radius * radius_adjustment
+            );
+        }
+    }
+
+    pan_orbit.force_update = true;
+    zoom_state.iteration_count += 1;
+}
+
+fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32, buffer: f32) -> f32 {
     // Calculate horizontal FOV based on aspect ratio
     let horizontal_fov = 2.0 * ((fov / 2.0).tan() * aspect_ratio).atan();
 
@@ -94,26 +317,60 @@ fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32) -> f32 
     // The total required distance
     let total_distance = xy_distance + z_half_depth;
 
-    // Apply minimal margin
-    let buffer = 1.05; // 5% margin
+    // Apply configured margin
     total_distance * buffer
 }
 
+// Helper function that matches the yellow box calculation exactly
+fn compute_screen_space_bounds(
+    boundary_corners: &[Vec3; 8],
+    camera_pos: Vec3,
+    camera_rotation: Quat,
+) -> (f32, f32, f32, f32) {
+    // Get camera basis vectors (matches yellow box code)
+    let cam_forward = camera_rotation * Vec3::NEG_Z;
+    let cam_right = camera_rotation * Vec3::X;
+    let cam_up = camera_rotation * Vec3::Y;
+
+    let mut min_norm_x = f32::INFINITY;
+    let mut max_norm_x = f32::NEG_INFINITY;
+    let mut min_norm_y = f32::INFINITY;
+    let mut max_norm_y = f32::NEG_INFINITY;
+
+    for corner in boundary_corners {
+        let relative = *corner - camera_pos;
+        let depth = relative.dot(cam_forward).max(0.1);
+        let x = relative.dot(cam_right);
+        let y = relative.dot(cam_up);
+
+        let norm_x = x / depth;
+        let norm_y = y / depth;
+
+        min_norm_x = min_norm_x.min(norm_x);
+        max_norm_x = max_norm_x.max(norm_x);
+        min_norm_y = min_norm_y.min(norm_y);
+        max_norm_y = max_norm_y.max(norm_y);
+    }
+
+    (min_norm_x, max_norm_x, min_norm_y, max_norm_y)
+}
+
 fn calculate_camera_radius_and_focus_for_angle(
-    grid_size: Vec3,
+    boundary: &Boundary,
     fov: f32,
     aspect_ratio: f32,
     yaw: f32,
     pitch: f32,
+    buffer: f32,
 ) -> (f32, Vec3) {
-    // Calculate horizontal FOV
-    let horizontal_fov = 2.0 * ((fov / 2.0).tan() * aspect_ratio).atan();
-    let half_tan_hfov = (horizontal_fov / 2.0).tan();
-    let half_tan_vfov = (fov / 2.0).tan();
+    // Calculate half-angle tangents
+    let half_tan_vfov = (fov * 0.5).tan();
+    let half_tan_hfov = half_tan_vfov * aspect_ratio;
 
-    // Generate the 8 corners of the boundary box
+    // Get boundary corners using the same method as the yellow box code
+    let grid_size = boundary.scale();
     let half_size = grid_size / 2.0;
-    let corners = [
+    let boundary_corners = [
         Vec3::new(-half_size.x, -half_size.y, -half_size.z),
         Vec3::new(half_size.x, -half_size.y, -half_size.z),
         Vec3::new(-half_size.x, half_size.y, -half_size.z),
@@ -124,69 +381,148 @@ fn calculate_camera_radius_and_focus_for_angle(
         Vec3::new(half_size.x, half_size.y, half_size.z),
     ];
 
+    // Compute geometric center of boundary
+    let mut boundary_center = Vec3::ZERO;
+    for corner in &boundary_corners {
+        boundary_center += corner;
+    }
+    boundary_center /= boundary_corners.len() as f32;
+
     // Build camera rotation (yaw then pitch)
     let yaw_quat = Quat::from_rotation_y(yaw);
     let pitch_quat = Quat::from_rotation_x(pitch);
     let camera_rotation = yaw_quat * pitch_quat;
     let view_rotation = camera_rotation.inverse();
 
-    // Transform all corners to camera view space
-    let mut rotated_corners = Vec::new();
-    for corner in &corners {
-        rotated_corners.push(view_rotation * (*corner));
+    // Find the maximum distance of any corner from the boundary center in view space
+    // to ensure we start from a position where all corners are in front of camera
+    let mut max_corner_distance = 0.0f32;
+    for corner in &boundary_corners {
+        let corner_in_view = view_rotation * (corner - boundary_center);
+        // We care about the z-distance (depth)
+        max_corner_distance = max_corner_distance.max(corner_in_view.z.abs());
     }
 
-    // Find 3D bounding box in view space
-    let mut min_x = f32::INFINITY;
-    let mut max_x = f32::NEG_INFINITY;
-    let mut min_y = f32::INFINITY;
-    let mut max_y = f32::NEG_INFINITY;
-    let mut min_z = f32::INFINITY;
-    let mut max_z = f32::NEG_INFINITY;
+    // Start from boundary center, then offset backward along view direction
+    // by the max corner distance plus margin to ensure all corners are in front
+    let view_forward = camera_rotation * Vec3::NEG_Z;
+    let initial_focus = boundary_center - view_forward * (max_corner_distance * 1.5);
 
-    for rotated in &rotated_corners {
-        min_x = min_x.min(rotated.x);
-        max_x = max_x.max(rotated.x);
-        min_y = min_y.min(rotated.y);
-        max_y = max_y.max(rotated.y);
-        min_z = min_z.min(rotated.z);
-        max_z = max_z.max(rotated.z);
+    // Iteratively center the boundary in screen space
+    let mut optimal_focus = initial_focus;
+    const MAX_ITERATIONS: usize = 10;
+    const TOLERANCE: f32 = 0.001;
+
+    // We need to iterate adjusting both focus and radius together
+    let mut current_radius = max_corner_distance * 2.0; // Initial estimate
+
+    for iteration in 0..MAX_ITERATIONS {
+        // Camera position in orbit camera: focus + (rotation * Vec3::Z * radius)
+        // Camera looks down -Z, so it's at +Z from focus
+        let camera_pos = optimal_focus + (camera_rotation * Vec3::Z * current_radius);
+
+        // Project corners to view space relative to camera position (matches yellow box)
+        let view_corners: Vec<Vec3> = boundary_corners
+            .iter()
+            .map(|corner| view_rotation * (corner - camera_pos))
+            .collect();
+
+        // Compute screen-space bounding box using same projection as yellow box
+        // norm_x = x / depth, norm_y = y / depth (no FOV division yet)
+        let mut min_norm_x = f32::INFINITY;
+        let mut max_norm_x = f32::NEG_INFINITY;
+        let mut min_norm_y = f32::INFINITY;
+        let mut max_norm_y = f32::NEG_INFINITY;
+        let mut sum_depth = 0.0;
+        let mut min_z = f32::INFINITY;
+        let mut max_z = f32::NEG_INFINITY;
+
+        for v in &view_corners {
+            let depth = -v.z; // positive depth
+            let norm_x = v.x / depth;
+            let norm_y = v.y / depth;
+
+            min_norm_x = min_norm_x.min(norm_x);
+            max_norm_x = max_norm_x.max(norm_x);
+            min_norm_y = min_norm_y.min(norm_y);
+            max_norm_y = max_norm_y.max(norm_y);
+            sum_depth += depth;
+            min_z = min_z.min(v.z);
+            max_z = max_z.max(v.z);
+        }
+
+        let avg_depth = sum_depth / view_corners.len() as f32;
+
+        // Center of screen-space bounding box
+        let center_x = (min_norm_x + max_norm_x) * 0.5;
+        let center_y = (min_norm_y + max_norm_y) * 0.5;
+
+        println!(
+            "Iteration {iteration}: screen-space center = ({center_x:.6}, {center_y:.6}), bounds = \
+             x:[{min_norm_x:.3}, {max_norm_x:.3}] y:[{min_norm_y:.3}, {max_norm_y:.3}], \
+             z:[{min_z:.1}, {max_z:.1}], avg_depth={avg_depth:.1}"
+        );
+
+        // Check if we're centered enough
+        if center_x.abs() < TOLERANCE && center_y.abs() < TOLERANCE {
+            println!("Converged! Final center: ({center_x:.6}, {center_y:.6})");
+            break;
+        }
+
+        // Convert screen-space offset to view-space shift with FOV scaling
+        // Positive center_x means boundary is right of screen center, so move focus right
+        let offset_x_view = center_x * avg_depth * half_tan_hfov;
+        let offset_y_view = center_y * avg_depth * half_tan_vfov;
+        let offset_world = camera_rotation * Vec3::new(offset_x_view, offset_y_view, 0.0);
+
+        println!("  Applying offset: view_space=({offset_x_view:.3}, {offset_y_view:.3})");
+
+        // Update focus
+        optimal_focus += offset_world;
+
+        // Recalculate radius for next iteration based on new focus
+        let mut next_radius = 0.0f32;
+        for corner in &boundary_corners {
+            let p = view_rotation * (corner - optimal_focus);
+            let depth = -p.z;
+            let norm_x = p.x / depth;
+            let norm_y = p.y / depth;
+            let scale = (norm_x.abs() / half_tan_hfov).max(norm_y.abs() / half_tan_vfov);
+            next_radius = next_radius.max(depth * scale);
+        }
+        current_radius = next_radius;
     }
 
-    // Center of the 3D bounding box in view space
-    let center_x = (min_x + max_x) / 2.0;
-    let center_y = (min_y + max_y) / 2.0;
-    let center_z = (min_z + max_z) / 2.0;
+    // Final convergence check using actual camera position
+    let final_camera_pos = optimal_focus + (camera_rotation * Vec3::Z * current_radius);
+    let final_view_corners: Vec<Vec3> = boundary_corners
+        .iter()
+        .map(|corner| view_rotation * (corner - final_camera_pos))
+        .collect();
 
-    // The offset in view space that centers the bounding box
-    let offset_in_view = Vec3::new(center_x, center_y, center_z);
+    let mut final_min_x = f32::INFINITY;
+    let mut final_max_x = f32::NEG_INFINITY;
+    let mut final_min_y = f32::INFINITY;
+    let mut final_max_y = f32::NEG_INFINITY;
 
-    // Transform back to world space
-    let optimal_focus = camera_rotation * offset_in_view;
-
-    // Now recalculate corners relative to this new focus
-    // In view space, they'll be centered around (0, 0)
-    let mut centered_corners = Vec::new();
-    for corner in &corners {
-        let relative = *corner - optimal_focus;
-        centered_corners.push(view_rotation * relative);
+    for v in &final_view_corners {
+        let depth = -v.z;
+        let norm_x = v.x / depth;
+        let norm_y = v.y / depth;
+        final_min_x = final_min_x.min(norm_x);
+        final_max_x = final_max_x.max(norm_x);
+        final_min_y = final_min_y.min(norm_y);
+        final_max_y = final_max_y.max(norm_y);
     }
 
-    // Calculate minimum radius needed to fit all corners
-    // For each corner at (x, y, z) to be visible:
-    // |x| <= (R - z) * tan(hfov/2)  =>  R >= |x|/tan(hfov/2) + z
-    // |y| <= (R - z) * tan(vfov/2)  =>  R >= |y|/tan(vfov/2) + z
-    let mut min_radius = 0.0f32;
+    let final_center_x = (final_min_x + final_max_x) * 0.5;
+    let final_center_y = (final_min_y + final_max_y) * 0.5;
+    println!("Final: center = ({final_center_x:.6}, {final_center_y:.6})");
 
-    for centered in &centered_corners {
-        let r_from_x = centered.x.abs() / half_tan_hfov + centered.z;
-        let r_from_y = centered.y.abs() / half_tan_vfov + centered.z;
-        let r_for_corner = r_from_x.max(r_from_y);
-        min_radius = min_radius.max(r_for_corner);
-    }
+    // Use the radius calculated during the last iteration, with buffer applied
+    let final_radius = current_radius * buffer;
 
-    // Small buffer for safety
-    (min_radius * 1.01, optimal_focus)
+    (final_radius, optimal_focus)
 }
 
 #[derive(Component, Reflect)]
@@ -268,6 +604,7 @@ fn toggle_stars(
 
 pub fn spawn_panorbit_camera(
     config: Res<Boundary>,
+    camera_config: Res<CameraConfig>,
     mut commands: Commands,
     mut q_stars_camera: Query<Entity, With<StarsCamera>>,
 ) {
@@ -288,7 +625,12 @@ pub fn spawn_panorbit_camera(
     let default_fov = std::f32::consts::FRAC_PI_4;
     let default_aspect_ratio = 1.7777778;
     let grid_size = config.scale();
-    let initial_radius = calculate_camera_radius(grid_size, default_fov, default_aspect_ratio);
+    let initial_radius = calculate_camera_radius(
+        grid_size,
+        default_fov,
+        default_aspect_ratio,
+        camera_config.zoom_multiplier(),
+    );
 
     commands
         .spawn(PanOrbitCamera {

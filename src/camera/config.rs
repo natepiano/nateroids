@@ -31,6 +31,8 @@ pub struct CameraConfig {
     pub bloom_low_frequency_boost: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub bloom_high_pass_frequency: f32,
+    #[inspector(min = 0.0, max = 0.5, display = NumberDisplay::Slider)]
+    pub zoom_buffer:               f32,
 }
 
 impl Default for CameraConfig {
@@ -41,6 +43,13 @@ impl Default for CameraConfig {
             bloom_intensity:           0.5,
             bloom_low_frequency_boost: 0.5,
             bloom_high_pass_frequency: 0.5,
+            zoom_buffer:               0.05,
         }
     }
+}
+
+impl CameraConfig {
+    /// Returns the zoom buffer multiplier (1.0 + buffer)
+    /// For example, a buffer of 0.05 returns 1.05 (5% margin)
+    pub const fn zoom_multiplier(&self) -> f32 { 1.0 + self.zoom_buffer }
 }
