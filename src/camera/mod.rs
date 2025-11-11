@@ -7,6 +7,8 @@ mod stars;
 use bevy::camera::visibility::Layer;
 use bevy::prelude::*;
 use cameras::CamerasPlugin;
+pub use cameras::ScreenSpaceMargins;
+pub use config::CameraConfig;
 use config::CameraConfigPlugin;
 use lights::DirectionalLightsPlugin;
 use star_twinkling::StarTwinklingPlugin;

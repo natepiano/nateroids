@@ -3,7 +3,9 @@ use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 
+use crate::camera::CameraConfig;
 use crate::camera::RenderLayer;
+use crate::camera::ScreenSpaceMargins;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
 use crate::playfield::Boundary;
@@ -90,69 +92,49 @@ fn draw_aabb_system(mut gizmos: Gizmos<AabbGizmo>, aabbs: Query<(&Transform, &Aa
 fn draw_screen_aligned_boundary_box(
     mut gizmos: Gizmos<AabbGizmo>,
     boundary: Res<Boundary>,
-    camera_query: Query<(&Transform, &GlobalTransform, &Projection), With<PanOrbitCamera>>,
+    camera_config: Res<CameraConfig>,
+    camera: Query<(&Camera, &Transform, &GlobalTransform, &Projection), With<PanOrbitCamera>>,
 ) {
-    let Ok((cam_transform, cam_global, projection)) = camera_query.single() else {
+    let Ok((cam, cam_transform, cam_global, projection)) = camera.single() else {
         return;
     };
 
-    let Projection::Perspective(_perspective) = projection else {
+    let Projection::Perspective(perspective) = projection else {
         return;
     };
 
-    // Get boundary corners
-    let grid_size = boundary.scale();
-    let half_size = grid_size / 2.0;
-    let corners = [
-        Vec3::new(-half_size.x, -half_size.y, -half_size.z),
-        Vec3::new(half_size.x, -half_size.y, -half_size.z),
-        Vec3::new(-half_size.x, half_size.y, -half_size.z),
-        Vec3::new(half_size.x, half_size.y, -half_size.z),
-        Vec3::new(-half_size.x, -half_size.y, half_size.z),
-        Vec3::new(half_size.x, -half_size.y, half_size.z),
-        Vec3::new(-half_size.x, half_size.y, half_size.z),
-        Vec3::new(half_size.x, half_size.y, half_size.z),
-    ];
+    // Get actual viewport aspect ratio
+    let aspect_ratio = if let Some(viewport_size) = cam.logical_viewport_size() {
+        viewport_size.x / viewport_size.y
+    } else {
+        perspective.aspect_ratio
+    };
 
-    // Get camera basis vectors
+    // Calculate screen-space bounds using ScreenSpaceMargins
+    let Some(margins) = ScreenSpaceMargins::from_camera_view(
+        &boundary,
+        cam_transform,
+        cam_global,
+        perspective,
+        aspect_ratio,
+        camera_config.zoom_multiplier(),
+    ) else {
+        return; // Boundary behind camera
+    };
+
+    // Get camera basis vectors for reconstruction
+    let cam_pos = cam_transform.translation;
     let cam_rot = cam_global.rotation();
-    let cam_forward = cam_rot * Vec3::NEG_Z; // Camera looks down -Z
+    let cam_forward = cam_rot * Vec3::NEG_Z;
     let cam_right = cam_rot * Vec3::X;
     let cam_up = cam_rot * Vec3::Y;
-    let cam_pos = cam_transform.translation;
-
-    // For each corner, compute its normalized screen-space position (accounting for perspective)
-    // Screen position = (x/depth, y/depth)
-    let mut min_norm_x = f32::INFINITY;
-    let mut max_norm_x = f32::NEG_INFINITY;
-    let mut min_norm_y = f32::INFINITY;
-    let mut max_norm_y = f32::NEG_INFINITY;
-    let mut avg_depth = 0.0;
-
-    for corner in &corners {
-        let relative = *corner - cam_pos;
-        let depth = relative.dot(cam_forward).max(0.1); // Ensure positive depth
-        let x = relative.dot(cam_right);
-        let y = relative.dot(cam_up);
-
-        // Normalized screen coordinates (perspective-correct)
-        let norm_x = x / depth;
-        let norm_y = y / depth;
-
-        min_norm_x = min_norm_x.min(norm_x);
-        max_norm_x = max_norm_x.max(norm_x);
-        min_norm_y = min_norm_y.min(norm_y);
-        max_norm_y = max_norm_y.max(norm_y);
-        avg_depth += depth;
-    }
-    avg_depth /= 8.0;
 
     // Draw the rectangle at average depth, scaling the normalized coords back to world coords
-    let draw_depth = avg_depth;
-    let world_min_x = min_norm_x * draw_depth;
-    let world_max_x = max_norm_x * draw_depth;
-    let world_min_y = min_norm_y * draw_depth;
-    let world_max_y = max_norm_y * draw_depth;
+    let draw_depth = margins.avg_depth;
+    let world_min_x = margins.min_norm_x * draw_depth;
+    let world_max_x = margins.max_norm_x * draw_depth;
+    let world_min_y = margins.min_norm_y * draw_depth;
+    let world_max_y = margins.max_norm_y * draw_depth;
 
     // Create the 4 corners of the screen-aligned rectangle in world space
     let rect_corners_world = [
