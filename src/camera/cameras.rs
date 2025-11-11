@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use bevy::camera::visibility::RenderLayers;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::light::AmbientLight;
@@ -56,10 +58,13 @@ pub struct MoveMe {
 
 #[derive(Component)]
 struct ZoomToFitActive {
-    max_iterations:      usize,
-    iteration_count:     usize,
-    previous_bounds:     Option<(f32, f32, f32, f32)>, // (min_x, max_x, min_y, max_y)
-    last_zoom_direction: Option<ZoomDirection>,
+    max_iterations:        usize,
+    iteration_count:       usize,
+    previous_bounds:       Option<(f32, f32, f32, f32)>, // (min_x, max_x, min_y, max_y)
+    last_zoom_direction:   Option<ZoomDirection>,
+    waiting_for_stability: bool, /* True when we've stopped issuing zoom commands, waiting for
+                                  * camera to settle */
+    margin_history:        VecDeque<(f32, f32)>, // Track (radius, margin) pairs for prediction
 }
 
 /// Screen-space margin information for a boundary
@@ -186,10 +191,12 @@ pub fn home_camera(
 fn start_zoom_to_fit(mut commands: Commands, camera_query: Query<Entity, With<PanOrbitCamera>>) {
     if let Ok(camera_entity) = camera_query.single() {
         commands.entity(camera_entity).insert(ZoomToFitActive {
-            max_iterations:      3000,
-            iteration_count:     0,
-            previous_bounds:     None,
-            last_zoom_direction: None,
+            max_iterations:        3000,
+            iteration_count:       0,
+            previous_bounds:       None,
+            last_zoom_direction:   None,
+            waiting_for_stability: false,
+            margin_history:        VecDeque::new(),
         });
         println!("Starting zoom-to-fit animation");
     }
@@ -402,9 +409,14 @@ fn update_zoom_to_fit(
     };
     zoom_state.previous_bounds = Some(current_bounds);
 
-    // Once bounds are stable (unchanged) AND balanced AND fitted, we're done
-    if balanced && fitted && !bounds_changed {
-        println!("  Camera stabilized: bounds unchanged, balanced, and fitted");
+    // Once bounds are stable (unchanged), check if we're done
+    // If waiting for stability, bounds stable means camera finished interpolating
+    // Otherwise, need to be balanced AND fitted too
+    if !bounds_changed && (zoom_state.waiting_for_stability || (balanced && fitted)) {
+        println!(
+            "  Camera stabilized: bounds unchanged, balanced={}, fitted={}",
+            balanced, fitted
+        );
         println!(
             "Zoom-to-fit complete! balanced={}, fitted={}",
             balanced, fitted
@@ -442,8 +454,6 @@ fn update_zoom_to_fit(
     // Phase 2: Once balanced, adjust zoom to fit
     // Zoom until one dimension hits target margin
     else if !fitted {
-        let current_radius = pan_orbit.target_radius;
-
         // Check each dimension against its own target
         let h_min = margins.left_margin.min(margins.right_margin);
         let v_min = margins.top_margin.min(margins.bottom_margin);
@@ -464,16 +474,68 @@ fn update_zoom_to_fit(
         let error = (constrained_margin - constrained_target).abs();
         let error_pct = (error / constrained_target) * 100.0;
 
-        // Dead zone: if error is very small, stop zooming to avoid oscillation
-        if error_pct < 1.0 {
+        // Track margin history for prediction (keep exactly 3 samples)
+        const HISTORY_SIZE: usize = 3;
+        let current_radius = pan_orbit.radius.unwrap_or(pan_orbit.target_radius);
+        zoom_state
+            .margin_history
+            .push_back((current_radius, constrained_margin));
+        if zoom_state.margin_history.len() > HISTORY_SIZE {
+            zoom_state.margin_history.pop_front();
+        }
+
+        // Predict final margin when camera reaches target_radius
+        let mut predicted_final_margin = None;
+        if zoom_state.margin_history.len() == HISTORY_SIZE {
+            // Calculate empirical rate: dMargin/dRadius from history
+            let (r1, m1) = zoom_state.margin_history[0];
+            let (r2, m2) = zoom_state.margin_history[HISTORY_SIZE - 1];
+            let delta_radius = r2 - r1;
+            if delta_radius.abs() > 0.01 {
+                let d_margin_d_radius = (m2 - m1) / delta_radius;
+                let remaining_delta = pan_orbit.target_radius - current_radius;
+                predicted_final_margin =
+                    Some(constrained_margin + (remaining_delta * d_margin_d_radius));
+
+                println!(
+                    "  Prediction: current_r={:.1}, target_r={:.1}, delta_r={:.1}, dM/dR={:.4}, predicted_margin={:.3}",
+                    current_radius,
+                    pan_orbit.target_radius,
+                    remaining_delta,
+                    d_margin_d_radius,
+                    predicted_final_margin.unwrap()
+                );
+            }
+        }
+
+        // If we're waiting for stability, don't issue new zoom commands
+        // Just continue logging and checking if bounds have stabilized
+        if zoom_state.waiting_for_stability {
             println!(
-                "  In dead zone ({} constrained: {:.3}/{:.3}, error={:.2}%), allowing camera to \
-                 stabilize",
+                "  Waiting for stability ({} constrained: {:.3}/{:.3}, error={:.2}%)",
                 dimension_name, constrained_margin, constrained_target, error_pct
             );
             pan_orbit.force_update = true;
             zoom_state.iteration_count += 1;
             return;
+        }
+
+        // Use prediction to decide when to stop issuing new zoom commands
+        // If predicted final margin is within acceptable range (±20% of target), stop
+        if let Some(predicted_margin) = predicted_final_margin {
+            let predicted_error =
+                ((predicted_margin - constrained_target).abs() / constrained_target) * 100.0;
+
+            if predicted_error <= 20.0 {
+                println!(
+                    "  Predicted final margin acceptable: {:.3}/{:.3} (error={:.1}%), stopping new zoom commands",
+                    predicted_margin, constrained_target, predicted_error
+                );
+                zoom_state.waiting_for_stability = true;
+                pan_orbit.force_update = true;
+                zoom_state.iteration_count += 1;
+                return;
+            }
         }
 
         let zoom_rate = if error_pct > 20.0 {
@@ -494,6 +556,7 @@ fn update_zoom_to_fit(
         };
 
         // Detect oscillation: if direction changed, we're overshooting due to interpolation
+        // Stop issuing new zoom commands but keep logging until camera settles
         if let Some(last_direction) = zoom_state.last_zoom_direction {
             if last_direction != desired_direction {
                 println!(
@@ -507,12 +570,10 @@ fn update_zoom_to_fit(
                     h_min,
                     v_min
                 );
-                println!("  Stopping zoom to prevent oscillation");
-                println!(
-                    "Zoom-to-fit complete! balanced={}, fitted={}",
-                    balanced, fitted
-                );
-                commands.entity(entity).remove::<ZoomToFitActive>();
+                println!("  Stopping zoom commands, waiting for camera to stabilize...");
+                zoom_state.waiting_for_stability = true;
+                pan_orbit.force_update = true;
+                zoom_state.iteration_count += 1;
                 return;
             }
         }

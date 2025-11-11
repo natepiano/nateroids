@@ -85,7 +85,8 @@ fn draw_aabb_system(mut gizmos: Gizmos<AabbGizmo>, aabbs: Query<(&Transform, &Aa
         );
     }
 }
-
+/// used to draw a yellow screen-aligned box around the boundary
+/// used for troubleshooting camera movement logic
 fn draw_screen_aligned_boundary_box(
     mut gizmos: Gizmos<AabbGizmo>,
     boundary: Res<Boundary>,
