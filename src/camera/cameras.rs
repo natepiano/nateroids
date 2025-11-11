@@ -130,7 +130,13 @@ fn calculate_camera_radius_and_focus_for_angle(
     let camera_rotation = yaw_quat * pitch_quat;
     let view_rotation = camera_rotation.inverse();
 
-    // Transform all corners to camera view space and find bounding box
+    // Transform all corners to camera view space
+    let mut rotated_corners = Vec::new();
+    for corner in &corners {
+        rotated_corners.push(view_rotation * (*corner));
+    }
+
+    // Find 3D bounding box in view space
     let mut min_x = f32::INFINITY;
     let mut max_x = f32::NEG_INFINITY;
     let mut min_y = f32::INFINITY;
@@ -138,8 +144,7 @@ fn calculate_camera_radius_and_focus_for_angle(
     let mut min_z = f32::INFINITY;
     let mut max_z = f32::NEG_INFINITY;
 
-    for corner in &corners {
-        let rotated = view_rotation * (*corner);
+    for rotated in &rotated_corners {
         min_x = min_x.min(rotated.x);
         max_x = max_x.max(rotated.x);
         min_y = min_y.min(rotated.y);
@@ -148,29 +153,35 @@ fn calculate_camera_radius_and_focus_for_angle(
         max_z = max_z.max(rotated.z);
     }
 
-    // Find the center of the bounding box in camera view space
-    let center_in_view = Vec3::new(
-        (min_x + max_x) / 2.0,
-        (min_y + max_y) / 2.0,
-        (min_z + max_z) / 2.0,
-    );
+    // Center of the 3D bounding box in view space
+    let center_x = (min_x + max_x) / 2.0;
+    let center_y = (min_y + max_y) / 2.0;
+    let center_z = (min_z + max_z) / 2.0;
 
-    // Transform back to world space - this is the optimal focus point
-    let optimal_focus = camera_rotation * center_in_view;
+    // The offset in view space that centers the bounding box
+    let offset_in_view = Vec3::new(center_x, center_y, center_z);
 
-    // Now calculate minimum radius needed from this focus point
+    // Transform back to world space
+    let optimal_focus = camera_rotation * offset_in_view;
+
+    // Now recalculate corners relative to this new focus
+    // In view space, they'll be centered around (0, 0)
+    let mut centered_corners = Vec::new();
+    for corner in &corners {
+        let relative = *corner - optimal_focus;
+        centered_corners.push(view_rotation * relative);
+    }
+
+    // Calculate minimum radius needed to fit all corners
+    // For each corner at (x, y, z) to be visible:
+    // |x| <= (R - z) * tan(hfov/2)  =>  R >= |x|/tan(hfov/2) + z
+    // |y| <= (R - z) * tan(vfov/2)  =>  R >= |y|/tan(vfov/2) + z
     let mut min_radius = 0.0f32;
 
-    for corner in &corners {
-        // Corner relative to new focus
-        let relative = *corner - optimal_focus;
-        let rotated = view_rotation * relative;
-
-        // Calculate radius needed for this corner
-        let r_from_x = rotated.x.abs() / half_tan_hfov + rotated.z;
-        let r_from_y = rotated.y.abs() / half_tan_vfov + rotated.z;
+    for centered in &centered_corners {
+        let r_from_x = centered.x.abs() / half_tan_hfov + centered.z;
+        let r_from_y = centered.y.abs() / half_tan_vfov + centered.z;
         let r_for_corner = r_from_x.max(r_from_y);
-
         min_radius = min_radius.max(r_for_corner);
     }
 
