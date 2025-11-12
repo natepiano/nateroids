@@ -1,4 +1,4 @@
 - use cargo nextest run for testing
 - you don't need to use sleep after send keys or launching the app - it will keep up
 - the game starts automatically
-- the Pan
+- you can't use Send Keys to test zoom to fit yourself

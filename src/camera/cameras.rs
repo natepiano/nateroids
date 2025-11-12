@@ -55,6 +55,8 @@ struct ZoomToFitActive {
     previous_bounds:      Option<(f32, f32, f32, f32)>, // (min_x, max_x, min_y, max_y)
     original_zoom_smooth: f32,
     original_pan_smooth:  f32,
+    locked_alpha:         f32, // Lock pitch during zoom-to-fit
+    locked_beta:          f32, // Lock yaw during zoom-to-fit
 }
 
 /// Screen-space margin information for a boundary
@@ -212,13 +214,22 @@ impl ScreenSpaceMargins {
         // Check if vertical dimension is at target
         let v_at_target = (v_min - self.target_margin_y).abs() < at_target_tolerance;
 
-        // At least one dimension should be at target
+        // At least one dimension should be at target (the constraining dimension)
+        // The other dimension will have >= target margin due to aspect ratio differences
         let one_dimension_at_target = h_at_target || v_at_target;
 
         // Must be balanced (use tight tolerance)
         let balanced = self.is_balanced(balance_tolerance);
 
         all_margins_sufficient && one_dimension_at_target && balanced
+    }
+
+    /// Returns true if horizontal is the constraining dimension
+    /// The constraining dimension is the one with larger span (takes up more screen space)
+    fn is_horizontal_constraining(&self) -> bool {
+        let h_span = self.max_norm_x - self.min_norm_x;
+        let v_span = self.max_norm_y - self.min_norm_y;
+        h_span > v_span
     }
 }
 
@@ -257,6 +268,10 @@ fn start_zoom_to_fit(
         let original_zoom_smooth = pan_orbit.zoom_smoothness;
         let original_pan_smooth = pan_orbit.pan_smoothness;
 
+        // Lock current pitch and yaw - only adjust focus and radius
+        let locked_alpha = pan_orbit.target_pitch;
+        let locked_beta = pan_orbit.target_yaw;
+
         // Disable smoothing so targets apply immediately
         pan_orbit.zoom_smoothness = 0.0;
         pan_orbit.pan_smoothness = 0.0;
@@ -267,6 +282,8 @@ fn start_zoom_to_fit(
             previous_bounds: None,
             original_zoom_smooth,
             original_pan_smooth,
+            locked_alpha,
+            locked_beta,
         });
         println!(
             "Starting zoom-to-fit animation (stored smoothness: zoom={:.2}, pan={:.2})",
@@ -370,6 +387,14 @@ fn update_zoom_to_fit(
         camera_config.zoom_multiplier()
     );
 
+    let h_min = margins.left_margin.min(margins.right_margin);
+    let v_min = margins.top_margin.min(margins.bottom_margin);
+    let (constraining_dim, current_margin, target_margin) = if h_min < v_min {
+        ("H", h_min, margins.target_margin_x)
+    } else {
+        ("V", v_min, margins.target_margin_y)
+    };
+
     println!(
         "  Margins: left={:.3}, right={:.3}, top={:.3}, bottom={:.3}, target_x={:.3}, target_y={:.3}, min={:.3}",
         margins.left_margin,
@@ -379,6 +404,13 @@ fn update_zoom_to_fit(
         margins.target_margin_x,
         margins.target_margin_y,
         margins.min_margin()
+    );
+    println!(
+        "  Constraining: dim={}, current={:.3}, target={:.3}, ratio={:.2}",
+        constraining_dim,
+        current_margin,
+        target_margin,
+        current_margin / target_margin
     );
 
     // Use Camera's official world_to_viewport to verify if any corners are outside
@@ -424,8 +456,8 @@ fn update_zoom_to_fit(
         );
     }
 
-    const BALANCE_TOLERANCE: f32 = 0.02; // Relaxed tolerance for margin balance
-    const AT_TARGET_TOLERANCE: f32 = 0.01; // Relaxed tolerance for "at target" check
+    const BALANCE_TOLERANCE: f32 = 0.002; // 0.2% tolerance - margins must be nearly equal
+    const AT_TARGET_TOLERANCE: f32 = 0.05; // 5% tolerance for "at target" check
 
     println!(
         "  Balanced: h_diff={:.3}, v_diff={:.3}, is_balanced={}, is_fitted={}",
@@ -434,10 +466,6 @@ fn update_zoom_to_fit(
         margins.is_balanced(BALANCE_TOLERANCE),
         margins.is_fitted(BALANCE_TOLERANCE, AT_TARGET_TOLERANCE)
     );
-
-    // Use margins struct for proper centered and fitted checks
-    let balanced = margins.is_balanced(BALANCE_TOLERANCE);
-    let fitted = margins.is_fitted(BALANCE_TOLERANCE, AT_TARGET_TOLERANCE);
 
     // Check if bounds have actually changed since last frame (detect camera stabilization)
     // Track bounds for debugging
@@ -449,15 +477,193 @@ fn update_zoom_to_fit(
     );
     zoom_state.previous_bounds = Some(current_bounds);
 
-    // Check completion
+    let current_radius = pan_orbit.radius.unwrap_or(pan_orbit.target_radius);
+    let cam_rot = cam_global.rotation();
+    let cam_right = cam_rot * Vec3::X;
+    let cam_up = cam_rot * Vec3::Y;
+
+    // Calculate correction to center the boundary
+    let offset_x = center_x * current_radius * half_tan_hfov;
+    let offset_y = center_y * current_radius * half_tan_vfov;
+    let offset_world = cam_right * offset_x + cam_up * offset_y;
+    let target_focus = pan_orbit.target_focus + offset_world;
+
+    // Calculate radius to achieve target margins
+    let h_min = margins.left_margin.min(margins.right_margin);
+    let v_min = margins.top_margin.min(margins.bottom_margin);
+    let (current_margin_val, target_margin_val) = if h_min < v_min {
+        (h_min, margins.target_margin_x)
+    } else {
+        (v_min, margins.target_margin_y)
+    };
+
+    let target_radius = if current_margin_val < 0.0 {
+        // Content outside view - zoom out by 25%
+        current_radius * 1.25
+    } else {
+        // Cap the ratio to prevent huge jumps (max 50% change per iteration)
+        let ratio = (target_margin_val / current_margin_val.max(0.001)).clamp(0.5, 1.5);
+        current_radius * ratio
+    };
+
+    // Calculate error magnitudes
+    let focus_delta = target_focus - pan_orbit.target_focus;
+    let radius_delta = target_radius - current_radius;
+    let focus_error = focus_delta.length();
+    let radius_error = radius_delta.abs();
+
+    // Calculate relative errors
+    let focus_rel_error = focus_error / current_radius.max(1.0);
+    let radius_rel_error = radius_error / current_radius.max(1.0);
+    let max_rel_error = focus_rel_error.max(radius_rel_error);
+
+    // Check if constraining dimension is already at target (within 5%)
+    // If so, we're just centering - no need for prediction
+    let margin_at_target =
+        (current_margin_val - target_margin_val).abs() / target_margin_val < 0.05;
+
+    // Predictive approach: Start with aggressive rate, but validate it won't overshoot
+    let base_rate = if margin_at_target {
+        0.20 // Very aggressive when just centering
+    } else {
+        0.12 // Normal aggressive rate
+    };
+
+    let mut focus_adjustment = focus_delta * base_rate;
+    let mut radius_adjustment = radius_delta * base_rate;
+
+    // Only do prediction if we're not at target yet (if at target, we're just centering)
+    if !margin_at_target {
+        // Simulate what the margin would be after applying this adjustment
+        let proposed_focus = pan_orbit.target_focus + focus_adjustment;
+        let proposed_radius = current_radius + radius_adjustment;
+
+        // We need to simulate the camera transform with the proposed values
+        // The camera looks from (focus + offset_from_angles) towards focus
+        // For simplicity, create a transform by offsetting along the current camera direction
+        let cam_forward = cam_global.forward();
+        let proposed_cam_pos = proposed_focus - cam_forward.as_vec3() * proposed_radius;
+
+        // Create hypothetical transform for prediction
+        let mut hypothetical_transform = *cam_transform;
+        hypothetical_transform.translation = proposed_cam_pos;
+
+        // Recalculate margins with proposed transform
+        if let Some(proposed_margins) = ScreenSpaceMargins::from_camera_view(
+            &boundary,
+            &hypothetical_transform,
+            cam_global,
+            perspective,
+            aspect_ratio,
+            camera_config.zoom_multiplier(),
+        ) {
+            let proposed_h_min = proposed_margins
+                .left_margin
+                .min(proposed_margins.right_margin);
+            let proposed_v_min = proposed_margins
+                .top_margin
+                .min(proposed_margins.bottom_margin);
+            let proposed_min_margin = proposed_h_min.min(proposed_v_min);
+
+            // Check if constraining dimension would flip
+            let current_constraining_is_h = margins.is_horizontal_constraining();
+            let proposed_constraining_is_h = proposed_margins.is_horizontal_constraining();
+            let would_flip_dimension = current_constraining_is_h != proposed_constraining_is_h;
+
+            if would_flip_dimension {
+                // Dimension flip would cause oscillation - apply moderate damping
+                let damping = 0.50; // 50% of the aggressive rate
+                focus_adjustment *= damping;
+                radius_adjustment *= damping;
+                println!(
+                    "  PREDICTION: Would flip dimension ({}→{})! Damping to {:.1}%",
+                    if current_constraining_is_h { "H" } else { "V" },
+                    if proposed_constraining_is_h { "H" } else { "V" },
+                    damping * 100.0
+                );
+            } else {
+                // Same dimension - check for overshoot
+                let would_overshoot = if current_margin_val < target_margin_val {
+                    // Currently too small, growing towards target
+                    proposed_min_margin > target_margin_val
+                } else {
+                    // Currently too large, shrinking towards target
+                    proposed_min_margin < target_margin_val
+                };
+
+                if would_overshoot {
+                    // Calculate exact scale factor to reach target precisely
+                    let margin_delta = proposed_min_margin - current_margin_val;
+                    let target_delta = target_margin_val - current_margin_val;
+
+                    let scale_factor = if margin_delta.abs() > 0.001 {
+                        (target_delta / margin_delta).clamp(0.0, 1.0)
+                    } else {
+                        0.5 // Fallback if margin barely changed
+                    };
+
+                    focus_adjustment *= scale_factor;
+                    radius_adjustment *= scale_factor;
+                    println!(
+                        "  PREDICTION: Would overshoot! current={:.3}, proposed={:.3}, target={:.3}, scaling to {:.1}% (exact)",
+                        current_margin_val,
+                        proposed_min_margin,
+                        target_margin_val,
+                        scale_factor * 100.0
+                    );
+                } else {
+                    println!(
+                        "  PREDICTION: Safe to apply aggressive rate {:.1}%",
+                        base_rate * 100.0
+                    );
+                }
+            }
+        }
+    } else {
+        println!(
+            "  PREDICTION: At target margin - using aggressive centering rate {:.1}%",
+            base_rate * 100.0
+        );
+    }
+
+    // Apply adjustments
+    pan_orbit.target_focus += focus_adjustment;
+    pan_orbit.target_radius = current_radius + radius_adjustment;
+
+    // Lock pitch and yaw
+    pan_orbit.target_pitch = zoom_state.locked_alpha;
+    pan_orbit.target_yaw = zoom_state.locked_beta;
+    pan_orbit.force_update = true;
+
+    let balanced = margins.is_balanced(BALANCE_TOLERANCE);
+    let fitted = margins.is_fitted(BALANCE_TOLERANCE, AT_TARGET_TOLERANCE);
+
+    println!(
+        "  Correcting: err={:.3}, rate={:.1}%, focus_adj=({:.3},{:.3},{:.3}), radius {:.1}->{:.1}, balanced={}, fitted={}",
+        max_rel_error,
+        base_rate * 100.0,
+        focus_adjustment.x,
+        focus_adjustment.y,
+        focus_adjustment.z,
+        current_radius,
+        pan_orbit.target_radius,
+        balanced,
+        fitted
+    );
+
+    // Check completion: balanced AND fitted
     if balanced && fitted {
-        println!("  Zoom-to-fit complete! balanced={balanced}, fitted={fitted}");
-        // Restore original smoothness
+        println!(
+            "  Zoom-to-fit complete! balanced={}, fitted={}",
+            balanced, fitted
+        );
         pan_orbit.zoom_smoothness = zoom_state.original_zoom_smooth;
         pan_orbit.pan_smoothness = zoom_state.original_pan_smooth;
         commands.entity(entity).remove::<ZoomToFitActive>();
         return;
     }
+
+    zoom_state.iteration_count += 1;
 
     // Stop if we hit max iterations
     if zoom_state.iteration_count >= zoom_state.max_iterations {
@@ -465,65 +671,10 @@ fn update_zoom_to_fit(
             "Zoom-to-fit stopped at max iterations! balanced={}, fitted={}",
             balanced, fitted
         );
-        // Restore original smoothness even on failure
         pan_orbit.zoom_smoothness = zoom_state.original_zoom_smooth;
         pan_orbit.pan_smoothness = zoom_state.original_pan_smooth;
         commands.entity(entity).remove::<ZoomToFitActive>();
-        return;
     }
-
-    // Adjust focus and radius simultaneously with dynamic speeds
-    let current_radius = pan_orbit.radius.unwrap_or(pan_orbit.target_radius);
-
-    // Calculate focus correction based on current center offset
-    let cam_rot = cam_global.rotation();
-    let cam_right = cam_rot * Vec3::X;
-    let cam_up = cam_rot * Vec3::Y;
-    let offset_x = center_x * current_radius * half_tan_hfov;
-    let offset_y = center_y * current_radius * half_tan_vfov;
-    let offset_world = cam_right * offset_x + cam_up * offset_y;
-
-    // Linear dynamic focus speed: fast when far, slow when close
-    let focus_error = (center_x.abs() + center_y.abs()) * 0.5;
-    let focus_speed = (focus_error * 10.0 + 0.02).min(1.0);
-    pan_orbit.target_focus += offset_world * focus_speed;
-
-    // Calculate radius correction based on current margins
-    let h_min = margins.left_margin.min(margins.right_margin);
-    let v_min = margins.top_margin.min(margins.bottom_margin);
-
-    let (current_margin, target_margin) = if h_min < v_min {
-        (h_min, margins.target_margin_x)
-    } else {
-        (v_min, margins.target_margin_y)
-    };
-
-    let target_radius = if current_margin < 0.0 {
-        current_radius * 1.25 // Zoom out more aggressively when boundary is outside
-    } else {
-        // Calculate proportionally with fixed tight bounds
-        let raw_ratio = target_margin / current_margin.max(0.001);
-        let ratio = raw_ratio.max(0.98).min(1.02);
-        current_radius * ratio
-    };
-
-    // Linear dynamic radius speed: fast when far, slow when close
-    let margin_error = (current_margin - target_margin).abs() / target_margin;
-    let radius_speed = (margin_error * 10.0 + 0.02).min(1.0);
-
-    let radius_delta = (target_radius - current_radius) * radius_speed;
-    pan_orbit.target_radius = current_radius + radius_delta;
-
-    pan_orbit.force_update = true;
-
-    println!(
-        "  Adjusting: focus_offset=({:.3},{:.3}), radius_delta={:.1}",
-        offset_world.x * focus_speed,
-        offset_world.y * focus_speed,
-        radius_delta
-    );
-
-    zoom_state.iteration_count += 1;
 }
 
 fn move_camera_system(
@@ -705,7 +856,7 @@ pub fn spawn_panorbit_camera(
             button_orbit: MouseButton::Middle,
             button_pan: MouseButton::Middle,
             modifier_pan: Some(KeyCode::ShiftLeft),
-            zoom_sensitivity: 0.1,
+            zoom_sensitivity: 0.2,
             trackpad_behavior: TrackpadBehavior::BlenderLike {
                 modifier_pan:  Some(KeyCode::ShiftLeft),
                 modifier_zoom: Some(KeyCode::ControlLeft),
