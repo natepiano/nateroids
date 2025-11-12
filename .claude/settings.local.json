@@ -64,15 +64,11 @@
       "mcp__brp__world_spawn_entity",
       "mcp__brp__world_mutate_resources",
       "mcp__brp__brp_extras_send_keys",
-      "Bash(git -C /Users/natemccoy/rust/nateroids status)",
-      "Bash(git -C /Users/natemccoy/rust/nateroids diff)",
+      "Bash(git -C:*)",
       "WebFetch(domain:parry.rs)",
       "Bash(truncate:*)",
       "Bash(git -C /Users/natemccoy/rust/nateroids diff src/camera/cameras.rs)",
-      "Bash(cargo nextest run:*)",
-      "Bash(git -C /Users/natemccoy/rust/portal-fix status)",
-      "Bash(git -C /Users/natemccoy/rust/portal-fix diff HEAD)",
-      "Bash(git -C /Users/natemccoy/rust/portal-fix diff --cached)"
+      "Bash(cargo nextest run:*)"
     ],
     "deny": [],
     "ask": []
