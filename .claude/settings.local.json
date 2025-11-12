@@ -71,7 +71,8 @@
       "Bash(cargo nextest run:*)",
       "mcp__brp__brp_list_logs",
       "Bash(git rev-parse:*)",
-      "Bash(git worktree:*)"
+      "Bash(git worktree:*)",
+      "Bash(git remote:*)"
     ],
     "deny": [],
     "ask": []
