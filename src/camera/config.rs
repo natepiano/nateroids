@@ -57,42 +57,61 @@ impl CameraConfig {
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct ZoomConfig {
+    /// Maximum iterations before giving up
+    #[inspector(min = 50, max = 500)]
+    pub max_iterations:                     usize,
     #[inspector(min = 0.0, max = 0.5, display = NumberDisplay::Slider)]
-    pub margin:                f32,
+    pub margin:                             f32,
     // Zoom-to-fit convergence parameters
     /// Convergence rate during fitting phase (0.12 = 12% per frame).
     /// Careful rate to avoid overshooting target margins when zooming in/out.
     #[inspector(min = 0.01, max = 0.5, display = NumberDisplay::Slider)]
-    pub fitting_rate:          f32,
+    pub convergence_rate_fitting:           f32,
     /// Convergence rate during balancing phase (0.50 = 50% per frame).
     /// Faster rate since we're only centering - the fit can't be lost by adjusting focus.
     #[inspector(min = 0.01, max = 1.0, display = NumberDisplay::Slider)]
-    pub balancing_rate:        f32,
+    pub convergence_rate_balancing:         f32,
     /// Convergence threshold for stopping when dimension flip detected (0.05 = 5% tolerance)
     #[inspector(min = 0.01, max = 0.2, display = NumberDisplay::Slider)]
-    pub convergence_threshold: f32,
+    pub stop_on_dimension_flip_threshold:   f32,
     /// Damping factor when dimension flip detected but not converged (0.30 = 30% speed)
     #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
-    pub flip_damping:          f32,
+    pub damping_on_dimension_flip_detected: f32,
     /// Minimum ratio clamp to prevent huge jumps (0.5 = max 50% shrink per frame)
     #[inspector(min = 0.1, max = 0.9, display = NumberDisplay::Slider)]
-    pub min_ratio_clamp:             f32,
+    pub min_ratio_clamp:                    f32,
     /// Maximum ratio clamp to prevent huge jumps (1.5 = max 50% grow per frame)
     #[inspector(min = 1.1, max = 3.0, display = NumberDisplay::Slider)]
-    pub max_ratio_clamp:             f32,
-
+    pub max_ratio_clamp:                    f32,
+    /// Strict balance tolerance for final convergence (0.002 = 0.2% tolerance)
+    #[inspector(min = 0.0001, max = 0.01, display = NumberDisplay::Slider)]
+    pub balance_tolerance:                  f32,
+    /// Good-enough tolerance for early exit to prevent oscillation (0.01 = 1% tolerance)
+    #[inspector(min = 0.001, max = 0.05, display = NumberDisplay::Slider)]
+    pub early_exit_tolerance:               f32,
+    /// Maximum relative error to allow early exit (0.5 = 50% error)
+    #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
+    pub max_error_for_exit:                 f32,
+    /// Minimum margin value for division safety (0.001)
+    #[inspector(min = 0.0001, max = 0.01, display = NumberDisplay::Slider)]
+    pub min_margin_divisor:                 f32,
 }
 
 impl Default for ZoomConfig {
     fn default() -> Self {
         Self {
-            margin:                0.08,
-            fitting_rate:          0.12,
-            balancing_rate:        0.50,
-            convergence_threshold: 0.05,
-            flip_damping:          0.30,
-            min_ratio_clamp:             0.5,
-            max_ratio_clamp:             1.5,
+            margin:                             0.08,
+            convergence_rate_fitting:           0.12,
+            convergence_rate_balancing:         0.50,
+            stop_on_dimension_flip_threshold:   0.05,
+            damping_on_dimension_flip_detected: 0.30,
+            min_ratio_clamp:                    0.5,
+            max_ratio_clamp:                    1.5,
+            balance_tolerance:                  0.002,
+            early_exit_tolerance:               0.01,
+            max_error_for_exit:                 0.5,
+            max_iterations:                     200,
+            min_margin_divisor:                 0.001,
         }
     }
 }

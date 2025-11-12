@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 
-use crate::camera::ScreenSpaceMargins;
+use crate::camera::ScreenSpaceBoundaryMargins;
 use crate::camera::ZoomConfig;
 use crate::game_input::GameAction;
 use crate::game_input::just_pressed;
@@ -30,9 +30,6 @@ struct ZoomToFitActive {
     locked_alpha:         f32, // Lock pitch during zoom-to-fit
     locked_beta:          f32, // Lock yaw during zoom-to-fit
 }
-
-const BALANCE_TOLERANCE: f32 = 0.002; // 0.2% tolerance - margins must be nearly equal
-const AT_TARGET_TOLERANCE: f32 = 0.05; // 5% tolerance for "at target" check
 
 pub fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32, buffer: f32) -> f32 {
     // Calculate horizontal FOV based on aspect ratio
@@ -81,6 +78,7 @@ pub fn home_camera(
 // Start the zoom-to-fit animation
 fn start_zoom_to_fit(
     mut commands: Commands,
+    zoom_config: Res<ZoomConfig>,
     mut camera_query: Query<(Entity, &mut PanOrbitCamera), With<PanOrbitCamera>>,
 ) {
     if let Ok((camera_entity, mut pan_orbit)) = camera_query.single_mut() {
@@ -97,7 +95,7 @@ fn start_zoom_to_fit(
         pan_orbit.pan_smoothness = 0.0;
 
         commands.entity(camera_entity).insert(ZoomToFitActive {
-            max_iterations: 200,
+            max_iterations: zoom_config.max_iterations,
             iteration_count: 0,
             previous_bounds: None,
             original_zoom_smooth,
@@ -163,9 +161,8 @@ fn update_zoom_to_fit(
     };
 
     // Calculate screen-space bounds and margins
-    let Some(margins) = ScreenSpaceMargins::from_camera_view(
+    let Some(margins) = ScreenSpaceBoundaryMargins::from_camera_view(
         &boundary,
-        cam_transform,
         cam_global,
         perspective,
         aspect_ratio,
@@ -298,8 +295,8 @@ fn update_zoom_to_fit(
         "  Balanced: h_diff={:.3}, v_diff={:.3}, is_balanced={}, is_fitted={}",
         (margins.left_margin - margins.right_margin).abs(),
         (margins.top_margin - margins.bottom_margin).abs(),
-        margins.is_balanced(BALANCE_TOLERANCE),
-        margins.is_fitted(AT_TARGET_TOLERANCE)
+        margins.is_balanced(zoom_config.balance_tolerance),
+        margins.is_fitted(zoom_config.stop_on_dimension_flip_threshold)
     );
 
     // Check if bounds have actually changed since last frame (detect camera stabilization)
@@ -312,7 +309,9 @@ fn update_zoom_to_fit(
     );
     zoom_state.previous_bounds = Some(current_bounds);
 
-    let current_radius = pan_orbit.radius.unwrap_or(pan_orbit.target_radius);
+    // Use target_radius instead of actual radius to avoid one-frame delay
+    // Since we set smoothness to 0, target should equal actual, but Transform updates next frame
+    let current_radius = pan_orbit.target_radius;
     let cam_rot = cam_global.rotation();
     let cam_right = cam_rot * Vec3::X;
     let cam_up = cam_rot * Vec3::Y;
@@ -332,13 +331,10 @@ fn update_zoom_to_fit(
         (v_min, margins.target_margin_y)
     };
 
-
-    let target_radius =  {
-        // Cap the ratio to prevent huge jumps
-        let ratio = (target_margin_val / current_margin_val.max(0.001)).clamp(
-            zoom_config.min_ratio_clamp,
-            zoom_config.max_ratio_clamp,
-        );
+    let target_radius = {
+        let ratio = target_margin_val / current_margin_val.max(zoom_config.min_margin_divisor);
+        // Previously clamped to prevent huge jumps, but rate limiters should handle this
+        // .clamp(zoom_config.min_ratio_clamp, zoom_config.max_ratio_clamp);
         current_radius * ratio
     };
 
@@ -354,15 +350,15 @@ fn update_zoom_to_fit(
     let max_rel_error = focus_rel_error.max(radius_rel_error);
 
     // Check if we're already fitted (constraining dimension at target)
-    let already_fitted = margins.is_fitted(AT_TARGET_TOLERANCE);
+    let already_fitted = margins.is_fitted(zoom_config.stop_on_dimension_flip_threshold);
 
     // Use a single unified rate for both focus and radius
     // This avoids creating oscillations from unbalanced adjustments
     // Use faster rate when already fitted - we're just balancing/centering
     let base_rate = if already_fitted {
-        zoom_config.balancing_rate
+        zoom_config.convergence_rate_balancing
     } else {
-        zoom_config.fitting_rate
+        zoom_config.convergence_rate_fitting
     };
 
     let rate_label = if already_fitted {
@@ -385,15 +381,15 @@ fn update_zoom_to_fit(
     let cam_forward = cam_global.forward();
     let proposed_cam_pos = proposed_focus - cam_forward.as_vec3() * proposed_radius;
 
-    // Create hypothetical transform for prediction
+    // Create hypothetical global transform for prediction
     let mut hypothetical_transform = *cam_transform;
     hypothetical_transform.translation = proposed_cam_pos;
+    let hypothetical_global = GlobalTransform::from(hypothetical_transform);
 
     // Recalculate margins with proposed transform
-    if let Some(proposed_margins) = ScreenSpaceMargins::from_camera_view(
+    if let Some(proposed_margins) = ScreenSpaceBoundaryMargins::from_camera_view(
         &boundary,
-        &hypothetical_transform,
-        cam_global,
+        &hypothetical_global,
         perspective,
         aspect_ratio,
         zoom_config.zoom_margin_multiplier(),
@@ -415,9 +411,9 @@ fn update_zoom_to_fit(
             // Dimension flip detected - check if both dimensions are already close to target
             // If so, the flip means we're done rather than oscillating
             let h_close = (h_min - margins.target_margin_x).abs()
-                < margins.target_margin_x * zoom_config.convergence_threshold;
+                < margins.target_margin_x * zoom_config.stop_on_dimension_flip_threshold;
             let v_close = (v_min - margins.target_margin_y).abs()
-                < margins.target_margin_y * zoom_config.convergence_threshold;
+                < margins.target_margin_y * zoom_config.stop_on_dimension_flip_threshold;
 
             if h_close && v_close {
                 // Both dimensions near target - flip is a convergence signal, stop here
@@ -434,7 +430,7 @@ fn update_zoom_to_fit(
                 return;
             } else {
                 // Real oscillation problem - apply damping
-                let damping = zoom_config.flip_damping;
+                let damping = zoom_config.damping_on_dimension_flip_detected;
                 focus_adjustment *= damping;
                 radius_adjustment *= damping;
                 effective_rate *= damping;
@@ -495,8 +491,8 @@ fn update_zoom_to_fit(
     pan_orbit.target_yaw = zoom_state.locked_beta;
     pan_orbit.force_update = true;
 
-    let balanced = margins.is_balanced(BALANCE_TOLERANCE);
-    let fitted = margins.is_fitted(AT_TARGET_TOLERANCE);
+    let balanced = margins.is_balanced(zoom_config.balance_tolerance);
+    let fitted = margins.is_fitted(zoom_config.stop_on_dimension_flip_threshold);
 
     println!(
         "  Correcting: err={:.3}, effective_rate={:.1}%, focus_adj=({:.3},{:.3},{:.3}), radius {:.1}->{:.1}, balanced={}, fitted={}",
@@ -511,14 +507,18 @@ fn update_zoom_to_fit(
         fitted
     );
 
-    // Early exit if error is negligible to prevent jitter from tiny adjustments
-    // When fitted and error < 1%, further iteration just causes oscillation
-    if already_fitted && max_rel_error < 0.01 {
+    // Early exit to prevent dimension-flipping oscillations
+    // When fitted and margins are "good enough" in both dimensions, stop
+    // Continuing causes visible jitter from H↔V dimension flips triggering radius changes
+    if already_fitted
+        && margins.is_balanced(zoom_config.early_exit_tolerance)
+        && max_rel_error < zoom_config.max_error_for_exit
+    {
         println!(
-            "  Zoom-to-fit complete! fitted={}, error negligible ({:.3}%), balanced={}",
+            "  Zoom-to-fit complete! fitted={}, margins good (balanced within {:.1}%), err={:.1}%",
             fitted,
-            max_rel_error * 100.0,
-            balanced
+            zoom_config.early_exit_tolerance * 100.0,
+            max_rel_error * 100.0
         );
         pan_orbit.zoom_smoothness = zoom_state.original_zoom_smooth;
         pan_orbit.pan_smoothness = zoom_state.original_pan_smooth;

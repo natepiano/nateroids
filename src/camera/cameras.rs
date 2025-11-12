@@ -44,7 +44,7 @@ pub struct MoveMe {
 }
 
 /// Screen-space margin information for a boundary
-pub struct ScreenSpaceMargins {
+pub struct ScreenSpaceBoundaryMargins {
     /// Distance from left edge (positive = inside, negative = outside)
     pub left_margin:     f32,
     /// Distance from right edge (positive = inside, negative = outside)
@@ -69,12 +69,11 @@ pub struct ScreenSpaceMargins {
     pub avg_depth:       f32,
 }
 
-impl ScreenSpaceMargins {
+impl ScreenSpaceBoundaryMargins {
     /// Creates screen space margins from a camera's view of a boundary.
     /// Returns `None` if any boundary corner is behind the camera.
     pub fn from_camera_view(
         boundary: &Boundary,
-        cam_transform: &Transform,
         cam_global: &GlobalTransform,
         perspective: &PerspectiveProjection,
         viewport_aspect: f32,
@@ -97,8 +96,8 @@ impl ScreenSpaceMargins {
             Vec3::new(half_size.x, half_size.y, half_size.z),
         ];
 
-        // Get camera basis vectors
-        let cam_pos = cam_transform.translation;
+        // Get camera basis vectors from global transform (world position, not local)
+        let cam_pos = cam_global.translation();
         let cam_rot = cam_global.rotation();
         let cam_forward = cam_rot * Vec3::NEG_Z;
         let cam_right = cam_rot * Vec3::X;

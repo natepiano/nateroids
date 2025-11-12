@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 
 use crate::camera::RenderLayer;
-use crate::camera::ScreenSpaceMargins;
+use crate::camera::ScreenSpaceBoundaryMargins;
 use crate::camera::ZoomConfig;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
@@ -111,9 +111,8 @@ fn draw_screen_aligned_boundary_box(
     };
 
     // Calculate screen-space bounds using ScreenSpaceMargins
-    let Some(margins) = ScreenSpaceMargins::from_camera_view(
+    let Some(margins) = ScreenSpaceBoundaryMargins::from_camera_view(
         &boundary,
-        cam_transform,
         cam_global,
         perspective,
         aspect_ratio,
