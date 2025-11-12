@@ -292,7 +292,25 @@ fn start_zoom_to_fit(
     }
 }
 
-// Update zoom-to-fit each frame
+/// Convergence algorithm for zoom-to-fit animation using predictive overshoot/flip detection.
+///
+/// The algorithm adjusts camera focus and radius at a constant 12% rate per frame, using
+/// forward simulation to detect and handle two types of problems before they occur:
+///
+/// 1. **Overshoot Prevention**: Simulates the next frame's margin to detect if we'd cross the
+///    target, then scales adjustment to land exactly on target.
+///
+/// 2. **Dimension Flip Detection**: The "constraining dimension" (H or V) is whichever has the
+///    larger screen-space span. Even with locked yaw/pitch, parallax from camera position changes
+///    can shift relative spans, potentially causing H↔V flips.
+///
+///    When a flip is detected in simulation:
+///    - If both dimensions are within 5% of target: **Stop immediately** - the flip is a
+///      convergence signal indicating both dimensions are equally close to target.
+///    - Otherwise: Apply 30% damping to prevent oscillation from premature flip.
+///
+/// This maintains smooth constant-rate motion throughout, stopping cleanly when converged
+/// rather than fighting natural convergence with artificial damping.
 fn update_zoom_to_fit(
     mut commands: Commands,
     boundary: Res<Boundary>,
@@ -498,11 +516,14 @@ fn update_zoom_to_fit(
     };
 
     let target_radius = if current_margin_val < 0.0 {
-        // Content outside view - zoom out by 25%
-        current_radius * 1.25
+        // Content outside view - zoom out
+        current_radius * camera_config.zoom_to_fit_emergency_zoom_out
     } else {
-        // Cap the ratio to prevent huge jumps (max 50% change per iteration)
-        let ratio = (target_margin_val / current_margin_val.max(0.001)).clamp(0.5, 1.5);
+        // Cap the ratio to prevent huge jumps
+        let ratio = (target_margin_val / current_margin_val.max(0.001)).clamp(
+            camera_config.zoom_to_fit_min_ratio,
+            camera_config.zoom_to_fit_max_ratio,
+        );
         current_radius * ratio
     };
 
@@ -517,113 +538,116 @@ fn update_zoom_to_fit(
     let radius_rel_error = radius_error / current_radius.max(1.0);
     let max_rel_error = focus_rel_error.max(radius_rel_error);
 
-    // Check if constraining dimension is already at target (within 5%)
-    // If so, we're just centering - no need for prediction
-    let margin_at_target =
-        (current_margin_val - target_margin_val).abs() / target_margin_val < 0.05;
-
-    // Predictive approach: Start with aggressive rate, but validate it won't overshoot
-    let base_rate = if margin_at_target {
-        0.20 // Very aggressive when just centering
-    } else {
-        0.12 // Normal aggressive rate
-    };
+    // Use a single unified rate for both focus and radius
+    // This avoids creating oscillations from unbalanced adjustments
+    let base_rate = camera_config.zoom_to_fit_rate;
 
     let mut focus_adjustment = focus_delta * base_rate;
     let mut radius_adjustment = radius_delta * base_rate;
 
-    // Only do prediction if we're not at target yet (if at target, we're just centering)
-    if !margin_at_target {
-        // Simulate what the margin would be after applying this adjustment
-        let proposed_focus = pan_orbit.target_focus + focus_adjustment;
-        let proposed_radius = current_radius + radius_adjustment;
+    // Simulate what the margin would be after applying this adjustment
+    let proposed_focus = pan_orbit.target_focus + focus_adjustment;
+    let proposed_radius = current_radius + radius_adjustment;
 
-        // We need to simulate the camera transform with the proposed values
-        // The camera looks from (focus + offset_from_angles) towards focus
-        // For simplicity, create a transform by offsetting along the current camera direction
-        let cam_forward = cam_global.forward();
-        let proposed_cam_pos = proposed_focus - cam_forward.as_vec3() * proposed_radius;
+    // We need to simulate the camera transform with the proposed values
+    // The camera looks from (focus + offset_from_angles) towards focus
+    // For simplicity, create a transform by offsetting along the current camera direction
+    let cam_forward = cam_global.forward();
+    let proposed_cam_pos = proposed_focus - cam_forward.as_vec3() * proposed_radius;
 
-        // Create hypothetical transform for prediction
-        let mut hypothetical_transform = *cam_transform;
-        hypothetical_transform.translation = proposed_cam_pos;
+    // Create hypothetical transform for prediction
+    let mut hypothetical_transform = *cam_transform;
+    hypothetical_transform.translation = proposed_cam_pos;
 
-        // Recalculate margins with proposed transform
-        if let Some(proposed_margins) = ScreenSpaceMargins::from_camera_view(
-            &boundary,
-            &hypothetical_transform,
-            cam_global,
-            perspective,
-            aspect_ratio,
-            camera_config.zoom_multiplier(),
-        ) {
-            let proposed_h_min = proposed_margins
-                .left_margin
-                .min(proposed_margins.right_margin);
-            let proposed_v_min = proposed_margins
-                .top_margin
-                .min(proposed_margins.bottom_margin);
-            let proposed_min_margin = proposed_h_min.min(proposed_v_min);
+    // Recalculate margins with proposed transform
+    if let Some(proposed_margins) = ScreenSpaceMargins::from_camera_view(
+        &boundary,
+        &hypothetical_transform,
+        cam_global,
+        perspective,
+        aspect_ratio,
+        camera_config.zoom_multiplier(),
+    ) {
+        let proposed_h_min = proposed_margins
+            .left_margin
+            .min(proposed_margins.right_margin);
+        let proposed_v_min = proposed_margins
+            .top_margin
+            .min(proposed_margins.bottom_margin);
+        let proposed_min_margin = proposed_h_min.min(proposed_v_min);
 
-            // Check if constraining dimension would flip
-            let current_constraining_is_h = margins.is_horizontal_constraining();
-            let proposed_constraining_is_h = proposed_margins.is_horizontal_constraining();
-            let would_flip_dimension = current_constraining_is_h != proposed_constraining_is_h;
+        // Check if constraining dimension would flip
+        let current_constraining_is_h = margins.is_horizontal_constraining();
+        let proposed_constraining_is_h = proposed_margins.is_horizontal_constraining();
+        let would_flip_dimension = current_constraining_is_h != proposed_constraining_is_h;
 
-            if would_flip_dimension {
-                // Dimension flip would cause oscillation - apply moderate damping
-                let damping = 0.50; // 50% of the aggressive rate
+        if would_flip_dimension {
+            // Dimension flip detected - check if both dimensions are already close to target
+            // If so, the flip means we're done rather than oscillating
+            let h_close = (h_min - margins.target_margin_x).abs()
+                < margins.target_margin_x * camera_config.zoom_to_fit_convergence_threshold;
+            let v_close = (v_min - margins.target_margin_y).abs()
+                < margins.target_margin_y * camera_config.zoom_to_fit_convergence_threshold;
+
+            if h_close && v_close {
+                // Both dimensions near target - flip is a convergence signal, stop here
+                println!(
+                    "  PREDICTION: Would flip dimension ({}→{}) but BOTH close to target! h_err={:.1}%, v_err={:.1}% - STOPPING",
+                    if current_constraining_is_h { "H" } else { "V" },
+                    if proposed_constraining_is_h { "H" } else { "V" },
+                    ((h_min - margins.target_margin_x) / margins.target_margin_x * 100.0).abs(),
+                    ((v_min - margins.target_margin_y) / margins.target_margin_y * 100.0).abs()
+                );
+                pan_orbit.zoom_smoothness = zoom_state.original_zoom_smooth;
+                pan_orbit.pan_smoothness = zoom_state.original_pan_smooth;
+                commands.entity(entity).remove::<ZoomToFitActive>();
+                return;
+            } else {
+                // Real oscillation problem - apply damping
+                let damping = camera_config.zoom_to_fit_flip_damping;
                 focus_adjustment *= damping;
                 radius_adjustment *= damping;
                 println!(
-                    "  PREDICTION: Would flip dimension ({}→{})! Damping to {:.1}%",
+                    "  PREDICTION: Would flip dimension ({}→{}) and NOT converged! Damping to {:.1}%",
                     if current_constraining_is_h { "H" } else { "V" },
                     if proposed_constraining_is_h { "H" } else { "V" },
                     damping * 100.0
                 );
+            }
+        } else {
+            // Same dimension - check for overshoot
+            let would_overshoot = if current_margin_val < target_margin_val {
+                // Currently too small, growing towards target
+                proposed_min_margin > target_margin_val
             } else {
-                // Same dimension - check for overshoot
-                let would_overshoot = if current_margin_val < target_margin_val {
-                    // Currently too small, growing towards target
-                    proposed_min_margin > target_margin_val
+                // Currently too large, shrinking towards target
+                proposed_min_margin < target_margin_val
+            };
+
+            if would_overshoot {
+                // Calculate exact scale factor to reach target precisely
+                let margin_delta = proposed_min_margin - current_margin_val;
+                let target_delta = target_margin_val - current_margin_val;
+
+                let scale_factor = if margin_delta.abs() > 0.001 {
+                    (target_delta / margin_delta).clamp(0.0, 1.0)
                 } else {
-                    // Currently too large, shrinking towards target
-                    proposed_min_margin < target_margin_val
+                    0.5 // Fallback if margin barely changed
                 };
 
-                if would_overshoot {
-                    // Calculate exact scale factor to reach target precisely
-                    let margin_delta = proposed_min_margin - current_margin_val;
-                    let target_delta = target_margin_val - current_margin_val;
-
-                    let scale_factor = if margin_delta.abs() > 0.001 {
-                        (target_delta / margin_delta).clamp(0.0, 1.0)
-                    } else {
-                        0.5 // Fallback if margin barely changed
-                    };
-
-                    focus_adjustment *= scale_factor;
-                    radius_adjustment *= scale_factor;
-                    println!(
-                        "  PREDICTION: Would overshoot! current={:.3}, proposed={:.3}, target={:.3}, scaling to {:.1}% (exact)",
-                        current_margin_val,
-                        proposed_min_margin,
-                        target_margin_val,
-                        scale_factor * 100.0
-                    );
-                } else {
-                    println!(
-                        "  PREDICTION: Safe to apply aggressive rate {:.1}%",
-                        base_rate * 100.0
-                    );
-                }
+                focus_adjustment *= scale_factor;
+                radius_adjustment *= scale_factor;
+                println!(
+                    "  PREDICTION: Would overshoot! current={:.3}, proposed={:.3}, target={:.3}, scaling to {:.1}% (exact)",
+                    current_margin_val,
+                    proposed_min_margin,
+                    target_margin_val,
+                    scale_factor * 100.0
+                );
+            } else {
+                println!("  PREDICTION: Safe to apply rate {:.1}%", base_rate * 100.0);
             }
         }
-    } else {
-        println!(
-            "  PREDICTION: At target margin - using aggressive centering rate {:.1}%",
-            base_rate * 100.0
-        );
     }
 
     // Apply adjustments
