@@ -72,7 +72,8 @@
       "mcp__brp__brp_list_logs",
       "Bash(git rev-parse:*)",
       "Bash(git worktree:*)",
-      "Bash(git remote:*)"
+      "Bash(git remote:*)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": []
