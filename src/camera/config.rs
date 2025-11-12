@@ -34,9 +34,14 @@ pub struct CameraConfig {
     #[inspector(min = 0.0, max = 0.5, display = NumberDisplay::Slider)]
     pub zoom_to_fit_margin:                f32,
     // Zoom-to-fit convergence parameters
-    /// Base convergence rate per frame (0.12 = 12% per frame)
+    /// Convergence rate during fitting phase (0.12 = 12% per frame).
+    /// Careful rate to avoid overshooting target margins when zooming in/out.
     #[inspector(min = 0.01, max = 0.5, display = NumberDisplay::Slider)]
-    pub zoom_to_fit_rate:                  f32,
+    pub zoom_to_fit_fitting_rate:          f32,
+    /// Convergence rate during balancing phase (0.50 = 50% per frame).
+    /// Faster rate since we're only centering - the fit can't be lost by adjusting focus.
+    #[inspector(min = 0.01, max = 1.0, display = NumberDisplay::Slider)]
+    pub zoom_to_fit_balancing_rate:        f32,
     /// Convergence threshold for stopping when dimension flip detected (0.05 = 5% tolerance)
     #[inspector(min = 0.01, max = 0.2, display = NumberDisplay::Slider)]
     pub zoom_to_fit_convergence_threshold: f32,
@@ -63,7 +68,8 @@ impl Default for CameraConfig {
             bloom_low_frequency_boost:         0.5,
             bloom_high_pass_frequency:         0.5,
             zoom_to_fit_margin:                0.08,
-            zoom_to_fit_rate:                  0.12,
+            zoom_to_fit_fitting_rate:          0.12,
+            zoom_to_fit_balancing_rate:        0.50,
             zoom_to_fit_convergence_threshold: 0.05,
             zoom_to_fit_flip_damping:          0.30,
             zoom_to_fit_min_ratio:             0.5,

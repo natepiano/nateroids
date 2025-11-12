@@ -3,6 +3,7 @@ mod config;
 mod lights;
 mod star_twinkling;
 mod stars;
+mod zoom;
 
 use bevy::camera::visibility::Layer;
 use bevy::prelude::*;
@@ -13,6 +14,8 @@ use config::CameraConfigPlugin;
 use lights::DirectionalLightsPlugin;
 use star_twinkling::StarTwinklingPlugin;
 use stars::StarsPlugin;
+use zoom::ZoomPlugin;
+pub use zoom::calculate_camera_radius;
 
 pub struct CameraPlugin;
 
@@ -21,6 +24,7 @@ impl Plugin for CameraPlugin {
         app.add_plugins(CameraConfigPlugin)
             .add_plugins(DirectionalLightsPlugin)
             .add_plugins(CamerasPlugin)
+            .add_plugins(ZoomPlugin)
             .add_plugins(StarsPlugin)
             .add_plugins(StarTwinklingPlugin);
     }

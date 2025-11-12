@@ -36,6 +36,7 @@ pub enum GameAction {
     Stars,
     SuppressNateroids,
     ZoomToFit,
+    ZoomToFitInspector,
 }
 
 /// GameActions assign keys to do a lot of obvious stuff. Debug is less
@@ -113,7 +114,8 @@ impl GameAction {
             },
             Self::Stars => input_map.with(action, KeyCode::F3),
             Self::SuppressNateroids => input_map.with(action, KeyCode::F4),
-            Self::ZoomToFit => insert_shift_input(input_map, action, KeyCode::F12),
+            Self::ZoomToFit => input_map.with(action, KeyCode::KeyZ),
+            Self::ZoomToFitInspector => insert_shift_input(input_map, action, KeyCode::KeyZ),
         })
     }
 }
