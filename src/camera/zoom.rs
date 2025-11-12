@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 
-use crate::camera::CameraConfig;
 use crate::camera::ScreenSpaceMargins;
+use crate::camera::ZoomConfig;
 use crate::game_input::GameAction;
 use crate::game_input::just_pressed;
 use crate::playfield::Boundary;
@@ -55,7 +55,7 @@ pub fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32, buf
 
 pub fn home_camera(
     boundary: Res<Boundary>,
-    camera_config: Res<CameraConfig>,
+    zoom_config: Res<ZoomConfig>,
     mut camera_query: Query<(&mut PanOrbitCamera, &Projection)>,
 ) {
     if let Ok((mut pan_orbit, Projection::Perspective(perspective))) = camera_query.single_mut() {
@@ -65,7 +65,7 @@ pub fn home_camera(
             grid_size,
             perspective.fov,
             perspective.aspect_ratio,
-            camera_config.zoom_multiplier(),
+            zoom_config.zoom_margin_multiplier(),
         );
 
         // Set the camera's orbit parameters
@@ -134,7 +134,7 @@ fn start_zoom_to_fit(
 fn update_zoom_to_fit(
     mut commands: Commands,
     boundary: Res<Boundary>,
-    camera_config: Res<CameraConfig>,
+    zoom_config: Res<ZoomConfig>,
     mut camera_query: Query<(
         Entity,
         &Transform,
@@ -169,7 +169,7 @@ fn update_zoom_to_fit(
         cam_global,
         perspective,
         aspect_ratio,
-        camera_config.zoom_multiplier(),
+        zoom_config.zoom_margin_multiplier(),
     ) else {
         // Boundary behind camera, move camera back
         println!(
@@ -222,7 +222,7 @@ fn update_zoom_to_fit(
         half_tan_hfov,
         half_tan_vfov,
         aspect_ratio,
-        camera_config.zoom_multiplier()
+        zoom_config.zoom_margin_multiplier()
     );
 
     let h_min = margins.left_margin.min(margins.right_margin);
@@ -332,14 +332,12 @@ fn update_zoom_to_fit(
         (v_min, margins.target_margin_y)
     };
 
-    let target_radius = if current_margin_val < 0.0 {
-        // Content outside view - zoom out
-        current_radius * camera_config.zoom_to_fit_emergency_zoom_out
-    } else {
+
+    let target_radius =  {
         // Cap the ratio to prevent huge jumps
         let ratio = (target_margin_val / current_margin_val.max(0.001)).clamp(
-            camera_config.zoom_to_fit_min_ratio,
-            camera_config.zoom_to_fit_max_ratio,
+            zoom_config.min_ratio_clamp,
+            zoom_config.max_ratio_clamp,
         );
         current_radius * ratio
     };
@@ -362,9 +360,9 @@ fn update_zoom_to_fit(
     // This avoids creating oscillations from unbalanced adjustments
     // Use faster rate when already fitted - we're just balancing/centering
     let base_rate = if already_fitted {
-        camera_config.zoom_to_fit_balancing_rate
+        zoom_config.balancing_rate
     } else {
-        camera_config.zoom_to_fit_fitting_rate
+        zoom_config.fitting_rate
     };
 
     let rate_label = if already_fitted {
@@ -398,7 +396,7 @@ fn update_zoom_to_fit(
         cam_global,
         perspective,
         aspect_ratio,
-        camera_config.zoom_multiplier(),
+        zoom_config.zoom_margin_multiplier(),
     ) {
         let proposed_h_min = proposed_margins
             .left_margin
@@ -417,9 +415,9 @@ fn update_zoom_to_fit(
             // Dimension flip detected - check if both dimensions are already close to target
             // If so, the flip means we're done rather than oscillating
             let h_close = (h_min - margins.target_margin_x).abs()
-                < margins.target_margin_x * camera_config.zoom_to_fit_convergence_threshold;
+                < margins.target_margin_x * zoom_config.convergence_threshold;
             let v_close = (v_min - margins.target_margin_y).abs()
-                < margins.target_margin_y * camera_config.zoom_to_fit_convergence_threshold;
+                < margins.target_margin_y * zoom_config.convergence_threshold;
 
             if h_close && v_close {
                 // Both dimensions near target - flip is a convergence signal, stop here
@@ -436,13 +434,16 @@ fn update_zoom_to_fit(
                 return;
             } else {
                 // Real oscillation problem - apply damping
-                let damping = camera_config.zoom_to_fit_flip_damping;
+                let damping = zoom_config.flip_damping;
                 focus_adjustment *= damping;
                 radius_adjustment *= damping;
+                effective_rate *= damping;
                 println!(
-                    "  PREDICTION: Would flip dimension ({}→{}) and NOT converged! Damping to {:.1}%",
+                    "  PREDICTION: Would flip dimension ({}→{}) and NOT converged! Damping {rate_label} from {:.1}% to {:.1}% ({:.1}% damping factor)",
                     if current_constraining_is_h { "H" } else { "V" },
                     if proposed_constraining_is_h { "H" } else { "V" },
+                    base_rate * 100.0,
+                    effective_rate * 100.0,
                     damping * 100.0
                 );
             }
@@ -509,6 +510,21 @@ fn update_zoom_to_fit(
         balanced,
         fitted
     );
+
+    // Early exit if error is negligible to prevent jitter from tiny adjustments
+    // When fitted and error < 1%, further iteration just causes oscillation
+    if already_fitted && max_rel_error < 0.01 {
+        println!(
+            "  Zoom-to-fit complete! fitted={}, error negligible ({:.3}%), balanced={}",
+            fitted,
+            max_rel_error * 100.0,
+            balanced
+        );
+        pan_orbit.zoom_smoothness = zoom_state.original_zoom_smooth;
+        pan_orbit.pan_smoothness = zoom_state.original_pan_smooth;
+        commands.entity(entity).remove::<ZoomToFitActive>();
+        return;
+    }
 
     // Check completion: balanced AND fitted
     if balanced && fitted {

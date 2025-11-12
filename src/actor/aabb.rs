@@ -3,9 +3,9 @@ use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 
-use crate::camera::CameraConfig;
 use crate::camera::RenderLayer;
 use crate::camera::ScreenSpaceMargins;
+use crate::camera::ZoomConfig;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
 use crate::playfield::Boundary;
@@ -92,7 +92,7 @@ fn draw_aabb_system(mut gizmos: Gizmos<AabbGizmo>, aabbs: Query<(&Transform, &Aa
 fn draw_screen_aligned_boundary_box(
     mut gizmos: Gizmos<AabbGizmo>,
     boundary: Res<Boundary>,
-    camera_config: Res<CameraConfig>,
+    zoom_config: Res<ZoomConfig>,
     camera: Query<(&Camera, &Transform, &GlobalTransform, &Projection), With<PanOrbitCamera>>,
 ) {
     let Ok((cam, cam_transform, cam_global, projection)) = camera.single() else {
@@ -117,7 +117,7 @@ fn draw_screen_aligned_boundary_box(
         cam_global,
         perspective,
         aspect_ratio,
-        camera_config.zoom_multiplier(),
+        zoom_config.zoom_margin_multiplier(),
     ) else {
         return; // Boundary behind camera
     };

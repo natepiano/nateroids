@@ -12,6 +12,7 @@ use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
 use crate::camera::calculate_camera_radius;
 use crate::camera::config::CameraConfig;
+use crate::camera::config::ZoomConfig;
 use crate::game_input::GameAction;
 use crate::playfield::Boundary;
 
@@ -329,7 +330,7 @@ fn toggle_stars(
 
 pub fn spawn_panorbit_camera(
     config: Res<Boundary>,
-    camera_config: Res<CameraConfig>,
+    zoom_config: Res<ZoomConfig>,
     mut commands: Commands,
     mut q_stars_camera: Query<Entity, With<StarsCamera>>,
 ) {
@@ -354,7 +355,7 @@ pub fn spawn_panorbit_camera(
         grid_size,
         default_fov,
         default_aspect_ratio,
-        camera_config.zoom_multiplier(),
+        zoom_config.zoom_margin_multiplier(),
     );
 
     commands
