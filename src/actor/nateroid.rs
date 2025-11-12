@@ -11,8 +11,8 @@ use super::actor_config::LOCKED_AXES_2D;
 use super::actor_config::insert_configured_components;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidConfig;
-use crate::game_input::just_pressed;
 use crate::game_input::GameAction;
+use crate::game_input::just_pressed;
 use crate::game_input::toggle_active;
 use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
@@ -77,7 +77,9 @@ impl Plugin for NateroidPlugin {
                         .in_set(InGameSet::EntityUpdates)
                         .run_if(toggle_active(true, GameAction::SuppressNateroids)),
                     kill_testaroid_on_teleport.in_set(InGameSet::EntityUpdates),
-                    spawn_testaroid.in_set(InGameSet::EntityUpdates).run_if(just_pressed(GameAction::SpawnTestaroid)),
+                    spawn_testaroid
+                        .in_set(InGameSet::EntityUpdates)
+                        .run_if(just_pressed(GameAction::SpawnTestaroid)),
                 ),
             );
     }
@@ -101,6 +103,9 @@ pub struct Deaderoid {
     pub shrink_duration: f32,
     pub elapsed_time:    f32,
     pub current_shrink:  f32,
+    pub initial_alpha:   f32,
+    pub target_alpha:    f32,
+    pub current_alpha:   f32,
 }
 
 /// Test nateroid component with configurable spawn position and velocity
@@ -137,44 +142,13 @@ fn kill_testaroid_on_teleport(
     }
 }
 
-fn spawn_testaroid(
-    mut commands: Commands,
-) {
+fn spawn_testaroid(mut commands: Commands) {
+    let testaroid = Testaroid {
+        position: Vec3::new(-159., -85., 0.),
+        velocity: Vec3::new(-20., 0., 0.),
+    };
 
-    let testaroid = Testaroid
-        {position:Vec3::new(-159.,-75.,0.),velocity:Vec3::new(-10.,0.,0.)};
-
-    commands.spawn((Nateroid, Name::new("Nateroid"), testaroid ));
-}
-
-/// Calculates velocity toward the nearest back wall corner for dying nateroids
-fn calculate_death_velocity(position: Vec3, boundary: &Boundary) -> Vec3 {
-    let half_size = boundary.transform.scale / 2.0;
-    let center = boundary.transform.translation;
-
-    // Four corners of the back wall (negative Z)
-    let back_z = center.z - half_size.z;
-    let corners = [
-        Vec3::new(center.x - half_size.x, center.y - half_size.y, back_z), // Bottom-left
-        Vec3::new(center.x + half_size.x, center.y - half_size.y, back_z), // Bottom-right
-        Vec3::new(center.x - half_size.x, center.y + half_size.y, back_z), // Top-left
-        Vec3::new(center.x + half_size.x, center.y + half_size.y, back_z), // Top-right
-    ];
-
-    // Find nearest corner
-    let nearest_corner = corners
-        .iter()
-        .min_by(|a, b| {
-            let dist_a = position.distance_squared(**a);
-            let dist_b = position.distance_squared(**b);
-            dist_a.partial_cmp(&dist_b).unwrap()
-        })
-        .copied()
-        .unwrap_or(Vec3::new(0.0, 0.0, back_z));
-
-    // Calculate direction toward nearest corner
-    let direction = (nearest_corner - position).normalize_or_zero();
-    direction * 20.0 // Velocity magnitude
+    commands.spawn((Nateroid, Name::new("Nateroid"), testaroid));
 }
 
 fn initialize_nateroid(

@@ -196,6 +196,50 @@ impl Boundary {
         snapped_position
     }
 
+    /// Calculates how many faces a portal spans at a given position
+    pub fn calculate_portal_face_count(&self, portal: &Portal) -> usize {
+        let overextended_faces = self.get_overextended_faces_for(portal);
+
+        // Early return if no overextension - single face (full circle)
+        if overextended_faces.is_empty() {
+            return 1;
+        }
+
+        // Calculate boundary extents for constraint checking
+        let half_size = self.transform.scale / 2.0;
+        let min = self.transform.translation - half_size;
+        let max = self.transform.translation + half_size;
+
+        let primary_face = BoundaryFace::from_normal(portal.normal).unwrap();
+
+        // Collect ALL faces that need arcs (primary + overextended)
+        let mut all_faces_in_corner = vec![primary_face];
+        all_faces_in_corner.extend(overextended_faces.iter());
+
+        let mut face_count = 0;
+
+        // Calculate constrained intersections for each face
+        for &face in &all_faces_in_corner {
+            let face_points = face.get_face_points(&min, &max);
+            let raw_intersections = intersect_circle_with_rectangle(portal, &face_points);
+
+            // Apply constraints: filter out points that extend beyond face boundaries
+            let constrained_points = constrain_intersection_points(
+                raw_intersections,
+                face,
+                &all_faces_in_corner,
+                &min,
+                &max,
+            );
+
+            if constrained_points.len() >= 2 {
+                face_count += 1;
+            }
+        }
+
+        face_count
+    }
+
     pub fn draw_portal(
         &self,
         gizmos: &mut Gizmos<PortalGizmo>,

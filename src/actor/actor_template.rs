@@ -93,6 +93,12 @@ impl DerefMut for MissileConfig {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_config }
 }
 
+#[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DeathCorner {
+    Nearest,
+    Random,
+}
+
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
 pub struct NateroidConfig {
@@ -101,6 +107,7 @@ pub struct NateroidConfig {
     pub angular_velocity:          f32,
     pub death_duration_secs:       f32,
     pub death_shrink_pct:          f32,
+    pub death_corner:              DeathCorner,
     pub density_culling_threshold: f32,
 }
 
@@ -108,7 +115,7 @@ impl Default for NateroidConfig {
     fn default() -> Self {
         Self {
             actor_config:              ActorConfig {
-                spawnable:                false,
+                spawnable:                true,
                 aabb:                     Aabb::default(),
                 angular_damping:          Some(0.001),
                 collider:                 Collider::cuboid(1., 1., 1.),
@@ -143,6 +150,7 @@ impl Default for NateroidConfig {
             angular_velocity:          4.5,
             death_duration_secs:       3.,
             death_shrink_pct:          0.3,
+            death_corner:              DeathCorner::Random,
             density_culling_threshold: 0.01,
         }
     }

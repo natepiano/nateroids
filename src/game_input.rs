@@ -112,9 +112,7 @@ impl GameAction {
             Self::SpaceshipControlInspector => {
                 insert_shift_input(input_map, action, KeyCode::Digit4)
             },
-            Self::SpawnTestaroid => {
-                insert_shift_input(input_map, action, KeyCode::KeyT)
-            },
+            Self::SpawnTestaroid => insert_shift_input(input_map, action, KeyCode::KeyT),
             Self::Stars => input_map.with(action, KeyCode::F3),
             Self::SuppressNateroids => input_map.with(action, KeyCode::F4),
             Self::ZoomToFit => insert_shift_input(input_map, action, KeyCode::F12),
