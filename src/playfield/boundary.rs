@@ -77,7 +77,7 @@ pub struct Boundary {
 
 impl Default for Boundary {
     fn default() -> Self {
-        let cell_count = UVec3::new(3, 2, 2);
+        let cell_count = UVec3::new(3, 2, 1);
         let scalar = 110.;
 
         Self {
@@ -297,20 +297,7 @@ impl Boundary {
                     self.rotate_portal_center_to_target_face(portal.position, portal.normal, face)
                 };
 
-                // EXPERIMENT 4: Log corner arcs to identify which face draws incorrectly
-                // if is_corner {
-                //     println!(
-                //         "CORNER ARC: face={face:?}, primary={primary_face:?},
-                // points=({:.1},{:.1},{:.1})->({:.1},{:.1},{:.1})",
-                //         points[0].x,
-                //         points[0].y,
-                //         points[0].z,
-                //         points[1].x,
-                //         points[1].y,
-                //         points[1].z
-                //     );
-                // }
-
+                // Current rendering
                 gizmos
                     .short_arc_3d_between(center, points[0], points[1], face_color)
                     .resolution(resolution);
@@ -438,6 +425,42 @@ impl Boundary {
         let final_rotation = start_rotation * face_rotation;
 
         // Draw the arc
+        gizmos
+            .arc_3d(
+                angle,
+                radius,
+                Isometry3d::new(center, final_rotation),
+                color,
+            )
+            .resolution(resolution);
+    }
+
+    // Draw a SHORT arc (no angle inversion) with explicit normal
+    // Used for testing coplanar rendering at corners
+    fn draw_short_arc_with_normal(
+        &self,
+        gizmos: &mut Gizmos<PortalGizmo>,
+        center: Vec3,
+        radius: f32,
+        normal: Vec3,
+        color: Color,
+        resolution: u32,
+        from: Vec3,
+        to: Vec3,
+    ) {
+        let vec_from = (from - center).normalize();
+        let vec_to = (to - center).normalize();
+
+        // SHORT arc - no angle inversion
+        let angle = vec_from.angle_between(vec_to);
+        let cross_product = vec_from.cross(vec_to);
+        let is_clockwise = cross_product.dot(normal) < 0.0;
+
+        let face_rotation = Quat::from_rotation_arc(Vec3::Y, normal);
+        let start_vec = if is_clockwise { vec_from } else { vec_to };
+        let start_rotation = Quat::from_rotation_arc(face_rotation * Vec3::X, start_vec);
+        let final_rotation = start_rotation * face_rotation;
+
         gizmos
             .arc_3d(
                 angle,

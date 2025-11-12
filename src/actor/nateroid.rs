@@ -6,10 +6,12 @@ use bevy::prelude::*;
 use rand::Rng;
 
 use super::Teleporter;
+use super::actor_config::Health;
 use super::actor_config::LOCKED_AXES_2D;
 use super::actor_config::insert_configured_components;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidConfig;
+use crate::game_input::just_pressed;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
 use crate::playfield::ActorPortals;
@@ -70,9 +72,13 @@ impl Plugin for NateroidPlugin {
             .add_observer(initialize_nateroid)
             .add_systems(
                 Update,
-                spawn_nateroid
-                    .in_set(InGameSet::EntityUpdates)
-                    .run_if(toggle_active(true, GameAction::SuppressNateroids)),
+                (
+                    spawn_nateroid
+                        .in_set(InGameSet::EntityUpdates)
+                        .run_if(toggle_active(true, GameAction::SuppressNateroids)),
+                    kill_testaroid_on_teleport.in_set(InGameSet::EntityUpdates),
+                    spawn_testaroid.in_set(InGameSet::EntityUpdates).run_if(just_pressed(GameAction::SpawnTestaroid)),
+                ),
             );
     }
 }
@@ -97,6 +103,14 @@ pub struct Deaderoid {
     pub current_shrink:  f32,
 }
 
+/// Test nateroid component with configurable spawn position and velocity
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub struct Testaroid {
+    pub position: Vec3,
+    pub velocity: Vec3,
+}
+
 fn spawn_nateroid(mut commands: Commands, mut config: ResMut<NateroidConfig>, time: Res<Time>) {
     if !config.spawnable {
         return;
@@ -112,6 +126,57 @@ fn spawn_nateroid(mut commands: Commands, mut config: ResMut<NateroidConfig>, ti
     commands.spawn((Nateroid, Name::new("Nateroid")));
 }
 
+fn kill_testaroid_on_teleport(
+    mut commands: Commands,
+    query: Query<(Entity, &Teleporter), With<Testaroid>>,
+) {
+    for (entity, teleporter) in query.iter() {
+        if teleporter.just_teleported {
+            commands.entity(entity).insert(Health(-1.0));
+        }
+    }
+}
+
+fn spawn_testaroid(
+    mut commands: Commands,
+) {
+
+    let testaroid = Testaroid
+        {position:Vec3::new(-159.,-75.,0.),velocity:Vec3::new(-10.,0.,0.)};
+
+    commands.spawn((Nateroid, Name::new("Nateroid"), testaroid ));
+}
+
+/// Calculates velocity toward the nearest back wall corner for dying nateroids
+fn calculate_death_velocity(position: Vec3, boundary: &Boundary) -> Vec3 {
+    let half_size = boundary.transform.scale / 2.0;
+    let center = boundary.transform.translation;
+
+    // Four corners of the back wall (negative Z)
+    let back_z = center.z - half_size.z;
+    let corners = [
+        Vec3::new(center.x - half_size.x, center.y - half_size.y, back_z), // Bottom-left
+        Vec3::new(center.x + half_size.x, center.y - half_size.y, back_z), // Bottom-right
+        Vec3::new(center.x - half_size.x, center.y + half_size.y, back_z), // Top-left
+        Vec3::new(center.x + half_size.x, center.y + half_size.y, back_z), // Top-right
+    ];
+
+    // Find nearest corner
+    let nearest_corner = corners
+        .iter()
+        .min_by(|a, b| {
+            let dist_a = position.distance_squared(**a);
+            let dist_b = position.distance_squared(**b);
+            dist_a.partial_cmp(&dist_b).unwrap()
+        })
+        .copied()
+        .unwrap_or(Vec3::new(0.0, 0.0, back_z));
+
+    // Calculate direction toward nearest corner
+    let direction = (nearest_corner - position).normalize_or_zero();
+    direction * 20.0 // Velocity magnitude
+}
+
 fn initialize_nateroid(
     nateroid: On<Add, Nateroid>,
     mut commands: Commands,
@@ -120,7 +185,29 @@ fn initialize_nateroid(
     spatial_query: SpatialQuery,
     mut spawn_stats: ResMut<NateroidSpawnStats>,
     time: Res<Time>,
+    test_query: Query<&Testaroid>,
 ) {
+    // Check if this is a testaroid
+    if let Ok(testaroid) = test_query.get(nateroid.entity) {
+        // Testaroid: spawn with configured position and velocity
+        // Dies immediately, death velocity drags portal along wall toward corner
+        let scale = config.actor_config.transform.scale;
+        let transform = Transform::from_translation(testaroid.position).with_scale(scale);
+
+        commands.entity(nateroid.entity).insert((
+            transform,
+            LinearVelocity(testaroid.velocity),
+            AngularVelocity(Vec3::ZERO),
+        ));
+
+        insert_configured_components(&mut commands, &mut config.actor_config, nateroid.entity);
+
+        // Kill immediately so it has approaching portal when it becomes deaderoid
+        commands.entity(nateroid.entity).insert(Health(-1.0));
+        return;
+    }
+
+    // Normal nateroid initialization
     let current_time = time.elapsed_secs();
 
     let Some(transform) = initialize_transform(&boundary, &config, &spatial_query) else {

@@ -43,7 +43,8 @@ pub fn despawn(commands: &mut Commands, entity: Entity) { commands.entity(entity
 
 /// Calculates velocity toward the nearest back wall corner.
 /// Back wall has 4 corners at -Z boundary.
-fn calculate_death_velocity(position: Vec3, boundary: &Boundary) -> Vec3 {
+/// Preserves the magnitude of the current velocity.
+fn calculate_death_velocity(position: Vec3, boundary: &Boundary, current_velocity: Vec3) -> Vec3 {
     let half_size = boundary.transform.scale / 2.0;
     let center = boundary.transform.translation;
 
@@ -69,7 +70,8 @@ fn calculate_death_velocity(position: Vec3, boundary: &Boundary) -> Vec3 {
 
     // Calculate direction toward nearest corner
     let direction = (nearest_corner - position).normalize_or_zero();
-    direction * 20.0 // Velocity magnitude
+    let speed = current_velocity.length();
+    direction * speed // Preserve original velocity magnitude
 }
 
 #[allow(clippy::type_complexity)]
@@ -80,6 +82,7 @@ fn despawn_dead_entities(
             Entity,
             &Health,
             &Transform,
+            &LinearVelocity,
             Option<&Nateroid>,
             Option<&Name>,
         ),
@@ -88,7 +91,7 @@ fn despawn_dead_entities(
     config: Res<NateroidConfig>,
     boundary: Res<Boundary>,
 ) {
-    for (entity, health, transform, nateroid, name) in query.iter() {
+    for (entity, health, transform, velocity, nateroid, name) in query.iter() {
         if health.0 <= 0.0 {
             if nateroid.is_some() {
                 let entity_name = name.map(|n| (*n).as_str()).unwrap_or("Unknown");
@@ -98,7 +101,8 @@ fn despawn_dead_entities(
                 );
 
                 // Find nearest back wall corner and vector toward it
-                let death_velocity = calculate_death_velocity(transform.translation, &boundary);
+                let death_velocity =
+                    calculate_death_velocity(transform.translation, &boundary, velocity.0);
 
                 // Nateroid - start death animation
                 commands

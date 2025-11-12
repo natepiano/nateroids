@@ -108,7 +108,7 @@ impl Default for NateroidConfig {
     fn default() -> Self {
         Self {
             actor_config:              ActorConfig {
-                spawnable:                true,
+                spawnable:                false,
                 aabb:                     Aabb::default(),
                 angular_damping:          Some(0.001),
                 collider:                 Collider::cuboid(1., 1., 1.),
@@ -135,7 +135,7 @@ impl Default for NateroidConfig {
                 restitution_combine_rule: CoefficientCombine::Max,
                 rigid_body:               RigidBody::Dynamic,
                 scene:                    Handle::default(),
-                spawn_timer_seconds:      Some(0.0),
+                spawn_timer_seconds:      Some(2.0),
                 transform:                Transform::default(),
                 spawn_timer:              None,
             },
