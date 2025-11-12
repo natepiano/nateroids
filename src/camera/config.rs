@@ -77,12 +77,6 @@ pub struct ZoomConfig {
     /// Damping factor when dimension flip detected but not converged (0.30 = 30% speed)
     #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
     pub damping_on_dimension_flip_detected: f32,
-    /// Minimum ratio clamp to prevent huge jumps (0.5 = max 50% shrink per frame)
-    #[inspector(min = 0.1, max = 0.9, display = NumberDisplay::Slider)]
-    pub min_ratio_clamp:                    f32,
-    /// Maximum ratio clamp to prevent huge jumps (1.5 = max 50% grow per frame)
-    #[inspector(min = 1.1, max = 3.0, display = NumberDisplay::Slider)]
-    pub max_ratio_clamp:                    f32,
     /// Strict balance tolerance for final convergence (0.002 = 0.2% tolerance)
     #[inspector(min = 0.0001, max = 0.01, display = NumberDisplay::Slider)]
     pub balance_tolerance:                  f32,
@@ -105,8 +99,6 @@ impl Default for ZoomConfig {
             convergence_rate_balancing:         0.50,
             stop_on_dimension_flip_threshold:   0.05,
             damping_on_dimension_flip_detected: 0.30,
-            min_ratio_clamp:                    0.5,
-            max_ratio_clamp:                    1.5,
             balance_tolerance:                  0.002,
             early_exit_tolerance:               0.01,
             max_error_for_exit:                 0.5,

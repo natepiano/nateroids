@@ -44,7 +44,7 @@ pub struct MoveMe {
 }
 
 /// Screen-space margin information for a boundary
-pub struct ScreenSpaceBoundaryMargins {
+pub struct ScreenSpaceBoundary {
     /// Distance from left edge (positive = inside, negative = outside)
     pub left_margin:     f32,
     /// Distance from right edge (positive = inside, negative = outside)
@@ -69,7 +69,7 @@ pub struct ScreenSpaceBoundaryMargins {
     pub avg_depth:       f32,
 }
 
-impl ScreenSpaceBoundaryMargins {
+impl ScreenSpaceBoundary {
     /// Creates screen space margins from a camera's view of a boundary.
     /// Returns `None` if any boundary corner is behind the camera.
     pub fn from_camera_view(
@@ -83,18 +83,7 @@ impl ScreenSpaceBoundaryMargins {
         let half_tan_hfov = half_tan_vfov * viewport_aspect;
 
         // Get boundary corners
-        let grid_size = boundary.scale();
-        let half_size = grid_size / 2.0;
-        let boundary_corners = [
-            Vec3::new(-half_size.x, -half_size.y, -half_size.z),
-            Vec3::new(half_size.x, -half_size.y, -half_size.z),
-            Vec3::new(-half_size.x, half_size.y, -half_size.z),
-            Vec3::new(half_size.x, half_size.y, -half_size.z),
-            Vec3::new(-half_size.x, -half_size.y, half_size.z),
-            Vec3::new(half_size.x, -half_size.y, half_size.z),
-            Vec3::new(-half_size.x, half_size.y, half_size.z),
-            Vec3::new(half_size.x, half_size.y, half_size.z),
-        ];
+        let boundary_corners = boundary.corners();
 
         // Get camera basis vectors from global transform (world position, not local)
         let cam_pos = cam_global.translation();
@@ -201,6 +190,39 @@ impl ScreenSpaceBoundaryMargins {
         let h_span = self.max_norm_x - self.min_norm_x;
         let v_span = self.max_norm_y - self.min_norm_y;
         h_span > v_span
+    }
+
+    /// Returns the center of the boundary in normalized screen space
+    pub fn center(&self) -> (f32, f32) {
+        let center_x = (self.min_norm_x + self.max_norm_x) * 0.5;
+        let center_y = (self.min_norm_y + self.max_norm_y) * 0.5;
+        (center_x, center_y)
+    }
+
+    /// Returns the span (width, height) of the boundary in normalized screen space
+    pub fn span(&self) -> (f32, f32) {
+        let span_x = self.max_norm_x - self.min_norm_x;
+        let span_y = self.max_norm_y - self.min_norm_y;
+        (span_x, span_y)
+    }
+
+    /// Returns the world-space offset to add to camera focus to center the boundary on screen.
+    /// Uses the boundary's current screen-space center position and average depth to compute
+    /// the 3D offset vector that will move the boundary to screen center.
+    pub fn focus_offset_to_center(
+        &self,
+        cam_global: &GlobalTransform,
+        half_tan_hfov: f32,
+        half_tan_vfov: f32,
+    ) -> Vec3 {
+        let (center_x, center_y) = self.center();
+        let cam_rot = cam_global.rotation();
+        let cam_right = cam_rot * Vec3::X;
+        let cam_up = cam_rot * Vec3::Y;
+
+        let offset_x = center_x * self.avg_depth * half_tan_hfov;
+        let offset_y = center_y * self.avg_depth * half_tan_vfov;
+        cam_right * offset_x + cam_up * offset_y
     }
 }
 
@@ -365,6 +387,7 @@ pub fn spawn_panorbit_camera(
             button_pan: MouseButton::Middle,
             modifier_pan: Some(KeyCode::ShiftLeft),
             zoom_sensitivity: 0.2,
+            zoom_lower_limit: 0.001, // Allow zoom-to-fit to get very close
             trackpad_behavior: TrackpadBehavior::BlenderLike {
                 modifier_pan:  Some(KeyCode::ShiftLeft),
                 modifier_zoom: Some(KeyCode::ControlLeft),
