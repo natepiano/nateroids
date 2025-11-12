@@ -69,7 +69,9 @@
       "Bash(truncate:*)",
       "Bash(git -C /Users/natemccoy/rust/nateroids diff src/camera/cameras.rs)",
       "Bash(cargo nextest run:*)",
-      "mcp__brp__brp_list_logs"
+      "mcp__brp__brp_list_logs",
+      "Bash(git rev-parse:*)",
+      "Bash(git worktree:*)"
     ],
     "deny": [],
     "ask": []
