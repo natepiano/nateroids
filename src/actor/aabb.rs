@@ -1,14 +1,10 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
-use bevy_panorbit_camera::PanOrbitCamera;
 
 use crate::camera::RenderLayer;
-use crate::camera::ScreenSpaceBoundary;
-use crate::camera::ZoomConfig;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
-use crate::playfield::Boundary;
 use crate::traits::TransformExt;
 
 pub struct AabbPlugin;
@@ -19,11 +15,6 @@ impl Plugin for AabbPlugin {
             .add_systems(
                 Update,
                 draw_aabb_system.run_if(toggle_active(false, GameAction::AABBs)),
-            )
-            .add_systems(
-                Update,
-                draw_screen_aligned_boundary_box
-                    .run_if(toggle_active(false, GameAction::BoundaryBox)),
             );
     }
 }
@@ -84,72 +75,6 @@ fn draw_aabb_system(mut gizmos: Gizmos<AabbGizmo>, aabbs: Query<(&Transform, &Aa
         gizmos.cuboid(
             Transform::from_trs(center, transform.rotation, aabb.size() * transform.scale),
             Color::from(tailwind::GREEN_800),
-        );
-    }
-}
-/// used to draw a yellow screen-aligned box around the boundary
-/// used for troubleshooting camera movement logic
-fn draw_screen_aligned_boundary_box(
-    mut gizmos: Gizmos<AabbGizmo>,
-    boundary: Res<Boundary>,
-    zoom_config: Res<ZoomConfig>,
-    camera: Query<(&Camera, &Transform, &GlobalTransform, &Projection), With<PanOrbitCamera>>,
-) {
-    let Ok((cam, cam_transform, cam_global, projection)) = camera.single() else {
-        return;
-    };
-
-    let Projection::Perspective(perspective) = projection else {
-        return;
-    };
-
-    // Get actual viewport aspect ratio
-    let aspect_ratio = if let Some(viewport_size) = cam.logical_viewport_size() {
-        viewport_size.x / viewport_size.y
-    } else {
-        perspective.aspect_ratio
-    };
-
-    // Calculate screen-space bounds using ScreenSpaceMargins
-    let Some(margins) = ScreenSpaceBoundary::from_camera_view(
-        &boundary,
-        cam_global,
-        perspective,
-        aspect_ratio,
-        zoom_config.zoom_margin_multiplier(),
-    ) else {
-        return; // Boundary behind camera
-    };
-
-    // Get camera basis vectors for reconstruction
-    let cam_pos = cam_transform.translation;
-    let cam_rot = cam_global.rotation();
-    let cam_forward = cam_rot * Vec3::NEG_Z;
-    let cam_right = cam_rot * Vec3::X;
-    let cam_up = cam_rot * Vec3::Y;
-
-    // Draw the rectangle at average depth, scaling the normalized coords back to world coords
-    let draw_depth = margins.avg_depth;
-    let world_min_x = margins.min_norm_x * draw_depth;
-    let world_max_x = margins.max_norm_x * draw_depth;
-    let world_min_y = margins.min_norm_y * draw_depth;
-    let world_max_y = margins.max_norm_y * draw_depth;
-
-    // Create the 4 corners of the screen-aligned rectangle in world space
-    let rect_corners_world = [
-        cam_pos + cam_right * world_min_x + cam_up * world_min_y + cam_forward * draw_depth,
-        cam_pos + cam_right * world_max_x + cam_up * world_min_y + cam_forward * draw_depth,
-        cam_pos + cam_right * world_max_x + cam_up * world_max_y + cam_forward * draw_depth,
-        cam_pos + cam_right * world_min_x + cam_up * world_max_y + cam_forward * draw_depth,
-    ];
-
-    // Draw the rectangle with thicker lines
-    for i in 0..4 {
-        let next = (i + 1) % 4;
-        gizmos.line(
-            rect_corners_world[i],
-            rect_corners_world[next],
-            Color::from(tailwind::YELLOW_400),
         );
     }
 }

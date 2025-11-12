@@ -20,7 +20,7 @@ pub enum GameAction {
     BoundaryBox,
     BoundaryInspector,
     CameraConfigInspector,
-    Debug,
+    ShowFocus,
     Home,
     LightsInspector,
     MissileInspector,
@@ -39,17 +39,9 @@ pub enum GameAction {
     ZoomToFit,
 }
 
-/// GameActions assign keys to do a lot of obvious stuff. Debug is less
-/// obvious.
+/// GameActions assign keys to do a lot of obvious stuff.
 ///
-/// Use Debug like this - invoke it with a system as follows:
-/// ```rust
-/// app.add_systems(Update, my_debug_system.run_if(toggle_active(false, GameAction::Debug))
-/// ```
-/// useful when you want to limit the amount of info that is being emitted
-///
-/// similarly you can also ask for the GameAction and use it in your code
-/// directly
+/// you can ask for the GameAction and use it in your code directly
 /// ```rust
 /// fn my_system(user_input: Res<ActionState<GameAction>>) {
 ///    if user_input.pressed(&GameAction::Debug) {
@@ -81,7 +73,6 @@ impl GameAction {
             Self::BoundaryBox => input_map.with(action, KeyCode::KeyB),
             Self::BoundaryInspector => insert_shift_input(input_map, action, KeyCode::KeyB),
             Self::CameraConfigInspector => insert_shift_input(input_map, action, KeyCode::KeyC),
-            Self::Debug => insert_shift_input(input_map, action, KeyCode::KeyD),
             Self::Home => input_map.with(action, KeyCode::F12),
             Self::LightsInspector => insert_shift_input(input_map, action, KeyCode::KeyL),
             Self::MissileInspector => insert_shift_input(input_map, action, KeyCode::Digit1),
@@ -108,6 +99,7 @@ impl GameAction {
                         .with(KeyCode::KeyS),
                 ],
             ),
+            Self::ShowFocus => insert_shift_input(input_map, action, KeyCode::KeyF),
             Self::SpaceshipInspector => insert_shift_input(input_map, action, KeyCode::Digit3),
             Self::SpaceshipControlInspector => {
                 insert_shift_input(input_map, action, KeyCode::Digit4)

@@ -94,13 +94,13 @@ pub struct ZoomConfig {
 impl Default for ZoomConfig {
     fn default() -> Self {
         Self {
-            margin:                             0.08,
+            margin:                             0.10,
             convergence_rate_fitting:           0.12,
             convergence_rate_balancing:         0.50,
             stop_on_dimension_flip_threshold:   0.05,
             damping_on_dimension_flip_detected: 0.30,
-            balance_tolerance:                  0.002,
-            early_exit_tolerance:               0.01,
+            balance_tolerance:                  0.001,
+            early_exit_tolerance:               0.001,
             max_error_for_exit:                 0.5,
             max_iterations:                     200,
             min_margin_divisor:                 0.001,

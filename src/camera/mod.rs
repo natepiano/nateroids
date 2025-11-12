@@ -8,6 +8,7 @@ mod zoom;
 use bevy::camera::visibility::Layer;
 use bevy::prelude::*;
 use cameras::CamerasPlugin;
+pub use cameras::Edge;
 pub use cameras::ScreenSpaceBoundary;
 use config::CameraConfigPlugin;
 pub use config::ZoomConfig;

@@ -14,6 +14,7 @@ use crate::camera::calculate_camera_radius;
 use crate::camera::config::CameraConfig;
 use crate::camera::config::ZoomConfig;
 use crate::game_input::GameAction;
+use crate::game_input::toggle_active;
 use crate::playfield::Boundary;
 
 pub struct CamerasPlugin;
@@ -21,14 +22,30 @@ pub struct CamerasPlugin;
 impl Plugin for CamerasPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(PanOrbitCameraPlugin)
+            .init_gizmo_group::<FocusGizmo>()
             .add_systems(Startup, spawn_star_camera.before(spawn_panorbit_camera))
             .add_systems(Startup, spawn_panorbit_camera)
             .add_systems(Update, move_camera_system)
+            .add_systems(Update, update_focus_gizmo_config)
             .add_systems(
                 Update,
-                (toggle_stars, update_bloom_settings, update_clear_color),
+                (
+                    toggle_stars,
+                    update_bloom_settings,
+                    update_clear_color,
+                    draw_camera_focus_gizmo.run_if(toggle_active(false, GameAction::ShowFocus)),
+                ),
             );
     }
+}
+
+#[derive(Default, Reflect, GizmoConfigGroup)]
+struct FocusGizmo {}
+
+fn update_focus_gizmo_config(mut config_store: ResMut<GizmoConfigStore>) {
+    let (config, _) = config_store.config_mut::<FocusGizmo>();
+    config.line.width = 0.5;
+    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
 /// Component for programmatically moving the camera to a specific position
@@ -67,6 +84,10 @@ pub struct ScreenSpaceBoundary {
     pub max_norm_y:      f32,
     /// Average depth of boundary corners from camera
     pub avg_depth:       f32,
+    /// Half tangent of vertical field of view
+    pub half_tan_vfov:   f32,
+    /// Half tangent of horizontal field of view (vfov * aspect_ratio)
+    pub half_tan_hfov:   f32,
 }
 
 impl ScreenSpaceBoundary {
@@ -150,6 +171,8 @@ impl ScreenSpaceBoundary {
             min_norm_y,
             max_norm_y,
             avg_depth,
+            half_tan_vfov,
+            half_tan_hfov,
         })
     }
 
@@ -168,6 +191,16 @@ impl ScreenSpaceBoundary {
         horizontal_balanced && vertical_balanced
     }
 
+    /// Returns true if horizontal margins are balanced (left == right)
+    pub fn is_horizontally_balanced(&self, tolerance: f32) -> bool {
+        (self.left_margin - self.right_margin).abs() < tolerance
+    }
+
+    /// Returns true if vertical margins are balanced (top == bottom)
+    pub fn is_vertically_balanced(&self, tolerance: f32) -> bool {
+        (self.top_margin - self.bottom_margin).abs() < tolerance
+    }
+
     /// Returns true if the constraining dimension has reached its target margin.
     /// The constraining dimension is whichever has the smaller margin (tighter fit).
     pub fn is_fitted(&self, at_target_tolerance: f32) -> bool {
@@ -184,14 +217,6 @@ impl ScreenSpaceBoundary {
         h_at_target || v_at_target
     }
 
-    /// Returns true if horizontal is the constraining dimension
-    /// The constraining dimension is the one with larger span (takes up more screen space)
-    pub fn is_horizontal_constraining(&self) -> bool {
-        let h_span = self.max_norm_x - self.min_norm_x;
-        let v_span = self.max_norm_y - self.min_norm_y;
-        h_span > v_span
-    }
-
     /// Returns the center of the boundary in normalized screen space
     pub fn center(&self) -> (f32, f32) {
         let center_x = (self.min_norm_x + self.max_norm_x) * 0.5;
@@ -206,24 +231,89 @@ impl ScreenSpaceBoundary {
         (span_x, span_y)
     }
 
-    /// Returns the world-space offset to add to camera focus to center the boundary on screen.
-    /// Uses the boundary's current screen-space center position and average depth to compute
-    /// the 3D offset vector that will move the boundary to screen center.
-    pub fn focus_offset_to_center(
-        &self,
-        cam_global: &GlobalTransform,
-        half_tan_hfov: f32,
-        half_tan_vfov: f32,
-    ) -> Vec3 {
-        let (center_x, center_y) = self.center();
-        let cam_rot = cam_global.rotation();
-        let cam_right = cam_rot * Vec3::X;
-        let cam_up = cam_rot * Vec3::Y;
-
-        let offset_x = center_x * self.avg_depth * half_tan_hfov;
-        let offset_y = center_y * self.avg_depth * half_tan_vfov;
-        cam_right * offset_x + cam_up * offset_y
+    /// Returns the screen edges in normalized space (left, right, top, bottom)
+    pub fn screen_edges_normalized(&self) -> (f32, f32, f32, f32) {
+        (
+            -self.half_tan_hfov,
+            self.half_tan_hfov,
+            self.half_tan_vfov,
+            -self.half_tan_vfov,
+        )
     }
+
+    /// Returns the center of a boundary edge in normalized space, clipped to visible portion
+    /// Returns None if the edge is not visible (entirely off-screen)
+    pub fn boundary_edge_center(&self, edge: Edge) -> Option<(f32, f32)> {
+        let (left_edge, right_edge, top_edge, bottom_edge) = self.screen_edges_normalized();
+
+        match edge {
+            Edge::Left if self.min_norm_x > left_edge => {
+                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
+                Some((self.min_norm_x, y))
+            },
+            Edge::Right if self.max_norm_x < right_edge => {
+                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
+                Some((self.max_norm_x, y))
+            },
+            Edge::Top if self.max_norm_y < top_edge => {
+                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
+                Some((x, self.max_norm_y))
+            },
+            Edge::Bottom if self.min_norm_y > bottom_edge => {
+                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
+                Some((x, self.min_norm_y))
+            },
+            _ => None,
+        }
+    }
+
+    /// Returns the center of a screen edge in normalized space, clipped to visible boundary portion
+    pub fn screen_edge_center(&self, edge: Edge) -> (f32, f32) {
+        let (left_edge, right_edge, top_edge, bottom_edge) = self.screen_edges_normalized();
+
+        match edge {
+            Edge::Left => {
+                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
+                (left_edge, y)
+            },
+            Edge::Right => {
+                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
+                (right_edge, y)
+            },
+            Edge::Top => {
+                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
+                (x, top_edge)
+            },
+            Edge::Bottom => {
+                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
+                (x, bottom_edge)
+            },
+        }
+    }
+
+    /// Converts normalized screen-space coordinates to world space
+    pub fn normalized_to_world(
+        &self,
+        norm_x: f32,
+        norm_y: f32,
+        cam_pos: Vec3,
+        cam_right: Vec3,
+        cam_up: Vec3,
+        cam_forward: Vec3,
+    ) -> Vec3 {
+        let world_x = norm_x * self.avg_depth;
+        let world_y = norm_y * self.avg_depth;
+        cam_pos + cam_right * world_x + cam_up * world_y + cam_forward * self.avg_depth
+    }
+}
+
+/// Boundary box edges
+#[derive(Debug, Clone, Copy)]
+pub enum Edge {
+    Left,
+    Right,
+    Top,
+    Bottom,
 }
 
 fn move_camera_system(
@@ -417,5 +507,22 @@ fn update_clear_color(camera_config: Res<CameraConfig>, mut clear_color: ResMut<
         clear_color.0 = camera_config
             .clear_color
             .darker(camera_config.darkening_factor);
+    }
+}
+
+/// Draws a red gizmo sphere at the PanOrbit camera's focus point
+/// and a red arrow from world origin to the focus
+fn draw_camera_focus_gizmo(
+    mut gizmos: Gizmos<FocusGizmo>,
+    camera_query: Query<&PanOrbitCamera, With<Camera>>,
+) {
+    if let Ok(pan_orbit) = camera_query.single() {
+        let focus = pan_orbit.target_focus;
+
+        // Draw sphere at focus point
+        gizmos.sphere(focus, 1.0, Color::srgb(1.0, 0.0, 0.0));
+
+        // Draw arrow from world origin to focus
+        gizmos.arrow(Vec3::ZERO, focus, Color::srgb(1.0, 0.0, 0.0));
     }
 }

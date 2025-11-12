@@ -74,20 +74,6 @@ pub fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32, buf
     xy_distance * buffer + z_half_depth
 }
 
-/// Calculates the fit ratio for zoom-to-fit.
-/// Returns (ratio_x, ratio_y, constraining_ratio) where constraining_ratio is the max of the two.
-fn calculate_fit_ratio(
-    span_x: f32,
-    span_y: f32,
-    target_span_x: f32,
-    target_span_y: f32,
-) -> (f32, f32, f32) {
-    let ratio_x = span_x / target_span_x;
-    let ratio_y = span_y / target_span_y;
-    let ratio = ratio_x.max(ratio_y);
-    (ratio_x, ratio_y, ratio)
-}
-
 pub fn home_camera(
     boundary: Res<Boundary>,
     zoom_config: Res<ZoomConfig>,
@@ -227,8 +213,9 @@ fn update_zoom_to_fit(
         return;
     };
 
-    let half_tan_vfov = (perspective.fov * 0.5).tan();
-    let half_tan_hfov = half_tan_vfov * aspect_ratio;
+    // Use FOV tangent values from margins (already calculated in from_camera_view)
+    let half_tan_vfov = margins.half_tan_vfov;
+    let half_tan_hfov = margins.half_tan_hfov;
 
     // Calculate center and span for debug printing
     let (center_x, center_y) = margins.center();
@@ -335,48 +322,67 @@ fn update_zoom_to_fit(
     let current_radius = pan_orbit.target_radius;
 
     println!(
-        "  START OF ITERATION: pan_orbit.target_radius={:.6}",
-        pan_orbit.target_radius
+        "  START OF ITERATION: pan_orbit.target_radius={:.6}, pan_orbit.target_focus=({:.3},{:.3},{:.3})",
+        pan_orbit.target_radius,
+        pan_orbit.target_focus.x,
+        pan_orbit.target_focus.y,
+        pan_orbit.target_focus.z
     );
 
-    // Calculate target focus to center the boundary on screen
-    let mut target_focus = pan_orbit.target_focus
-        + margins.focus_offset_to_center(cam_global, half_tan_hfov, half_tan_vfov);
+    // Two-phase focus adjustment:
+    // Phase 1: When far from boundary, move toward Vec3::ZERO (boundary center)
+    // Phase 2: When close to boundary, use screen-space centering for precision
 
-    // Calculate target radius to fit the boundary with margins
-    // Compare boundary span to desired span (screen size with margins)
+    let focus_to_boundary_distance = pan_orbit.target_focus.length(); // Distance to Vec3::ZERO
+    let far_from_boundary_threshold = current_radius * 0.5; // Consider "far" if distance > half the radius
+
+    let target_focus = if focus_to_boundary_distance > far_from_boundary_threshold {
+        // Phase 1: Move toward boundary center
+        Vec3::ZERO
+    } else {
+        // Phase 2: Fine-tune using screen-space centering
+        // Calculate where camera center is pointing at boundary depth
+        let (center_x, center_y) = margins.center();
+        let cam_rot = cam_global.rotation();
+        let cam_right = cam_rot * Vec3::X;
+        let cam_up = cam_rot * Vec3::Y;
+
+        // Convert screen-space offset to world-space adjustment
+        let world_offset_x = center_x * margins.avg_depth;
+        let world_offset_y = center_y * margins.avg_depth;
+        let focus_correction = cam_right * world_offset_x + cam_up * world_offset_y;
+
+        // Apply correction to current focus
+        pan_orbit.target_focus + focus_correction
+    };
+
+    // Calculate target radius using span ratios
+    // Physics: At distance R, object has span S. Closer = larger span.
+    // Relationship: S * R = constant, so target_R = current_R * (current_S / target_S)
+
+    // Target spans with proper margins
     let target_span_x = 2.0 * half_tan_hfov / zoom_config.zoom_margin_multiplier();
     let target_span_y = 2.0 * half_tan_vfov / zoom_config.zoom_margin_multiplier();
 
-    // Use whichever dimension needs more zoom (larger ratio = more zoom out needed)
-    let (ratio_x, ratio_y, ratio) =
-        calculate_fit_ratio(span_x, span_y, target_span_x, target_span_y);
+    // Calculate ratios for each dimension
+    let ratio_x = span_x / target_span_x;
+    let ratio_y = span_y / target_span_y;
 
-    let mut target_radius = current_radius * ratio;
+    // Use the larger ratio (constraining dimension) to ensure both fit
+    let ratio = ratio_x.max(ratio_y);
 
-    // If we need to zoom in but radius is at/near minimum, move focus forward instead
-    let zoom_lower_limit = 0.001;
-    if target_radius < zoom_lower_limit && ratio < 1.0 {
-        // Can't zoom in by reducing radius, so move focus towards boundary
-        let distance_blocked = zoom_lower_limit - target_radius;
-        target_radius = zoom_lower_limit;
-
-        // Move focus forward along camera direction by the blocked distance
-        let cam_forward = cam_global.forward();
-        let focus_forward_offset = cam_forward.as_vec3() * distance_blocked;
-        target_focus = target_focus + focus_forward_offset;
-
-        println!(
-            "  RADIUS LIMIT HIT: would be {:.6}, clamped to {:.3}, moving focus forward by {:.3}",
-            current_radius * ratio,
-            target_radius,
-            distance_blocked
-        );
-    }
+    // Calculate target radius from current radius and span ratio
+    let target_radius = current_radius * ratio;
 
     println!(
-        "  SPAN-BASED CALC: target_span=({:.3}, {:.3}), ratio_x={:.6}, ratio_y={:.6}, ratio={:.6}, current_radius={:.3}, target_radius={:.3}",
-        target_span_x, target_span_y, ratio_x, ratio_y, ratio, current_radius, target_radius
+        "  SPAN-BASED CALC: current_span=({:.3},{:.3}), target_span=({:.3},{:.3}), ratio_x={:.3}, ratio_y={:.3}, ratio={:.3}",
+        span_x, span_y, target_span_x, target_span_y, ratio_x, ratio_y, ratio
+    );
+    println!(
+        "  RADIUS CALC: current={:.3}, target={:.3}, delta={:.3}",
+        current_radius,
+        target_radius,
+        target_radius - current_radius
     );
 
     // Calculate error magnitudes
@@ -384,6 +390,26 @@ fn update_zoom_to_fit(
     let radius_delta = target_radius - current_radius;
     let focus_error = focus_delta.length();
     let radius_error = radius_delta.abs();
+
+    let focus_phase = if focus_to_boundary_distance > far_from_boundary_threshold {
+        "PHASE1"
+    } else {
+        "PHASE2"
+    };
+
+    println!(
+        "  FOCUS {}: dist_to_boundary={:.1}, threshold={:.1}, target=({:.3},{:.3},{:.3}), delta=({:.3},{:.3},{:.3}), error={:.3}",
+        focus_phase,
+        focus_to_boundary_distance,
+        far_from_boundary_threshold,
+        target_focus.x,
+        target_focus.y,
+        target_focus.z,
+        focus_delta.x,
+        focus_delta.y,
+        focus_delta.z,
+        focus_error
+    );
 
     // Calculate relative errors
     let focus_rel_error = focus_error / current_radius.max(1.0);
@@ -412,127 +438,37 @@ fn update_zoom_to_fit(
     let mut radius_adjustment = radius_delta * base_rate;
     let mut effective_rate = base_rate;
 
-    // Simulate what the margin would be after applying this adjustment
+    // Simple overshoot detection: check if we would cross the target values
     let proposed_focus = pan_orbit.target_focus + focus_adjustment;
     let proposed_radius = current_radius + radius_adjustment;
+    // Check focus overshoot
+    let proposed_focus_delta = proposed_focus - target_focus;
+    let current_focus_delta = pan_orbit.target_focus - target_focus;
+    let focus_would_overshoot =
+        proposed_focus_delta.dot(current_focus_delta) < 0.0 && current_focus_delta.length() > 0.001;
 
-    // We need to simulate the camera transform with the proposed values
-    // The camera looks from (focus + offset_from_angles) towards focus
-    // For simplicity, create a transform by offsetting along the current camera direction
-    let cam_forward = cam_global.forward();
-    let proposed_cam_pos = proposed_focus - cam_forward.as_vec3() * proposed_radius;
+    // Check radius overshoot
+    let proposed_radius_delta = proposed_radius - target_radius;
+    let current_radius_delta = current_radius - target_radius;
+    let radius_would_overshoot = proposed_radius_delta.signum() != current_radius_delta.signum()
+        && current_radius_delta.abs() > 0.001;
 
-    // Create hypothetical global transform for prediction
-    let hypothetical_global = GlobalTransform::from(Transform {
-        translation: proposed_cam_pos,
-        rotation:    cam_global.rotation(),
-        scale:       Vec3::ONE,
-    });
-
-    // Recalculate margins with proposed transform
-    if let Some(proposed_margins) = ScreenSpaceBoundary::from_camera_view(
-        &boundary,
-        &hypothetical_global,
-        perspective,
-        aspect_ratio,
-        zoom_config.zoom_margin_multiplier(),
-    ) {
-        // Check if constraining dimension would flip
-        let current_constraining_is_h = margins.is_horizontal_constraining();
-        let proposed_constraining_is_h = proposed_margins.is_horizontal_constraining();
-        let would_flip_dimension = current_constraining_is_h != proposed_constraining_is_h;
-
-        if would_flip_dimension {
-            // Dimension flip detected - check if both dimensions are already close to target (ratio
-            // ≈ 1.0) If so, the flip means we're done rather than oscillating
-            let h_close = (ratio_x - 1.0).abs() < zoom_config.stop_on_dimension_flip_threshold;
-            let v_close = (ratio_y - 1.0).abs() < zoom_config.stop_on_dimension_flip_threshold;
-
-            if h_close && v_close {
-                // Both dimensions near target - flip is a convergence signal, stop here
-                println!(
-                    "  PREDICTION: Would flip dimension ({}→{}) but BOTH close to target! h_ratio={:.3}, v_ratio={:.3} - STOPPING",
-                    if current_constraining_is_h { "H" } else { "V" },
-                    if proposed_constraining_is_h { "H" } else { "V" },
-                    ratio_x,
-                    ratio_y
-                );
-                commands.entity(entity).remove::<ZoomToFitActive>();
-                return;
-            } else {
-                // Real oscillation problem - apply damping
-                let damping = zoom_config.damping_on_dimension_flip_detected;
-                focus_adjustment *= damping;
-                radius_adjustment *= damping;
-                effective_rate *= damping;
-                println!(
-                    "  PREDICTION: Would flip dimension ({}→{}) and NOT converged! Damping {rate_label} from {:.1}% to {:.1}% ({:.1}% damping factor)",
-                    if current_constraining_is_h { "H" } else { "V" },
-                    if proposed_constraining_is_h { "H" } else { "V" },
-                    base_rate * 100.0,
-                    effective_rate * 100.0,
-                    damping * 100.0
-                );
-            }
-        } else {
-            // Same dimension - check for overshoot
-            // With span-based approach: target ratio is 1.0 (boundary fits perfectly)
-            // Check if we're crossing from >1.0 to <1.0 or vice versa
-            let (proposed_span_x, proposed_span_y) = proposed_margins.span();
-            let (proposed_ratio_x, proposed_ratio_y, proposed_ratio) = calculate_fit_ratio(
-                proposed_span_x,
-                proposed_span_y,
-                target_span_x,
-                target_span_y,
-            );
-
-            println!(
-                "  PREDICTION CALC: proposed_span=({:.3}, {:.3}), proposed_ratio_x={:.6}, proposed_ratio_y={:.6}, proposed_ratio={:.6}",
-                proposed_span_x,
-                proposed_span_y,
-                proposed_ratio_x,
-                proposed_ratio_y,
-                proposed_ratio
-            );
-
-            let would_overshoot = if ratio > 1.0 {
-                // Currently too large, shrinking towards 1.0
-                proposed_ratio < 1.0
-            } else {
-                // Currently too small, growing towards 1.0
-                proposed_ratio > 1.0
-            };
-
-            if would_overshoot {
-                // Calculate exact scale factor to reach ratio=1.0 precisely
-                let ratio_delta = proposed_ratio - ratio;
-                let target_delta = 1.0 - ratio;
-
-                let scale_factor = if ratio_delta.abs() > 0.001 {
-                    (target_delta / ratio_delta).clamp(0.0, 1.0)
-                } else {
-                    0.5 // Fallback if ratio barely changed
-                };
-
-                effective_rate = base_rate * scale_factor;
-                focus_adjustment *= scale_factor;
-                radius_adjustment *= scale_factor;
-                println!(
-                    "  PREDICTION: Would overshoot target! ratio_delta={:.6}, target_delta={:.6}, scale_factor={:.6}",
-                    ratio_delta, target_delta, scale_factor
-                );
-                println!(
-                    "  PREDICTION: Scaling {rate_label} from {:.1}% to {:.1}%",
-                    base_rate * 100.0,
-                    effective_rate * 100.0
-                );
-            } else {
-                println!(
-                    "  PREDICTION: Safe to apply {rate_label} {:.1}%",
-                    base_rate * 100.0
-                );
-            }
-        }
+    if focus_would_overshoot || radius_would_overshoot {
+        // Would overshoot - scale adjustment to reach target exactly
+        let scale_factor = 0.5; // Simple damping when we'd overshoot
+        effective_rate = base_rate * scale_factor;
+        focus_adjustment *= scale_factor;
+        radius_adjustment *= scale_factor;
+        println!(
+            "  PREDICTION: Would overshoot! Scaling {rate_label} from {:.1}% to {:.1}%",
+            base_rate * 100.0,
+            effective_rate * 100.0
+        );
+    } else {
+        println!(
+            "  PREDICTION: Safe to apply {rate_label} {:.1}%",
+            base_rate * 100.0
+        );
     }
 
     // Apply adjustments
