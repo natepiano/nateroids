@@ -97,9 +97,6 @@ fn despawn_dead_entities(
                     entity_name, health.0
                 );
 
-                // Calculate shrink rate based on death duration
-                let shrink_rate = (1.0 - config.death_shrink_pct) / config.death_duration_secs;
-
                 // Find nearest back wall corner and vector toward it
                 let death_velocity = calculate_death_velocity(transform.translation, &boundary);
 
@@ -108,10 +105,11 @@ fn despawn_dead_entities(
                     .entity(entity)
                     .insert((
                         Deaderoid {
-                            initial_scale: transform.scale,
-                            target_shrink: config.death_shrink_pct,
-                            shrink_rate,
-                            current_shrink: 1.0,
+                            initial_scale:   transform.scale,
+                            target_shrink:   config.death_shrink_pct,
+                            shrink_duration: config.death_duration_secs,
+                            elapsed_time:    0.0,
+                            current_shrink:  1.0,
                         },
                         CollisionLayers::NONE,
                         LinearVelocity(death_velocity),
@@ -140,9 +138,18 @@ fn despawn_splash(mut commands: Commands, query: Query<Entity, With<crate::splas
 
 fn animate_dying_nateroids(mut query: Query<(&mut Deaderoid, &mut Transform)>, time: Res<Time>) {
     for (mut deaderoid, mut transform) in query.iter_mut() {
-        // Gradually shrink based on shrink_rate
-        deaderoid.current_shrink -= deaderoid.shrink_rate * time.delta_secs();
-        deaderoid.current_shrink = deaderoid.current_shrink.max(deaderoid.target_shrink);
+        // Update elapsed time
+        deaderoid.elapsed_time += time.delta_secs();
+
+        // Calculate progress (0.0 to 1.0)
+        let progress = (deaderoid.elapsed_time / deaderoid.shrink_duration).min(1.0);
+
+        // Apply ease-in curve (cubic for slow start, fast finish)
+        // This gives logarithmic-like behavior: stays near full size, then shrinks rapidly
+        let eased_progress = progress * progress * progress;
+
+        // Interpolate from 1.0 (full size) to target_shrink using eased progress
+        deaderoid.current_shrink = 1.0 - (1.0 - deaderoid.target_shrink) * eased_progress;
 
         // Apply shrinking to transform
         transform.scale = deaderoid.initial_scale * deaderoid.current_shrink;
