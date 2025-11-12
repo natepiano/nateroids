@@ -402,18 +402,25 @@ fn draw_approaching_portals(
     boundary: Res<Boundary>,
     config: Res<PortalConfig>,
     orientation: Res<CameraOrientation>,
-    q_portals: Query<&ActorPortals>,
+    q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
 ) {
-    for portal in q_portals.iter() {
+    for (portal, deaderoid) in q_portals.iter() {
         if let Some(ref approaching) = portal.approaching {
-            // Draw the portal with the current radius
+            // Compute color based on current deaderoid status, not stored color
+            let portal_color = if deaderoid.is_some() {
+                config.color_approaching_deaderoid
+            } else {
+                config.color_approaching
+            };
+
             boundary.draw_portal(
                 &mut gizmos,
                 approaching,
-                approaching.color,
+                portal_color,
                 config.resolution,
                 &orientation,
+                deaderoid.is_some(),
             );
         }
     }
@@ -477,17 +484,25 @@ fn draw_emerging_portals(
     boundary: Res<Boundary>,
     config: Res<PortalConfig>,
     orientation: Res<CameraOrientation>,
-    q_portals: Query<&ActorPortals>,
+    q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
 ) {
-    for portal in q_portals.iter() {
+    for (portal, deaderoid) in q_portals.iter() {
         if let Some(ref emerging) = portal.emerging {
+            // Compute color based on current deaderoid status, not stored color
+            let portal_color = if deaderoid.is_some() {
+                config.color_approaching_deaderoid
+            } else {
+                config.color_emerging
+            };
+
             boundary.draw_portal(
                 &mut gizmos,
                 emerging,
-                config.color_emerging,
+                portal_color,
                 config.resolution,
                 &orientation,
+                deaderoid.is_some(),
             );
         }
     }

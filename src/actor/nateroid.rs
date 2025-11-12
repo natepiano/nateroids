@@ -90,10 +90,11 @@ pub struct Nateroid;
 
 #[derive(Component, Debug)]
 pub struct Deaderoid {
-    pub initial_scale:  Vec3,
-    pub target_shrink:  f32,
-    pub shrink_rate:    f32,
-    pub current_shrink: f32,
+    pub initial_scale:   Vec3,
+    pub target_shrink:   f32,
+    pub shrink_duration: f32,
+    pub elapsed_time:    f32,
+    pub current_shrink:  f32,
 }
 
 fn spawn_nateroid(mut commands: Commands, mut config: ResMut<NateroidConfig>, time: Res<Time>) {

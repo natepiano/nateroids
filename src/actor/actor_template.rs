@@ -135,7 +135,7 @@ impl Default for NateroidConfig {
                 restitution_combine_rule: CoefficientCombine::Max,
                 rigid_body:               RigidBody::Dynamic,
                 scene:                    Handle::default(),
-                spawn_timer_seconds:      Some(2.0),
+                spawn_timer_seconds:      Some(0.0),
                 transform:                Transform::default(),
                 spawn_timer:              None,
             },
@@ -180,7 +180,7 @@ impl Default for SpaceshipConfig {
                     [GameLayer::Asteroid, GameLayer::Boundary],
                 ),
                 gravity_scale:            0.,
-                health:                   500.,
+                health:                   50000.,
                 linear_damping:           Some(0.05),
                 locked_axes:              LockedAxes::new()
                     .lock_rotation_x()

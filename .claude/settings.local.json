@@ -68,7 +68,8 @@
       "WebFetch(domain:parry.rs)",
       "Bash(truncate:*)",
       "Bash(git -C /Users/natemccoy/rust/nateroids diff src/camera/cameras.rs)",
-      "Bash(cargo nextest run:*)"
+      "Bash(cargo nextest run:*)",
+      "mcp__brp__brp_list_logs"
     ],
     "deny": [],
     "ask": []
