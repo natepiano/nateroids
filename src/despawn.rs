@@ -6,6 +6,7 @@ use crate::actor::Deaderoid;
 use crate::actor::Health;
 use crate::actor::MissilePosition;
 use crate::actor::Nateroid;
+use crate::actor::NateroidDeathMaterials;
 use crate::actor::actor_template::DeathCorner;
 use crate::actor::actor_template::NateroidConfig;
 use crate::playfield::Boundary;
@@ -43,39 +44,11 @@ fn despawn_missiles(mut commands: Commands, query: Query<(Entity, &MissilePositi
 /// (e.g., missile reaching max distance AND taking lethal damage simultaneously)
 pub fn despawn(commands: &mut Commands, entity: Entity) { commands.entity(entity).try_despawn(); }
 
-/// Sets transparency on all descendant entities with StandardMaterial
-/// Clones materials to avoid affecting other entities using the same material
-fn set_transparency_for_descendants(
-    entity: Entity,
-    alpha: f32,
-    children_query: &Query<&Children>,
-    materials: &mut Assets<StandardMaterial>,
-    material_query: &Query<&MeshMaterial3d<StandardMaterial>>,
-    commands: &mut Commands,
-) {
-    // Iterate over all descendants using Bevy's built-in iterator
-    for descendant in children_query.iter_descendants(entity) {
-        if let Ok(material_handle) = material_query.get(descendant) {
-            // Clone the material to avoid affecting other entities
-            if let Some(original_material) = materials.get(&material_handle.0) {
-                let mut cloned_material = original_material.clone();
-                cloned_material.base_color.set_alpha(alpha);
-                cloned_material.alpha_mode = AlphaMode::Blend;
-
-                // Add the cloned material and update the entity's material handle
-                let new_handle = materials.add(cloned_material);
-                commands
-                    .entity(descendant)
-                    .insert(MeshMaterial3d(new_handle));
-            }
-        }
-    }
-}
-
 /// Calculates velocity toward a boundary corner based on the death corner strategy.
 /// Velocity is calculated to reach the corner in exactly `death_duration` seconds.
 fn calculate_death_velocity(
     position: Vec3,
+    current_velocity: Vec3,
     boundary: &Boundary,
     death_duration: f32,
     death_corner: DeathCorner,
@@ -146,6 +119,43 @@ fn calculate_death_velocity(
             let mut rng = rand::rng();
             corners[rng.random_range(0..8)]
         },
+        DeathCorner::Directional => {
+            // Find corner most aligned with current velocity direction
+            let velocity_dir = current_velocity.normalize_or_zero();
+
+            // Calculate dot product for each corner (how aligned it is with velocity)
+            let corner_scores: Vec<(Vec3, f32)> = corners
+                .iter()
+                .map(|&corner| {
+                    let to_corner = (corner - position).normalize_or_zero();
+                    let dot = velocity_dir.dot(to_corner);
+                    (corner, dot)
+                })
+                .collect();
+
+            // Find maximum dot product (most aligned)
+            let max_dot = corner_scores
+                .iter()
+                .map(|(_, dot)| *dot)
+                .max_by(|a, b| a.partial_cmp(b).unwrap())
+                .unwrap_or(0.0);
+
+            // Collect all corners within epsilon of max (handles ties)
+            const EPSILON: f32 = 0.001;
+            let best_corners: Vec<Vec3> = corner_scores
+                .iter()
+                .filter(|(_, dot)| (dot - max_dot).abs() < EPSILON)
+                .map(|(corner, _)| *corner)
+                .collect();
+
+            // If multiple corners equally aligned, randomly pick one
+            if best_corners.len() > 1 {
+                let mut rng = rand::rng();
+                best_corners[rng.random_range(0..best_corners.len())]
+            } else {
+                best_corners.first().copied().unwrap_or(corners[0])
+            }
+        },
     };
 
     // Calculate velocity to reach corner in exactly death_duration seconds
@@ -161,6 +171,7 @@ fn despawn_dead_entities(
             Entity,
             &Health,
             &Transform,
+            &LinearVelocity,
             Option<&Nateroid>,
             Option<&Name>,
         ),
@@ -168,11 +179,11 @@ fn despawn_dead_entities(
     >,
     config: Res<NateroidConfig>,
     boundary: Res<Boundary>,
+    death_materials: Option<Res<NateroidDeathMaterials>>,
     children_query: Query<&Children>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     material_query: Query<&MeshMaterial3d<StandardMaterial>>,
 ) {
-    for (entity, health, transform, nateroid, name) in query.iter() {
+    for (entity, health, transform, linear_velocity, nateroid, name) in query.iter() {
         if health.0 <= 0.0 {
             if nateroid.is_some() {
                 let entity_name = name.map(|n| (*n).as_str()).unwrap_or("Unknown");
@@ -184,19 +195,10 @@ fn despawn_dead_entities(
                 // Calculate velocity to reach target corner in death_duration
                 let death_velocity = calculate_death_velocity(
                     transform.translation,
+                    linear_velocity.0,
                     &boundary,
                     config.death_duration_secs,
                     config.death_corner,
-                );
-
-                // Set 75% transparency (alpha 0.25) on all child materials
-                set_transparency_for_descendants(
-                    entity,
-                    0.25,
-                    &children_query,
-                    &mut materials,
-                    &material_query,
-                    &mut commands,
                 );
 
                 // Nateroid - start death animation
@@ -204,19 +206,41 @@ fn despawn_dead_entities(
                     .entity(entity)
                     .insert((
                         Deaderoid {
-                            initial_scale:   transform.scale,
-                            target_shrink:   config.death_shrink_pct,
-                            shrink_duration: config.death_duration_secs,
-                            elapsed_time:    0.0,
-                            current_shrink:  1.0,
-                            initial_alpha:   0.25,
-                            target_alpha:    0.10,
-                            current_alpha:   0.25,
+                            initial_scale:          transform.scale,
+                            target_shrink:          config.death_shrink_pct,
+                            shrink_duration:        config.death_duration_secs,
+                            elapsed_time:           0.0,
+                            current_shrink:         1.0,
+                            current_material_index: 0,
                         },
                         CollisionLayers::NONE,
                         LinearVelocity(death_velocity),
                     ))
                     .remove::<LockedAxes>();
+
+                // Apply initial materials (index 0, alpha 0.25) immediately
+                if let Some(death_materials) = &death_materials {
+                    if !death_materials.materials.is_empty() {
+                        let materials_for_level = &death_materials.materials[0];
+                        let mut material_index = 0;
+
+                        for descendant in children_query.iter_descendants(entity) {
+                            if material_query.get(descendant).is_ok()
+                                && material_index < materials_for_level.len()
+                            {
+                                commands.entity(descendant).insert(MeshMaterial3d(
+                                    materials_for_level[material_index].clone(),
+                                ));
+                                material_index += 1;
+                            }
+                        }
+
+                        info!(
+                            "💀 {entity_name}: Applied initial materials (index 0, alpha {:.2}) to {material_index} descendants",
+                            config.initial_alpha
+                        );
+                    }
+                }
             } else {
                 // Other entities - despawn immediately
                 despawn(&mut commands, entity);
@@ -239,13 +263,22 @@ fn despawn_splash(mut commands: Commands, query: Query<Entity, With<crate::splas
 }
 
 fn animate_dying_nateroids(
-    mut query: Query<(&mut Deaderoid, &mut Transform, Entity)>,
+    mut query: Query<(&mut Deaderoid, &mut Transform, Entity, Option<&Name>)>,
     time: Res<Time>,
+    death_materials: Option<Res<NateroidDeathMaterials>>,
     children_query: Query<&Children>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     material_query: Query<&MeshMaterial3d<StandardMaterial>>,
+    nateroid_config: Res<NateroidConfig>,
+    mut commands: Commands,
 ) {
-    for (mut deaderoid, mut transform, entity) in query.iter_mut() {
+    // Early return if materials haven't been precomputed yet
+    let Some(death_materials) = death_materials else {
+        return;
+    };
+
+    for (mut deaderoid, mut transform, entity, name) in query.iter_mut() {
+        let entity_name = name.map(|n| (*n).as_str()).unwrap_or("Unknown");
+
         // Update elapsed time
         deaderoid.elapsed_time += time.delta_secs();
 
@@ -258,18 +291,41 @@ fn animate_dying_nateroids(
         // Apply shrinking to transform
         transform.scale = deaderoid.initial_scale * deaderoid.current_shrink;
 
-        // Apply ease-in curve (cubic) for alpha fade - stays visible, then rapidly fades at end
-        let eased_alpha_progress = progress * progress * progress;
-        deaderoid.current_alpha = deaderoid.initial_alpha
-            - (deaderoid.initial_alpha - deaderoid.target_alpha) * eased_alpha_progress;
+        // Apply ease-out curve (inverse cubic) for material swapping - fades rapidly at first,
+        // then slows down (exponential decay)
+        let eased_progress = 1.0 - (1.0 - progress).powi(3);
+        let new_index = (eased_progress * (death_materials.materials.len() - 1) as f32) as usize;
 
-        // Apply alpha to all descendant materials
-        for descendant in children_query.iter_descendants(entity) {
-            if let Ok(material_handle) = material_query.get(descendant) {
-                if let Some(material) = materials.get_mut(&material_handle.0) {
-                    material.base_color.set_alpha(deaderoid.current_alpha);
+        // Only swap materials when index changes
+        if new_index != deaderoid.current_material_index {
+            let old_index = deaderoid.current_material_index;
+            deaderoid.current_material_index = new_index;
+
+            // Calculate the alpha value for this level
+            let alpha = nateroid_config.initial_alpha - (new_index as f32 * 0.01);
+
+            debug!(
+                "💀 {entity_name}: Material swap {old_index} → {new_index} | progress: {:.3} → {:.3} | alpha: {:.2}",
+                progress, eased_progress, alpha
+            );
+
+            // Get the precomputed materials for this transparency level
+            let materials_for_level = &death_materials.materials[new_index];
+
+            // Swap material handles for all descendants
+            let mut material_index = 0;
+            for descendant in children_query.iter_descendants(entity) {
+                if material_query.get(descendant).is_ok()
+                    && material_index < materials_for_level.len()
+                {
+                    commands
+                        .entity(descendant)
+                        .insert(MeshMaterial3d(materials_for_level[material_index].clone()));
+                    material_index += 1;
                 }
             }
+
+            debug!("💀 {entity_name}: Swapped materials on {material_index} descendants");
         }
 
         // Note: Velocity is constant (set once in despawn_dead_entities)

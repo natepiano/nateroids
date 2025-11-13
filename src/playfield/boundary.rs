@@ -479,42 +479,6 @@ impl Boundary {
             .resolution(resolution);
     }
 
-    // Draw a SHORT arc (no angle inversion) with explicit normal
-    // Used for testing coplanar rendering at corners
-    fn draw_short_arc_with_normal(
-        &self,
-        gizmos: &mut Gizmos<PortalGizmo>,
-        center: Vec3,
-        radius: f32,
-        normal: Vec3,
-        color: Color,
-        resolution: u32,
-        from: Vec3,
-        to: Vec3,
-    ) {
-        let vec_from = (from - center).normalize();
-        let vec_to = (to - center).normalize();
-
-        // SHORT arc - no angle inversion
-        let angle = vec_from.angle_between(vec_to);
-        let cross_product = vec_from.cross(vec_to);
-        let is_clockwise = cross_product.dot(normal) < 0.0;
-
-        let face_rotation = Quat::from_rotation_arc(Vec3::Y, normal);
-        let start_vec = if is_clockwise { vec_from } else { vec_to };
-        let start_rotation = Quat::from_rotation_arc(face_rotation * Vec3::X, start_vec);
-        let final_rotation = start_rotation * face_rotation;
-
-        gizmos
-            .arc_3d(
-                angle,
-                radius,
-                Isometry3d::new(center, final_rotation),
-                color,
-            )
-            .resolution(resolution);
-    }
-
     fn get_overextended_faces_for(&self, portal: &Portal) -> Vec<BoundaryFace> {
         let mut overextended_faces = Vec::new();
         let half_size = self.transform.scale / 2.0;

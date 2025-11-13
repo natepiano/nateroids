@@ -97,6 +97,7 @@ impl DerefMut for MissileConfig {
 pub enum DeathCorner {
     Nearest,
     Random,
+    Directional,
 }
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
@@ -108,6 +109,8 @@ pub struct NateroidConfig {
     pub death_duration_secs:       f32,
     pub death_shrink_pct:          f32,
     pub death_corner:              DeathCorner,
+    pub initial_alpha:             f32,
+    pub target_alpha:              f32,
     pub density_culling_threshold: f32,
 }
 
@@ -150,7 +153,9 @@ impl Default for NateroidConfig {
             angular_velocity:          4.5,
             death_duration_secs:       3.,
             death_shrink_pct:          0.3,
-            death_corner:              DeathCorner::Random,
+            death_corner:              DeathCorner::Directional,
+            initial_alpha:             0.35,
+            target_alpha:              0.05,
             density_culling_threshold: 0.01,
         }
     }

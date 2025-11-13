@@ -19,6 +19,7 @@ use missile::MissilePlugin;
 pub use missile::MissilePosition;
 pub use nateroid::Deaderoid;
 pub use nateroid::Nateroid;
+pub use nateroid::NateroidDeathMaterials;
 use nateroid::NateroidPlugin;
 pub use nateroid::NateroidSpawnStats;
 use spaceship::SpaceshipPlugin;

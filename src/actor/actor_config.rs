@@ -130,7 +130,7 @@ pub const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
     .lock_rotation_y()
     .lock_translation_z();
 
-fn initialize_actor_configs(
+pub fn initialize_actor_configs(
     mut commands: Commands,
     meshes: Res<Assets<Mesh>>,
     scenes: Res<Assets<Scene>>,

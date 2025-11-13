@@ -11,9 +11,10 @@ use super::actor_config::LOCKED_AXES_2D;
 use super::actor_config::insert_configured_components;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidConfig;
+use crate::asset_loader;
+use crate::asset_loader::SceneAssets;
 use crate::game_input::GameAction;
 use crate::game_input::just_pressed;
-use crate::game_input::toggle_active;
 use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
@@ -69,14 +70,16 @@ pub struct NateroidPlugin;
 impl Plugin for NateroidPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<NateroidSpawnStats>()
+            .add_systems(
+                OnEnter(asset_loader::AssetsState::Loaded),
+                precompute_death_materials.after(super::actor_config::initialize_actor_configs),
+            )
             .add_observer(initialize_nateroid)
             .add_systems(
                 Update,
                 (
-                    spawn_nateroid
-                        .in_set(InGameSet::EntityUpdates)
-                        .run_if(toggle_active(true, GameAction::SuppressNateroids)),
-                    kill_testaroid_on_teleport.in_set(InGameSet::EntityUpdates),
+                    spawn_nateroid.in_set(InGameSet::EntityUpdates),
+                    despawn_testaroid_on_teleport.in_set(InGameSet::EntityUpdates),
                     spawn_testaroid
                         .in_set(InGameSet::EntityUpdates)
                         .run_if(just_pressed(GameAction::SpawnTestaroid)),
@@ -98,14 +101,18 @@ pub struct Nateroid;
 
 #[derive(Component, Debug)]
 pub struct Deaderoid {
-    pub initial_scale:   Vec3,
-    pub target_shrink:   f32,
-    pub shrink_duration: f32,
-    pub elapsed_time:    f32,
-    pub current_shrink:  f32,
-    pub initial_alpha:   f32,
-    pub target_alpha:    f32,
-    pub current_alpha:   f32,
+    pub initial_scale:          Vec3,
+    pub target_shrink:          f32,
+    pub shrink_duration:        f32,
+    pub elapsed_time:           f32,
+    pub current_shrink:         f32,
+    pub current_material_index: usize,
+}
+
+/// Precomputed materials for nateroid death animation at different transparency levels
+#[derive(Resource)]
+pub struct NateroidDeathMaterials {
+    pub materials: Vec<Vec<Handle<StandardMaterial>>>,
 }
 
 /// Test nateroid component with configurable spawn position and velocity
@@ -131,7 +138,7 @@ fn spawn_nateroid(mut commands: Commands, mut config: ResMut<NateroidConfig>, ti
     commands.spawn((Nateroid, Name::new("Nateroid")));
 }
 
-fn kill_testaroid_on_teleport(
+fn despawn_testaroid_on_teleport(
     mut commands: Commands,
     query: Query<(Entity, &Teleporter), With<Testaroid>>,
 ) {
@@ -268,6 +275,76 @@ fn initialize_transform(
     }
 
     None
+}
+
+/// System that precomputes death materials when assets are loaded
+fn precompute_death_materials(
+    mut commands: Commands,
+    scene_assets: Res<SceneAssets>,
+    scenes: Res<Assets<Scene>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    nateroid_config: Res<NateroidConfig>,
+) {
+    // Get the nateroid scene
+    let Some(nateroid_scene) = scenes.get(&scene_assets.nateroid) else {
+        warn!("Nateroid scene not loaded yet");
+        return;
+    };
+
+    let initial_alpha = nateroid_config.initial_alpha;
+    let target_alpha = nateroid_config.target_alpha;
+    let num_levels = ((initial_alpha - target_alpha) * 100.0) as usize + 1;
+
+    // Collect material handles from the scene's world using try_query
+    let mut material_handles = Vec::new();
+    if let Some(mut query_state) = nateroid_scene
+        .world
+        .try_query::<&MeshMaterial3d<StandardMaterial>>()
+    {
+        for mesh_material in query_state.iter(&nateroid_scene.world) {
+            material_handles.push(mesh_material.0.clone());
+        }
+    }
+
+    if material_handles.is_empty() {
+        warn!("No materials found in nateroid scene");
+        return;
+    }
+
+    info!(
+        "Collected {} material handles from nateroid scene",
+        material_handles.len()
+    );
+
+    // Precompute materials for each alpha level
+    let mut precomputed_materials = Vec::with_capacity(num_levels);
+    for level in 0..num_levels {
+        let alpha = initial_alpha - (level as f32 * 0.01);
+        let mut level_materials = Vec::with_capacity(material_handles.len());
+
+        for material_handle in &material_handles {
+            if let Some(original_material) = materials.get(material_handle) {
+                let mut cloned_material = original_material.clone();
+                cloned_material.base_color.set_alpha(alpha);
+                cloned_material.alpha_mode = AlphaMode::Blend;
+                level_materials.push(materials.add(cloned_material));
+            }
+        }
+
+        precomputed_materials.push(level_materials);
+    }
+
+    let num_material_sets = precomputed_materials.len();
+    let num_materials_per_set = material_handles.len();
+
+    // Insert the resource
+    commands.insert_resource(NateroidDeathMaterials {
+        materials: precomputed_materials,
+    });
+
+    info!(
+        "Precomputed {num_material_sets} material sets with {num_materials_per_set} materials each"
+    );
 }
 
 fn get_random_position_within_bounds(bounds: &Transform) -> Vec3 {
