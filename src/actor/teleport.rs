@@ -45,7 +45,6 @@ struct Teleported {
     collider: Collider,
 }
 
-#[allow(clippy::type_complexity)]
 fn on_teleported(
     event: On<Teleported>,
     mut params: ParamSet<(
@@ -131,7 +130,6 @@ fn on_teleported(
     }
 }
 
-#[allow(clippy::type_complexity)]
 pub fn teleport_at_boundary(
     boundary: Res<Boundary>,
     mut commands: Commands,

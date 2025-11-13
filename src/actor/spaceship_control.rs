@@ -179,9 +179,6 @@ fn apply_acceleration(
     }
 }
 
-// todo: how can i avoid setting this allow - i'm guessing a system param would
-// be just as problematic
-#[allow(clippy::type_complexity)]
 fn toggle_continuous_fire(
     mut commands: Commands,
     q_spaceship: Query<

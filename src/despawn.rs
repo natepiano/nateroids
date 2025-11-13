@@ -163,7 +163,6 @@ fn calculate_death_velocity(
     (target_corner - position) / death_duration
 }
 
-#[allow(clippy::type_complexity)]
 fn despawn_dead_entities(
     mut commands: Commands,
     query: Query<
@@ -219,27 +218,27 @@ fn despawn_dead_entities(
                     .remove::<LockedAxes>();
 
                 // Apply initial materials (index 0, alpha 0.25) immediately
-                if let Some(death_materials) = &death_materials {
-                    if !death_materials.materials.is_empty() {
-                        let materials_for_level = &death_materials.materials[0];
-                        let mut material_index = 0;
+                if let Some(death_materials) = &death_materials
+                    && !death_materials.materials.is_empty()
+                {
+                    let materials_for_level = &death_materials.materials[0];
+                    let mut material_index = 0;
 
-                        for descendant in children_query.iter_descendants(entity) {
-                            if material_query.get(descendant).is_ok()
-                                && material_index < materials_for_level.len()
-                            {
-                                commands.entity(descendant).insert(MeshMaterial3d(
-                                    materials_for_level[material_index].clone(),
-                                ));
-                                material_index += 1;
-                            }
+                    for descendant in children_query.iter_descendants(entity) {
+                        if material_query.get(descendant).is_ok()
+                            && material_index < materials_for_level.len()
+                        {
+                            commands.entity(descendant).insert(MeshMaterial3d(
+                                materials_for_level[material_index].clone(),
+                            ));
+                            material_index += 1;
                         }
-
-                        debug!(
-                            "💀 {entity_name}: Applied initial materials (index 0, alpha {:.2}) to {material_index} descendants",
-                            config.initial_alpha
-                        );
                     }
+
+                    debug!(
+                        "💀 {entity_name}: Applied initial materials (index 0, alpha {:.2}) to {material_index} descendants",
+                        config.initial_alpha
+                    );
                 }
             } else {
                 // Other entities - despawn immediately

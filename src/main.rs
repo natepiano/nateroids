@@ -1,3 +1,10 @@
+//! Nateroids - An asteroids-style game built with Bevy 0.17
+//!
+//! A 3D space shooter featuring:
+//! - Portal-based boundary wrapping mechanics
+//! - Physics-based asteroid destruction
+//! - Dynamic camera system//! - Bevy Remote Protocol (BRP) support for debugging
+
 // exclude when targeting wasm - this breaks in the browser right now
 mod actor;
 mod asset_loader;

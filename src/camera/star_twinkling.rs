@@ -61,7 +61,6 @@ fn extract_elements_at_indices<T: Clone>(vec: &[T], indices: &[usize]) -> Vec<T>
 }
 
 // yeah - but how can the query below be much simpler?
-#[allow(clippy::type_complexity)]
 fn start_twinkling(
     mut commands: Commands,
     config: Res<StarConfig>,

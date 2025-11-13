@@ -19,13 +19,22 @@ use crate::state::PlayingGame;
 const BOUNDARY_SNAP_EPSILON: f32 = 0.01;
 const BOUNDARY_OVEREXTENSION_EPSILON: f32 = BOUNDARY_SNAP_EPSILON * 2.0;
 
+const MIN_POINTS_FOR_ARC: usize = 2;
+const MIN_FACES_FOR_CORNER: usize = 3;
+
+// Deaderoid portal colors
+const DEADEROID_APPROACHING_COLOR: Color = Color::srgb(1.0, 0.0, 0.0); // Red
+const CORNER_COLOR_LEFT_RIGHT_YZ: Color = Color::srgb(1.0, 0.0, 0.0); // Red
+const CORNER_COLOR_TOP_BOTTOM_XZ: Color = Color::srgb(0.0, 1.0, 0.0); // Green
+const CORNER_COLOR_FRONT_BACK_XY: Color = Color::srgb(1.0, 1.0, 0.0); // Yellow
+
 pub struct BoundaryPlugin;
 
 impl Plugin for BoundaryPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Boundary>()
-            .init_gizmo_group::<BoundaryGridGizmo>()
-            .init_gizmo_group::<OuterBoundaryGizmo>()
+            .init_gizmo_group::<GridGizmo>()
+            .init_gizmo_group::<BoundaryGizmo>()
             .add_plugins(
                 ResourceInspectorPlugin::<Boundary>::default()
                     .run_if(toggle_active(false, GameAction::BoundaryInspector)),
@@ -36,17 +45,17 @@ impl Plugin for BoundaryPlugin {
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
-struct BoundaryGridGizmo {}
+struct GridGizmo {}
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
-struct OuterBoundaryGizmo {}
+struct BoundaryGizmo {}
 
 fn update_gizmos_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Res<Boundary>) {
-    let (config, _) = config_store.config_mut::<BoundaryGridGizmo>();
+    let (config, _) = config_store.config_mut::<GridGizmo>();
     config.line.width = boundary.line_width;
     config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 
-    let (outer_config, _) = config_store.config_mut::<OuterBoundaryGizmo>();
+    let (outer_config, _) = config_store.config_mut::<BoundaryGizmo>();
     outer_config.line.width = boundary.outer_line_width;
     outer_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
@@ -232,7 +241,7 @@ impl Boundary {
                 &max,
             );
 
-            if constrained_points.len() >= 2 {
+            if constrained_points.len() >= MIN_POINTS_FOR_ARC {
                 face_count += 1;
             }
         }
@@ -294,26 +303,26 @@ impl Boundary {
                 &max,
             );
 
-            if constrained_points.len() >= 2 {
+            if constrained_points.len() >= MIN_POINTS_FOR_ARC {
                 face_arcs.push((face, constrained_points));
             }
         }
 
         // Draw all arcs
-        let is_corner = face_arcs.len() >= 3;
+        let is_corner = face_arcs.len() >= MIN_FACES_FOR_CORNER;
         for (face, points) in face_arcs {
             // Apply face color-coding only for deaderoid portals
             let face_color = if is_deaderoid {
                 if is_corner {
                     // Corner: use 3-color diagnostic scheme
                     match face {
-                        BoundaryFace::Left | BoundaryFace::Right => Color::srgb(1.0, 0.0, 0.0), /* Red */
-                        BoundaryFace::Top | BoundaryFace::Bottom => Color::srgb(0.0, 1.0, 0.0), /* Green */
-                        BoundaryFace::Front | BoundaryFace::Back => Color::srgb(1.0, 1.0, 0.0), /* Yellow */
+                        BoundaryFace::Left | BoundaryFace::Right => CORNER_COLOR_LEFT_RIGHT_YZ,
+                        BoundaryFace::Top | BoundaryFace::Bottom => CORNER_COLOR_TOP_BOTTOM_XZ,
+                        BoundaryFace::Front | BoundaryFace::Back => CORNER_COLOR_FRONT_BACK_XY,
                     }
                 } else {
                     // Edge: ALL faces red (both primary and overextended)
-                    Color::srgb(1.0, 0.0, 0.0)
+                    DEADEROID_APPROACHING_COLOR
                 }
             } else {
                 color // Non-deaderoid portals: always use the provided color
@@ -656,8 +665,8 @@ fn is_in_bounds(
 
 fn draw_boundary(
     mut boundary: ResMut<Boundary>,
-    mut grid_gizmo: Gizmos<BoundaryGridGizmo>,
-    mut outer_boundary_gizmo: Gizmos<OuterBoundaryGizmo>,
+    mut grid_gizmo: Gizmos<GridGizmo>,
+    mut outer_boundary_gizmo: Gizmos<BoundaryGizmo>,
     camera_query: Query<(&Camera, &Projection, &GlobalTransform), With<PanOrbitCamera>>,
 ) {
     // updating the boundary resource transform from its configuration so it can be
@@ -846,4 +855,250 @@ fn faces_share_axis(face1: BoundaryFace, face2: BoundaryFace) -> bool {
         (Top, Bottom) | (Bottom, Top) |
         (Front, Back) | (Back, Front)
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Helper function to create a test boundary centered at origin with given size
+    fn create_test_boundary(size: Vec3) -> Boundary {
+        Boundary {
+            transform: Transform {
+                translation: Vec3::ZERO,
+                scale: size,
+                ..default()
+            },
+            ..default()
+        }
+    }
+
+    #[test]
+    fn test_no_teleport_when_inside_boundary() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+
+        // Test positions well inside boundary
+        let inside_positions = vec![
+            Vec3::ZERO,
+            Vec3::new(10.0, 0.0, 0.0),
+            Vec3::new(0.0, 20.0, 0.0),
+            Vec3::new(0.0, 0.0, 30.0),
+            Vec3::new(-10.0, -20.0, -30.0),
+        ];
+
+        for pos in inside_positions {
+            let result = boundary.calculate_teleport_position(pos);
+            assert_eq!(
+                result, pos,
+                "Position {pos} inside boundary should not be teleported"
+            );
+        }
+    }
+
+    #[test]
+    fn test_teleport_right_face_to_left() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        // boundary_max.x = 50.0, boundary_min.x = -50.0
+
+        // Entity exits right face (+X) at x=55.0 (5.0 past boundary)
+        let position = Vec3::new(55.0, 0.0, 0.0);
+        let result = boundary.calculate_teleport_position(position);
+
+        // Should wrap to left face at x=-45.0 (5.0 offset from left boundary)
+        assert_eq!(result.x, -45.0);
+        assert_eq!(result.y, 0.0);
+        assert_eq!(result.z, 0.0);
+    }
+
+    #[test]
+    fn test_teleport_left_face_to_right() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+
+        // Entity exits left face (-X) at x=-60.0 (10.0 past boundary)
+        let position = Vec3::new(-60.0, 0.0, 0.0);
+        let result = boundary.calculate_teleport_position(position);
+
+        // Should wrap to right face at x=40.0 (10.0 offset from right boundary)
+        assert_eq!(result.x, 40.0);
+        assert_eq!(result.y, 0.0);
+        assert_eq!(result.z, 0.0);
+    }
+
+    #[test]
+    fn test_teleport_top_face_to_bottom() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+
+        // Entity exits top face (+Y) at y=53.0 (3.0 past boundary)
+        let position = Vec3::new(0.0, 53.0, 0.0);
+        let result = boundary.calculate_teleport_position(position);
+
+        // Should wrap to bottom face at y=-47.0 (3.0 offset from bottom boundary)
+        assert_eq!(result.x, 0.0);
+        assert_eq!(result.y, -47.0);
+        assert_eq!(result.z, 0.0);
+    }
+
+    #[test]
+    fn test_teleport_bottom_face_to_top() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+
+        // Entity exits bottom face (-Y) at y=-58.0 (8.0 past boundary)
+        let position = Vec3::new(0.0, -58.0, 0.0);
+        let result = boundary.calculate_teleport_position(position);
+
+        // Should wrap to top face at y=42.0 (8.0 offset from top boundary)
+        assert_eq!(result.x, 0.0);
+        assert_eq!(result.y, 42.0);
+        assert_eq!(result.z, 0.0);
+    }
+
+    #[test]
+    fn test_teleport_front_face_to_back() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+
+        // Entity exits front face (+Z) at z=52.0 (2.0 past boundary)
+        let position = Vec3::new(0.0, 0.0, 52.0);
+        let result = boundary.calculate_teleport_position(position);
+
+        // Should wrap to back face at z=-48.0 (2.0 offset from back boundary)
+        assert_eq!(result.x, 0.0);
+        assert_eq!(result.y, 0.0);
+        assert_eq!(result.z, -48.0);
+    }
+
+    #[test]
+    fn test_teleport_back_face_to_front() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+
+        // Entity exits back face (-Z) at z=-57.0 (7.0 past boundary)
+        let position = Vec3::new(0.0, 0.0, -57.0);
+        let result = boundary.calculate_teleport_position(position);
+
+        // Should wrap to front face at z=43.0 (7.0 offset from front boundary)
+        assert_eq!(result.x, 0.0);
+        assert_eq!(result.y, 0.0);
+        assert_eq!(result.z, 43.0);
+    }
+
+    #[test]
+    fn test_teleport_preserves_offset_on_other_axes() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+
+        // Entity exits right face with Y and Z offsets
+        let position = Vec3::new(55.0, 20.0, -10.0);
+        let result = boundary.calculate_teleport_position(position);
+
+        // X should wrap, but Y and Z should remain unchanged
+        assert_eq!(result.x, -45.0);
+        assert_eq!(result.y, 20.0);
+        assert_eq!(result.z, -10.0);
+    }
+
+    #[test]
+    fn test_teleport_edge_wrapping() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+
+        // Entity exits both right face (+X) and top face (+Y)
+        let position = Vec3::new(53.0, 52.0, 0.0);
+        let result = boundary.calculate_teleport_position(position);
+
+        // Both axes should wrap independently
+        assert_eq!(result.x, -47.0); // Wrapped from right to left
+        assert_eq!(result.y, -48.0); // Wrapped from top to bottom
+        assert_eq!(result.z, 0.0);
+    }
+
+    #[test]
+    fn test_teleport_corner_wrapping() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+
+        // Entity exits all three faces (corner case)
+        let position = Vec3::new(55.0, 58.0, 52.0);
+        let result = boundary.calculate_teleport_position(position);
+
+        // All three axes should wrap independently
+        assert_eq!(result.x, -45.0);
+        assert_eq!(result.y, -42.0);
+        assert_eq!(result.z, -48.0);
+    }
+
+    #[test]
+    fn test_teleport_large_offset() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+
+        // Entity far past boundary (offset = 150.0, larger than boundary itself)
+        let position = Vec3::new(200.0, 0.0, 0.0);
+        let result = boundary.calculate_teleport_position(position);
+
+        // Should maintain the full offset from opposite boundary
+        // offset = 200.0 - 50.0 = 150.0
+        // result = -50.0 + 150.0 = 100.0
+        assert_eq!(result.x, 100.0);
+        assert_eq!(result.y, 0.0);
+        assert_eq!(result.z, 0.0);
+    }
+
+    #[test]
+    fn test_teleport_with_non_centered_boundary() {
+        // Boundary centered at (100, 50, -25) with size (200, 100, 50)
+        let boundary = Boundary {
+            transform: Transform {
+                translation: Vec3::new(100.0, 50.0, -25.0),
+                scale: Vec3::new(200.0, 100.0, 50.0),
+                ..default()
+            },
+            ..default()
+        };
+        // boundary_min = (0, 0, -50), boundary_max = (200, 100, 0)
+
+        // Test right face wrap
+        let position = Vec3::new(205.0, 50.0, -25.0);
+        let result = boundary.calculate_teleport_position(position);
+        assert_eq!(result.x, 5.0); // Offset 5.0 from left boundary
+        assert_eq!(result.y, 50.0);
+        assert_eq!(result.z, -25.0);
+
+        // Test top face wrap
+        let position = Vec3::new(100.0, 103.0, -25.0);
+        let result = boundary.calculate_teleport_position(position);
+        assert_eq!(result.x, 100.0);
+        assert_eq!(result.y, 3.0); // Offset 3.0 from bottom boundary
+        assert_eq!(result.z, -25.0);
+    }
+
+    #[test]
+    fn test_teleport_exactly_at_boundary() {
+        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+
+        // Position exactly at boundary (should not wrap, as condition is >= not >)
+        let position = Vec3::new(50.0, 0.0, 0.0);
+        let result = boundary.calculate_teleport_position(position);
+
+        // At x=50.0 (boundary_max), should wrap to boundary_min
+        assert_eq!(result.x, -50.0);
+        assert_eq!(result.y, 0.0);
+        assert_eq!(result.z, 0.0);
+    }
+
+    #[test]
+    fn test_teleport_asymmetric_boundary() {
+        // Test with different dimensions on each axis
+        let boundary = create_test_boundary(Vec3::new(200.0, 50.0, 80.0));
+        // boundary_min = (-100, -25, -40), boundary_max = (100, 25, 40)
+
+        // Test X axis (larger)
+        let position = Vec3::new(110.0, 0.0, 0.0);
+        let result = boundary.calculate_teleport_position(position);
+        assert_eq!(result.x, -90.0);
+
+        // Test Y axis (smaller)
+        let position = Vec3::new(0.0, 30.0, 0.0);
+        let result = boundary.calculate_teleport_position(position);
+        assert_eq!(result.y, -20.0);
+
+        // Test Z axis (medium)
+        let position = Vec3::new(0.0, 0.0, -45.0);
+        let result = boundary.calculate_teleport_position(position);
+        assert_eq!(result.z, 35.0);
+    }
 }
