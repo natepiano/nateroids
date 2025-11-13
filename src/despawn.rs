@@ -109,7 +109,7 @@ fn calculate_death_velocity(
                 .min_by(|a, b| {
                     let dist_a = position.distance_squared(**a);
                     let dist_b = position.distance_squared(**b);
-                    dist_a.partial_cmp(&dist_b).unwrap()
+                    dist_a.total_cmp(&dist_b)
                 })
                 .copied()
                 .unwrap_or(corners[0])
@@ -137,7 +137,7 @@ fn calculate_death_velocity(
             let max_dot = corner_scores
                 .iter()
                 .map(|(_, dot)| *dot)
-                .max_by(|a, b| a.partial_cmp(b).unwrap())
+                .max_by(|a, b| a.total_cmp(b))
                 .unwrap_or(0.0);
 
             // Collect all corners within epsilon of max (handles ties)

@@ -28,6 +28,30 @@ const CORNER_COLOR_LEFT_RIGHT_YZ: Color = Color::srgb(1.0, 0.0, 0.0); // Red
 const CORNER_COLOR_TOP_BOTTOM_XZ: Color = Color::srgb(0.0, 1.0, 0.0); // Green
 const CORNER_COLOR_FRONT_BACK_XY: Color = Color::srgb(1.0, 1.0, 0.0); // Yellow
 
+/// Describes the geometric configuration of a portal relative to boundary faces
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum PortalGeometry {
+    /// Portal completely within a single boundary face
+    SingleFace,
+    /// Portal extends across multiple faces (edge or corner)
+    MultiFace(MultiFaceGeometry),
+}
+
+/// Describes portals that span multiple boundary faces
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum MultiFaceGeometry {
+    /// Portal extends across an edge between two faces
+    Edge {
+        primary:      BoundaryFace,
+        overextended: BoundaryFace,
+    },
+    /// Portal extends into a corner (3+ faces)
+    Corner {
+        primary:      BoundaryFace,
+        overextended: Vec<BoundaryFace>,
+    },
+}
+
 pub struct BoundaryPlugin;
 
 impl Plugin for BoundaryPlugin {
@@ -102,6 +126,26 @@ impl Default for Boundary {
 }
 
 impl Boundary {
+    /// Analyzes portal geometry relative to boundary faces
+    fn classify_portal_geometry(&self, portal: &Portal) -> PortalGeometry {
+        let overextended_faces = self.get_overextended_faces_for(portal);
+        let primary = BoundaryFace::from_normal(portal.normal).unwrap();
+
+        if overextended_faces.is_empty() {
+            PortalGeometry::SingleFace
+        } else if overextended_faces.len() == 1 {
+            PortalGeometry::MultiFace(MultiFaceGeometry::Edge {
+                primary,
+                overextended: overextended_faces[0],
+            })
+        } else {
+            PortalGeometry::MultiFace(MultiFaceGeometry::Corner {
+                primary,
+                overextended: overextended_faces,
+            })
+        }
+    }
+
     /// Finds the intersection point of a ray (defined by an origin and
     /// direction) with the edges of a viewable area.
     ///
@@ -258,29 +302,71 @@ impl Boundary {
         orientation: &CameraOrientation,
         is_deaderoid: bool,
     ) {
-        let overextended_faces = self.get_overextended_faces_for(portal);
+        let geometry = self.classify_portal_geometry(portal);
+        self.render_portal_by_geometry(
+            gizmos,
+            portal,
+            color,
+            resolution,
+            orientation,
+            is_deaderoid,
+            &geometry,
+        );
+    }
 
-        // Early return if no overextension - draw full circle
-        if overextended_faces.is_empty() {
-            let rotation =
-                Quat::from_rotation_arc(orientation.config.axis_profundus, portal.normal.as_vec3());
-            let isometry = Isometry3d::new(portal.position, rotation);
-            gizmos
-                .circle(isometry, portal.radius, color)
-                .resolution(resolution);
-
-            return;
+    fn render_portal_by_geometry(
+        &self,
+        gizmos: &mut Gizmos<PortalGizmo>,
+        portal: &Portal,
+        color: Color,
+        resolution: u32,
+        orientation: &CameraOrientation,
+        is_deaderoid: bool,
+        geometry: &PortalGeometry,
+    ) {
+        match geometry {
+            PortalGeometry::SingleFace => {
+                // Draw full circle
+                let rotation = Quat::from_rotation_arc(
+                    orientation.config.axis_profundus,
+                    portal.normal.as_vec3(),
+                );
+                let isometry = Isometry3d::new(portal.position, rotation);
+                gizmos
+                    .circle(isometry, portal.radius, color)
+                    .resolution(resolution);
+            },
+            PortalGeometry::MultiFace(multiface) => {
+                self.draw_portal_arcs(gizmos, portal, color, resolution, is_deaderoid, multiface);
+            },
         }
+    }
+
+    fn draw_portal_arcs(
+        &self,
+        gizmos: &mut Gizmos<PortalGizmo>,
+        portal: &Portal,
+        color: Color,
+        resolution: u32,
+        is_deaderoid: bool,
+        geometry: &MultiFaceGeometry,
+    ) {
+        // Extract primary face and overextended faces from geometry
+        let (primary_face, overextended_faces) = match geometry {
+            MultiFaceGeometry::Edge {
+                primary,
+                overextended,
+            } => (*primary, vec![*overextended]),
+            MultiFaceGeometry::Corner {
+                primary,
+                overextended,
+            } => (*primary, overextended.clone()),
+        };
 
         // Calculate boundary extents for constraint checking
         let half_size = self.transform.scale / 2.0;
         let min = self.transform.translation - half_size;
         let max = self.transform.translation + half_size;
-
-        // Safe to unwrap: portals are always created with axis-aligned normals via
-        // snap_position_to_boundary_face(), so from_normal() will always return Some().
-        // This invariant holds until boundary system is redesigned.
-        let primary_face = BoundaryFace::from_normal(portal.normal).unwrap();
 
         // Collect ALL faces that need arcs (primary + overextended)
         let mut all_faces_in_corner = vec![primary_face];
@@ -309,20 +395,19 @@ impl Boundary {
         }
 
         // Draw all arcs
-        let is_corner = face_arcs.len() >= MIN_FACES_FOR_CORNER;
         for (face, points) in face_arcs {
             // Apply face color-coding only for deaderoid portals
             let face_color = if is_deaderoid {
-                if is_corner {
-                    // Corner: use 3-color diagnostic scheme
-                    match face {
-                        BoundaryFace::Left | BoundaryFace::Right => CORNER_COLOR_LEFT_RIGHT_YZ,
-                        BoundaryFace::Top | BoundaryFace::Bottom => CORNER_COLOR_TOP_BOTTOM_XZ,
-                        BoundaryFace::Front | BoundaryFace::Back => CORNER_COLOR_FRONT_BACK_XY,
-                    }
-                } else {
-                    // Edge: ALL faces red (both primary and overextended)
-                    DEADEROID_APPROACHING_COLOR
+                match geometry {
+                    MultiFaceGeometry::Corner { .. } => {
+                        // Corner: use 3-color diagnostic scheme
+                        match face {
+                            BoundaryFace::Left | BoundaryFace::Right => CORNER_COLOR_LEFT_RIGHT_YZ,
+                            BoundaryFace::Top | BoundaryFace::Bottom => CORNER_COLOR_TOP_BOTTOM_XZ,
+                            BoundaryFace::Front | BoundaryFace::Back => CORNER_COLOR_FRONT_BACK_XY,
+                        }
+                    },
+                    MultiFaceGeometry::Edge { .. } => DEADEROID_APPROACHING_COLOR,
                 }
             } else {
                 color // Non-deaderoid portals: always use the provided color
@@ -330,30 +415,37 @@ impl Boundary {
 
             // EXPERIMENT 7: Only use draw_arc_with_center_and_normal for edge primary faces, not
             // corners
-            if face == primary_face && !is_corner {
-                // Primary face at edge uses the complex arc logic with TAU - angle inversion
-                self.draw_arc_with_center_and_normal(
-                    gizmos,
-                    portal.position,
-                    portal.radius,
-                    portal.normal.as_vec3(),
-                    face_color,
-                    resolution,
-                    points[0],
-                    points[1],
-                );
-            } else {
-                // For ALL corner faces (including primary) + edge overextended faces
-                let center = if is_corner {
-                    portal.position
-                } else {
-                    self.rotate_portal_center_to_target_face(portal.position, portal.normal, face)
-                };
-
-                // Current rendering
-                gizmos
-                    .short_arc_3d_between(center, points[0], points[1], face_color)
-                    .resolution(resolution);
+            match geometry {
+                MultiFaceGeometry::Edge { .. } if face == primary_face => {
+                    // Primary face at edge uses the complex arc logic with TAU - angle inversion
+                    self.draw_arc_with_center_and_normal(
+                        gizmos,
+                        portal.position,
+                        portal.radius,
+                        portal.normal.as_vec3(),
+                        face_color,
+                        resolution,
+                        points[0],
+                        points[1],
+                    );
+                },
+                MultiFaceGeometry::Edge { .. } => {
+                    // Edge overextended faces
+                    let center = self.rotate_portal_center_to_target_face(
+                        portal.position,
+                        portal.normal,
+                        face,
+                    );
+                    gizmos
+                        .short_arc_3d_between(center, points[0], points[1], face_color)
+                        .resolution(resolution);
+                },
+                MultiFaceGeometry::Corner { .. } => {
+                    // For ALL corner faces (including primary)
+                    gizmos
+                        .short_arc_3d_between(portal.position, points[0], points[1], face_color)
+                        .resolution(resolution);
+                },
             }
         }
     }

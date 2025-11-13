@@ -128,7 +128,9 @@ fn spawn_nateroid(mut commands: Commands, mut config: ResMut<NateroidConfig>, ti
         return;
     }
 
-    let spawn_timer = config.spawn_timer.as_mut().unwrap();
+    let Some(spawn_timer) = config.spawn_timer.as_mut() else {
+        return;
+    };
     spawn_timer.tick(time.delta());
 
     if !spawn_timer.just_finished() {

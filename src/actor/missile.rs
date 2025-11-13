@@ -145,12 +145,12 @@ fn initialize_transform(
 
 fn fire_missile(
     mut commands: Commands,
-    q_spaceship: Query<Option<&ContinuousFire>, With<Spaceship>>,
+    q_continuous_fire: Query<Option<&ContinuousFire>, With<Spaceship>>,
     mut missile_config: ResMut<MissileConfig>,
     fire_button: Single<&ActionState<SpaceshipControl>>,
     time: Res<Time>,
 ) {
-    let Ok(continuous_fire_enabled) = q_spaceship.single() else {
+    let Ok(continuous_fire_enabled) = q_continuous_fire.single() else {
         return;
     };
 
