@@ -1,4 +1,5 @@
-- use cargo nextest run for testing
 - you don't need to use sleep after send keys or launching the app - it will keep up
 - the game starts automatically
 - you can't use Send Keys to test zoom to fit yourself
+- if you see duplication - refactor to remove it
+- you never need to truncate old logs - only do it if i ask

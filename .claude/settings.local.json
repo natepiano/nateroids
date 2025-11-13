@@ -78,7 +78,8 @@
       "Bash(git merge:*)",
       "Bash(git -C /Users/natemccoy/rust/nateroids diff --cached)",
       "Bash(git -C /Users/natemccoy/rust/nateroids log --oneline -15)",
-      "mcp__brp__brp_extras_set_window_title"
+      "mcp__brp__brp_extras_set_window_title",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

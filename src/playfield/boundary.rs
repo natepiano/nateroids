@@ -611,6 +611,22 @@ impl Boundary {
     }
 
     pub fn scale(&self) -> Vec3 { self.scalar * self.cell_count.as_vec3() }
+
+    /// Returns the 8 corner points of the boundary as a fixed-size array
+    pub fn corners(&self) -> [Vec3; 8] {
+        let grid_size = self.scale();
+        let half_size = grid_size / 2.0;
+        [
+            Vec3::new(-half_size.x, -half_size.y, -half_size.z),
+            Vec3::new(half_size.x, -half_size.y, -half_size.z),
+            Vec3::new(-half_size.x, half_size.y, -half_size.z),
+            Vec3::new(half_size.x, half_size.y, -half_size.z),
+            Vec3::new(-half_size.x, -half_size.y, half_size.z),
+            Vec3::new(half_size.x, -half_size.y, half_size.z),
+            Vec3::new(-half_size.x, half_size.y, half_size.z),
+            Vec3::new(half_size.x, half_size.y, half_size.z),
+        ]
+    }
 }
 
 fn is_in_bounds(

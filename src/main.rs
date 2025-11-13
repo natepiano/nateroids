@@ -36,11 +36,30 @@ use crate::state::StatePlugin;
 fn main() {
     let mut app = App::new();
 
+    // Get effective port from BrpExtrasPlugin to include in window title if non-default
+    let brp_plugin = BrpExtrasPlugin::default();
+    let (effective_port, _) = brp_plugin.get_effective_port();
+    let window_title = if effective_port != bevy_brp_extras::DEFAULT_REMOTE_PORT {
+        format!("nateroids - {effective_port}")
+    } else {
+        "nateroids".to_string()
+    };
+
     #[cfg(not(target_arch = "wasm32"))]
-    app.add_plugins(DefaultPlugins.set(GltfPlugin {
-        use_model_forward_direction: true,
-        ..default()
-    }));
+    app.add_plugins(
+        DefaultPlugins
+            .set(GltfPlugin {
+                use_model_forward_direction: true,
+                ..default()
+            })
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: window_title.clone(),
+                    ..default()
+                }),
+                ..default()
+            }),
+    );
 
     #[cfg(target_arch = "wasm32")]
     app.add_plugins(
@@ -52,6 +71,7 @@ fn main() {
             .set(ImagePlugin::default_nearest())
             .set(WindowPlugin {
                 primary_window: Some(Window {
+                    title: window_title,
                     present_mode: PresentMode::AutoNoVsync, // Reduces input lag.
                     mode: WindowMode::BorderlessFullscreen,
                     ..default()
@@ -64,7 +84,7 @@ fn main() {
         EguiPlugin::default(),
         ActorPlugin,
         AssetLoaderPlugin,
-        BrpExtrasPlugin::default(),
+        brp_plugin,
         PlayfieldPlugin,
         CameraPlugin,
         DespawnPlugin,
