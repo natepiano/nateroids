@@ -106,47 +106,6 @@ fn calculate_target_focus(
     }
 }
 
-/// Debug helper that verifies boundary corners using `Camera.world_to_viewport`.
-///
-/// Prints viewport bounds and whether any corners fall outside the viewport.
-/// Used for debugging viewport calculations during zoom-to-fit.
-fn verify_viewport_corners_debug(
-    camera: &Camera,
-    cam_global: &GlobalTransform,
-    boundary: &Boundary,
-) {
-    if let Some(viewport_size) = camera.logical_viewport_size() {
-        let mut any_outside = false;
-        let mut min_vp_x = f32::INFINITY;
-        let mut max_vp_x = f32::NEG_INFINITY;
-        let mut min_vp_y = f32::INFINITY;
-        let mut max_vp_y = f32::NEG_INFINITY;
-
-        let boundary_corners = boundary.corners();
-
-        for corner in &boundary_corners {
-            if let Ok(viewport_pos) = camera.world_to_viewport(cam_global, *corner) {
-                min_vp_x = min_vp_x.min(viewport_pos.x);
-                max_vp_x = max_vp_x.max(viewport_pos.x);
-                min_vp_y = min_vp_y.min(viewport_pos.y);
-                max_vp_y = max_vp_y.max(viewport_pos.y);
-
-                if viewport_pos.x < 0.0
-                    || viewport_pos.x > viewport_size.x
-                    || viewport_pos.y < 0.0
-                    || viewport_pos.y > viewport_size.y
-                {
-                    any_outside = true;
-                }
-            }
-        }
-        println!(
-            "  Camera.world_to_viewport check: viewport={}x{}, bounds=[{:.1},{:.1}]x[{:.1},{:.1}], outside={}",
-            viewport_size.x, viewport_size.y, min_vp_x, max_vp_x, min_vp_y, max_vp_y, any_outside
-        );
-    }
-}
-
 /// Convergence algorithm for zoom-to-fit animation using iterative adjustments.
 ///
 /// **Convergence Rate**: Applies `convergence_rate` to both focus and radius adjustments each
@@ -215,23 +174,8 @@ fn update_zoom_to_fit(
     let (span_x, span_y) = margins.span();
 
     println!(
-        "Iteration {}: center=({:.6}, {:.6}), span=({:.3}, {:.3}), bounds x:[{:.3}, {:.3}] y:[{:.3}, {:.3}]",
-        zoom_state.iteration_count,
-        center_x,
-        center_y,
-        span_x,
-        span_y,
-        margins.min_norm_x,
-        margins.max_norm_x,
-        margins.min_norm_y,
-        margins.max_norm_y
-    );
-    println!(
-        "  Screen edges: h_fov=±{:.3}, v_fov=±{:.3}, aspect={:.3}, zoom_mult={:.3}",
-        half_tan_hfov,
-        half_tan_vfov,
-        aspect_ratio,
-        zoom_config.zoom_margin_multiplier()
+        "Iteration {}: center=({:.3},{:.3}), span=({:.3},{:.3})",
+        zoom_state.iteration_count, center_x, center_y, span_x, span_y
     );
 
     let h_min = margins.left_margin.min(margins.right_margin);
@@ -243,51 +187,28 @@ fn update_zoom_to_fit(
     };
 
     println!(
-        "  Margins: left={:.3}, right={:.3}, top={:.3}, bottom={:.3}, target_x={:.3}, target_y={:.3}, min={:.3}",
+        "  Margins: L={:.3} R={:.3} T={:.3} B={:.3}, target=({:.3},{:.3})",
         margins.left_margin,
         margins.right_margin,
         margins.top_margin,
         margins.bottom_margin,
         margins.target_margin_x,
-        margins.target_margin_y,
-        margins.min_margin()
+        margins.target_margin_y
     );
     println!(
-        "  Constraining: dim={}, current={:.3}, target={:.3}, ratio={:.2}",
+        "  Constraining: {}, margin={:.3}/{:.3} (ratio={:.2})",
         constraining_dim,
         current_margin,
         target_margin,
         current_margin / target_margin
     );
 
-    verify_viewport_corners_debug(camera, cam_global, &boundary);
-
-    println!(
-        "  Balanced: h_diff={:.3}, v_diff={:.3}, is_balanced={}, is_fitted={}",
-        (margins.left_margin - margins.right_margin).abs(),
-        (margins.top_margin - margins.bottom_margin).abs(),
-        margins.is_balanced(zoom_config.margin_tolerance),
-        margins.is_fitted(zoom_config.margin_tolerance)
-    );
-
     // Use target_radius instead of actual radius to avoid one-frame delay
     // Since we set smoothness to 0, target should equal actual, but Transform updates next frame
     let current_radius = pan_orbit.target_radius;
 
-    println!(
-        "  START OF ITERATION: pan_orbit.target_radius={:.6}, pan_orbit.target_focus=({:.3},{:.3},{:.3})",
-        pan_orbit.target_radius,
-        pan_orbit.target_focus.x,
-        pan_orbit.target_focus.y,
-        pan_orbit.target_focus.z
-    );
-
     let target_focus =
         calculate_target_focus(pan_orbit.target_focus, current_radius, &margins, cam_global);
-
-    // For debug output
-    let focus_to_boundary_distance = pan_orbit.target_focus.length();
-    let far_from_boundary_threshold = current_radius * 0.5;
 
     // Calculate target radius using span ratios
     // Physics: At distance R, object has span S. Closer = larger span.
@@ -307,40 +228,13 @@ fn update_zoom_to_fit(
     // Calculate target radius from current radius and span ratio
     let target_radius = current_radius * ratio;
 
-    println!(
-        "  SPAN-BASED CALC: current_span=({:.3},{:.3}), target_span=({:.3},{:.3}), ratio_x={:.3}, ratio_y={:.3}, ratio={:.3}",
-        span_x, span_y, target_span_x, target_span_y, ratio_x, ratio_y, ratio
-    );
-    println!(
-        "  RADIUS CALC: current={:.3}, target={:.3}, delta={:.3}",
-        current_radius,
-        target_radius,
-        target_radius - current_radius
-    );
-
     // Calculate error magnitudes
     let focus_delta = target_focus - pan_orbit.target_focus;
     let radius_delta = target_radius - current_radius;
-    let focus_error = focus_delta.length();
-
-    let focus_phase = if focus_to_boundary_distance > far_from_boundary_threshold {
-        "PHASE1"
-    } else {
-        "PHASE2"
-    };
 
     println!(
-        "  FOCUS {}: dist_to_boundary={:.1}, threshold={:.1}, target=({:.3},{:.3},{:.3}), delta=({:.3},{:.3},{:.3}), error={:.3}",
-        focus_phase,
-        focus_to_boundary_distance,
-        far_from_boundary_threshold,
-        target_focus.x,
-        target_focus.y,
-        target_focus.z,
-        focus_delta.x,
-        focus_delta.y,
-        focus_delta.z,
-        focus_error
+        "  Focus: adj=({:.3},{:.3},{:.3})",
+        focus_delta.x, focus_delta.y, focus_delta.z
     );
 
     // Apply convergence rate to both focus and radius
@@ -354,32 +248,21 @@ fn update_zoom_to_fit(
     pan_orbit.target_radius = new_target_radius;
     pan_orbit.force_update = true;
 
-    println!(
-        "  APPLYING: radius_delta={:.6}, radius_adjustment={:.6}, current={:.6}, new_target={:.6}",
-        radius_delta, radius_adjustment, current_radius, new_target_radius
-    );
-
     let balanced = margins.is_balanced(zoom_config.margin_tolerance);
     let fitted = margins.is_fitted(zoom_config.margin_tolerance);
 
     println!(
-        "  Correcting: rate={:.1}%, focus_adj=({:.3},{:.3},{:.3}), radius {:.1}->{:.1}, balanced={}, fitted={}",
-        rate * 100.0,
-        focus_adjustment.x,
-        focus_adjustment.y,
-        focus_adjustment.z,
+        "  Radius: {:.1}→{:.1} (Δ={:.3}, rate={:.0}%)",
         current_radius,
-        pan_orbit.target_radius,
-        balanced,
-        fitted
+        new_target_radius,
+        radius_delta,
+        rate * 100.0
     );
+    println!("  Status: balanced={}, fitted={}", balanced, fitted);
 
     // Check completion: balanced AND fitted
     if balanced && fitted {
-        println!(
-            "  Zoom-to-fit complete! balanced={}, fitted={}",
-            balanced, fitted
-        );
+        println!("  → CONVERGED");
         commands.entity(entity).remove::<ZoomToFitActive>();
         return;
     }
@@ -388,10 +271,7 @@ fn update_zoom_to_fit(
 
     // Stop if we hit max iterations
     if zoom_state.iteration_count >= zoom_config.max_iterations {
-        println!(
-            "Zoom-to-fit stopped at max iterations! balanced={}, fitted={}",
-            balanced, fitted
-        );
+        println!("  → MAX ITERATIONS REACHED (not converged)");
         commands.entity(entity).remove::<ZoomToFitActive>();
     }
 }

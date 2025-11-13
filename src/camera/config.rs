@@ -83,8 +83,8 @@ impl Default for ZoomConfig {
         Self {
             max_iterations:   200,
             margin:           0.1, //percent of screen
-            margin_tolerance: 0.0001,
-            convergence_rate: 0.18,
+            margin_tolerance: 0.00001,
+            convergence_rate: 0.30,
         }
     }
 }
@@ -92,5 +92,5 @@ impl Default for ZoomConfig {
 impl ZoomConfig {
     /// Returns the zoom margin multiplier (1.0 + margin)
     /// For example, a margin of 0.08 returns 1.08 (8% margin)
-    pub const fn zoom_margin_multiplier(&self) -> f32 { 1.0 + self.margin }
+    pub const fn zoom_margin_multiplier(&self) -> f32 { 1.0 / (1.0 - self.margin) }
 }

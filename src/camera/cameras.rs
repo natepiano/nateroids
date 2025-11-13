@@ -177,14 +177,6 @@ impl ScreenSpaceBoundary {
         })
     }
 
-    /// Returns the minimum margin across all sides
-    pub fn min_margin(&self) -> f32 {
-        self.left_margin
-            .min(self.right_margin)
-            .min(self.top_margin)
-            .min(self.bottom_margin)
-    }
-
     /// Returns true if the margins are balanced (opposite sides are equal)
     pub fn is_balanced(&self, tolerance: f32) -> bool {
         let horizontal_balanced = (self.left_margin - self.right_margin).abs() < tolerance;
@@ -208,14 +200,15 @@ impl ScreenSpaceBoundary {
         let h_min = self.left_margin.min(self.right_margin);
         let v_min = self.top_margin.min(self.bottom_margin);
 
-        // Check if horizontal dimension is at target
-        let h_at_target = (h_min - self.target_margin_x).abs() < at_target_tolerance;
+        // The constraining dimension is the one with smaller margin
+        let (constraining_margin, target_margin) = if h_min < v_min {
+            (h_min, self.target_margin_x)
+        } else {
+            (v_min, self.target_margin_y)
+        };
 
-        // Check if vertical dimension is at target
-        let v_at_target = (v_min - self.target_margin_y).abs() < at_target_tolerance;
-
-        // At least one dimension should be at target (the constraining dimension)
-        h_at_target || v_at_target
+        // Check if constraining dimension is at target
+        (constraining_margin - target_margin).abs() < at_target_tolerance
     }
 
     /// Returns the center of the boundary in normalized screen space
