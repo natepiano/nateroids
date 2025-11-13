@@ -77,7 +77,12 @@
       "mcp__brp__brp_extras_set_window_title",
       "Bash(cat:*)",
       "Bash(git remote:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(git rev-list:*)",
+      "Bash(test:*)",
+      "Bash(git -C /Users/natemccoy/rust/portal-fix rev-parse:*)",
+      "Bash(git -C /Users/natemccoy/rust/portal-fix branch:*)",
+      "Bash(git -C /Users/natemccoy/rust/portal-fix status --porcelain)"
     ],
     "deny": [],
     "ask": []
