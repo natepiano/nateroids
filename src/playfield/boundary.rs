@@ -27,6 +27,22 @@ const CORNER_COLOR_LEFT_RIGHT_YZ: Color = Color::srgb(1.0, 0.0, 0.0); // Red
 const CORNER_COLOR_TOP_BOTTOM_XZ: Color = Color::srgb(0.0, 1.0, 0.0); // Green
 const CORNER_COLOR_FRONT_BACK_XY: Color = Color::srgb(1.0, 1.0, 0.0); // Yellow
 
+pub struct BoundaryPlugin;
+
+impl Plugin for BoundaryPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<Boundary>()
+            .init_gizmo_group::<GridGizmo>()
+            .init_gizmo_group::<BoundaryGizmo>()
+            .add_plugins(
+                ResourceInspectorPlugin::<Boundary>::default()
+                    .run_if(toggle_active(false, GameAction::BoundaryInspector)),
+            )
+            .add_systems(Update, update_gizmos_config)
+            .add_systems(Update, draw_boundary.run_if(in_state(PlayingGame)));
+    }
+}
+
 /// Describes the geometric configuration of a portal relative to boundary faces
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum PortalGeometry {
@@ -51,22 +67,6 @@ enum MultiFaceGeometry {
     },
 }
 
-pub struct BoundaryPlugin;
-
-impl Plugin for BoundaryPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<Boundary>()
-            .init_gizmo_group::<GridGizmo>()
-            .init_gizmo_group::<BoundaryGizmo>()
-            .add_plugins(
-                ResourceInspectorPlugin::<Boundary>::default()
-                    .run_if(toggle_active(false, GameAction::BoundaryInspector)),
-            )
-            .add_systems(Update, update_gizmos_config)
-            .add_systems(Update, draw_boundary.run_if(in_state(PlayingGame)));
-    }
-}
-
 #[derive(Default, Reflect, GizmoConfigGroup)]
 struct GridGizmo {}
 
@@ -75,51 +75,43 @@ struct BoundaryGizmo {}
 
 fn update_gizmos_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Res<Boundary>) {
     let (config, _) = config_store.config_mut::<GridGizmo>();
-    config.line.width = boundary.line_width;
+    config.line.width = boundary.grid_line_width;
     config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 
     let (outer_config, _) = config_store.config_mut::<BoundaryGizmo>();
-    outer_config.line.width = boundary.outer_line_width;
+    outer_config.line.width = boundary.boundary_line_width;
     outer_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
-// circle_direction_change_factor:
-// if we're within a certain radians of the wall we continue to draw on it but
-// after that we consider that we're looking to be at a new wall boundary point
-// adjust this if it makes sense to
-//
-// circle_smoothing_factor:
-// keep it small so that if you change directions the circle doesn't fly
-// away fast - looks terrible
-//
+/// defines
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 pub struct Boundary {
-    pub cell_count:       UVec3,
-    pub grid_color:       Color,
-    pub outer_color:      Color,
+    pub cell_count:          UVec3,
+    pub grid_color:          Color,
+    pub outer_color:         Color,
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
-    pub line_width:       f32,
+    pub grid_line_width:     f32,
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
-    pub outer_line_width: f32,
+    pub boundary_line_width: f32,
     #[inspector(min = 50., max = 300., display = NumberDisplay::Slider)]
-    pub scalar:           f32,
-    pub transform:        Transform,
+    pub boundary_scalar:     f32,
+    pub transform:           Transform,
 }
 
 impl Default for Boundary {
     fn default() -> Self {
         let cell_count = UVec3::new(3, 2, 1);
-        let scalar = 110.;
+        let boundary_scalar = 110.;
 
         Self {
             cell_count,
             grid_color: Color::from(tailwind::BLUE_500).with_alpha(0.25),
             outer_color: Color::from(tailwind::BLUE_500).with_alpha(1.0),
-            line_width: 1.5,
-            outer_line_width: 6.,
-            scalar,
-            transform: Transform::from_scale(scalar * cell_count.as_vec3()),
+            grid_line_width: 1.5,
+            boundary_line_width: 6.,
+            boundary_scalar,
+            transform: Transform::from_scale(boundary_scalar * cell_count.as_vec3()),
         }
     }
 }
@@ -288,7 +280,7 @@ impl Boundary {
         // Calculate constrained intersections for each face
         for &face in &all_faces_in_corner {
             let face_points = face.get_face_points(&min, &max);
-            let raw_intersections = intersect_circle_with_rectangle(portal, &face_points);
+            let raw_intersections = intersect_portal_with_rectangle(portal, &face_points);
 
             // Apply constraints: filter out points that extend beyond face boundaries
             let constrained_points = constrain_intersection_points(
@@ -351,12 +343,19 @@ impl Boundary {
                     .resolution(resolution);
             },
             PortalGeometry::MultiFace(multiface) => {
-                self.draw_portal_arcs(gizmos, portal, color, resolution, is_deaderoid, multiface);
+                self.draw_multiface_portal(
+                    gizmos,
+                    portal,
+                    color,
+                    resolution,
+                    is_deaderoid,
+                    multiface,
+                );
             },
         }
     }
 
-    fn draw_portal_arcs(
+    fn draw_multiface_portal(
         &self,
         gizmos: &mut Gizmos<PortalGizmo>,
         portal: &Portal,
@@ -391,7 +390,7 @@ impl Boundary {
         // Calculate constrained intersections for each face
         for &face in &all_faces_in_corner {
             let face_points = face.get_face_points(&min, &max);
-            let raw_intersections = intersect_circle_with_rectangle(portal, &face_points);
+            let raw_intersections = intersect_portal_with_rectangle(portal, &face_points);
 
             // Apply constraints: filter out points that extend beyond face boundaries
             // Pass ALL faces so each face can check against all others
@@ -427,8 +426,7 @@ impl Boundary {
                 color // Non-deaderoid portals: always use the provided color
             };
 
-            // EXPERIMENT 7: Only use draw_arc_with_center_and_normal for edge primary faces, not
-            // corners
+            // Only use draw_arc_with_center_and_normal for edge primary faces, notorners
             match geometry {
                 MultiFaceGeometry::Edge { .. } if face == primary_face => {
                     // Primary face at edge uses the complex arc logic with TAU - angle inversion
@@ -715,7 +713,7 @@ impl Boundary {
         boundary_scale.x.max(boundary_scale.y).max(boundary_scale.z)
     }
 
-    pub fn scale(&self) -> Vec3 { self.scalar * self.cell_count.as_vec3() }
+    pub fn scale(&self) -> Vec3 { self.boundary_scalar * self.cell_count.as_vec3() }
 
     /// Returns the 8 corner points of the boundary as a fixed-size array
     pub fn corners(&self) -> [Vec3; 8] {
@@ -741,12 +739,12 @@ fn is_in_bounds(
     boundary_min: Vec3,
     boundary_max: Vec3,
 ) -> bool {
-    if start == origin.x {
+    if (start - origin.x).abs() < BOUNDARY_SNAP_EPSILON {
         point.y >= boundary_min.y
             && point.y <= boundary_max.y
             && point.z >= boundary_min.z
             && point.z <= boundary_max.z
-    } else if start == origin.y {
+    } else if (start - origin.y).abs() < BOUNDARY_SNAP_EPSILON {
         point.x >= boundary_min.x
             && point.x <= boundary_max.x
             && point.z >= boundary_min.z
@@ -759,6 +757,8 @@ fn is_in_bounds(
     }
 }
 
+/// draw the grid and then slightly outside the grid, draw the boundary around the whole grid
+/// transform
 fn draw_boundary(
     mut boundary: ResMut<Boundary>,
     mut grid_gizmo: Gizmos<GridGizmo>,
@@ -775,7 +775,7 @@ fn draw_boundary(
         .grid_3d(
             Isometry3d::new(boundary.transform.translation, Quat::IDENTITY),
             boundary.cell_count,
-            Vec3::splat(boundary.scalar),
+            Vec3::splat(boundary.boundary_scalar),
             boundary.grid_color,
         )
         .outer_edges();
@@ -799,7 +799,7 @@ fn draw_boundary(
 
     // Gizmo lines are centered on edges
     // Empirically tuned multiplier to account for gizmo rendering
-    let total_line_width = boundary.line_width + boundary.outer_line_width;
+    let total_line_width = boundary.grid_line_width + boundary.boundary_line_width;
     let outer_scale =
         boundary.transform.scale + Vec3::splat(total_line_width * world_units_per_pixel * 0.1);
 
@@ -810,7 +810,7 @@ fn draw_boundary(
     );
 }
 
-pub fn intersect_circle_with_rectangle(portal: &Portal, rectangle_points: &[Vec3; 4]) -> Vec<Vec3> {
+pub fn intersect_portal_with_rectangle(portal: &Portal, rectangle_points: &[Vec3; 4]) -> Vec<Vec3> {
     let mut intersections = Vec::new();
 
     for i in 0..4 {
@@ -858,13 +858,13 @@ fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -
 /// Returns filtered vector containing only points within valid region. May be empty
 /// if all points were outside boundaries (e.g., small portal near corner).
 fn constrain_intersection_points(
-    points: Vec<Vec3>,
+    raw_intersections: Vec<Vec3>,
     current_face: BoundaryFace,
     all_faces_in_corner: &[BoundaryFace],
     min: &Vec3,
     max: &Vec3,
 ) -> Vec<Vec3> {
-    points
+    raw_intersections
         .into_iter()
         .filter(|point| {
             point_within_boundary_for_face(*point, current_face, all_faces_in_corner, min, max)
@@ -954,6 +954,7 @@ fn faces_share_axis(face1: BoundaryFace, face2: BoundaryFace) -> bool {
 }
 
 #[cfg(test)]
+#[allow(clippy::float_cmp)]
 mod tests {
     use super::*;
 
