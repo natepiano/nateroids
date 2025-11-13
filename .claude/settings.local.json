@@ -82,7 +82,8 @@
       "Bash(test:*)",
       "Bash(git -C /Users/natemccoy/rust/portal-fix rev-parse:*)",
       "Bash(git -C /Users/natemccoy/rust/portal-fix branch:*)",
-      "Bash(git -C /Users/natemccoy/rust/portal-fix status --porcelain)"
+      "Bash(git -C /Users/natemccoy/rust/portal-fix status --porcelain)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": []
