@@ -1,12 +1,19 @@
+use std::f32::consts::PI;
 use std::ops::Range;
 
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use rand::Rng;
 use rand::prelude::ThreadRng;
 
 use crate::camera::RenderLayer;
+use crate::game_input::GameAction;
+use crate::game_input::toggle_active;
 use crate::playfield::Boundary;
+use crate::schedule::InGameSet;
 use crate::state::GameState;
 use crate::traits::TransformExt;
 
@@ -14,7 +21,12 @@ pub struct StarsPlugin;
 
 impl Plugin for StarsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (spawn_stars, setup_star_rendering).chain())
+        app.insert_resource(StarRotationState { current_angle: 0.0 })
+            .add_plugins(
+                ResourceInspectorPlugin::<StarConfig>::default()
+                    .run_if(toggle_active(false, GameAction::StarConfigInspector)),
+            )
+            .add_systems(Startup, (spawn_stars, setup_star_rendering).chain())
             .add_systems(
                 OnEnter(GameState::Splash),
                 (despawn_stars, spawn_stars, setup_star_rendering).chain(),
@@ -22,12 +34,13 @@ impl Plugin for StarsPlugin {
             .add_systems(
                 OnEnter(GameState::GameOver),
                 (despawn_stars, spawn_stars, setup_star_rendering).chain(),
-            );
+            )
+            .add_systems(Update, rotate_stars.in_set(InGameSet::EntityUpdates));
     }
 }
 
-#[derive(Debug, Clone, Reflect, Resource)]
-#[reflect(Resource)]
+#[derive(Debug, Clone, Reflect, Resource, InspectorOptions)]
+#[reflect(Resource, InspectorOptions)]
 pub struct StarConfig {
     pub batch_size_replace:            usize,
     pub duration_replace_timer:        f32,
@@ -43,6 +56,9 @@ pub struct StarConfig {
     pub twinkle_duration:              Range<f32>,
     pub twinkle_intensity:             Range<f32>,
     pub twinkle_choose_multiple_count: usize,
+    #[inspector(min = 0.01667, max = 30.0, display = NumberDisplay::Slider)]
+    pub rotation_cycle_minutes:        f32,
+    pub rotation_axis:                 Vec3,
 }
 
 impl Default for StarConfig {
@@ -62,6 +78,8 @@ impl Default for StarConfig {
             twinkle_duration:              0.5..2.,
             twinkle_intensity:             10.0..20.,
             twinkle_choose_multiple_count: 2, // stars to look at each update
+            rotation_cycle_minutes:        6.5,
+            rotation_axis:                 Vec3::Y,
         }
     }
 }
@@ -71,6 +89,11 @@ pub struct Star {
     position:     Vec3,
     radius:       f32,
     pub emissive: Vec4,
+}
+
+#[derive(Resource)]
+struct StarRotationState {
+    current_angle: f32,
 }
 
 fn despawn_stars(mut commands: Commands, stars: Query<Entity, With<Star>>) {
@@ -184,5 +207,30 @@ fn setup_star_rendering(
                 Quat::IDENTITY,
                 Vec3::splat(star.radius),
             ));
+    }
+}
+
+fn rotate_stars(
+    time: Res<Time>,
+    config: Res<StarConfig>,
+    mut rotation_state: ResMut<StarRotationState>,
+    mut stars: Query<(&Star, &mut Transform)>,
+) {
+    // Guard against invalid rotation cycle values (min: 1 second = 0.01667 minutes)
+    if config.rotation_cycle_minutes < 0.01667 {
+        return;
+    }
+
+    // Calculate rotation speed (radians per second)
+    let rotation_speed = (2.0 * PI) / (config.rotation_cycle_minutes * 60.0);
+
+    // Update current angle (negative for clockwise rotation when viewed from above)
+    rotation_state.current_angle -= rotation_speed * time.delta_secs();
+
+    // Apply rotation to each star around the configured axis
+    let rotation = Quat::from_axis_angle(config.rotation_axis, rotation_state.current_angle);
+
+    for (star, mut transform) in &mut stars {
+        transform.translation = rotation * star.position;
     }
 }

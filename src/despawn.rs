@@ -235,7 +235,7 @@ fn despawn_dead_entities(
                             }
                         }
 
-                        info!(
+                        debug!(
                             "💀 {entity_name}: Applied initial materials (index 0, alpha {:.2}) to {material_index} descendants",
                             config.initial_alpha
                         );

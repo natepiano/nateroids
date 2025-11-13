@@ -34,6 +34,7 @@ pub enum GameAction {
     SpaceshipInspector,
     SpaceshipControlInspector,
     Stars,
+    StarConfigInspector,
     SpawnTestaroid,
     ZoomConfigInspector,
     ZoomToFit,
@@ -106,6 +107,7 @@ impl GameAction {
             },
             Self::SpawnTestaroid => insert_shift_input(input_map, action, KeyCode::KeyT),
             Self::Stars => input_map.with(action, KeyCode::F3),
+            Self::StarConfigInspector => insert_shift_input(input_map, action, KeyCode::KeyS),
             Self::ZoomConfigInspector => insert_shift_input(input_map, action, KeyCode::KeyZ),
             Self::ZoomToFit => input_map.with(action, KeyCode::KeyZ),
         })

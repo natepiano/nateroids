@@ -193,7 +193,7 @@ impl Default for SpaceshipConfig {
                     [GameLayer::Asteroid, GameLayer::Boundary],
                 ),
                 gravity_scale:            0.,
-                health:                   50000.,
+                health:                   5000.,
                 linear_damping:           Some(0.05),
                 locked_axes:              LockedAxes::new()
                     .lock_rotation_x()
