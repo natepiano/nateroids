@@ -457,9 +457,10 @@ pub fn spawn_panorbit_camera(
     // we're going to attach it to the primary as a child so it always has the same
     // view as the primary camera but can show the stars with bloom while the
     // primary shows everything else
-    let stars_camera_entity = q_stars_camera
-        .single_mut()
-        .expect("why in god's name is there no star's camera?");
+    let Ok(stars_camera_entity) = q_stars_camera.single_mut() else {
+        error!("Stars camera not found during setup");
+        return;
+    };
 
     // Use default FOV and aspect ratio values since the camera doesn't exist yet
     // values determined from home_camera

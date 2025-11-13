@@ -20,7 +20,6 @@ const BOUNDARY_SNAP_EPSILON: f32 = 0.01;
 const BOUNDARY_OVEREXTENSION_EPSILON: f32 = BOUNDARY_SNAP_EPSILON * 2.0;
 
 const MIN_POINTS_FOR_ARC: usize = 2;
-const MIN_FACES_FOR_CORNER: usize = 3;
 
 // Deaderoid portal colors
 const DEADEROID_APPROACHING_COLOR: Color = Color::srgb(1.0, 0.0, 0.0); // Red
@@ -129,7 +128,7 @@ impl Boundary {
     /// Analyzes portal geometry relative to boundary faces
     fn classify_portal_geometry(&self, portal: &Portal) -> PortalGeometry {
         let overextended_faces = self.get_overextended_faces_for(portal);
-        let primary = BoundaryFace::from_normal(portal.normal).unwrap();
+        let primary = portal.face;
 
         if overextended_faces.is_empty() {
             PortalGeometry::SingleFace
@@ -251,23 +250,38 @@ impl Boundary {
 
     /// Calculates how many faces a portal spans at a given position
     pub fn calculate_portal_face_count(&self, portal: &Portal) -> usize {
-        let overextended_faces = self.get_overextended_faces_for(portal);
+        let geometry = self.classify_portal_geometry(portal);
 
-        // Early return if no overextension - single face (full circle)
-        if overextended_faces.is_empty() {
-            return 1;
+        match geometry {
+            PortalGeometry::SingleFace => 1,
+            PortalGeometry::MultiFace(multiface) => {
+                self.count_faces_with_valid_arcs(portal, &multiface)
+            },
         }
+    }
 
+    /// Counts how many faces have valid arc intersections for a multi-face portal
+    fn count_faces_with_valid_arcs(&self, portal: &Portal, multiface: &MultiFaceGeometry) -> usize {
         // Calculate boundary extents for constraint checking
         let half_size = self.transform.scale / 2.0;
         let min = self.transform.translation - half_size;
         let max = self.transform.translation + half_size;
 
-        let primary_face = BoundaryFace::from_normal(portal.normal).unwrap();
-
-        // Collect ALL faces that need arcs (primary + overextended)
-        let mut all_faces_in_corner = vec![primary_face];
-        all_faces_in_corner.extend(overextended_faces.iter());
+        // Collect all faces from the geometry
+        let all_faces_in_corner = match multiface {
+            MultiFaceGeometry::Edge {
+                primary,
+                overextended,
+            } => vec![*primary, *overextended],
+            MultiFaceGeometry::Corner {
+                primary,
+                overextended,
+            } => {
+                let mut faces = vec![*primary];
+                faces.extend(overextended);
+                faces
+            },
+        };
 
         let mut face_count = 0;
 
@@ -329,7 +343,7 @@ impl Boundary {
                 // Draw full circle
                 let rotation = Quat::from_rotation_arc(
                     orientation.config.axis_profundus,
-                    portal.normal.as_vec3(),
+                    portal.normal().as_vec3(),
                 );
                 let isometry = Isometry3d::new(portal.position, rotation);
                 gizmos
@@ -422,7 +436,7 @@ impl Boundary {
                         gizmos,
                         portal.position,
                         portal.radius,
-                        portal.normal.as_vec3(),
+                        portal.normal().as_vec3(),
                         face_color,
                         resolution,
                         points[0],
@@ -433,7 +447,7 @@ impl Boundary {
                     // Edge overextended faces
                     let center = self.rotate_portal_center_to_target_face(
                         portal.position,
-                        portal.normal,
+                        portal.normal(),
                         face,
                     );
                     gizmos
@@ -612,17 +626,7 @@ impl Boundary {
         }
 
         // Remove the face the portal is on from the overextended faces
-        let face_to_remove = match portal.normal {
-            Dir3::NEG_X => BoundaryFace::Left,
-            Dir3::X => BoundaryFace::Right,
-            Dir3::NEG_Y => BoundaryFace::Bottom,
-            Dir3::Y => BoundaryFace::Top,
-            Dir3::NEG_Z => BoundaryFace::Back,
-            Dir3::Z => BoundaryFace::Front,
-            _ => return overextended_faces, // Handle any other case without removing a face
-        };
-
-        overextended_faces.retain(|&face| face != face_to_remove);
+        overextended_faces.retain(|&face| face != portal.face);
         overextended_faces
     }
     /// Returns the normal of the closest boundary face to a position.
@@ -778,10 +782,10 @@ fn draw_boundary(
 
     // Calculate world-space offset based on camera projection
     let Ok((camera, projection, camera_transform)) = camera_query.single() else {
-        panic!("No camera found");
+        return; // No camera yet, skip gizmo rendering this frame
     };
     let Projection::Perspective(perspective) = projection else {
-        panic!("Expected perspective camera");
+        return; // Not perspective camera, skip
     };
 
     let viewport_size = camera

@@ -128,9 +128,13 @@ pub struct Portal {
     pub face:                       BoundaryFace,
     pub face_count:                 usize,
     fade_out_started:               Option<f32>,
-    pub normal:                     Dir3,
     pub position:                   Vec3,
     pub radius:                     f32,
+}
+
+impl Portal {
+    /// Returns the normal direction for this portal's face
+    pub fn normal(&self) -> Dir3 { self.face.to_dir3() }
 }
 
 impl Default for Portal {
@@ -144,7 +148,6 @@ impl Default for Portal {
             face:                       BoundaryFace::Right,
             face_count:                 1,
             fade_out_started:           None,
-            normal:                     Dir3::X,
             position:                   Vec3::ZERO,
             radius:                     0.,
         }
@@ -224,18 +227,18 @@ fn is_physics_burst(position: Vec3, boundary: &Boundary) -> bool {
     max_distance_from_center > boundary_diagonal * 2.0
 }
 
-/// Snaps position to boundary and calculates the correct normal and face for the snapped position.
-/// Recalculates normal because snapping can move position to a different face (especially at
+/// Snaps position to boundary and calculates the correct face for the snapped position.
+/// Recalculates face because snapping can move position to a different face (especially at
 /// corners).
-fn snap_and_get_normal(
+fn snap_and_get_face(
     position: Vec3,
     initial_normal: Dir3,
     boundary: &Boundary,
-) -> (Vec3, Dir3, Option<BoundaryFace>) {
+) -> (Vec3, Option<BoundaryFace>) {
     let snapped_position = boundary.snap_position_to_boundary_face(position, initial_normal);
     let final_normal = boundary.get_normal_for_position(snapped_position);
     let face = BoundaryFace::from_normal(final_normal);
-    (snapped_position, final_normal, face)
+    (snapped_position, face)
 }
 
 fn handle_emerging_visual(
@@ -258,14 +261,13 @@ fn handle_emerging_visual(
                     return;
                 }
 
-                // Snap to boundary face and recalculate normal to prevent corner glitches
-                let (snapped_position, final_normal, final_face) =
-                    snap_and_get_normal(teleported_position, normal, boundary);
+                // Snap to boundary face and recalculate face to prevent corner glitches
+                let (snapped_position, final_face) =
+                    snap_and_get_face(teleported_position, normal, boundary);
 
                 visual.emerging = Some(Portal {
                     actor_distance_to_wall: 0.0,
                     face: final_face.unwrap_or(face),
-                    normal: final_normal,
                     position: snapped_position,
                     fade_out_started: Some(time.elapsed_secs()),
                     ..portal
@@ -297,9 +299,10 @@ fn handle_approaching_visual(
             let normal = boundary.get_normal_for_position(collision_point);
 
             // Create temporary portal at collision point to calculate face count BEFORE smoothing
+            let face = BoundaryFace::from_normal(normal).unwrap_or(BoundaryFace::Right);
             let temp_portal = Portal {
                 position: collision_point,
-                normal,
+                face,
                 radius: portal.radius,
                 ..portal.clone()
             };
@@ -319,16 +322,14 @@ fn handle_approaching_visual(
                 smooth_circle_position(visual, collision_point, normal, portal_config)
             };
 
-            // Snap to boundary face and recalculate normal to prevent corner glitches
-            let (snapped_position, final_normal, face) =
-                snap_and_get_normal(smoothed_position, normal, boundary);
+            // Snap to boundary face and recalculate face to prevent corner glitches
+            let (snapped_position, face) = snap_and_get_face(smoothed_position, normal, boundary);
 
             if let Some(face) = face {
                 visual.approaching = Some(Portal {
                     actor_distance_to_wall,
                     face,
                     face_count: current_face_count,
-                    normal: final_normal,
                     position: snapped_position,
                     ..portal
                 });
@@ -373,7 +374,7 @@ fn smooth_circle_position(
         // circle_direction_change_factor = threshold for considering normals "similar"
         // approaching carries the last normal, current carries this frame's normal
         if approaching
-            .normal
+            .normal()
             .dot(current_boundary_wall_normal.as_vec3())
             > portal_config.direction_change_factor
         {

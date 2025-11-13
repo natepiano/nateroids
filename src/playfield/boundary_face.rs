@@ -25,6 +25,18 @@ impl BoundaryFace {
         }
     }
 
+    /// Infallible conversion to `Dir3` - all boundary faces are axis-aligned
+    pub fn to_dir3(&self) -> Dir3 {
+        match self {
+            BoundaryFace::Right => Dir3::X,
+            BoundaryFace::Left => Dir3::NEG_X,
+            BoundaryFace::Top => Dir3::Y,
+            BoundaryFace::Bottom => Dir3::NEG_Y,
+            BoundaryFace::Front => Dir3::Z,
+            BoundaryFace::Back => Dir3::NEG_Z,
+        }
+    }
+
     pub fn from_normal(normal: Dir3) -> Option<Self> {
         match normal {
             Dir3::X => Some(BoundaryFace::Right),

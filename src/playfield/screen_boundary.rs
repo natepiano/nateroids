@@ -227,6 +227,11 @@ fn draw_screen_aligned_boundary_box(
 
             // Project to screen space
             if let Ok(screen_pos) = cam.world_to_viewport(cam_global, world_pos) {
+                // Extract viewport size - must exist if world_to_viewport succeeded
+                let Some(viewport_size) = cam.logical_viewport_size() else {
+                    continue;
+                };
+
                 // Find or update existing label for this edge
                 let mut found = false;
                 for (_, label, mut label_text, mut node, mut text_color) in &mut label_query {
@@ -241,16 +246,14 @@ fn draw_screen_aligned_boundary_box(
                                 node.bottom = Val::Auto;
                             },
                             Edge::Right => {
-                                node.right =
-                                    Val::Px(cam.logical_viewport_size().unwrap().x - screen_pos.x);
+                                node.right = Val::Px(viewport_size.x - screen_pos.x);
                                 node.top = Val::Px(screen_pos.y);
                                 node.left = Val::Auto;
                                 node.bottom = Val::Auto;
                             },
                             Edge::Bottom => {
                                 node.left = Val::Px(screen_pos.x);
-                                node.bottom =
-                                    Val::Px(cam.logical_viewport_size().unwrap().y - screen_pos.y);
+                                node.bottom = Val::Px(viewport_size.y - screen_pos.y);
                                 node.right = Val::Auto;
                                 node.top = Val::Auto;
                             },
@@ -271,14 +274,14 @@ fn draw_screen_aligned_boundary_box(
                         },
                         Edge::Right => Node {
                             position_type: PositionType::Absolute,
-                            right: Val::Px(cam.logical_viewport_size().unwrap().x - screen_pos.x),
+                            right: Val::Px(viewport_size.x - screen_pos.x),
                             top: Val::Px(screen_pos.y),
                             ..default()
                         },
                         Edge::Bottom => Node {
                             position_type: PositionType::Absolute,
                             left: Val::Px(screen_pos.x),
-                            bottom: Val::Px(cam.logical_viewport_size().unwrap().y - screen_pos.y),
+                            bottom: Val::Px(viewport_size.y - screen_pos.y),
                             ..default()
                         },
                     };

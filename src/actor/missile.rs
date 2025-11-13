@@ -77,11 +77,9 @@ fn should_fire(
     }
 
     if continuous_fire.is_some() {
-        // We know the timer exists, so we can safely unwrap it
-        let timer = missile_config
-            .spawn_timer
-            .as_mut()
-            .expect("configure missile spawn timer here: impl Default for InitialEnsembleConfig");
+        let Some(timer) = missile_config.spawn_timer.as_mut() else {
+            return false;
+        };
         timer.tick(time.delta());
         if !timer.just_finished() {
             return false;

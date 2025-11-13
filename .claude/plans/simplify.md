@@ -60,6 +60,28 @@ enum MultiFaceGeometry {
 - Clear separation: single-face vs multi-face rendering
 - Each function only handles cases it actually receives
 
+### ✅ Phase 5: Eliminate `.unwrap()` and Remove Redundant Portal Fields (COMPLETED)
+
+**Problem:** Portal struct had redundant data - both `face: BoundaryFace` and `normal: Dir3` representing the same information. This required `.unwrap()` calls when converting between them, violating cargo.toml lints (`unwrap_used = "deny"`).
+
+**Changes:**
+- Added infallible `to_dir3()` method to `BoundaryFace` (src/playfield/boundary_face.rs:28-38)
+- Removed redundant `normal: Dir3` field from Portal struct
+- Added `normal()` helper method to Portal impl that derives normal from face
+- Updated `classify_portal_geometry()` to use `portal.face` directly (line 132) - no conversion needed!
+- Fixed all Portal construction sites in portals.rs (lines 269, 305, 333)
+- Changed `portal.normal` field access to `portal.normal()` method call (line 378)
+- Refactored `snap_and_get_normal()` → `snap_and_get_face()` to only return needed values
+- Refactored `calculate_portal_face_count()` to use `classify_portal_geometry()` and enum matching
+- Extracted `count_faces_with_valid_arcs()` helper method
+
+**Benefits:**
+- Zero `.unwrap()` or `.expect()` calls - complies with cargo.toml lints
+- No elided variables - function signatures match actual usage patterns
+- Portal struct has single source of truth for face/normal information
+- Eliminated all duplication between `draw_portal()` and `calculate_portal_face_count()` (~40 lines)
+- More maintainable through shared `classify_portal_geometry()` method
+
 ## Issues Identified
 
 ### 1. Major Code Duplication (~80 lines)
