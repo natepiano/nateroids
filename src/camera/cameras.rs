@@ -10,10 +10,10 @@ use leafwing_input_manager::prelude::*;
 
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
-use crate::camera::calculate_camera_radius;
 use crate::camera::config::CameraConfig;
 use crate::camera::config::ZoomConfig;
 use crate::game_input::GameAction;
+use crate::game_input::just_pressed;
 use crate::game_input::toggle_active;
 use crate::playfield::Boundary;
 
@@ -25,6 +25,7 @@ impl Plugin for CamerasPlugin {
             .init_gizmo_group::<FocusGizmo>()
             .add_systems(Startup, spawn_star_camera.before(spawn_panorbit_camera))
             .add_systems(Startup, spawn_panorbit_camera)
+            .add_systems(Update, home_camera.run_if(just_pressed(GameAction::Home)))
             .add_systems(Update, move_camera_system)
             .add_systems(Update, update_focus_gizmo_config)
             .add_systems(
@@ -305,10 +306,24 @@ impl ScreenSpaceBoundary {
         let world_y = norm_y * self.avg_depth;
         cam_pos + cam_right * world_x + cam_up * world_y + cam_forward * self.avg_depth
     }
+
+    /// Returns the margin percentage for a given edge.
+    /// Percentage represents how much of the screen width/height is margin.
+    pub fn margin_percentage(&self, edge: Edge) -> f32 {
+        let screen_width = 2.0 * self.half_tan_hfov;
+        let screen_height = 2.0 * self.half_tan_vfov;
+
+        match edge {
+            Edge::Left => (self.left_margin / screen_width) * 100.0,
+            Edge::Right => (self.right_margin / screen_width) * 100.0,
+            Edge::Top => (self.top_margin / screen_height) * 100.0,
+            Edge::Bottom => (self.bottom_margin / screen_height) * 100.0,
+        }
+    }
 }
 
 /// Boundary box edges
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
 pub enum Edge {
     Left,
     Right,
@@ -524,5 +539,50 @@ fn draw_camera_focus_gizmo(
 
         // Draw arrow from world origin to focus
         gizmos.arrow(Vec3::ZERO, focus, Color::srgb(1.0, 0.0, 0.0));
+    }
+}
+
+pub fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32, buffer: f32) -> f32 {
+    // Calculate horizontal FOV based on aspect ratio
+    let horizontal_fov = 2.0 * ((fov / 2.0).tan() * aspect_ratio).atan();
+
+    // Calculate distances required for X and Y dimensions to fit in viewport
+    let x_distance = (grid_size.x / 2.0) / (horizontal_fov / 2.0).tan();
+    let y_distance = (grid_size.y / 2.0) / (fov / 2.0).tan();
+
+    // Take the max of X and Y distances
+    let xy_distance = x_distance.max(y_distance);
+
+    // For Z dimension (depth)
+    let z_half_depth = grid_size.z / 2.0;
+
+    // Apply buffer to XY distance (for screen-space margin), then add Z depth
+    // This ensures buffer represents actual screen-space margin percentage
+    xy_distance * buffer + z_half_depth
+}
+
+/// take us back to the splash screen start position
+pub fn home_camera(
+    boundary: Res<Boundary>,
+    zoom_config: Res<ZoomConfig>,
+    mut camera_query: Query<(&mut PanOrbitCamera, &Projection)>,
+) {
+    if let Ok((mut pan_orbit, Projection::Perspective(perspective))) = camera_query.single_mut() {
+        let grid_size = boundary.scale();
+
+        let target_radius = calculate_camera_radius(
+            grid_size,
+            perspective.fov,
+            perspective.aspect_ratio,
+            zoom_config.zoom_margin_multiplier(),
+        );
+
+        // Set the camera's orbit parameters
+        pan_orbit.target_focus = Vec3::ZERO;
+        pan_orbit.target_yaw = 0.0;
+        pan_orbit.target_pitch = 0.0;
+        pan_orbit.target_radius = target_radius;
+
+        pan_orbit.force_update = true;
     }
 }

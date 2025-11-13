@@ -36,6 +36,10 @@ pub struct CameraConfig {
     pub bloom_low_frequency_boost: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub bloom_high_pass_frequency: f32,
+    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    pub zoom_smoothness:           f32,
+    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    pub pan_smoothness:            f32,
 }
 
 impl Default for CameraConfig {
@@ -46,6 +50,8 @@ impl Default for CameraConfig {
             bloom_intensity:           0.5,
             bloom_low_frequency_boost: 0.5,
             bloom_high_pass_frequency: 0.5,
+            zoom_smoothness:           0.10,
+            pan_smoothness:            0.02,
         }
     }
 }
@@ -59,51 +65,30 @@ impl CameraConfig {
 pub struct ZoomConfig {
     /// Maximum iterations before giving up
     #[inspector(min = 50, max = 500)]
-    pub max_iterations:                     usize,
+    pub max_iterations:   usize,
     #[inspector(min = 0.0, max = 0.5, display = NumberDisplay::Slider)]
-    pub margin:                             f32,
+    pub margin:           f32,
+    /// Margin tolerance for convergence detection (0.001 = 0.1% tolerance).
+    /// Used for both balance and fit checks.
+    #[inspector(min = 0.0001, max = 0.01, display = NumberDisplay::Slider)]
+    pub margin_tolerance: f32,
     // Zoom-to-fit convergence parameters
-    /// Convergence rate during fitting phase (0.12 = 12% per frame).
-    /// Careful rate to avoid overshooting target margins when zooming in/out.
+    /// Convergence rate for zoom-to-fit adjustments (0.18 = 18% per frame).
     #[inspector(min = 0.01, max = 0.5, display = NumberDisplay::Slider)]
-    pub convergence_rate_fitting:           f32,
-    /// Convergence rate during balancing phase (0.50 = 50% per frame).
-    /// Faster rate since we're only centering - the fit can't be lost by adjusting focus.
-    #[inspector(min = 0.01, max = 1.0, display = NumberDisplay::Slider)]
-    pub convergence_rate_balancing:         f32,
-    /// Convergence threshold for stopping when dimension flip detected (0.05 = 5% tolerance)
-    #[inspector(min = 0.01, max = 0.2, display = NumberDisplay::Slider)]
-    pub stop_on_dimension_flip_threshold:   f32,
-    /// Damping factor when dimension flip detected but not converged (0.30 = 30% speed)
-    #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
-    pub damping_on_dimension_flip_detected: f32,
-    /// Strict balance tolerance for final convergence (0.002 = 0.2% tolerance)
-    #[inspector(min = 0.0001, max = 0.01, display = NumberDisplay::Slider)]
-    pub balance_tolerance:                  f32,
-    /// Good-enough tolerance for early exit to prevent oscillation (0.01 = 1% tolerance)
-    #[inspector(min = 0.001, max = 0.05, display = NumberDisplay::Slider)]
-    pub early_exit_tolerance:               f32,
-    /// Maximum relative error to allow early exit (0.5 = 50% error)
-    #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
-    pub max_error_for_exit:                 f32,
-    /// Minimum margin value for division safety (0.001)
-    #[inspector(min = 0.0001, max = 0.01, display = NumberDisplay::Slider)]
-    pub min_margin_divisor:                 f32,
+    pub convergence_rate: f32,
+    /// Damping factor if overshoot is predicted
+    #[inspector(min = 0.0001, max = 1.0, display = NumberDisplay::Slider)]
+    pub damping:          f32,
 }
 
 impl Default for ZoomConfig {
     fn default() -> Self {
         Self {
-            margin:                             0.10,
-            convergence_rate_fitting:           0.12,
-            convergence_rate_balancing:         0.50,
-            stop_on_dimension_flip_threshold:   0.05,
-            damping_on_dimension_flip_detected: 0.30,
-            balance_tolerance:                  0.001,
-            early_exit_tolerance:               0.001,
-            max_error_for_exit:                 0.5,
-            max_iterations:                     200,
-            min_margin_divisor:                 0.001,
+            max_iterations:   200,
+            margin:           0.1, //percent of screen
+            margin_tolerance: 0.0001,
+            convergence_rate: 0.18,
+            damping:          0.5,
         }
     }
 }

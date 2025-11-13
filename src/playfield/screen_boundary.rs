@@ -21,8 +21,17 @@ impl Plugin for ScreenBoundaryPlugin {
                 Update,
                 draw_screen_aligned_boundary_box
                     .run_if(toggle_active(false, GameAction::BoundaryBox)),
+            )
+            .add_systems(
+                Update,
+                cleanup_margin_labels.run_if(toggle_active(true, GameAction::BoundaryBox)),
             );
     }
+}
+
+#[derive(Component, Reflect)]
+struct MarginLabel {
+    edge: Edge,
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -36,12 +45,17 @@ fn init_screen_boundary_gizmo_config(mut config_store: ResMut<GizmoConfigStore>)
 /// used to draw a yellow screen-aligned box around the boundary
 /// used for troubleshooting camera movement logic
 fn draw_screen_aligned_boundary_box(
+    mut commands: Commands,
     mut gizmos: Gizmos<ScreenBoundaryGizmo>,
     boundary: Res<Boundary>,
     zoom_config: Res<ZoomConfig>,
-    camera: Query<(&Camera, &Transform, &GlobalTransform, &Projection), With<PanOrbitCamera>>,
+    camera: Query<(&Camera, &GlobalTransform, &Projection), With<PanOrbitCamera>>,
+    mut label_query: Query<
+        (Entity, &MarginLabel, &mut Text, &mut Node, &mut TextColor),
+        Without<Camera>,
+    >,
 ) {
-    let Ok((cam, cam_transform, cam_global, projection)) = camera.single() else {
+    let Ok((cam, cam_global, projection)) = camera.single() else {
         return;
     };
 
@@ -68,7 +82,7 @@ fn draw_screen_aligned_boundary_box(
     };
 
     // Get camera basis vectors for reconstruction
-    let cam_pos = cam_transform.translation;
+    let cam_pos = cam_global.translation();
     let cam_rot = cam_global.rotation();
     let cam_forward = cam_rot * Vec3::NEG_Z;
     let cam_right = cam_rot * Vec3::X;
@@ -122,11 +136,15 @@ fn draw_screen_aligned_boundary_box(
 
     // Draw lines from visible boundary edges to screen edges
     // Green if margins are balanced, red otherwise
-    let h_balanced = margins.is_horizontally_balanced(zoom_config.balance_tolerance);
-    let v_balanced = margins.is_vertically_balanced(zoom_config.balance_tolerance);
+    let h_balanced = margins.is_horizontally_balanced(zoom_config.margin_tolerance);
+    let v_balanced = margins.is_vertically_balanced(zoom_config.margin_tolerance);
+
+    // Track which edges are currently visible for label cleanup
+    let mut visible_edges: Vec<Edge> = Vec::new();
 
     for edge in [Edge::Left, Edge::Right, Edge::Top, Edge::Bottom] {
         if let Some((boundary_x, boundary_y)) = margins.boundary_edge_center(edge) {
+            visible_edges.push(edge);
             let (screen_x, screen_y) = margins.screen_edge_center(edge);
 
             let boundary_pos = margins.normalized_to_world(
@@ -165,6 +183,132 @@ fn draw_screen_aligned_boundary_box(
             };
 
             gizmos.line(boundary_pos, screen_pos, color);
+
+            // Add text label for this edge
+            let percentage = margins.margin_percentage(edge);
+            let text = format!("{percentage:.2}%");
+
+            // Calculate label position based on edge
+            let text_offset = 0.01;
+            let (label_x, label_y) = match edge {
+                Edge::Left => {
+                    let (_, screen_y) = margins.screen_edge_center(edge);
+                    (
+                        -margins.half_tan_hfov + text_offset,
+                        screen_y + text_offset * 2.0,
+                    )
+                },
+                Edge::Right => {
+                    let (_, screen_y) = margins.screen_edge_center(edge);
+                    (
+                        margins.half_tan_hfov - text_offset,
+                        screen_y + text_offset * 2.0,
+                    )
+                },
+                Edge::Top => {
+                    let (screen_x, _) = margins.screen_edge_center(edge);
+                    (screen_x + text_offset, margins.half_tan_vfov - text_offset)
+                },
+                Edge::Bottom => {
+                    let (screen_x, _) = margins.screen_edge_center(edge);
+                    (screen_x + text_offset, -margins.half_tan_vfov + text_offset)
+                },
+            };
+
+            let mut world_pos = margins.normalized_to_world(
+                label_x,
+                label_y,
+                cam_pos,
+                cam_right,
+                cam_up,
+                cam_forward,
+            );
+            world_pos -= cam_forward * 1.0;
+
+            // Project to screen space
+            if let Ok(screen_pos) = cam.world_to_viewport(cam_global, world_pos) {
+                // Find or update existing label for this edge
+                let mut found = false;
+                for (_, label, mut label_text, mut node, mut text_color) in &mut label_query {
+                    if label.edge == edge {
+                        label_text.0 = text.clone();
+                        text_color.0 = color;
+                        match edge {
+                            Edge::Left | Edge::Top => {
+                                node.left = Val::Px(screen_pos.x);
+                                node.top = Val::Px(screen_pos.y);
+                                node.right = Val::Auto;
+                                node.bottom = Val::Auto;
+                            },
+                            Edge::Right => {
+                                node.right =
+                                    Val::Px(cam.logical_viewport_size().unwrap().x - screen_pos.x);
+                                node.top = Val::Px(screen_pos.y);
+                                node.left = Val::Auto;
+                                node.bottom = Val::Auto;
+                            },
+                            Edge::Bottom => {
+                                node.left = Val::Px(screen_pos.x);
+                                node.bottom =
+                                    Val::Px(cam.logical_viewport_size().unwrap().y - screen_pos.y);
+                                node.right = Val::Auto;
+                                node.top = Val::Auto;
+                            },
+                        }
+                        found = true;
+                        break;
+                    }
+                }
+
+                if !found {
+                    // Create new label
+                    let node = match edge {
+                        Edge::Left | Edge::Top => Node {
+                            position_type: PositionType::Absolute,
+                            left: Val::Px(screen_pos.x),
+                            top: Val::Px(screen_pos.y),
+                            ..default()
+                        },
+                        Edge::Right => Node {
+                            position_type: PositionType::Absolute,
+                            right: Val::Px(cam.logical_viewport_size().unwrap().x - screen_pos.x),
+                            top: Val::Px(screen_pos.y),
+                            ..default()
+                        },
+                        Edge::Bottom => Node {
+                            position_type: PositionType::Absolute,
+                            left: Val::Px(screen_pos.x),
+                            bottom: Val::Px(cam.logical_viewport_size().unwrap().y - screen_pos.y),
+                            ..default()
+                        },
+                    };
+
+                    commands.spawn((
+                        Text::new(text),
+                        TextFont {
+                            font_size: 11.0,
+                            ..default()
+                        },
+                        TextColor(color),
+                        node,
+                        RenderLayers::from_layers(RenderLayer::Game.layers()),
+                        MarginLabel { edge },
+                    ));
+                }
+            }
         }
+    }
+
+    // Remove labels for edges that are no longer visible
+    for (entity, label, _, _, _) in &label_query {
+        if !visible_edges.contains(&label.edge) {
+            commands.entity(entity).despawn();
+        }
+    }
+}
+
+fn cleanup_margin_labels(mut commands: Commands, label_query: Query<Entity, With<MarginLabel>>) {
+    for entity in &label_query {
+        commands.entity(entity).despawn();
     }
 }

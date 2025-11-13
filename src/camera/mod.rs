@@ -10,13 +10,13 @@ use bevy::prelude::*;
 use cameras::CamerasPlugin;
 pub use cameras::Edge;
 pub use cameras::ScreenSpaceBoundary;
+pub use config::CameraConfig;
 use config::CameraConfigPlugin;
 pub use config::ZoomConfig;
 use lights::DirectionalLightsPlugin;
 use star_twinkling::StarTwinklingPlugin;
 use stars::StarsPlugin;
 use zoom::ZoomPlugin;
-pub use zoom::calculate_camera_radius;
 
 pub struct CameraPlugin;
 
