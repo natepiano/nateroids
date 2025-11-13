@@ -147,15 +147,10 @@ fn verify_viewport_corners_debug(
     }
 }
 
-/// Convergence algorithm for zoom-to-fit animation using iterative adjustments and overshoot
-/// prevention.
+/// Convergence algorithm for zoom-to-fit animation using iterative adjustments.
 ///
 /// **Convergence Rate**: Applies `convergence_rate` to both focus and radius adjustments each
 /// frame, moving the camera gradually toward the target configuration.
-///
-/// **Overshoot Prevention**: Before applying adjustments, simulates whether the proposed change
-/// would overshoot the target. If overshoot detected, applies `damping` to scale down
-/// the adjustment and prevent oscillation.
 ///
 /// **Convergence Detection**: Stops when both `is_fitted(margin_tolerance)` and
 /// `is_balanced(margin_tolerance)` are true.
@@ -349,39 +344,9 @@ fn update_zoom_to_fit(
     );
 
     // Apply convergence rate to both focus and radius
-    let base_rate = zoom_config.convergence_rate;
-    let mut focus_adjustment = focus_delta * base_rate;
-    let mut radius_adjustment = radius_delta * base_rate;
-    let mut effective_rate = base_rate;
-
-    // Simple overshoot detection: check if we would cross the target values
-    let proposed_focus = pan_orbit.target_focus + focus_adjustment;
-    let proposed_radius = current_radius + radius_adjustment;
-    // Check focus overshoot
-    let proposed_focus_delta = proposed_focus - target_focus;
-    let current_focus_delta = pan_orbit.target_focus - target_focus;
-    let focus_would_overshoot =
-        proposed_focus_delta.dot(current_focus_delta) < 0.0 && current_focus_delta.length() > 0.001;
-
-    // Check radius overshoot
-    let proposed_radius_delta = proposed_radius - target_radius;
-    let current_radius_delta = current_radius - target_radius;
-    let radius_would_overshoot = proposed_radius_delta.signum() != current_radius_delta.signum()
-        && current_radius_delta.abs() > 0.001;
-
-    if focus_would_overshoot || radius_would_overshoot {
-        // Would overshoot - scale adjustment with damping to reach target exactly
-        effective_rate = base_rate * zoom_config.damping;
-        focus_adjustment *= zoom_config.damping;
-        radius_adjustment *= zoom_config.damping;
-        println!(
-            "  PREDICTION: Would overshoot! Scaling rate from {:.1}% to {:.1}%",
-            base_rate * 100.0,
-            effective_rate * 100.0
-        );
-    } else {
-        println!("  PREDICTION: Safe to apply rate {:.1}%", base_rate * 100.0);
-    }
+    let rate = zoom_config.convergence_rate;
+    let focus_adjustment = focus_delta * rate;
+    let radius_adjustment = radius_delta * rate;
 
     // Apply adjustments
     pan_orbit.target_focus += focus_adjustment;
@@ -398,8 +363,8 @@ fn update_zoom_to_fit(
     let fitted = margins.is_fitted(zoom_config.margin_tolerance);
 
     println!(
-        "  Correcting: effective_rate={:.1}%, focus_adj=({:.3},{:.3},{:.3}), radius {:.1}->{:.1}, balanced={}, fitted={}",
-        effective_rate * 100.0,
+        "  Correcting: rate={:.1}%, focus_adj=({:.3},{:.3},{:.3}), radius {:.1}->{:.1}, balanced={}, fitted={}",
+        rate * 100.0,
         focus_adjustment.x,
         focus_adjustment.y,
         focus_adjustment.z,

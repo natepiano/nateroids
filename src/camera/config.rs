@@ -70,15 +70,12 @@ pub struct ZoomConfig {
     pub margin:           f32,
     /// Margin tolerance for convergence detection (0.001 = 0.1% tolerance).
     /// Used for both balance and fit checks.
-    #[inspector(min = 0.0001, max = 0.01, display = NumberDisplay::Slider)]
+    #[inspector(min = 0.00001, max = 0.01, display = NumberDisplay::Slider)]
     pub margin_tolerance: f32,
     // Zoom-to-fit convergence parameters
     /// Convergence rate for zoom-to-fit adjustments (0.18 = 18% per frame).
     #[inspector(min = 0.01, max = 0.5, display = NumberDisplay::Slider)]
     pub convergence_rate: f32,
-    /// Damping factor if overshoot is predicted
-    #[inspector(min = 0.0001, max = 1.0, display = NumberDisplay::Slider)]
-    pub damping:          f32,
 }
 
 impl Default for ZoomConfig {
@@ -88,7 +85,6 @@ impl Default for ZoomConfig {
             margin:           0.1, //percent of screen
             margin_tolerance: 0.0001,
             convergence_rate: 0.18,
-            damping:          0.5,
         }
     }
 }

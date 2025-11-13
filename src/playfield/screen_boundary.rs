@@ -186,7 +186,7 @@ fn draw_screen_aligned_boundary_box(
 
             // Add text label for this edge
             let percentage = margins.margin_percentage(edge);
-            let text = format!("{percentage:.2}%");
+            let text = format!("{percentage:.3}%");
 
             // Calculate label position based on edge
             let text_offset = 0.01;
