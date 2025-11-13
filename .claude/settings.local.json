@@ -76,7 +76,8 @@
       "mcp__brp__brp_list_logs",
       "mcp__brp__brp_extras_set_window_title",
       "Bash(cat:*)",
-      "Bash(git remote:*)"
+      "Bash(git remote:*)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": []
