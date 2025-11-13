@@ -162,7 +162,7 @@ pub fn teleport_at_boundary(
             // Only log spaceship teleports
             if is_spaceship.is_some() {
                 let entity_name = name.map(|n| (*n).as_str()).unwrap_or("Spaceship");
-                info!(
+                debug!(
                     "🔄 {} teleporting: from ({:.1}, {:.1}, {:.1}) to ({:.1}, {:.1}, {:.1})",
                     entity_name,
                     original_position.x,

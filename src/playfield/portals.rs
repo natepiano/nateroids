@@ -126,6 +126,7 @@ pub struct Portal {
     pub boundary_distance_shrink:   f32,
     pub color:                      Color,
     pub face:                       BoundaryFace,
+    pub face_count:                 usize,
     fade_out_started:               Option<f32>,
     pub normal:                     Dir3,
     pub position:                   Vec3,
@@ -141,6 +142,7 @@ impl Default for Portal {
             boundary_distance_shrink:   0.,
             color:                      Color::WHITE,
             face:                       BoundaryFace::Right,
+            face_count:                 1,
             fade_out_started:           None,
             normal:                     Dir3::X,
             position:                   Vec3::ZERO,
@@ -294,8 +296,29 @@ fn handle_approaching_visual(
 
         if actor_distance_to_wall <= portal.boundary_distance_approach {
             let normal = boundary.get_normal_for_position(collision_point);
-            let smoothed_position =
-                smooth_circle_position(visual, collision_point, normal, portal_config);
+
+            // Create temporary portal at collision point to calculate face count BEFORE smoothing
+            let temp_portal = Portal {
+                position: collision_point,
+                normal,
+                radius: portal.radius,
+                ..portal.clone()
+            };
+            let current_face_count = boundary.calculate_portal_face_count(&temp_portal);
+
+            // Get previous face count
+            let previous_face_count = visual
+                .approaching
+                .as_ref()
+                .map(|p| p.face_count)
+                .unwrap_or(1);
+
+            // Disable smoothing on any topology change to prevent off-plane artifacts
+            let smoothed_position = if current_face_count != previous_face_count {
+                collision_point
+            } else {
+                smooth_circle_position(visual, collision_point, normal, portal_config)
+            };
 
             // Snap to boundary face and recalculate normal to prevent corner glitches
             let (snapped_position, final_normal, face) =
@@ -305,6 +328,7 @@ fn handle_approaching_visual(
                 visual.approaching = Some(Portal {
                     actor_distance_to_wall,
                     face,
+                    face_count: current_face_count,
                     normal: final_normal,
                     position: snapped_position,
                     ..portal
@@ -402,18 +426,25 @@ fn draw_approaching_portals(
     boundary: Res<Boundary>,
     config: Res<PortalConfig>,
     orientation: Res<CameraOrientation>,
-    q_portals: Query<&ActorPortals>,
+    q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
 ) {
-    for portal in q_portals.iter() {
+    for (portal, deaderoid) in q_portals.iter() {
         if let Some(ref approaching) = portal.approaching {
-            // Draw the portal with the current radius
+            // Compute color based on current deaderoid status, not stored color
+            let portal_color = if deaderoid.is_some() {
+                config.color_approaching_deaderoid
+            } else {
+                config.color_approaching
+            };
+
             boundary.draw_portal(
                 &mut gizmos,
                 approaching,
-                approaching.color,
+                portal_color,
                 config.resolution,
                 &orientation,
+                deaderoid.is_some(),
             );
         }
     }
@@ -477,17 +508,25 @@ fn draw_emerging_portals(
     boundary: Res<Boundary>,
     config: Res<PortalConfig>,
     orientation: Res<CameraOrientation>,
-    q_portals: Query<&ActorPortals>,
+    q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
 ) {
-    for portal in q_portals.iter() {
+    for (portal, deaderoid) in q_portals.iter() {
         if let Some(ref emerging) = portal.emerging {
+            // Compute color based on current deaderoid status, not stored color
+            let portal_color = if deaderoid.is_some() {
+                config.color_approaching_deaderoid
+            } else {
+                config.color_emerging
+            };
+
             boundary.draw_portal(
                 &mut gizmos,
                 emerging,
-                config.color_emerging,
+                portal_color,
                 config.resolution,
                 &orientation,
+                deaderoid.is_some(),
             );
         }
     }

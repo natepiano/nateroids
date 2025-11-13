@@ -1,5 +1,222 @@
 # Portal Rendering Test Suite Implementation Plan
 
+## EXECUTION PROTOCOL
+
+<Instructions>
+For each step in the implementation sequence:
+
+1. **DESCRIBE**: Present the changes with:
+   - Summary of what will change and why
+   - Code examples showing before/after
+   - List of files to be modified
+   - Expected impact on the system
+
+2. **AWAIT APPROVAL**: Stop and wait for user confirmation ("go ahead" or similar)
+
+3. **IMPLEMENT**: Make the changes and stop
+
+4. **BUILD & VALIDATE**: Execute the build process:
+   ```bash
+   cargo build && cargo +nightly fmt
+   ```
+   For test steps, also run:
+   ```bash
+   cargo nextest run portal_render_tests
+   ```
+
+5. **CONFIRM**: Wait for user to confirm the build succeeded
+
+6. **MARK COMPLETE**: Update this document to mark the step as ✅ COMPLETED
+
+7. **PROCEED**: Move to next step only after confirmation
+</Instructions>
+
+<ExecuteImplementation>
+    Find the next ⏳ PENDING step in the INTERACTIVE IMPLEMENTATION SEQUENCE below.
+
+    For the current step:
+    1. Follow the <Instructions/> above for executing the step
+    2. When step is complete, use Edit tool to mark it as ✅ COMPLETED
+    3. Continue to next PENDING step
+
+    If all steps are COMPLETED:
+        Display: "✅ Implementation complete! All steps have been executed."
+</ExecuteImplementation>
+
+## INTERACTIVE IMPLEMENTATION SEQUENCE
+
+### Step 1: Add Helper Functions ⏳ PENDING
+
+**Objective**: Implement 3 constraint helper functions for intersection point filtering
+
+**Changes**:
+- Add `constrain_intersection_points()` - Filters intersection points to only include those within face boundary limits
+- Add `point_within_boundary_for_face()` - Checks if a point extends beyond boundaries
+- Add `faces_share_axis()` - Determines if two faces are perpendicular to the same axis
+
+**Files**: `src/playfield/boundary.rs`
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Expected Result**:
+- ✅ Compiles successfully
+- ⚠️ Dead code warnings expected (functions will be used in portal-upgraded.md Step 2)
+
+**See Implementation Details**: Phase 1 section below
+
+---
+
+### Step 2: Add Test Infrastructure ⏳ PENDING
+
+**Objective**: Implement test-only method and scaffolding for portal rendering tests
+
+**Changes**:
+- Add `#[cfg(test)]` impl block with `calculate_portal_render_data()` method
+- Add `PortalRenderData` enum type for test results
+- Add test module with helper functions (`create_test_boundary()`, `create_portal()`)
+
+**Files**: `src/playfield/boundary.rs`
+
+**Dependencies**: Requires Step 1 (uses helper functions)
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Expected Result**: ✅ Compiles successfully
+
+**See Implementation Details**: Phase 2 section below
+
+---
+
+### Step 3: Add Category 1 & 2 Tests (Too Far + Single Face) ⏳ PENDING
+
+**Objective**: Implement 7 tests for basic portal rendering scenarios
+
+**Changes**:
+- Add 1 "too far" test (portal doesn't reach boundaries)
+- Add 6 "single face" tests (one for each boundary face)
+
+**Files**: `src/playfield/boundary.rs`
+
+**Dependencies**: Requires Step 2 (test infrastructure)
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Test Command**:
+```bash
+cargo nextest run portal_render_tests
+```
+
+**Expected Result**:
+- ✅ Compiles successfully
+- ✅ All 7 tests PASS
+
+**See Implementation Details**: Phase 3, Category 1 & 2 sections below
+
+---
+
+### Step 4: Add Category 3 Tests (Edge Cases) ⏳ PENDING
+
+**Objective**: Implement 12 tests for portal rendering at boundary edges
+
+**Changes**:
+- Add 4 X-axis edge tests (top/bottom + back/front combinations)
+- Add 4 Y-axis edge tests (left/right + back/front combinations)
+- Add 4 Z-axis edge tests (left/right + top/bottom combinations)
+
+**Files**: `src/playfield/boundary.rs`
+
+**Dependencies**: Requires Step 2 (test infrastructure)
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Test Command**:
+```bash
+cargo nextest run portal_render_tests
+```
+
+**Expected Result**:
+- ✅ Compiles successfully
+- ✅ All 12 tests PASS
+
+**See Implementation Details**: Phase 3, Category 3 section below
+
+---
+
+### Step 5: Add Category 4 Tests (Corner Cases) ⏳ PENDING
+
+**Objective**: Implement 8 tests for portal rendering at boundary corners (EXPECTED TO FAIL)
+
+**Changes**:
+- Add 8 corner tests covering all boundary corners
+- These tests document the known corner rendering bug
+
+**Files**: `src/playfield/boundary.rs`
+
+**Dependencies**: Requires Step 2 (test infrastructure)
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Test Command**:
+```bash
+cargo nextest run portal_render_tests
+```
+
+**Expected Result**:
+- ✅ Compiles successfully
+- ❌ All 8 tests FAIL (expected - documents corner rendering bug)
+
+**Note**: These failures are intentional and document the bug that will be fixed by portal-upgraded.md Steps 2-4
+
+**See Implementation Details**: Phase 3, Category 4 section below
+
+---
+
+### Step 6: Final Validation ⏳ PENDING
+
+**Objective**: Run complete test suite and verify expected results
+
+**Tasks**:
+- Run all tests
+- Verify 19 tests pass (categories 1-3)
+- Verify 8 tests fail (category 4 - corner bug)
+
+**Build Command**:
+```bash
+cargo build && cargo +nightly fmt
+```
+
+**Test Command**:
+```bash
+cargo nextest run portal_render_tests
+```
+
+**Expected Results**:
+
+| Category | Tests | Expected Result |
+|----------|-------|-----------------|
+| Too Far  | 1     | ✅ PASS         |
+| Single Face | 6  | ✅ PASS         |
+| Edge (2 faces) | 12 | ✅ PASS      |
+| Corner (3 faces) | 8 | ❌ FAIL       |
+| **Total** | **27** | **19 pass, 8 fail** |
+
+---
+
 ## Overview
 
 Create comprehensive unit tests for portal rendering logic covering 4 scenarios:
@@ -17,6 +234,8 @@ Tests will use `cargo nextest run` and require no Bevy runtime (pure geometry te
 - ✅ Provide regression suite for portal-upgraded.md implementation
 - ✅ Enable fast, deterministic testing without Bevy systems
 
+---
+
 ## Phase 1: Implement Helper Functions (Portal-Upgraded Step 1)
 
 ### Context
@@ -32,7 +251,7 @@ By implementing them now, we:
 
 ### Implementation
 
-Add three helper functions to `src/playfield/boundary.rs` after `intersect_circle_with_line_segment()` (around line 657):
+Add three helper functions to `src/playfield/boundary.rs` immediately after line 657 (after the closing brace of `intersect_circle_with_line_segment()` function):
 
 #### Helper 1: `constrain_intersection_points()`
 
@@ -118,9 +337,9 @@ fn faces_share_axis(face1: BoundaryFace, face2: BoundaryFace) -> bool {
 }
 ```
 
-**Placement**: After `intersect_circle_with_line_segment()` (currently line ~631-657)
+**Placement**: Immediately after line 657 (the closing brace of `intersect_circle_with_line_segment()` which spans lines 631-657)
 
-**Note**: These are production functions (no `#[cfg(test)]`) because they'll be used in portal-upgraded.md Step 2.
+**Note**: These are production functions (no `#[cfg(test)]`) because they'll be used in portal-upgraded.md Step 2. The Rust compiler will generate **dead code warnings** for these functions after Phase 1 completes, since they won't be called until portal-upgraded.md executes. This is expected and can be ignored - these warnings will disappear once portal-upgraded.md Step 2 uses them in the refactored rendering code.
 
 ---
 
@@ -130,10 +349,17 @@ fn faces_share_axis(face1: BoundaryFace, face2: BoundaryFace) -> bool {
 
 Add test-only method to extract render decisions without drawing (after helper functions, before test module):
 
+**IMPORTANT**: This implementation is **self-contained** and does NOT depend on `get_overextended_intersection_points()` (which will be deleted in portal-upgraded.md Step 3). Instead, it directly calculates intersections using the low-level geometry functions and the new constraint helpers from Phase 1.
+
 ```rust
 #[cfg(test)]
 impl Boundary {
     /// Test helper: Get portal rendering data without drawing
+    ///
+    /// This is a self-contained implementation that doesn't depend on
+    /// `get_overextended_intersection_points()` (which will be removed
+    /// in the portal-upgraded.md refactor). It directly calculates
+    /// intersections and applies constraints using the Phase 1 helpers.
     pub fn calculate_portal_render_data(&self, portal: &Portal) -> PortalRenderData {
         let overextended_faces = self.get_overextended_faces_for(portal);
 
@@ -145,18 +371,64 @@ impl Boundary {
             };
         }
 
-        let intersection_data = self.get_overextended_intersection_points(
-            portal,
-            overextended_faces.clone()
-        );
+        // Calculate boundary extents for constraint checking
+        let half_size = self.transform.scale / 2.0;
+        let min = self.transform.translation - half_size;
+        let max = self.transform.translation + half_size;
+
+        let primary_face = BoundaryFace::from_normal(portal.normal).unwrap();
+        let mut arc_data = Vec::new();
+
+        // Collect ALL faces that need arcs (primary + overextended)
+        let mut all_faces = vec![primary_face];
+        all_faces.extend(overextended_faces.iter());
+
+        // Calculate intersections for each face
+        for &face in &all_faces {
+            let face_points = face.get_face_points(&min, &max);
+            let mut face_intersections = intersect_circle_with_rectangle(portal, &face_points);
+
+            // Apply constraints: filter out points that extend beyond face boundaries
+            face_intersections = constrain_intersection_points(
+                face_intersections,
+                face,
+                &overextended_faces,
+                &min,
+                &max,
+            );
+
+            if !face_intersections.is_empty() {
+                arc_data.push((face, face_intersections));
+            }
+        }
 
         PortalRenderData::SplitArcs {
-            primary_face: BoundaryFace::from_normal(portal.normal).unwrap(),
-            arc_data: intersection_data,
+            primary_face,
+            arc_data,
         }
     }
 }
 
+/// Test helper return type that captures complete portal rendering data.
+///
+/// **Design rationale**: This type intentionally includes ALL data that the real
+/// `draw_portal()` function uses, even though current tests only validate subsets:
+///
+/// 1. **Debugging value**: When tests fail, developers can inspect the complete
+///    rendering state (position, radius, normals, intersection points) to understand
+///    what went wrong, not just which assertion failed.
+///
+/// 2. **Future test expansion**: Additional tests may validate position accuracy
+///    (e.g., verifying `snap_position_to_boundary_face()` worked correctly) or
+///    radius constraints (e.g., portals don't exceed max size).
+///
+/// 3. **Mirrors production code**: Type structure matches what `draw_portal()`
+///    actually uses, making it a true "rendering data snapshot" rather than a
+///    minimal test assertion type.
+///
+/// **Current test usage**: Tests validate rendering strategy (single circle vs
+/// split arcs) and face selection, using pattern matching with `..` to ignore
+/// geometric parameters that are already known (input values).
 #[cfg(test)]
 #[derive(Debug, PartialEq)]
 pub enum PortalRenderData {
@@ -180,6 +452,12 @@ Add at end of `src/playfield/boundary.rs`:
 #[cfg(test)]
 mod portal_render_tests {
     use super::*;
+    use crate::playfield::portals::Portal;
+
+    // Note: The following types are available via `use super::*;`:
+    // - Boundary, BoundaryFace (from boundary.rs)
+    // - Vec3, Dir3, UVec3, Transform, default() (from bevy prelude)
+    // - constrain_intersection_points() and other helper functions (from Phase 1)
 
     fn create_test_boundary() -> Boundary {
         Boundary {
@@ -200,36 +478,37 @@ mod portal_render_tests {
         }
     }
 
-    // Helper to check if intersection points are properly constrained
-    fn verify_points_constrained(
-        points: &[Vec3],
-        face: BoundaryFace,
-        overextended_faces: &[BoundaryFace],
-        boundary_min: Vec3,
-        boundary_max: Vec3,
-    ) {
-        let constrained = constrain_intersection_points(
-            points.to_vec(),
-            face,
-            overextended_faces,
-            &boundary_min,
-            &boundary_max,
-        );
-
-        assert_eq!(
-            points.len(),
-            constrained.len(),
-            "Some intersection points extend beyond face boundaries"
-        );
-    }
-
     // Tests go here...
 }
 ```
 
+**Note on Test Scope:** These tests validate **rendering outcomes** (single circle vs split arcs, correct face counts) rather than intermediate constraint filtering behavior. The `constrain_intersection_points()` helper is used internally by `calculate_portal_render_data()` (lines 173-179 above), but tests don't directly validate constraint filtering. They verify that the entire rendering pipeline produces correct visual results. Constraint filtering is an implementation detail that's tested indirectly through outcome validation.
+
 ---
 
 ## Phase 3: Test Cases
+
+**Test Validation Scope:** These tests intentionally validate **rendering strategy** (single circle vs split arcs, correct face selection) rather than geometric correctness of intersection points. Specifically, tests do NOT validate:
+
+- **Exact point coordinates**: Tests don't assert specific x/y/z values for intersection points
+- **Points staying within boundaries**: Constraint filtering is handled by `constrain_intersection_points()` helper and tested indirectly
+- **`primary_face` matching portal normal**: Implicit in test setup (portal normal determines face)
+- **Individual point positions**: Tests use `..` pattern to ignore point data, focusing on arc counts
+
+This is intentional because:
+
+1. **Tests focus on high-level rendering decisions**, not low-level geometry calculations
+2. **Geometric parameters are test inputs**: Validating output coordinates against input position/radius would be circular testing
+3. **Constraint filtering tested indirectly**: If constraints fail, arc counts or face selection would be wrong (caught by assertions)
+4. **Maintainability**: Geometric coordinate validation would be brittle and require complex epsilon comparisons for floating-point arithmetic
+
+**What tests DO validate:**
+- Correct rendering path chosen (SingleCircle vs SplitArcs)
+- Correct number of faces rendered (1 for single face, 2 for edges, 3 for corners)
+- Correct face identification (Back, Top, Left, etc.)
+- Sufficient intersection points per arc (>= 2 points needed to draw an arc)
+
+If detailed geometric validation is needed in the future, add separate unit tests for the constraint helpers (`constrain_intersection_points()`, `point_within_boundary_for_face()`, etc.) rather than expanding these integration tests.
 
 ### Category 1: Too Far (1 test)
 
@@ -722,34 +1001,6 @@ fn test_portal_at_right_top_front_corner() {
 ```
 
 **Expected**: ❌ All 8 tests FAIL (confirms corner rendering bug)
-
----
-
-## Phase 4: Build, Format, and Run Tests
-
-### Build and Format
-
-```bash
-cargo build && cargo +nightly fmt
-```
-
-### Run Tests
-
-```bash
-cargo nextest run portal_render_tests
-```
-
-### Expected Results Summary
-
-| Category | Tests | Expected Result |
-|----------|-------|-----------------|
-| Too Far  | 1     | ✅ PASS         |
-| Single Face | 6  | ✅ PASS         |
-| Edge (2 faces) | 12 | ✅ PASS      |
-| Corner (3 faces) | 8 | ❌ FAIL       |
-| **Total** | **27** | **19 pass, 8 fail** |
-
-The 8 failing corner tests document the bug that will be fixed by portal-upgraded.md Steps 2-4.
 
 ---
 

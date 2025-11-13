@@ -116,23 +116,9 @@ fn propagate_render_layers_on_spawn(
     // Only process if this entity has one of our actor marker components (scene
     // children added to actor parent)
     if let Ok(parent_layers) = q_parents.get(add.entity) {
-        // Recursively propagate to all descendants
-        propagate_to_descendants(add.entity, parent_layers, &children_query, &mut commands);
-    }
-}
-
-fn propagate_to_descendants(
-    entity: Entity,
-    parent_layers: &RenderLayers,
-    children_query: &Query<&Children>,
-    commands: &mut Commands,
-) {
-    if let Ok(children) = children_query.get(entity) {
-        for child in children.iter() {
-            commands.entity(child).insert(parent_layers.clone());
-
-            // Recursively propagate to grandchildren
-            propagate_to_descendants(child, parent_layers, children_query, commands);
+        // Propagate to all descendants using Bevy's built-in iterator
+        for descendant in children_query.iter_descendants(add.entity) {
+            commands.entity(descendant).insert(parent_layers.clone());
         }
     }
 }
@@ -144,7 +130,7 @@ pub const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
     .lock_rotation_y()
     .lock_translation_z();
 
-fn initialize_actor_configs(
+pub fn initialize_actor_configs(
     mut commands: Commands,
     meshes: Res<Assets<Mesh>>,
     scenes: Res<Assets<Scene>>,

@@ -77,7 +77,7 @@ pub struct Boundary {
 
 impl Default for Boundary {
     fn default() -> Self {
-        let cell_count = UVec3::new(3, 1, 1);
+        let cell_count = UVec3::new(3, 2, 1);
         let scalar = 110.;
 
         Self {
@@ -93,28 +93,6 @@ impl Default for Boundary {
 }
 
 impl Boundary {
-    fn get_overextended_intersection_points(
-        &self,
-        portal: &Portal,
-        overextended_faces: Vec<BoundaryFace>,
-    ) -> Vec<(BoundaryFace, Vec<Vec3>)> {
-        let mut intersections = Vec::new();
-        let half_size = self.transform.scale / 2.0;
-        let min = self.transform.translation - half_size;
-        let max = self.transform.translation + half_size;
-
-        for face in overextended_faces {
-            let face_points = face.get_face_points(&min, &max);
-            let face_intersections = intersect_circle_with_rectangle(portal, &face_points);
-
-            if !face_intersections.is_empty() {
-                intersections.push((face, face_intersections));
-            }
-        }
-
-        intersections
-    }
-
     /// Finds the intersection point of a ray (defined by an origin and
     /// direction) with the edges of a viewable area.
     ///
@@ -218,6 +196,50 @@ impl Boundary {
         snapped_position
     }
 
+    /// Calculates how many faces a portal spans at a given position
+    pub fn calculate_portal_face_count(&self, portal: &Portal) -> usize {
+        let overextended_faces = self.get_overextended_faces_for(portal);
+
+        // Early return if no overextension - single face (full circle)
+        if overextended_faces.is_empty() {
+            return 1;
+        }
+
+        // Calculate boundary extents for constraint checking
+        let half_size = self.transform.scale / 2.0;
+        let min = self.transform.translation - half_size;
+        let max = self.transform.translation + half_size;
+
+        let primary_face = BoundaryFace::from_normal(portal.normal).unwrap();
+
+        // Collect ALL faces that need arcs (primary + overextended)
+        let mut all_faces_in_corner = vec![primary_face];
+        all_faces_in_corner.extend(overextended_faces.iter());
+
+        let mut face_count = 0;
+
+        // Calculate constrained intersections for each face
+        for &face in &all_faces_in_corner {
+            let face_points = face.get_face_points(&min, &max);
+            let raw_intersections = intersect_circle_with_rectangle(portal, &face_points);
+
+            // Apply constraints: filter out points that extend beyond face boundaries
+            let constrained_points = constrain_intersection_points(
+                raw_intersections,
+                face,
+                &all_faces_in_corner,
+                &min,
+                &max,
+            );
+
+            if constrained_points.len() >= 2 {
+                face_count += 1;
+            }
+        }
+
+        face_count
+    }
+
     pub fn draw_portal(
         &self,
         gizmos: &mut Gizmos<PortalGizmo>,
@@ -225,13 +247,12 @@ impl Boundary {
         color: Color,
         resolution: u32,
         orientation: &CameraOrientation,
+        is_deaderoid: bool,
     ) {
         let overextended_faces = self.get_overextended_faces_for(portal);
 
-        let over_extended_intersection_points =
-            self.get_overextended_intersection_points(portal, overextended_faces);
-
-        if over_extended_intersection_points.is_empty() {
+        // Early return if no overextension - draw full circle
+        if overextended_faces.is_empty() {
             let rotation =
                 Quat::from_rotation_arc(orientation.config.axis_profundus, portal.normal.as_vec3());
             let isometry = Isometry3d::new(portal.position, rotation);
@@ -242,24 +263,88 @@ impl Boundary {
             return;
         }
 
-        // Draw primary arc only once using first valid intersection points
-        let mut primary_arc_drawn = false;
+        // Calculate boundary extents for constraint checking
+        let half_size = self.transform.scale / 2.0;
+        let min = self.transform.translation - half_size;
+        let max = self.transform.translation + half_size;
 
-        for (face, points) in over_extended_intersection_points {
-            if points.len() >= 2 {
-                let rotated_position =
-                    self.rotate_portal_center_to_target_face(portal.position, portal.normal, face);
+        // Safe to unwrap: portals are always created with axis-aligned normals via
+        // snap_position_to_boundary_face(), so from_normal() will always return Some().
+        // This invariant holds until boundary system is redesigned.
+        let primary_face = BoundaryFace::from_normal(portal.normal).unwrap();
 
-                // Draw the wrapped arc on the adjacent face
-                gizmos
-                    .short_arc_3d_between(rotated_position, points[0], points[1], color)
-                    .resolution(resolution);
+        // Collect ALL faces that need arcs (primary + overextended)
+        let mut all_faces_in_corner = vec![primary_face];
+        all_faces_in_corner.extend(overextended_faces.iter());
 
-                // Draw primary arc only once (use first valid intersection points)
-                if !primary_arc_drawn {
-                    self.draw_primary_arc(gizmos, portal, color, resolution, points[0], points[1]);
-                    primary_arc_drawn = true;
+        let mut face_arcs = Vec::new();
+
+        // Calculate constrained intersections for each face
+        for &face in &all_faces_in_corner {
+            let face_points = face.get_face_points(&min, &max);
+            let raw_intersections = intersect_circle_with_rectangle(portal, &face_points);
+
+            // Apply constraints: filter out points that extend beyond face boundaries
+            // Pass ALL faces so each face can check against all others
+            let constrained_points = constrain_intersection_points(
+                raw_intersections,
+                face,
+                &all_faces_in_corner,
+                &min,
+                &max,
+            );
+
+            if constrained_points.len() >= 2 {
+                face_arcs.push((face, constrained_points));
+            }
+        }
+
+        // Draw all arcs
+        let is_corner = face_arcs.len() >= 3;
+        for (face, points) in face_arcs {
+            // Apply face color-coding only for deaderoid portals
+            let face_color = if is_deaderoid {
+                if is_corner {
+                    // Corner: use 3-color diagnostic scheme
+                    match face {
+                        BoundaryFace::Left | BoundaryFace::Right => Color::srgb(1.0, 0.0, 0.0), /* Red */
+                        BoundaryFace::Top | BoundaryFace::Bottom => Color::srgb(0.0, 1.0, 0.0), /* Green */
+                        BoundaryFace::Front | BoundaryFace::Back => Color::srgb(1.0, 1.0, 0.0), /* Yellow */
+                    }
+                } else {
+                    // Edge: ALL faces red (both primary and overextended)
+                    Color::srgb(1.0, 0.0, 0.0)
                 }
+            } else {
+                color // Non-deaderoid portals: always use the provided color
+            };
+
+            // EXPERIMENT 7: Only use draw_arc_with_center_and_normal for edge primary faces, not
+            // corners
+            if face == primary_face && !is_corner {
+                // Primary face at edge uses the complex arc logic with TAU - angle inversion
+                self.draw_arc_with_center_and_normal(
+                    gizmos,
+                    portal.position,
+                    portal.radius,
+                    portal.normal.as_vec3(),
+                    face_color,
+                    resolution,
+                    points[0],
+                    points[1],
+                );
+            } else {
+                // For ALL corner faces (including primary) + edge overextended faces
+                let center = if is_corner {
+                    portal.position
+                } else {
+                    self.rotate_portal_center_to_target_face(portal.position, portal.normal, face)
+                };
+
+                // Current rendering
+                gizmos
+                    .short_arc_3d_between(center, points[0], points[1], face_color)
+                    .resolution(resolution);
             }
         }
     }
@@ -348,26 +433,19 @@ impl Boundary {
         Vec3::new(x, y, z)
     }
 
-    // arc_3d has these assumptions:
-    // rotation: defines orientation of the arc, by default we assume the arc is
-    // contained in a plane parallel to the XZ plane and the default starting
-    // point is (position + Vec3::X)
-    //
-    // so we have to rotate the arc to match up with the actual place it should be
-    // drawn
-    fn draw_primary_arc(
+    // Helper function to draw an arc with explicit center, radius, and normal
+    // Used for primary face arcs - inverts the angle for proper rendering
+    fn draw_arc_with_center_and_normal(
         &self,
         gizmos: &mut Gizmos<PortalGizmo>,
-        portal: &Portal,
+        center: Vec3,
+        radius: f32,
+        normal: Vec3,
         color: Color,
         resolution: u32,
         from: Vec3,
         to: Vec3,
     ) {
-        let center = portal.position;
-        let radius = portal.radius;
-        let normal = portal.normal.as_vec3();
-
         // Calculate vectors from center to intersection points
         let vec_from = (from - center).normalize();
         let vec_to = (to - center).normalize();
@@ -377,6 +455,7 @@ impl Boundary {
         let cross_product = vec_from.cross(vec_to);
         let is_clockwise = cross_product.dot(normal) < 0.0;
 
+        // Invert the angle for arc_3d rendering logic
         angle = std::f32::consts::TAU - angle;
 
         // Calculate the rotation to align the arc with the boundary face
@@ -398,10 +477,6 @@ impl Boundary {
                 color,
             )
             .resolution(resolution);
-
-        // Debug visualization
-        // gizmos.line(center, from, Color::from(tailwind::GREEN_500));
-        // gizmos.line(center, to, Color::from(tailwind::BLUE_500));
     }
 
     fn get_overextended_faces_for(&self, portal: &Portal) -> Vec<BoundaryFace> {
@@ -670,4 +745,105 @@ fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -
     }
 
     intersections
+}
+
+/// Filters intersection points to only include those within the face's boundary limits.
+/// At corners, this prevents arcs from extending into adjacent faces.
+///
+/// Returns filtered vector containing only points within valid region. May be empty
+/// if all points were outside boundaries (e.g., small portal near corner).
+fn constrain_intersection_points(
+    points: Vec<Vec3>,
+    current_face: BoundaryFace,
+    all_faces_in_corner: &[BoundaryFace],
+    min: &Vec3,
+    max: &Vec3,
+) -> Vec<Vec3> {
+    points
+        .into_iter()
+        .filter(|point| {
+            point_within_boundary_for_face(*point, current_face, all_faces_in_corner, min, max)
+        })
+        .collect()
+}
+
+fn point_within_boundary_for_face(
+    point: Vec3,
+    current_face: BoundaryFace,
+    all_faces_in_corner: &[BoundaryFace],
+    min: &Vec3,
+    max: &Vec3,
+) -> bool {
+    // Check that point doesn't extend beyond ANY of the other faces in the corner
+    for &other_face in all_faces_in_corner {
+        if other_face == current_face {
+            continue; // Skip checking against ourselves
+        }
+        if faces_share_axis(current_face, other_face) {
+            continue; // Same axis, no constraint needed (optimization)
+        }
+
+        // Check if point exceeds the boundary this other face represents
+        // These are exact comparisons - no epsilon needed for geometric filtering
+        match other_face {
+            BoundaryFace::Left => {
+                if point.x < min.x {
+                    return false;
+                }
+            },
+            BoundaryFace::Right => {
+                if point.x > max.x {
+                    return false;
+                }
+            },
+            BoundaryFace::Bottom => {
+                if point.y < min.y {
+                    return false;
+                }
+            },
+            BoundaryFace::Top => {
+                if point.y > max.y {
+                    return false;
+                }
+            },
+            BoundaryFace::Back => {
+                if point.z < min.z {
+                    return false;
+                }
+            },
+            BoundaryFace::Front => {
+                if point.z > max.z {
+                    return false;
+                }
+            },
+        }
+    }
+
+    true
+}
+
+/// Returns true if two faces are perpendicular to the same axis.
+/// Used to optimize constraint checks by skipping geometrically impossible conditions.
+///
+/// Faces share an axis when they're perpendicular to the same coordinate axis:
+/// - Left/Right: both perpendicular to X-axis (points have fixed X, varying Y/Z)
+/// - Top/Bottom: both perpendicular to Y-axis (points have fixed Y, varying X/Z)
+/// - Front/Back: both perpendicular to Z-axis (points have fixed Z, varying X/Y)
+///
+/// Example: When drawing on Left face (x = -55) with Right overextended (x = 55),
+/// the constraint `point.x > 55` is impossible (point.x is fixed at -55).
+/// Skipping this check is a performance optimization.
+fn faces_share_axis(face1: BoundaryFace, face2: BoundaryFace) -> bool {
+    use BoundaryFace::*;
+    matches!(
+        (face1, face2),
+        // Same face (optimization for redundant self-checks)
+        (Left, Left) | (Right, Right) |
+        (Top, Top) | (Bottom, Bottom) |
+        (Front, Front) | (Back, Back) |
+        // Opposite faces on same axis
+        (Left, Right) | (Right, Left) |
+        (Top, Bottom) | (Bottom, Top) |
+        (Front, Back) | (Back, Front)
+    )
 }

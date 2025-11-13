@@ -93,6 +93,13 @@ impl DerefMut for MissileConfig {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_config }
 }
 
+#[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DeathCorner {
+    Nearest,
+    Random,
+    Directional,
+}
+
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
 pub struct NateroidConfig {
@@ -101,6 +108,9 @@ pub struct NateroidConfig {
     pub angular_velocity:          f32,
     pub death_duration_secs:       f32,
     pub death_shrink_pct:          f32,
+    pub death_corner:              DeathCorner,
+    pub initial_alpha:             f32,
+    pub target_alpha:              f32,
     pub density_culling_threshold: f32,
 }
 
@@ -108,13 +118,13 @@ impl Default for NateroidConfig {
     fn default() -> Self {
         Self {
             actor_config:              ActorConfig {
-                spawnable:                false,
+                spawnable:                true,
                 aabb:                     Aabb::default(),
                 angular_damping:          Some(0.001),
                 collider:                 Collider::cuboid(1., 1., 1.),
                 collider_margin:          1.0 / 3.0,
                 collider_type:            ColliderType::Ball,
-                collision_damage:         0.1,
+                collision_damage:         10.,
                 collision_layers:         CollisionLayers::new(
                     [GameLayer::Asteroid],
                     [
@@ -135,7 +145,7 @@ impl Default for NateroidConfig {
                 restitution_combine_rule: CoefficientCombine::Max,
                 rigid_body:               RigidBody::Dynamic,
                 scene:                    Handle::default(),
-                spawn_timer_seconds:      Some(0.1),
+                spawn_timer_seconds:      Some(2.0),
                 transform:                Transform::default(),
                 spawn_timer:              None,
             },
@@ -143,6 +153,9 @@ impl Default for NateroidConfig {
             angular_velocity:          4.5,
             death_duration_secs:       3.,
             death_shrink_pct:          0.3,
+            death_corner:              DeathCorner::Directional,
+            initial_alpha:             0.35,
+            target_alpha:              0.05,
             density_culling_threshold: 0.01,
         }
     }
@@ -180,7 +193,7 @@ impl Default for SpaceshipConfig {
                     [GameLayer::Asteroid, GameLayer::Boundary],
                 ),
                 gravity_scale:            0.,
-                health:                   500.,
+                health:                   5000.,
                 linear_damping:           Some(0.05),
                 locked_axes:              LockedAxes::new()
                     .lock_rotation_x()

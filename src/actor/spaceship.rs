@@ -55,7 +55,7 @@ fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipConfig
         return;
     }
 
-    commands.spawn((Spaceship, Name::new("Spaceship")));
+    commands.spawn((Spaceship, ContinuousFire, Name::new("Spaceship")));
 }
 
 fn initialize_spaceship(
