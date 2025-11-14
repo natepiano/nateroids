@@ -25,8 +25,6 @@ impl Plugin for StatePlugin {
             .add_systems(OnEnter(IsPaused::NotPaused), unpause_rapier)
             .add_systems(Update, log_transitions::<GameState>);
     }
-
-    fn name(&self) -> &str { "state plugin" }
 }
 
 // splash is the default so bevy will automatically enter this state

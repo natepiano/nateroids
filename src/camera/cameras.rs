@@ -95,6 +95,7 @@ pub struct ScreenSpaceBoundary {
 impl ScreenSpaceBoundary {
     /// Creates screen space margins from a camera's view of a boundary.
     /// Returns `None` if any boundary corner is behind the camera.
+    #[allow(clippy::similar_names)] // half_tan_hfov vs half_tan_vfov are standard FOV terms
     pub fn from_camera_view(
         boundary: &Boundary,
         cam_global: &GlobalTransform,
@@ -317,7 +318,7 @@ impl ScreenSpaceBoundary {
 }
 
 /// Boundary box edges
-#[derive(Debug, Clone, Copy, PartialEq, Reflect)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub enum Edge {
     Left,
     Right,
@@ -470,7 +471,7 @@ pub fn spawn_panorbit_camera(
     // camera - this doesn't make sense hard coding the initial values here
     // sucks but I can live with it for now
     let default_fov = std::f32::consts::FRAC_PI_4;
-    let default_aspect_ratio = 1.7777778;
+    let default_aspect_ratio = 1.777_777_8;
     let grid_size = config.scale();
     let initial_radius = calculate_camera_radius(
         grid_size,
@@ -537,6 +538,7 @@ fn draw_camera_focus_gizmo(
     }
 }
 
+#[allow(clippy::similar_names)] // x_distance, y_distance, xy_distance are intentionally similar
 pub fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32, buffer: f32) -> f32 {
     // Calculate horizontal FOV based on aspect ratio
     let horizontal_fov = 2.0 * ((fov / 2.0).tan() * aspect_ratio).atan();

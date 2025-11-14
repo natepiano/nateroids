@@ -3,6 +3,7 @@ mod boundary_face;
 mod planes;
 mod portals;
 mod screen_boundary;
+mod types;
 
 use bevy::prelude::*;
 

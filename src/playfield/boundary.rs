@@ -6,20 +6,24 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 
+use super::boundary_face::BoundaryFace;
+use super::portals::Portal;
+use super::portals::PortalGizmo;
+use super::types::BoundaryGizmo;
+use super::types::FlattenIntersections;
+use super::types::GridGizmo;
+use super::types::Intersection;
+use super::types::MultiFaceGeometry;
+use super::types::PortalGeometry;
 use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
 use crate::orientation::CameraOrientation;
-use crate::playfield::boundary_face::BoundaryFace;
-use crate::playfield::portals::Portal;
-use crate::playfield::portals::PortalGizmo;
 use crate::state::PlayingGame;
 
 // Epsilon values for boundary position snapping and portal overextension detection
 const BOUNDARY_SNAP_EPSILON: f32 = 0.01;
 const BOUNDARY_OVEREXTENSION_EPSILON: f32 = BOUNDARY_SNAP_EPSILON * 2.0;
-
-const MIN_POINTS_FOR_ARC: usize = 2;
 
 // Deaderoid portal colors
 const DEADEROID_APPROACHING_COLOR: Color = Color::srgb(1.0, 0.0, 0.0); // Red
@@ -43,30 +47,6 @@ impl Plugin for BoundaryPlugin {
     }
 }
 
-/// Describes the geometric configuration of a portal relative to boundary faces
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum PortalGeometry {
-    /// Portal completely within a single boundary face
-    SingleFace,
-    /// Portal extends across multiple faces (edge or corner)
-    MultiFace(MultiFaceGeometry),
-}
-
-/// Describes portals that span multiple boundary faces
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum MultiFaceGeometry {
-    /// Portal extends across an edge between two faces
-    Edge { overextended: BoundaryFace },
-    /// Portal extends into a corner (3+ faces)
-    Corner { overextended: Vec<BoundaryFace> },
-}
-
-#[derive(Default, Reflect, GizmoConfigGroup)]
-struct GridGizmo {}
-
-#[derive(Default, Reflect, GizmoConfigGroup)]
-struct BoundaryGizmo {}
-
 fn update_gizmos_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Res<Boundary>) {
     let (config, _) = config_store.config_mut::<GridGizmo>();
     config.line.width = boundary.grid_line_width;
@@ -80,6 +60,7 @@ fn update_gizmos_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Re
 /// defines
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
+#[allow(clippy::struct_field_names)] // "boundary_" prefix distinguishes from grid_line_width
 pub struct Boundary {
     pub cell_count:          UVec3,
     pub grid_color:          Color,
@@ -265,18 +246,10 @@ impl Boundary {
         // Calculate constrained intersections for each face
         for &face in &all_faces_in_corner {
             let face_points = face.get_face_points(&min, &max);
-            let raw_intersections = intersect_portal_with_rectangle(portal, &face_points);
+            let intersections = intersect_portal_with_rectangle(portal, &face_points).to_vec();
 
-            // Apply constraints: filter out points that extend beyond face boundaries
-            let constrained_points = constrain_intersection_points(
-                raw_intersections,
-                face,
-                &all_faces_in_corner,
-                &min,
-                &max,
-            );
-
-            if constrained_points.len() >= MIN_POINTS_FOR_ARC {
+            // Only count faces with exactly 2 intersection points
+            if intersections.len() == 2 {
                 face_count += 1;
             }
         }
@@ -362,65 +335,31 @@ impl Boundary {
         let max = self.transform.translation + half_size;
 
         // Collect ALL faces that need arcs (primary + overextended)
-        let mut all_faces_in_corner = vec![primary_face];
-        all_faces_in_corner.extend(overextended_faces.iter());
+        let mut all_faces_for_drawing = vec![primary_face];
+        all_faces_for_drawing.extend(overextended_faces.iter());
 
         let mut face_arcs = Vec::new();
 
         // Calculate constrained intersections for each face
-        for &face in &all_faces_in_corner {
+        for &face in &all_faces_for_drawing {
             let face_points = face.get_face_points(&min, &max);
-            let raw_intersections = intersect_portal_with_rectangle(portal, &face_points);
+            let intersections = intersect_portal_with_rectangle(portal, &face_points).to_vec();
 
-            // Apply constraints: filter out points that extend beyond face boundaries
-            // Pass ALL faces so each face can check against all others
-            let constrained_points = constrain_intersection_points(
-                raw_intersections,
-                face,
-                &all_faces_in_corner,
-                &min,
-                &max,
-            );
-
-            if constrained_points.len() >= MIN_POINTS_FOR_ARC {
-                face_arcs.push((face, constrained_points));
-            } else if !constrained_points.is_empty() {
-                error!(
-                    "Face {:?} filtered: only {} points (need {}). Portal at {:?}, radius {}",
-                    face,
-                    constrained_points.len(),
-                    MIN_POINTS_FOR_ARC,
-                    portal.position,
-                    portal.radius
-                );
+            // Only draw arcs for faces with exactly 2 intersection points
+            if intersections.len() == 2 {
+                face_arcs.push((face, intersections));
             }
         }
 
         // Draw all arcs
         for (face, points) in face_arcs {
-            // Apply face color-coding only for deaderoid portals
-            let face_color = if is_deaderoid {
-                match geometry {
-                    MultiFaceGeometry::Corner { .. } => {
-                        // Corner: use 3-color diagnostic scheme
-                        match face {
-                            BoundaryFace::Left | BoundaryFace::Right => CORNER_COLOR_LEFT_RIGHT_YZ,
-                            BoundaryFace::Top | BoundaryFace::Bottom => CORNER_COLOR_TOP_BOTTOM_XZ,
-                            BoundaryFace::Front | BoundaryFace::Back => CORNER_COLOR_FRONT_BACK_XY,
-                        }
-                    },
-                    MultiFaceGeometry::Edge { .. } => DEADEROID_APPROACHING_COLOR,
-                }
-            } else {
-                color // Non-deaderoid portals: always use the provided color
-            };
+            let face_color = get_portal_color(is_deaderoid, geometry, face, color);
 
-            // Only use draw_arc_with_center_and_normal for edge primary faces, notorners
             match geometry {
                 MultiFaceGeometry::Edge { .. } if face == primary_face => {
-                    // Primary face at edge uses complex arc logic with TAU angle inversion
-                    // This is geometrically necessary - simpler approaches don't work
-                    self.draw_arc_with_center_and_normal(
+                    // Primary face (contains actual portal.position) at edge uses complex arc logic
+                    // with TAU angle inversion
+                    Self::draw_primary_face_arc(
                         gizmos,
                         portal.position,
                         portal.radius,
@@ -432,7 +371,7 @@ impl Boundary {
                     );
                 },
                 MultiFaceGeometry::Edge { .. } => {
-                    // Edge overextended faces
+                    // The single Edge overextended face
                     let center = self.rotate_portal_center_to_target_face(
                         portal.position,
                         portal.normal(),
@@ -538,8 +477,7 @@ impl Boundary {
 
     // Helper function to draw an arc with explicit center, radius, and normal
     // Used for primary face arcs - inverts the angle for proper rendering
-    fn draw_arc_with_center_and_normal(
-        &self,
+    fn draw_primary_face_arc(
         gizmos: &mut Gizmos<PortalGizmo>,
         center: Vec3,
         radius: f32,
@@ -804,21 +742,42 @@ fn draw_boundary(
     );
 }
 
-pub fn intersect_portal_with_rectangle(portal: &Portal, rectangle_points: &[Vec3; 4]) -> Vec<Vec3> {
-    let mut intersections = Vec::new();
-
-    for i in 0..4 {
-        let start = rectangle_points[i];
-        let end = rectangle_points[(i + 1) % 4];
-
-        let edge_intersections = intersect_circle_with_line_segment(portal, start, end);
-        intersections.extend(edge_intersections);
+const fn get_portal_color(
+    is_deaderoid: bool,
+    geometry: &MultiFaceGeometry,
+    face: BoundaryFace,
+    default_color: Color,
+) -> Color {
+    if is_deaderoid {
+        match geometry {
+            MultiFaceGeometry::Corner { .. } => {
+                // Corner: use 3-color diagnostic scheme
+                match face {
+                    BoundaryFace::Left | BoundaryFace::Right => CORNER_COLOR_LEFT_RIGHT_YZ,
+                    BoundaryFace::Top | BoundaryFace::Bottom => CORNER_COLOR_TOP_BOTTOM_XZ,
+                    BoundaryFace::Front | BoundaryFace::Back => CORNER_COLOR_FRONT_BACK_XY,
+                }
+            },
+            MultiFaceGeometry::Edge { .. } => DEADEROID_APPROACHING_COLOR,
+        }
+    } else {
+        default_color
     }
-
-    intersections
 }
 
-fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -> Vec<Vec3> {
+fn intersect_portal_with_rectangle(
+    portal: &Portal,
+    rectangle_points: &[Vec3; 4],
+) -> [Intersection; 4] {
+    [
+        intersect_circle_with_line_segment(portal, rectangle_points[0], rectangle_points[1]),
+        intersect_circle_with_line_segment(portal, rectangle_points[1], rectangle_points[2]),
+        intersect_circle_with_line_segment(portal, rectangle_points[2], rectangle_points[3]),
+        intersect_circle_with_line_segment(portal, rectangle_points[3], rectangle_points[0]),
+    ]
+}
+
+fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -> Intersection {
     let edge = end - start;
     let center_to_start = start - portal.position;
 
@@ -832,122 +791,21 @@ fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -
     let discriminant = b * b - 4.0 * a * c;
 
     if discriminant < 0.0 {
-        return vec![];
+        return Intersection::NoIntersections;
     }
 
-    let mut intersections = Vec::new();
     let t1 = (-b + discriminant.sqrt()) / (2.0 * a);
     let t2 = (-b - discriminant.sqrt()) / (2.0 * a);
 
-    if (0.0..=1.0).contains(&t1) {
-        intersections.push(start + t1 * edge);
+    let t1_valid = (0.0..=1.0).contains(&t1);
+    let t2_valid = (0.0..=1.0).contains(&t2) && (t1 - t2).abs() > 1e-6;
+
+    match (t1_valid, t2_valid) {
+        (false, false) => Intersection::NoIntersections,
+        (true, false) => Intersection::OneIntersection(start + t1 * edge),
+        (false, true) => Intersection::OneIntersection(start + t2 * edge),
+        (true, true) => Intersection::TwoIntersections(start + t1 * edge, start + t2 * edge),
     }
-    if (0.0..=1.0).contains(&t2) && (t1 - t2).abs() > 1e-6 {
-        intersections.push(start + t2 * edge);
-    }
-
-    intersections
-}
-
-/// Filters intersection points to only include those within the face's boundary limits.
-/// At corners, this prevents arcs from extending into adjacent faces.
-///
-/// Returns filtered vector containing only points within valid region. May be empty
-/// if all points were outside boundaries (e.g., small portal near corner).
-fn constrain_intersection_points(
-    raw_intersections: Vec<Vec3>,
-    current_face: BoundaryFace,
-    all_faces_in_corner: &[BoundaryFace],
-    min: &Vec3,
-    max: &Vec3,
-) -> Vec<Vec3> {
-    raw_intersections
-        .into_iter()
-        .filter(|point| {
-            point_within_boundary_for_face(*point, current_face, all_faces_in_corner, min, max)
-        })
-        .collect()
-}
-
-fn point_within_boundary_for_face(
-    point: Vec3,
-    current_face: BoundaryFace,
-    all_faces_in_corner: &[BoundaryFace],
-    min: &Vec3,
-    max: &Vec3,
-) -> bool {
-    // Check that point doesn't extend beyond ANY of the other faces in the corner
-    for &other_face in all_faces_in_corner {
-        if other_face == current_face {
-            continue; // Skip checking against ourselves
-        }
-        if faces_share_axis(current_face, other_face) {
-            continue; // Same axis, no constraint needed (optimization)
-        }
-
-        // Check if point exceeds the boundary this other face represents
-        // These are exact comparisons - no epsilon needed for geometric filtering
-        match other_face {
-            BoundaryFace::Left => {
-                if point.x < min.x {
-                    return false;
-                }
-            },
-            BoundaryFace::Right => {
-                if point.x > max.x {
-                    return false;
-                }
-            },
-            BoundaryFace::Bottom => {
-                if point.y < min.y {
-                    return false;
-                }
-            },
-            BoundaryFace::Top => {
-                if point.y > max.y {
-                    return false;
-                }
-            },
-            BoundaryFace::Back => {
-                if point.z < min.z {
-                    return false;
-                }
-            },
-            BoundaryFace::Front => {
-                if point.z > max.z {
-                    return false;
-                }
-            },
-        }
-    }
-
-    true
-}
-
-/// Returns true if two faces are perpendicular to the same axis.
-/// Used to optimize constraint checks by skipping geometrically impossible conditions.
-///
-/// Faces share an axis when they're perpendicular to the same coordinate axis:
-/// - Left/Right: both perpendicular to X-axis (points have fixed X, varying Y/Z)
-/// - Top/Bottom: both perpendicular to Y-axis (points have fixed Y, varying X/Z)
-/// - Front/Back: both perpendicular to Z-axis (points have fixed Z, varying X/Y)
-///
-/// Example: When drawing on Left face (x = -55) with Right overextended (x = 55),
-/// the constraint `point.x > 55` is impossible (point.x is fixed at -55).
-/// Skipping this check is a performance optimization.
-const fn faces_share_axis(face1: BoundaryFace, face2: BoundaryFace) -> bool {
-    use BoundaryFace::*;
-    matches!(
-        (face1, face2),
-        // Same face (optimization for redundant self-checks)
-        (Left, Left) | (Right, Right) |
-        (Top, Top) | (Bottom, Bottom) |
-        (Front, Front) | (Back, Back) |
-        // Opposite faces on same axis
-        (Left, Right) | (Right, Left) |
-        (Top, Bottom) | (Bottom, Top) |
-        (Front, Back) | (Back, Front)
-    )
 }
 
 #[cfg(test)]

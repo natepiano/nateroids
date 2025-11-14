@@ -121,7 +121,7 @@ fn enforce_spaceship_2d_rotation(
             return;
         }
 
-        let tilt_amount = (up.x * up.x + up.y * up.y).sqrt();
+        let tilt_amount = up.x.hypot(up.y);
 
         // Only correct transform if significantly tilted (threshold: ~5 degrees)
         if tilt_amount > 0.087 {

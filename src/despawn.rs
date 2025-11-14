@@ -54,6 +54,7 @@ fn calculate_death_velocity(
     death_duration: f32,
     death_corner: DeathCorner,
 ) -> Vec3 {
+    const EPSILON: f32 = 0.001;
     let half_size = boundary.transform.scale / 2.0;
     let center = boundary.transform.translation;
 
@@ -138,11 +139,10 @@ fn calculate_death_velocity(
             let max_dot = corner_scores
                 .iter()
                 .map(|(_, dot)| *dot)
-                .max_by(|a, b| a.total_cmp(b))
+                .max_by(f32::total_cmp)
                 .unwrap_or(0.0);
 
             // Collect all corners within epsilon of max (handles ties)
-            const EPSILON: f32 = 0.001;
             let best_corners: Vec<Vec3> = corner_scores
                 .iter()
                 .filter(|(_, dot)| (dot - max_dot).abs() < EPSILON)
@@ -296,6 +296,8 @@ fn animate_dying_nateroids(
         // Apply ease-out curve (inverse cubic) for material swapping - fades rapidly at first,
         // then slows down (exponential decay)
         let eased_progress = 1.0 - (1.0 - progress).powi(3);
+        // Safe: eased_progress is 0.0-1.0, bounded by array size, result is valid index
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let new_index = (eased_progress * (death_materials.materials.len() - 1).to_f32()) as usize;
 
         // Only swap materials when index changes

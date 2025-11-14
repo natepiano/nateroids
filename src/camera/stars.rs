@@ -132,16 +132,19 @@ fn get_star_position(
     outer_sphere_radius: f32,
     rng: &mut ThreadRng,
 ) -> Vec3 {
-    let u: f32 = rng.random_range(0.0..1.0);
-    let v: f32 = rng.random_range(0.0..1.0);
-    let theta = u * std::f32::consts::PI * 2.0;
-    // FMA optimization (faster + more precise): 2.0 * v - 1.0
-    let phi = 2.0f32.mul_add(v, -1.0).acos();
-    let r = rng.random_range(inner_sphere_radius..outer_sphere_radius);
+    // Generate uniform random points on spherical shell using spherical coordinates
+    let azimuth_norm: f32 = rng.random_range(0.0..1.0); // normalized azimuthal angle
+    let polar_norm: f32 = rng.random_range(0.0..1.0); // normalized polar angle
 
-    let x = r * theta.cos() * phi.sin();
-    let y = r * theta.sin() * phi.sin();
-    let z = r * phi.cos();
+    let theta = azimuth_norm * std::f32::consts::PI * 2.0; // azimuthal: 0 to 2π
+    // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
+    let phi = 2.0f32.mul_add(polar_norm, -1.0).acos(); // polar angle
+    let radius = rng.random_range(inner_sphere_radius..outer_sphere_radius);
+
+    // Convert spherical to Cartesian coordinates
+    let x = radius * theta.cos() * phi.sin();
+    let y = radius * theta.sin() * phi.sin();
+    let z = radius * phi.cos();
 
     Vec3::new(x, y, z)
 }

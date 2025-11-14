@@ -67,7 +67,6 @@
       "Bash(git -C:*)",
       "WebFetch(domain:parry.rs)",
       "Bash(truncate:*)",
-      "Bash(git -C /Users/natemccoy/rust/nateroids diff src/camera/cameras.rs)",
       "Bash(cargo nextest run:*)",
       "mcp__brp__brp_list_logs",
       "Bash(git rev-parse:*)",
@@ -91,7 +90,10 @@
       "Bash(git branch:*)",
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(rustup doc:*)",
+      "Bash(open \"https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#used_underscore_binding\")",
+      "Bash(1)"
     ],
     "deny": [],
     "ask": []

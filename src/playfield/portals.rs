@@ -65,7 +65,6 @@ fn update_portal_config(
 #[reflect(Resource, InspectorOptions)]
 struct PortalConfig {
     color_approaching:             Color,
-    color_approaching_deaderoid:   Color,
     color_emerging:                Color,
     #[inspector(min = 0.0, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
     pub direction_change_factor:   f32,
@@ -94,20 +93,19 @@ struct PortalConfig {
 impl Default for PortalConfig {
     fn default() -> Self {
         Self {
-            color_approaching:           Color::from(tailwind::BLUE_600),
-            color_approaching_deaderoid: Color::from(tailwind::RED_600),
-            color_emerging:              Color::from(tailwind::YELLOW_800),
-            direction_change_factor:     0.75,
-            distance_approach:           0.5,
-            distance_shrink:             0.25,
-            fadeout_duration:            14.,
-            line_joints:                 4,
-            line_width:                  2.,
-            minimum_radius:              0.1,
-            movement_smoothing_factor:   0.08,
-            portal_scalar:               2.,
-            portal_smallest:             5.,
-            resolution:                  128,
+            color_approaching:         Color::from(tailwind::BLUE_600),
+            color_emerging:            Color::from(tailwind::YELLOW_800),
+            direction_change_factor:   0.75,
+            distance_approach:         0.5,
+            distance_shrink:           0.25,
+            fadeout_duration:          14.,
+            line_joints:               4,
+            line_width:                2.,
+            minimum_radius:            0.1,
+            movement_smoothing_factor: 0.08,
+            portal_scalar:             2.,
+            portal_smallest:           5.,
+            resolution:                128,
         }
     }
 }
@@ -124,7 +122,6 @@ pub struct Portal {
     pub actor_distance_to_wall:     f32,
     pub boundary_distance_approach: f32,
     pub boundary_distance_shrink:   f32,
-    pub color:                      Color,
     pub face:                       BoundaryFace,
     pub face_count:                 usize,
     fade_out_started:               Option<f32>,
@@ -144,7 +141,6 @@ impl Default for Portal {
             actor_distance_to_wall:     0.,
             boundary_distance_approach: 0.,
             boundary_distance_shrink:   0.,
-            color:                      Color::WHITE,
             face:                       BoundaryFace::Right,
             face_count:                 1,
             fade_out_started:           None,
@@ -161,13 +157,11 @@ fn init_portals(
         &LinearVelocity,
         &Teleporter,
         &mut ActorPortals,
-        Option<&Deaderoid>,
     )>,
     boundary: Res<Boundary>,
     portal_config: Res<PortalConfig>,
     time: Res<Time>,
 ) {
-    // todo #handle3d
     let boundary_size = boundary
         .transform
         .scale
@@ -177,25 +171,18 @@ fn init_portals(
     let boundary_distance_approach = boundary_size * portal_config.distance_approach;
     let boundary_distance_shrink = boundary_size * portal_config.distance_shrink;
 
-    for (aabb, transform, velocity, teleporter, mut visual, deaderoid) in &mut q_actor {
+    for (aabb, transform, velocity, teleporter, mut visual) in &mut q_actor {
         let radius =
             aabb.max_dimension().max(portal_config.portal_smallest) * portal_config.portal_scalar;
 
         let portal_position = transform.translation;
         let actor_direction = velocity.normalize_or_zero();
 
-        let color = if deaderoid.is_some() {
-            portal_config.color_approaching_deaderoid
-        } else {
-            portal_config.color_approaching
-        };
-
         let portal = Portal {
             actor_direction,
             position: portal_position,
             boundary_distance_approach,
             boundary_distance_shrink,
-            color,
             radius,
             ..default()
         };
@@ -401,6 +388,8 @@ fn update_approaching_portals(
 
                 // Fade out over n seconds
                 let fade_out_duration = config.fadeout_duration;
+                #[allow(clippy::suspicious_operation_groupings)]
+                // minimum_radius is correct here, not radius
                 if elapsed_time >= fade_out_duration || approaching.radius < config.minimum_radius {
                     // Remove visual after fade-out is complete
                     portal.approaching = None;
@@ -427,17 +416,10 @@ fn draw_approaching_portals(
 ) {
     for (portal, deaderoid) in q_portals.iter() {
         if let Some(ref approaching) = portal.approaching {
-            // Compute color based on current deaderoid status, not stored color
-            let portal_color = if deaderoid.is_some() {
-                config.color_approaching_deaderoid
-            } else {
-                config.color_approaching
-            };
-
             boundary.draw_portal(
                 &mut gizmos,
                 approaching,
-                portal_color,
+                config.color_approaching,
                 config.resolution,
                 &orientation,
                 deaderoid.is_some(),
@@ -511,17 +493,10 @@ fn draw_emerging_portals(
 ) {
     for (portal, deaderoid) in q_portals.iter() {
         if let Some(ref emerging) = portal.emerging {
-            // Compute color based on current deaderoid status, not stored color
-            let portal_color = if deaderoid.is_some() {
-                config.color_approaching_deaderoid
-            } else {
-                config.color_emerging
-            };
-
             boundary.draw_portal(
                 &mut gizmos,
                 emerging,
-                portal_color,
+                config.color_emerging,
                 config.resolution,
                 &orientation,
                 deaderoid.is_some(),

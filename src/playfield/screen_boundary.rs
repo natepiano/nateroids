@@ -236,7 +236,7 @@ fn draw_screen_aligned_boundary_box(
                 let mut found = false;
                 for (_, label, mut label_text, mut node, mut text_color) in &mut label_query {
                     if label.edge == edge {
-                        label_text.0 = text.clone();
+                        label_text.0 = (*text).to_string();
                         text_color.0 = color;
                         match edge {
                             Edge::Left | Edge::Top => {

@@ -1,5 +1,6 @@
 use avian3d::prelude::*;
 use bevy::camera::visibility::RenderLayers;
+use bevy::diagnostic::Diagnostic;
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
@@ -73,7 +74,7 @@ fn monitor_physics_health(
     // Get FPS from diagnostics
     let fps = diagnostics
         .get(&FrameTimeDiagnosticsPlugin::FPS)
-        .and_then(|fps| fps.smoothed())
+        .and_then(Diagnostic::smoothed)
         .unwrap_or(0.0);
 
     // Detect potential physics breakdown with hysteresis to prevent oscillation

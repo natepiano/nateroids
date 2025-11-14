@@ -32,12 +32,12 @@ fn handle_collision_events(
 
     for event in collision_events.read() {
         // Check if either entity is the spaceship that just teleported
-        let entity1_is_invincible_spaceship = spaceship_just_teleported
-            .map_or(false, |(ship_entity, just_teleported)| {
+        let entity1_is_invincible_spaceship =
+            spaceship_just_teleported.is_some_and(|(ship_entity, just_teleported)| {
                 just_teleported && event.collider1 == ship_entity
             });
-        let entity2_is_invincible_spaceship = spaceship_just_teleported
-            .map_or(false, |(ship_entity, just_teleported)| {
+        let entity2_is_invincible_spaceship =
+            spaceship_just_teleported.is_some_and(|(ship_entity, just_teleported)| {
                 just_teleported && event.collider2 == ship_entity
             });
 

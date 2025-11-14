@@ -72,40 +72,7 @@ fn start_zoom_to_fit(
     }
 }
 
-/// Calculates the target focus point using a two-phase approach.
-///
-/// **Phase 1** (far from boundary): When focus is more than half the camera radius away from
-/// the boundary center, move directly toward `Vec3::ZERO`.
-///
-/// **Phase 2** (close to boundary): Use screen-space centering to fine-tune the focus position
-/// by converting screen-space offsets to world-space corrections.
-fn calculate_target_focus(
-    current_focus: Vec3,
-    current_radius: f32,
-    margins: &ScreenSpaceBoundary,
-    cam_global: &GlobalTransform,
-) -> Vec3 {
-    let focus_to_boundary_distance = current_focus.length();
-    let far_from_boundary_threshold = current_radius * 0.5;
 
-    if focus_to_boundary_distance > far_from_boundary_threshold {
-        // Phase 1: Move toward boundary center
-        Vec3::ZERO
-    } else {
-        // Phase 2: Fine-tune using screen-space centering
-        let (center_x, center_y) = margins.center();
-        let cam_rot = cam_global.rotation();
-        let cam_right = cam_rot * Vec3::X;
-        let cam_up = cam_rot * Vec3::Y;
-
-        // Convert screen-space offset to world-space adjustment
-        let world_offset_x = center_x * margins.avg_depth;
-        let world_offset_y = center_y * margins.avg_depth;
-        let focus_correction = cam_right * world_offset_x + cam_up * world_offset_y;
-
-        current_focus + focus_correction
-    }
-}
 
 /// Convergence algorithm for zoom-to-fit animation using iterative adjustments.
 ///
@@ -167,9 +134,6 @@ fn update_zoom_to_fit(
         return;
     };
 
-    // Use FOV tangent values from margins (already calculated in from_camera_view)
-    let half_tan_vfov = margins.half_tan_vfov;
-    let half_tan_hfov = margins.half_tan_hfov;
 
     // Calculate center and span for debug printing
     let (center_x, center_y) = margins.center();
@@ -212,23 +176,7 @@ fn update_zoom_to_fit(
     let target_focus =
         calculate_target_focus(pan_orbit.target_focus, current_radius, &margins, cam_global);
 
-    // Calculate target radius using span ratios
-    // Physics: At distance R, object has span S. Closer = larger span.
-    // Relationship: S * R = constant, so target_R = current_R * (current_S / target_S)
-
-    // Target spans with proper margins
-    let target_span_x = 2.0 * half_tan_hfov / zoom_config.zoom_margin_multiplier();
-    let target_span_y = 2.0 * half_tan_vfov / zoom_config.zoom_margin_multiplier();
-
-    // Calculate ratios for each dimension
-    let ratio_x = span_x / target_span_x;
-    let ratio_y = span_y / target_span_y;
-
-    // Use the larger ratio (constraining dimension) to ensure both fit
-    let ratio = ratio_x.max(ratio_y);
-
-    // Calculate target radius from current radius and span ratio
-    let target_radius = current_radius * ratio;
+    let target_radius = calculate_target_radius(current_radius, span_x, span_y, &margins, &zoom_config);
 
     // Calculate error magnitudes
     let focus_delta = target_focus - pan_orbit.target_focus;
@@ -260,7 +208,7 @@ fn update_zoom_to_fit(
         radius_delta,
         rate * 100.0
     );
-    println!("  Status: balanced={}, fitted={}", balanced, fitted);
+    println!("  Status: balanced={balanced}, fitted={fitted}");
 
     // Check completion: balanced AND fitted
     if balanced && fitted {
@@ -276,4 +224,59 @@ fn update_zoom_to_fit(
         println!("  → MAX ITERATIONS REACHED (not converged)");
         commands.entity(entity).remove::<ZoomToFitActive>();
     }
+}
+
+/// Calculates the target focus point using a two-phase approach.
+///
+/// **Phase 1** (far from boundary): When focus is more than half the camera radius away from
+/// the boundary center, move directly toward `Vec3::ZERO`.
+///
+/// **Phase 2** (close to boundary): Use screen-space centering to fine-tune the focus position
+/// by converting screen-space offsets to world-space corrections.
+fn calculate_target_focus(
+    current_focus: Vec3,
+    current_radius: f32,
+    margins: &ScreenSpaceBoundary,
+    cam_global: &GlobalTransform,
+) -> Vec3 {
+    let focus_to_boundary_distance = current_focus.length();
+    let far_from_boundary_threshold = current_radius * 0.5;
+
+    if focus_to_boundary_distance > far_from_boundary_threshold {
+        // Phase 1: Move toward boundary center
+        Vec3::ZERO
+    } else {
+        // Phase 2: Fine-tune using screen-space centering
+        let (center_x, center_y) = margins.center();
+        let cam_rot = cam_global.rotation();
+        let cam_right = cam_rot * Vec3::X;
+        let cam_up = cam_rot * Vec3::Y;
+
+        // Convert screen-space offset to world-space adjustment
+        let world_offset_x = center_x * margins.avg_depth;
+        let world_offset_y = center_y * margins.avg_depth;
+        let focus_correction = cam_right * world_offset_x + cam_up * world_offset_y;
+
+        current_focus + focus_correction
+    }
+}
+
+/// Calculate target radius using span ratios
+/// Physics: At distance R, object has span S. Closer = larger span.
+/// Relationship: S * R = constant, so target_R = current_R * (current_S / target_S)
+fn calculate_target_radius(current_radius: f32, span_x: f32, span_y: f32, margins: &ScreenSpaceBoundary, zoom_config: &ZoomConfig) -> f32 {
+
+    // Target spans with proper margins
+    let target_span_x = 2.0 * margins.half_tan_hfov / zoom_config.zoom_margin_multiplier();
+    let target_span_y = 2.0 * margins.half_tan_vfov / zoom_config.zoom_margin_multiplier();
+
+    // Calculate ratios for each dimension
+    let ratio_x = span_x / target_span_x;
+    let ratio_y = span_y / target_span_y;
+
+    // Use the larger ratio (constraining dimension) to ensure both fit
+    let ratio = ratio_x.max(ratio_y);
+
+    // Calculate target radius from current radius and span ratio
+    current_radius * ratio
 }

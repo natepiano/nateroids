@@ -190,8 +190,10 @@ fn spawn_test_missile(mut commands: Commands, boundary: Res<Boundary>) {
 
     // Spawn near z=0 plane at random x,y position within boundary (z=5 to avoid immediate despawn)
     let spawn_position = Vec3::new(
-        boundary.transform.translation.x + rng.random_range(-half_size.x..half_size.x) * 0.8, /* 80% of boundary */
-        boundary.transform.translation.y + rng.random_range(-half_size.y..half_size.y) * 0.8,
+        rng.random_range(-half_size.x..half_size.x)
+            .mul_add(0.8, boundary.transform.translation.x), /* 80% of boundary */
+        rng.random_range(-half_size.y..half_size.y)
+            .mul_add(0.8, boundary.transform.translation.y),
         5.0, // Slightly offset from z=0 to avoid immediate despawn
     );
 
@@ -360,6 +362,8 @@ fn precompute_death_materials(
 
     let initial_alpha = nateroid_config.initial_alpha;
     let target_alpha = nateroid_config.target_alpha;
+    // Safe: alpha values are 0.0-1.0, result is small positive integer (~30-40)
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let num_levels = ((initial_alpha - target_alpha) * 100.0) as usize + 1;
 
     // Collect material handles from the scene's world using try_query
