@@ -135,7 +135,8 @@ fn get_star_position(
     let u: f32 = rng.random_range(0.0..1.0);
     let v: f32 = rng.random_range(0.0..1.0);
     let theta = u * std::f32::consts::PI * 2.0;
-    let phi = (2.0 * v - 1.0).acos();
+    // FMA optimization (faster + more precise): 2.0 * v - 1.0
+    let phi = 2.0f32.mul_add(v, -1.0).acos();
     let r = rng.random_range(inner_sphere_radius..outer_sphere_radius);
 
     let x = r * theta.cos() * phi.sin();
@@ -162,7 +163,8 @@ fn get_star_color(config: &StarConfig, rng: &mut impl Rng) -> Vec4 {
     let mut b = rng.random_range(start..end);
 
     // Ensure minimum brightness
-    let min_brightness = start + (end - start) * 0.2; // 20% above start
+    // FMA optimization (faster + more precise): start + (end - start) * 0.2
+    let min_brightness = (end - start).mul_add(0.2, start); // 20% above start
     let current_brightness = r.max(g).max(b);
 
     if current_brightness < min_brightness {

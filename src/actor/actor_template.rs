@@ -1,9 +1,9 @@
-//! this file is separated from actor_spawner just for the convenience of
-//! editing default values all the logic is in actor_spawner -
+//! this file is separated from `actor_spawner` just for the convenience of
+//! editing default values all the logic is in `actor_spawner` -
 //! we want to use an inspector to change defaults so
 //! a new bundle is constructed on each spawn and if the inspector changed
 //! anything, it will be reflected in the newly created entity. each of these
-//! can be thought of as an ActorConfig
+//! can be thought of as an `ActorConfig`
 use std::ops::Deref;
 use std::ops::DerefMut;
 

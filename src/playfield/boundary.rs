@@ -56,15 +56,9 @@ enum PortalGeometry {
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum MultiFaceGeometry {
     /// Portal extends across an edge between two faces
-    Edge {
-        primary:      BoundaryFace,
-        overextended: BoundaryFace,
-    },
+    Edge { overextended: BoundaryFace },
     /// Portal extends into a corner (3+ faces)
-    Corner {
-        primary:      BoundaryFace,
-        overextended: Vec<BoundaryFace>,
-    },
+    Corner { overextended: Vec<BoundaryFace> },
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -120,18 +114,15 @@ impl Boundary {
     /// Analyzes portal geometry relative to boundary faces
     fn classify_portal_geometry(&self, portal: &Portal) -> PortalGeometry {
         let overextended_faces = self.get_overextended_faces_for(portal);
-        let primary = portal.face;
 
         if overextended_faces.is_empty() {
             PortalGeometry::SingleFace
         } else if overextended_faces.len() == 1 {
             PortalGeometry::MultiFace(MultiFaceGeometry::Edge {
-                primary,
                 overextended: overextended_faces[0],
             })
         } else {
             PortalGeometry::MultiFace(MultiFaceGeometry::Corner {
-                primary,
                 overextended: overextended_faces,
             })
         }
@@ -259,17 +250,11 @@ impl Boundary {
         let min = self.transform.translation - half_size;
         let max = self.transform.translation + half_size;
 
-        // Collect all faces from the geometry
+        // Collect all faces from the geometry (primary from portal.face + overextended)
         let all_faces_in_corner = match multiface {
-            MultiFaceGeometry::Edge {
-                primary,
-                overextended,
-            } => vec![*primary, *overextended],
-            MultiFaceGeometry::Corner {
-                primary,
-                overextended,
-            } => {
-                let mut faces = vec![*primary];
+            MultiFaceGeometry::Edge { overextended } => vec![portal.face, *overextended],
+            MultiFaceGeometry::Corner { overextended } => {
+                let mut faces = vec![portal.face];
                 faces.extend(overextended);
                 faces
             },
@@ -364,16 +349,11 @@ impl Boundary {
         is_deaderoid: bool,
         geometry: &MultiFaceGeometry,
     ) {
-        // Extract primary face and overextended faces from geometry
-        let (primary_face, overextended_faces) = match geometry {
-            MultiFaceGeometry::Edge {
-                primary,
-                overextended,
-            } => (*primary, vec![*overextended]),
-            MultiFaceGeometry::Corner {
-                primary,
-                overextended,
-            } => (*primary, overextended.clone()),
+        // Extract overextended faces from geometry (primary is always portal.face)
+        let primary_face = portal.face;
+        let overextended_faces = match geometry {
+            MultiFaceGeometry::Edge { overextended } => vec![*overextended],
+            MultiFaceGeometry::Corner { overextended } => overextended.clone(),
         };
 
         // Calculate boundary extents for constraint checking
@@ -404,6 +384,15 @@ impl Boundary {
 
             if constrained_points.len() >= MIN_POINTS_FOR_ARC {
                 face_arcs.push((face, constrained_points));
+            } else if !constrained_points.is_empty() {
+                error!(
+                    "Face {:?} filtered: only {} points (need {}). Portal at {:?}, radius {}",
+                    face,
+                    constrained_points.len(),
+                    MIN_POINTS_FOR_ARC,
+                    portal.position,
+                    portal.radius
+                );
             }
         }
 
@@ -429,7 +418,8 @@ impl Boundary {
             // Only use draw_arc_with_center_and_normal for edge primary faces, notorners
             match geometry {
                 MultiFaceGeometry::Edge { .. } if face == primary_face => {
-                    // Primary face at edge uses the complex arc logic with TAU - angle inversion
+                    // Primary face at edge uses complex arc logic with TAU angle inversion
+                    // This is geometrically necessary - simpler approaches don't work
                     self.draw_arc_with_center_and_normal(
                         gizmos,
                         portal.position,
@@ -705,7 +695,11 @@ impl Boundary {
 
     pub fn longest_diagonal(&self) -> f32 {
         let boundary_scale = self.scale();
-        (boundary_scale.x.powi(2) + boundary_scale.y.powi(2) + boundary_scale.z.powi(2)).sqrt()
+        let x = boundary_scale.x;
+        let y = boundary_scale.y;
+        let z = boundary_scale.z;
+        // FMA optimization (faster + more precise): (x² + y² + z²).sqrt()
+        z.mul_add(z, y.mul_add(y, x.mul_add(x, 0.0))).sqrt()
     }
 
     pub fn max_missile_distance(&self) -> f32 {
@@ -830,7 +824,10 @@ fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -
 
     let a = edge.dot(edge);
     let b = 2.0 * center_to_start.dot(edge);
-    let c = center_to_start.dot(center_to_start) - portal.radius * portal.radius;
+    // FMA optimization (faster + more precise): dot(center_to_start) - radius²
+    let c = portal
+        .radius
+        .mul_add(-portal.radius, center_to_start.dot(center_to_start));
 
     let discriminant = b * b - 4.0 * a * c;
 
@@ -938,7 +935,7 @@ fn point_within_boundary_for_face(
 /// Example: When drawing on Left face (x = -55) with Right overextended (x = 55),
 /// the constraint `point.x > 55` is impossible (point.x is fixed at -55).
 /// Skipping this check is a performance optimization.
-fn faces_share_axis(face1: BoundaryFace, face2: BoundaryFace) -> bool {
+const fn faces_share_axis(face1: BoundaryFace, face2: BoundaryFace) -> bool {
     use BoundaryFace::*;
     matches!(
         (face1, face2),

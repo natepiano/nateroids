@@ -56,7 +56,7 @@ pub struct PlaneConfig {
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub specular_transmission: f32,
     #[inspector(min = 0.001, max = 10.0, display = NumberDisplay::Slider)]
-    pub(crate) thickness:      f32,
+    pub thickness:             f32,
 }
 
 impl Default for PlaneConfig {
@@ -123,15 +123,15 @@ fn create_or_update_plane(
     if let Some(entity) = existing_entity {
         commands
             .entity(entity)
-            .insert(Mesh3d(mesh.clone()))
-            .insert(MeshMaterial3d(material_handle.clone()))
+            .insert(Mesh3d(mesh))
+            .insert(MeshMaterial3d(material_handle))
             .insert(transform)
             .id()
     } else {
         commands
             .spawn(BoxPlane { plane_type })
-            .insert(Mesh3d(mesh.clone()))
-            .insert(MeshMaterial3d(material_handle.clone()))
+            .insert(Mesh3d(mesh))
+            .insert(MeshMaterial3d(material_handle))
             .insert(transform)
             .id()
     }

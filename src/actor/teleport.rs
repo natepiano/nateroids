@@ -144,13 +144,17 @@ pub fn teleport_at_boundary(
     )>,
 ) {
     for (entity, mut transform, mut teleporter, collider, name, is_spaceship, is_deaderoid) in
-        teleporting_entities.iter_mut()
+        &mut teleporting_entities
     {
         let original_position = transform.translation;
 
         let teleported_position = boundary.calculate_teleport_position(original_position);
 
-        if teleported_position != original_position {
+        if teleported_position == original_position {
+            teleporter.just_teleported = false;
+            teleporter.last_teleported_position = None;
+            teleporter.last_teleported_normal = None;
+        } else {
             // If this is a dying nateroid, despawn it instead of teleporting
             if is_deaderoid.is_some() {
                 despawn(&mut commands, entity);
@@ -159,7 +163,7 @@ pub fn teleport_at_boundary(
 
             // Only log spaceship teleports
             if is_spaceship.is_some() {
-                let entity_name = name.map(|n| (*n).as_str()).unwrap_or("Spaceship");
+                let entity_name = name.map_or("Spaceship", |n| (*n).as_str());
                 debug!(
                     "🔄 {} teleporting: from ({:.1}, {:.1}, {:.1}) to ({:.1}, {:.1}, {:.1})",
                     entity_name,
@@ -185,10 +189,6 @@ pub fn teleport_at_boundary(
                 rotation: transform.rotation,
                 collider: collider.clone(),
             });
-        } else {
-            teleporter.just_teleported = false;
-            teleporter.last_teleported_position = None;
-            teleporter.last_teleported_normal = None;
         }
     }
 }

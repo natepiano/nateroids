@@ -36,13 +36,14 @@ pub enum GameAction {
     Stars,
     StarConfigInspector,
     SpawnTestaroid,
+    SpawnTestMissile,
     ZoomConfigInspector,
     ZoomToFit,
 }
 
-/// GameActions assign keys to do a lot of obvious stuff.
+/// `GameActions` assign keys to do a lot of obvious stuff.
 ///
-/// you can ask for the GameAction and use it in your code directly
+/// you can ask for the `GameAction` and use it in your code directly
 /// ```rust
 /// fn my_system(user_input: Res<ActionState<GameAction>>) {
 ///    if user_input.pressed(&GameAction::Debug) {
@@ -106,6 +107,7 @@ impl GameAction {
                 insert_shift_input(input_map, action, KeyCode::Digit4)
             },
             Self::SpawnTestaroid => insert_shift_input(input_map, action, KeyCode::KeyT),
+            Self::SpawnTestMissile => insert_shift_input(input_map, action, KeyCode::KeyM),
             Self::Stars => input_map.with(action, KeyCode::F3),
             Self::StarConfigInspector => insert_shift_input(input_map, action, KeyCode::KeyS),
             Self::ZoomConfigInspector => insert_shift_input(input_map, action, KeyCode::KeyZ),
@@ -118,8 +120,8 @@ impl GameAction {
 // dependency injection with this impl?        because it makes using
 // toggle_active super intuitive and useful
 
-/// ToggleActive allows us to do something cool - we can use it like the bevy
-/// input_toggle_active but it works with leafwing_input_manager input_map
+/// `ToggleActive` allows us to do something cool - we can use it like the bevy
+/// `input_toggle_active` but it works with `leafwing_input_manager` `input_map`
 /// entries so we can have simple syntax for toggling systems as a run condition
 /// as follows:
 ///

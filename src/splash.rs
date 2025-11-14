@@ -4,12 +4,12 @@ use bevy::prelude::*;
 use crate::camera::RenderLayer;
 use crate::state::GameState;
 
-pub(crate) struct SplashPlugin;
+pub struct SplashPlugin;
 
 const SPLASH_TIME: f32 = 2.;
 
 #[derive(Component)]
-pub(crate) struct SplashText;
+pub struct SplashText;
 
 #[derive(Resource, Debug)]
 struct SplashTimer {

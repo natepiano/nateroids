@@ -46,10 +46,10 @@ fn main() {
     // Get effective port from BrpExtrasPlugin to include in window title if non-default
     let brp_plugin = BrpExtrasPlugin::default();
     let (effective_port, _) = brp_plugin.get_effective_port();
-    let window_title = if effective_port != bevy_brp_extras::DEFAULT_REMOTE_PORT {
-        format!("nateroids - {effective_port}")
-    } else {
+    let window_title = if effective_port == bevy_brp_extras::DEFAULT_REMOTE_PORT {
         "nateroids".to_string()
+    } else {
+        format!("nateroids - {effective_port}")
     };
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -61,7 +61,7 @@ fn main() {
             })
             .set(WindowPlugin {
                 primary_window: Some(Window {
-                    title: window_title.clone(),
+                    title: window_title,
                     ..default()
                 }),
                 ..default()

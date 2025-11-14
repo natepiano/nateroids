@@ -8,6 +8,7 @@ use leafwing_input_manager::action_state::ActionState;
 use crate::actor::Nateroid;
 use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
+use crate::traits::UsizeExt;
 
 pub struct PhysicsPlugin;
 
@@ -64,7 +65,7 @@ fn monitor_physics_health(
     // Calculate average velocity magnitude
     let total_speed: f32 = nateroids.iter().map(|vel| vel.length()).sum();
     let avg_speed = if nateroid_count > 0 {
-        total_speed / nateroid_count as f32
+        total_speed / nateroid_count.to_f32()
     } else {
         0.0
     };

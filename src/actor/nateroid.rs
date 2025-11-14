@@ -13,12 +13,14 @@ use super::actor_template::GameLayer;
 use super::actor_template::NateroidConfig;
 use crate::asset_loader;
 use crate::asset_loader::SceneAssets;
+use crate::despawn::despawn;
 use crate::game_input::GameAction;
 use crate::game_input::just_pressed;
 use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 use crate::traits::TransformExt;
+use crate::traits::UsizeExt;
 
 // half the size of the boundary and only in the x,y plane
 const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
@@ -54,7 +56,7 @@ impl NateroidSpawnStats {
             1.0 // No data - assume field is not crowded
         } else {
             let successes = self.attempts.iter().filter(|&&success| success).count();
-            successes as f32 / self.attempts.len() as f32
+            successes.to_f32() / self.attempts.len().to_f32()
         }
     }
 
@@ -83,6 +85,10 @@ impl Plugin for NateroidPlugin {
                     spawn_testaroid
                         .in_set(InGameSet::EntityUpdates)
                         .run_if(just_pressed(GameAction::SpawnTestaroid)),
+                    spawn_test_missile
+                        .in_set(InGameSet::EntityUpdates)
+                        .run_if(just_pressed(GameAction::SpawnTestMissile)),
+                    despawn_test_missiles.in_set(InGameSet::EntityUpdates),
                 ),
             );
     }
@@ -158,6 +164,65 @@ fn spawn_testaroid(mut commands: Commands) {
     };
 
     commands.spawn((Nateroid, Name::new("Nateroid"), testaroid));
+}
+
+fn spawn_test_missile(mut commands: Commands, boundary: Res<Boundary>) {
+    use rand::Rng;
+    let mut rng = rand::rng();
+
+    // Pick a random corner from the 4 front corners (positive z to ensure heading away from z=0)
+    let half_size = boundary.transform.scale / 2.0;
+    let corner_signs = Vec3::new(
+        if rng.random::<bool>() { 1.0 } else { -1.0 },
+        if rng.random::<bool>() { 1.0 } else { -1.0 },
+        1.0, // Always positive z (front wall) to avoid crossing z=0 before reaching corner
+    );
+    let corner = boundary.transform.translation + half_size * corner_signs;
+
+    // Target the corner directly (small offset for variety but guaranteed corner hit)
+    let target_offset_radius = 1.0; // Very small offset to add variety
+    let offset = Vec3::new(
+        rng.random_range(-target_offset_radius..target_offset_radius),
+        rng.random_range(-target_offset_radius..target_offset_radius),
+        rng.random_range(-target_offset_radius..target_offset_radius),
+    );
+    let target = corner + offset;
+
+    // Spawn near z=0 plane at random x,y position within boundary (z=5 to avoid immediate despawn)
+    let spawn_position = Vec3::new(
+        boundary.transform.translation.x + rng.random_range(-half_size.x..half_size.x) * 0.8, /* 80% of boundary */
+        boundary.transform.translation.y + rng.random_range(-half_size.y..half_size.y) * 0.8,
+        5.0, // Slightly offset from z=0 to avoid immediate despawn
+    );
+
+    // Calculate direction from spawn to target
+    let direction = (target - spawn_position).normalize_or_zero();
+
+    // Velocity aimed at target (moderate speed to see what's happening)
+    let velocity = direction * 80.0;
+
+    let test_missile = super::missile::TestMissile {
+        position: spawn_position,
+        velocity,
+    };
+
+    commands.spawn((
+        super::missile::Missile,
+        Name::new("TestMissile"),
+        test_missile,
+    ));
+}
+
+fn despawn_test_missiles(
+    mut commands: Commands,
+    query: Query<(Entity, &Transform, &super::missile::TestMissile)>,
+) {
+    for (entity, transform, _) in query.iter() {
+        // Despawn when z crosses 0 (returned from back to front)
+        if transform.translation.z.abs() < 0.5 {
+            despawn(&mut commands, entity);
+        }
+    }
 }
 
 fn initialize_nateroid(
@@ -321,7 +386,8 @@ fn precompute_death_materials(
     // Precompute materials for each alpha level
     let mut precomputed_materials = Vec::with_capacity(num_levels);
     for level in 0..num_levels {
-        let alpha = initial_alpha - (level as f32 * 0.01);
+        // FMA optimization (faster + more precise): initial_alpha - (level as f32 * 0.01)
+        let alpha = level.to_f32().mul_add(-0.01, initial_alpha);
         let mut level_materials = Vec::with_capacity(material_handles.len());
 
         for material_handle in &material_handles {

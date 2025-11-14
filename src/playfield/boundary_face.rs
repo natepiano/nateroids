@@ -14,74 +14,74 @@ pub enum BoundaryFace {
 }
 
 impl BoundaryFace {
-    pub fn get_normal(&self) -> Vec3 {
+    pub const fn get_normal(self) -> Vec3 {
         match self {
-            BoundaryFace::Left => Vec3::NEG_X,
-            BoundaryFace::Right => Vec3::X,
-            BoundaryFace::Top => Vec3::Y,
-            BoundaryFace::Bottom => Vec3::NEG_Y,
-            BoundaryFace::Front => Vec3::Z,
-            BoundaryFace::Back => Vec3::NEG_Z,
+            Self::Left => Vec3::NEG_X,
+            Self::Right => Vec3::X,
+            Self::Top => Vec3::Y,
+            Self::Bottom => Vec3::NEG_Y,
+            Self::Front => Vec3::Z,
+            Self::Back => Vec3::NEG_Z,
         }
     }
 
     /// Infallible conversion to `Dir3` - all boundary faces are axis-aligned
-    pub fn to_dir3(&self) -> Dir3 {
+    pub const fn to_dir3(self) -> Dir3 {
         match self {
-            BoundaryFace::Right => Dir3::X,
-            BoundaryFace::Left => Dir3::NEG_X,
-            BoundaryFace::Top => Dir3::Y,
-            BoundaryFace::Bottom => Dir3::NEG_Y,
-            BoundaryFace::Front => Dir3::Z,
-            BoundaryFace::Back => Dir3::NEG_Z,
+            Self::Right => Dir3::X,
+            Self::Left => Dir3::NEG_X,
+            Self::Top => Dir3::Y,
+            Self::Bottom => Dir3::NEG_Y,
+            Self::Front => Dir3::Z,
+            Self::Back => Dir3::NEG_Z,
         }
     }
 
     pub fn from_normal(normal: Dir3) -> Option<Self> {
         match normal {
-            Dir3::X => Some(BoundaryFace::Right),
-            Dir3::NEG_X => Some(BoundaryFace::Left),
-            Dir3::Y => Some(BoundaryFace::Top),
-            Dir3::NEG_Y => Some(BoundaryFace::Bottom),
-            Dir3::Z => Some(BoundaryFace::Front),
-            Dir3::NEG_Z => Some(BoundaryFace::Back),
+            Dir3::X => Some(Self::Right),
+            Dir3::NEG_X => Some(Self::Left),
+            Dir3::Y => Some(Self::Top),
+            Dir3::NEG_Y => Some(Self::Bottom),
+            Dir3::Z => Some(Self::Front),
+            Dir3::NEG_Z => Some(Self::Back),
             _ => None,
         }
     }
 
-    pub fn get_face_points(&self, min: &Vec3, max: &Vec3) -> [Vec3; 4] {
+    pub const fn get_face_points(self, min: &Vec3, max: &Vec3) -> [Vec3; 4] {
         match self {
-            BoundaryFace::Left => [
+            Self::Left => [
                 Vec3::new(min.x, min.y, min.z),
                 Vec3::new(min.x, max.y, min.z),
                 Vec3::new(min.x, max.y, max.z),
                 Vec3::new(min.x, min.y, max.z),
             ],
-            BoundaryFace::Right => [
+            Self::Right => [
                 Vec3::new(max.x, min.y, min.z),
                 Vec3::new(max.x, max.y, min.z),
                 Vec3::new(max.x, max.y, max.z),
                 Vec3::new(max.x, min.y, max.z),
             ],
-            BoundaryFace::Bottom => [
+            Self::Bottom => [
                 Vec3::new(min.x, min.y, min.z),
                 Vec3::new(max.x, min.y, min.z),
                 Vec3::new(max.x, min.y, max.z),
                 Vec3::new(min.x, min.y, max.z),
             ],
-            BoundaryFace::Top => [
+            Self::Top => [
                 Vec3::new(min.x, max.y, min.z),
                 Vec3::new(max.x, max.y, min.z),
                 Vec3::new(max.x, max.y, max.z),
                 Vec3::new(min.x, max.y, max.z),
             ],
-            BoundaryFace::Back => [
+            Self::Back => [
                 Vec3::new(min.x, min.y, min.z),
                 Vec3::new(max.x, min.y, min.z),
                 Vec3::new(max.x, max.y, min.z),
                 Vec3::new(min.x, max.y, min.z),
             ],
-            BoundaryFace::Front => [
+            Self::Front => [
                 Vec3::new(min.x, min.y, max.z),
                 Vec3::new(max.x, min.y, max.z),
                 Vec3::new(max.x, max.y, max.z),

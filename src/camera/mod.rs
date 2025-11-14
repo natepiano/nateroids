@@ -40,8 +40,8 @@ pub enum CameraOrder {
 impl CameraOrder {
     pub const fn order(self) -> isize {
         match self {
-            CameraOrder::Game => 1,
-            CameraOrder::Stars => 0,
+            Self::Game => 1,
+            Self::Stars => 0,
         }
     }
 }
@@ -62,8 +62,8 @@ pub enum RenderLayer {
 impl RenderLayer {
     pub const fn layers(self) -> &'static [Layer] {
         match self {
-            RenderLayer::Game => &[1],
-            RenderLayer::Stars => &[0],
+            Self::Game => &[1],
+            Self::Stars => &[0],
         }
     }
 }

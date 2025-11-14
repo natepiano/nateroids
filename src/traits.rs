@@ -15,3 +15,15 @@ impl TransformExt for Transform {
         }
     }
 }
+
+/// Extension trait for `usize` to provide safe f32 conversion for game-scale values
+pub trait UsizeExt {
+    /// Converts `usize` to `f32` for game-scale values (safe for values < 16 million)
+    fn to_f32(self) -> f32;
+}
+
+impl UsizeExt for usize {
+    #[inline]
+    #[allow(clippy::cast_precision_loss)]
+    fn to_f32(self) -> f32 { self as f32 }
+}

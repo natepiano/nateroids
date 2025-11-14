@@ -125,7 +125,7 @@ fn update_twinkling(
     mut stars: Query<(Entity, &MeshMaterial3d<StandardMaterial>, &mut Twinkling)>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    for (entity, material_handle, mut twinkling) in stars.iter_mut() {
+    for (entity, material_handle, mut twinkling) in &mut stars {
         twinkling.twinkle_timer.tick(time.delta());
 
         if let Some(material) = materials.get_mut(material_handle) {

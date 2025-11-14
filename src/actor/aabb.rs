@@ -118,7 +118,7 @@ fn get_mesh_aabb(mesh: &Mesh) -> Aabb {
     {
         let mut min = Vec3::splat(f32::MAX);
         let mut max = Vec3::splat(f32::MIN);
-        for position in positions.iter() {
+        for position in positions {
             min = min.min(Vec3::from(*position));
             max = max.max(Vec3::from(*position));
         }

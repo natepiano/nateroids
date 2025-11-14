@@ -7,6 +7,7 @@ use crate::camera::ZoomConfig;
 use crate::game_input::GameAction;
 use crate::game_input::just_pressed;
 use crate::playfield::Boundary;
+use crate::traits::UsizeExt;
 
 pub struct ZoomPlugin;
 
@@ -157,7 +158,8 @@ fn update_zoom_to_fit(
             zoom_state.iteration_count
         );
         let boundary_corners = boundary.corners();
-        let boundary_center = boundary_corners.iter().sum::<Vec3>() / boundary_corners.len() as f32;
+        let boundary_center =
+            boundary_corners.iter().sum::<Vec3>() / boundary_corners.len().to_f32();
         pan_orbit.target_focus = boundary_center;
         pan_orbit.target_radius *= 1.5;
         pan_orbit.force_update = true;

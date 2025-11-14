@@ -33,11 +33,13 @@ fn handle_collision_events(
     for event in collision_events.read() {
         // Check if either entity is the spaceship that just teleported
         let entity1_is_invincible_spaceship = spaceship_just_teleported
-            .map(|(ship_entity, just_teleported)| just_teleported && event.collider1 == ship_entity)
-            .unwrap_or(false);
+            .map_or(false, |(ship_entity, just_teleported)| {
+                just_teleported && event.collider1 == ship_entity
+            });
         let entity2_is_invincible_spaceship = spaceship_just_teleported
-            .map(|(ship_entity, just_teleported)| just_teleported && event.collider2 == ship_entity)
-            .unwrap_or(false);
+            .map_or(false, |(ship_entity, just_teleported)| {
+                just_teleported && event.collider2 == ship_entity
+            });
 
         if entity1_is_invincible_spaceship {
             // Spaceship just teleported - instantly kill entity2

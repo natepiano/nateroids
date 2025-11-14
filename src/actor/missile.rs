@@ -20,6 +20,7 @@ pub struct MissilePlugin;
 impl Plugin for MissilePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(initialize_missile)
+            .add_observer(initialize_test_missile)
             .add_systems(FixedUpdate, fire_missile.in_set(InGameSet::UserInput))
             .add_systems(
                 FixedUpdate,
@@ -41,6 +42,14 @@ impl Plugin for MissilePlugin {
 )]
 pub struct Missile;
 
+/// Test missile with custom position and velocity for testing corner portals
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub struct TestMissile {
+    pub position: Vec3,
+    pub velocity: Vec3,
+}
+
 #[derive(Component, Reflect, Copy, Clone, Debug, Default)]
 #[reflect(Component)]
 pub struct MissilePosition {
@@ -52,8 +61,8 @@ pub struct MissilePosition {
 }
 
 impl MissilePosition {
-    pub fn new(total_distance: f32) -> Self {
-        MissilePosition {
+    pub const fn new(total_distance: f32) -> Self {
+        Self {
             total_distance,
             traveled_distance: 0.,
             remaining_distance: 0.,
@@ -121,6 +130,34 @@ fn initialize_missile(
     insert_configured_components(&mut commands, &mut config.actor_config, missile.entity);
 }
 
+fn initialize_test_missile(
+    missile: On<Add, Missile>,
+    mut commands: Commands,
+    boundary: Res<Boundary>,
+    mut config: ResMut<MissileConfig>,
+    test_query: Query<&TestMissile>,
+) {
+    // Check if this is a test missile
+    if let Ok(test_missile) = test_query.get(missile.entity) {
+        let missile_position = MissilePosition::new(boundary.max_missile_distance());
+
+        let transform = Transform::from_translation(test_missile.position)
+            .with_scale(config.actor_config.transform.scale);
+
+        let linear_velocity = LinearVelocity(test_missile.velocity);
+        let angular_velocity = AngularVelocity(Vec3::ZERO);
+
+        commands
+            .entity(missile.entity)
+            .insert(missile_position)
+            .insert(transform)
+            .insert(linear_velocity)
+            .insert(angular_velocity);
+
+        insert_configured_components(&mut commands, &mut config.actor_config, missile.entity);
+    }
+}
+
 fn initialize_transform(
     spaceship_transform: &Transform,
     missile_config: &MissileConfig,
@@ -167,7 +204,7 @@ fn fire_missile(
 /// we update missile movement so that it can be despawned after it has traveled
 /// its total distance
 fn missile_movement(mut query: Query<(&Transform, &mut MissilePosition, &Teleporter)>) {
-    for (transform, mut missile, teleporter) in query.iter_mut() {
+    for (transform, mut missile, teleporter) in &mut query {
         let current_position = transform.translation;
 
         if let Some(last_position) = missile.last_position {

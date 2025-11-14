@@ -134,7 +134,7 @@ pub struct Portal {
 
 impl Portal {
     /// Returns the normal direction for this portal's face
-    pub fn normal(&self) -> Dir3 { self.face.to_dir3() }
+    pub const fn normal(&self) -> Dir3 { self.face.to_dir3() }
 }
 
 impl Default for Portal {
@@ -177,7 +177,7 @@ fn init_portals(
     let boundary_distance_approach = boundary_size * portal_config.distance_approach;
     let boundary_distance_shrink = boundary_size * portal_config.distance_shrink;
 
-    for (aabb, transform, velocity, teleporter, mut visual, deaderoid) in q_actor.iter_mut() {
+    for (aabb, transform, velocity, teleporter, mut visual, deaderoid) in &mut q_actor {
         let radius =
             aabb.max_dimension().max(portal_config.portal_smallest) * portal_config.portal_scalar;
 
@@ -304,22 +304,18 @@ fn handle_approaching_visual(
                 position: collision_point,
                 face,
                 radius: portal.radius,
-                ..portal.clone()
+                ..portal
             };
             let current_face_count = boundary.calculate_portal_face_count(&temp_portal);
 
             // Get previous face count
-            let previous_face_count = visual
-                .approaching
-                .as_ref()
-                .map(|p| p.face_count)
-                .unwrap_or(1);
+            let previous_face_count = visual.approaching.as_ref().map_or(1, |p| p.face_count);
 
             // Disable smoothing on any topology change to prevent off-plane artifacts
-            let smoothed_position = if current_face_count != previous_face_count {
-                collision_point
-            } else {
+            let smoothed_position = if current_face_count == previous_face_count {
                 smooth_circle_position(visual, collision_point, normal, portal_config)
+            } else {
+                collision_point
             };
 
             // Snap to boundary face and recalculate face to prevent corner glitches
@@ -361,7 +357,7 @@ fn handle_approaching_visual(
 //
 // extracted for readability/complexity
 fn smooth_circle_position(
-    visual: &mut Mut<ActorPortals>,
+    visual: &Mut<ActorPortals>,
     collision_point: Vec3,
     current_boundary_wall_normal: Dir3,
     portal_config: &Res<PortalConfig>,
@@ -393,7 +389,7 @@ fn update_approaching_portals(
     config: Res<PortalConfig>,
     mut q_portals: Query<&mut ActorPortals>,
 ) {
-    for mut portal in q_portals.iter_mut() {
+    for mut portal in &mut q_portals {
         if let Some(ref mut approaching) = portal.approaching {
             let radius = get_approaching_radius(approaching);
 
@@ -451,7 +447,7 @@ fn draw_approaching_portals(
 }
 
 // extracted for readability
-fn get_approaching_radius(approaching: &mut Portal) -> f32 {
+fn get_approaching_radius(approaching: &Portal) -> f32 {
     // 0.5 corresponds to making sure that the aabb's of an actor fits
     // once radius shrinks down - we make sure the aabb always fits
     // for now not parameterizing but maybe i'll care in the future
@@ -466,7 +462,9 @@ fn get_approaching_radius(approaching: &mut Portal) -> f32 {
         let scale_factor = (approaching.actor_distance_to_wall
             / approaching.boundary_distance_shrink)
             .clamp(0.0, 1.0);
-        min_radius + (max_radius - min_radius) * scale_factor
+        // FMA optimization (faster + more precise): min_radius + (max_radius - min_radius) *
+        // scale_factor
+        (max_radius - min_radius).mul_add(scale_factor, min_radius)
     }
 }
 
@@ -475,7 +473,7 @@ fn update_emerging_portals(
     config: Res<PortalConfig>,
     mut q_portals: Query<&mut ActorPortals>,
 ) {
-    for mut portal in q_portals.iter_mut() {
+    for mut portal in &mut q_portals {
         if let Some(ref mut emerging) = portal.emerging
             && let Some(emerging_start) = emerging.fade_out_started
         {

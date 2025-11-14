@@ -81,7 +81,7 @@ impl Default for LightConfig {
 }
 
 impl LightConfig {
-    pub fn get_light_settings(&self, position: LightPosition) -> &LightSettings {
+    pub const fn get_light_settings(&self, position: LightPosition) -> &LightSettings {
         match position {
             LightPosition::Front => &self.front,
             LightPosition::Back => &self.back,
@@ -104,31 +104,31 @@ pub enum LightPosition {
 }
 
 impl LightPosition {
-    pub fn get_rotation(&self, orientation: &CameraOrientation) -> RotationInfo {
+    pub fn get_rotation(self, orientation: &CameraOrientation) -> RotationInfo {
         use std::f32::consts::FRAC_PI_2;
         use std::f32::consts::PI;
         match self {
-            LightPosition::Right => RotationInfo {
+            Self::Right => RotationInfo {
                 axis:  orientation.config.axis_mundi,
                 angle: FRAC_PI_2,
             },
-            LightPosition::Left => RotationInfo {
+            Self::Left => RotationInfo {
                 axis:  orientation.config.axis_mundi,
                 angle: -FRAC_PI_2,
             },
-            LightPosition::Front => RotationInfo {
+            Self::Front => RotationInfo {
                 axis:  orientation.config.axis_orbis,
                 angle: 0.,
             },
-            LightPosition::Back => RotationInfo {
+            Self::Back => RotationInfo {
                 axis:  orientation.config.axis_orbis,
                 angle: PI,
             },
-            LightPosition::Bottom => RotationInfo {
+            Self::Bottom => RotationInfo {
                 axis:  orientation.config.axis_orbis,
                 angle: FRAC_PI_2,
             },
-            LightPosition::Top => RotationInfo {
+            Self::Top => RotationInfo {
                 axis:  orientation.config.axis_orbis,
                 angle: -FRAC_PI_2,
             },
@@ -171,16 +171,14 @@ fn manage_lighting(
     // iterate through all possible positions to see if any of them exist...
     // if it's been enabled and it doesn't exist then spawn it
     // if it has changed then update it to what it's changed to
-    for position in [
+    for position in &[
         LightPosition::Right,
         LightPosition::Left,
         LightPosition::Front,
         LightPosition::Back,
         LightPosition::Bottom,
         LightPosition::Top,
-    ]
-    .iter()
-    {
+    ] {
         let settings = light_config.get_light_settings(*position);
 
         // we always spawn a light with its current LightDirection - see

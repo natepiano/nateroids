@@ -16,6 +16,7 @@ use crate::game_input::GameAction;
 use crate::game_input::just_pressed;
 use crate::game_input::toggle_active;
 use crate::playfield::Boundary;
+use crate::traits::UsizeExt;
 
 pub struct CamerasPlugin;
 
@@ -87,7 +88,7 @@ pub struct ScreenSpaceBoundary {
     pub avg_depth:       f32,
     /// Half tangent of vertical field of view
     pub half_tan_vfov:   f32,
-    /// Half tangent of horizontal field of view (vfov * aspect_ratio)
+    /// Half tangent of horizontal field of view (vfov * `aspect_ratio`)
     pub half_tan_hfov:   f32,
 }
 
@@ -142,7 +143,7 @@ impl ScreenSpaceBoundary {
             max_norm_y = max_norm_y.max(norm_y);
             avg_depth += depth;
         }
-        avg_depth /= boundary_corners.len() as f32;
+        avg_depth /= boundary_corners.len().to_f32();
 
         // Screen edges are at ±half_tan_hfov and ±half_tan_vfov
         // Target edges (with margin) are at ±(half_tan_hfov / zoom_multiplier)
@@ -328,7 +329,7 @@ fn move_camera_system(
     mut commands: Commands,
     mut camera_query: Query<(Entity, &mut PanOrbitCamera, &MoveMe), With<Camera>>,
 ) {
-    for (entity, mut pan_orbit, move_me) in camera_query.iter_mut() {
+    for (entity, mut pan_orbit, move_me) in &mut camera_query {
         // Interpolate towards target values
         let focus_diff = move_me.target_focus - pan_orbit.target_focus;
         let radius_diff = move_me.target_radius - pan_orbit.target_radius;
@@ -416,7 +417,7 @@ fn get_bloom_settings(camera_config: Res<CameraConfig>) -> Bloom {
     new_bloom_settings.intensity = camera_config.bloom_intensity;
     new_bloom_settings.low_frequency_boost = camera_config.bloom_low_frequency_boost;
     new_bloom_settings.high_pass_frequency = camera_config.bloom_high_pass_frequency;
-    new_bloom_settings.clone()
+    new_bloom_settings
 }
 
 // remove and insert BloomSettings to toggle them off and on
@@ -519,7 +520,7 @@ fn update_clear_color(camera_config: Res<CameraConfig>, mut clear_color: ResMut<
     }
 }
 
-/// Draws a red gizmo sphere at the PanOrbit camera's focus point
+/// Draws a red gizmo sphere at the `PanOrbit` camera's focus point
 /// and a red arrow from world origin to the focus
 fn draw_camera_focus_gizmo(
     mut gizmos: Gizmos<FocusGizmo>,

@@ -12,6 +12,7 @@ use crate::actor::actor_template::NateroidConfig;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
+use crate::traits::UsizeExt;
 
 pub struct DespawnPlugin;
 
@@ -185,7 +186,7 @@ fn despawn_dead_entities(
     for (entity, health, transform, linear_velocity, nateroid, name) in query.iter() {
         if health.0 <= 0.0 {
             if nateroid.is_some() {
-                let entity_name = name.map(|n| (*n).as_str()).unwrap_or("Unknown");
+                let entity_name = name.map_or("Unknown", |n| (*n).as_str());
                 debug!(
                     "☠️ despawn_dead_entities: Adding Deaderoid to {} (health: {})",
                     entity_name, health.0
@@ -275,8 +276,8 @@ fn animate_dying_nateroids(
         return;
     };
 
-    for (mut deaderoid, mut transform, entity, name) in query.iter_mut() {
-        let entity_name = name.map(|n| (*n).as_str()).unwrap_or("Unknown");
+    for (mut deaderoid, mut transform, entity, name) in &mut query {
+        let entity_name = name.map_or("Unknown", |n| (*n).as_str());
 
         // Update elapsed time
         deaderoid.elapsed_time += time.delta_secs();
@@ -285,7 +286,9 @@ fn animate_dying_nateroids(
         let progress = (deaderoid.elapsed_time / deaderoid.shrink_duration).min(1.0);
 
         // Linear interpolation from 1.0 (full size) to target_shrink
-        deaderoid.current_shrink = 1.0 - (1.0 - deaderoid.target_shrink) * progress;
+        // FMA optimization (faster + more precise): 1.0 - (1.0 - deaderoid.target_shrink) *
+        // progress
+        deaderoid.current_shrink = (1.0 - deaderoid.target_shrink).mul_add(-progress, 1.0);
 
         // Apply shrinking to transform
         transform.scale = deaderoid.initial_scale * deaderoid.current_shrink;
@@ -293,7 +296,7 @@ fn animate_dying_nateroids(
         // Apply ease-out curve (inverse cubic) for material swapping - fades rapidly at first,
         // then slows down (exponential decay)
         let eased_progress = 1.0 - (1.0 - progress).powi(3);
-        let new_index = (eased_progress * (death_materials.materials.len() - 1) as f32) as usize;
+        let new_index = (eased_progress * (death_materials.materials.len() - 1).to_f32()) as usize;
 
         // Only swap materials when index changes
         if new_index != deaderoid.current_material_index {
@@ -301,7 +304,10 @@ fn animate_dying_nateroids(
             deaderoid.current_material_index = new_index;
 
             // Calculate the alpha value for this level
-            let alpha = nateroid_config.initial_alpha - (new_index as f32 * 0.01);
+            // FMA optimization (faster + more precise): initial_alpha - (new_index as f32 * 0.01)
+            let alpha = new_index
+                .to_f32()
+                .mul_add(-0.01, nateroid_config.initial_alpha);
 
             debug!(
                 "💀 {entity_name}: Material swap {old_index} → {new_index} | progress: {:.3} → {:.3} | alpha: {:.2}",

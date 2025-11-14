@@ -52,7 +52,7 @@ pub enum GameState {
 // "modes" other than paused. The example has turbo mode - which is global, just
 // like paused so that might be useful to have around
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub(crate) struct PlayingGame;
+pub struct PlayingGame;
 
 impl ComputedStates for PlayingGame {
     // Our computed state depends on `AppState`, so we need to specify it as the
