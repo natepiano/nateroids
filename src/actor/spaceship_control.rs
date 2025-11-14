@@ -194,10 +194,10 @@ fn toggle_continuous_fire(
         && control.just_pressed(&SpaceshipControl::ContinuousFire)
     {
         if continuous.is_some() {
-            println!("removing continuous");
+            info!("removing continuous");
             commands.entity(entity).remove::<ContinuousFire>();
         } else {
-            println!("adding continuous");
+            info!("adding continuous");
             commands.entity(entity).insert(ContinuousFire);
         }
     }

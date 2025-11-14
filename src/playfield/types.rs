@@ -28,9 +28,9 @@ pub struct GridGizmo {}
 pub struct BoundaryGizmo {}
 
 pub enum Intersection {
-    NoIntersections,
-    OneIntersection(Vec3),
-    TwoIntersections(Vec3, Vec3),
+    NoneFound,
+    One(Vec3),
+    Two(Vec3, Vec3),
 }
 
 /// we added Intersection for readability in our intersection logic
@@ -51,18 +51,20 @@ impl FlattenIntersections for [Intersection; 4] {
         let result: Vec<Vec3> = self
             .into_iter()
             .flat_map(|intersection| match intersection {
-                Intersection::NoIntersections => vec![],
-                Intersection::OneIntersection(p) => vec![p],
-                Intersection::TwoIntersections(p1, p2) => vec![p1, p2],
+                Intersection::NoneFound => vec![],
+                Intersection::One(p) => vec![p],
+                Intersection::Two(p1, p2) => vec![p1, p2],
             })
             .collect();
 
-        // Debug assertion: portals must never be larger than faces
-        // If this fails, it means our simplified intersection logic is broken
+        // Debug assertion: A circle can intersect a rectangle's 4 edges at most 4 times.
+        // This occurs when the portal is positioned near a corner of the face -
+        // the circle can intersect both adjacent edges (2 points each = 4 total).
+        // Portals positioned in the center typically produce 2 intersection points.
         debug_assert!(
-            result.len() <= 2,
-            "Portal larger than face detected: {} intersection points (expected ≤2). \
-             This breaks the assumption that portals never exceed face boundaries.",
+            result.len() <= 4,
+            "Circle-rectangle intersection exceeded maximum: {} intersection points (expected ≤4). \
+             This indicates a geometric error in the intersection calculation.",
             result.len()
         );
 

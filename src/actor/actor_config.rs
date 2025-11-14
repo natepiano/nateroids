@@ -106,7 +106,7 @@ pub enum ColliderType {
 type ActorRenderLayersQuery<'w, 'a> =
     Query<'w, 'a, &'static RenderLayers, Or<(With<Missile>, With<Nateroid>, With<Spaceship>)>>;
 
-/// ensures that the game camera can see the spawned actor
+/// ensures that the game camera can see the spawned actor and that shadows are cast
 fn propagate_render_layers_on_spawn(
     add: On<Add, Children>,
     q_parents: ActorRenderLayersQuery,

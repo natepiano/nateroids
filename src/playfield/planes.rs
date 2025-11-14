@@ -1,9 +1,11 @@
+use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
 use bevy::render::render_resource::Face;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
+use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
 use crate::orientation::CameraOrientation;
@@ -29,6 +31,7 @@ impl Plugin for PlanesPlugin {
 // its default problem for another day...
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
+#[allow(clippy::struct_excessive_bools)] // 6 directional bools (front/back/top/bottom/left/right) are intentional
 pub struct PlaneConfig {
     pub front:                 bool,
     pub back:                  bool,
@@ -68,9 +71,10 @@ impl Default for PlaneConfig {
             right:                 false,
             top:                   false,
             bottom:                false,
-            alpha_mode:            None,
+            alpha_mode:            None, // Some(AlphaMode::Blend),
             attenuation_distance:  f32::INFINITY,
-            base_color:            Color::from(LinearRgba::new(1., 1., 1., 1.)),
+            base_color:            Color::WHITE, /* Color::from(tailwind::AMBER_100).
+                                                  * with_alpha(0.0), */
             cull_mode:             Some(Face::Back),
             diffuse_transmission:  0.,
             double_sided:          false,
@@ -126,6 +130,7 @@ fn create_or_update_plane(
             .insert(Mesh3d(mesh))
             .insert(MeshMaterial3d(material_handle))
             .insert(transform)
+            .insert(RenderLayers::from_layers(RenderLayer::Game.layers()))
             .id()
     } else {
         commands
@@ -133,6 +138,7 @@ fn create_or_update_plane(
             .insert(Mesh3d(mesh))
             .insert(MeshMaterial3d(material_handle))
             .insert(transform)
+            .insert(RenderLayers::from_layers(RenderLayer::Game.layers()))
             .id()
     }
 }

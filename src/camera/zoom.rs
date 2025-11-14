@@ -41,7 +41,7 @@ fn on_remove_zoom_to_fit(
     pan_orbit.zoom_smoothness = camera_config.zoom_smoothness;
     pan_orbit.pan_smoothness = camera_config.pan_smoothness;
 
-    println!(
+    debug!(
         "ZoomToFitActive removed: restored smoothness (zoom={:.2}, pan={:.2})",
         camera_config.zoom_smoothness, camera_config.pan_smoothness
     );
@@ -58,7 +58,7 @@ fn start_zoom_to_fit(
     if let Ok((camera_entity, mut pan_orbit, existing_zoom)) = camera_query.single_mut() {
         // Allow restart if already running
         if existing_zoom.is_some() {
-            println!("Zoom-to-fit already active, restarting");
+            debug!("Zoom-to-fit already active, restarting");
         }
 
         // Disable smoothing so targets apply immediately
@@ -68,11 +68,9 @@ fn start_zoom_to_fit(
         commands
             .entity(camera_entity)
             .insert(ZoomToFitActive { iteration_count: 0 });
-        println!("Starting zoom-to-fit animation");
+        debug!("Starting zoom-to-fit animation");
     }
 }
-
-
 
 /// Convergence algorithm for zoom-to-fit animation using iterative adjustments.
 ///
@@ -120,7 +118,7 @@ fn update_zoom_to_fit(
         zoom_config.zoom_margin_multiplier(),
     ) else {
         // Boundary behind camera, move camera back
-        println!(
+        debug!(
             "Iteration {}: Boundary behind camera, moving back",
             zoom_state.iteration_count
         );
@@ -134,12 +132,11 @@ fn update_zoom_to_fit(
         return;
     };
 
-
     // Calculate center and span for debug printing
     let (center_x, center_y) = margins.center();
     let (span_x, span_y) = margins.span();
 
-    println!(
+    debug!(
         "Iteration {}: center=({:.3},{:.3}), span=({:.3},{:.3})",
         zoom_state.iteration_count, center_x, center_y, span_x, span_y
     );
@@ -152,7 +149,7 @@ fn update_zoom_to_fit(
         ("V", v_min, margins.target_margin_y)
     };
 
-    println!(
+    debug!(
         "  Margins: L={:.3} R={:.3} T={:.3} B={:.3}, target=({:.3},{:.3})",
         margins.left_margin,
         margins.right_margin,
@@ -161,7 +158,7 @@ fn update_zoom_to_fit(
         margins.target_margin_x,
         margins.target_margin_y
     );
-    println!(
+    debug!(
         "  Constraining: {}, margin={:.3}/{:.3} (ratio={:.2})",
         constraining_dim,
         current_margin,
@@ -176,13 +173,14 @@ fn update_zoom_to_fit(
     let target_focus =
         calculate_target_focus(pan_orbit.target_focus, current_radius, &margins, cam_global);
 
-    let target_radius = calculate_target_radius(current_radius, span_x, span_y, &margins, &zoom_config);
+    let target_radius =
+        calculate_target_radius(current_radius, span_x, span_y, &margins, &zoom_config);
 
     // Calculate error magnitudes
     let focus_delta = target_focus - pan_orbit.target_focus;
     let radius_delta = target_radius - current_radius;
 
-    println!(
+    debug!(
         "  Focus: adj=({:.3},{:.3},{:.3})",
         focus_delta.x, focus_delta.y, focus_delta.z
     );
@@ -201,18 +199,18 @@ fn update_zoom_to_fit(
     let balanced = margins.is_balanced(zoom_config.margin_tolerance);
     let fitted = margins.is_fitted(zoom_config.margin_tolerance);
 
-    println!(
+    debug!(
         "  Radius: {:.1}→{:.1} (Δ={:.3}, rate={:.0}%)",
         current_radius,
         new_target_radius,
         radius_delta,
         rate * 100.0
     );
-    println!("  Status: balanced={balanced}, fitted={fitted}");
+    debug!("  Status: balanced={balanced}, fitted={fitted}");
 
     // Check completion: balanced AND fitted
     if balanced && fitted {
-        println!("  → CONVERGED");
+        debug!("  → CONVERGED");
         commands.entity(entity).remove::<ZoomToFitActive>();
         return;
     }
@@ -221,7 +219,7 @@ fn update_zoom_to_fit(
 
     // Stop if we hit max iterations
     if zoom_state.iteration_count >= zoom_config.max_iterations {
-        println!("  → MAX ITERATIONS REACHED (not converged)");
+        debug!("  → MAX ITERATIONS REACHED (not converged)");
         commands.entity(entity).remove::<ZoomToFitActive>();
     }
 }
@@ -263,9 +261,14 @@ fn calculate_target_focus(
 
 /// Calculate target radius using span ratios
 /// Physics: At distance R, object has span S. Closer = larger span.
-/// Relationship: S * R = constant, so target_R = current_R * (current_S / target_S)
-fn calculate_target_radius(current_radius: f32, span_x: f32, span_y: f32, margins: &ScreenSpaceBoundary, zoom_config: &ZoomConfig) -> f32 {
-
+/// Relationship: S * R = constant, so `target_R` = `current_R` * (`current_S` / `target_S`)
+fn calculate_target_radius(
+    current_radius: f32,
+    span_x: f32,
+    span_y: f32,
+    margins: &ScreenSpaceBoundary,
+    zoom_config: &ZoomConfig,
+) -> f32 {
     // Target spans with proper margins
     let target_span_x = 2.0 * margins.half_tan_hfov / zoom_config.zoom_margin_multiplier();
     let target_span_y = 2.0 * margins.half_tan_vfov / zoom_config.zoom_margin_multiplier();

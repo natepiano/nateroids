@@ -47,8 +47,8 @@ impl CameraOrder {
 }
 
 // RenderLayers don't propagate to scene children, they default to layer 0
-// Stars camera (order 0) renders layer 1 (stars only) with bloom, clears with
-// opaque background color. Game camera (order 1) renders layer 0 (game objects)
+// Stars camera (order 0) renders layer 0 (stars only) with bloom, clears with
+// opaque background color. Game camera (order 1) renders layer 1 (game objects)
 // without bloom, clears with transparent color (preserves stars but prevents
 // motion trails)
 #[derive(Reflect, Clone, Copy, Debug, PartialEq, Eq)]

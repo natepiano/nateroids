@@ -46,7 +46,7 @@ fn toggle_physics_debug(
     if user_input.just_pressed(&GameAction::PhysicsAABB) {
         let (config, _) = config_store.config_mut::<PhysicsGizmos>();
         config.enabled = !config.enabled;
-        println!("Physics debug: {}", config.enabled);
+        info!("Physics debug: {}", config.enabled);
     }
 }
 

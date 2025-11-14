@@ -1,5 +1,6 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
+use bevy::light::CascadeShadowConfigBuilder;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
@@ -40,6 +41,9 @@ impl Default for LightSettings {
             color:           Color::from(tailwind::AMBER_400),
             enabled:         false,
             illuminance:     3000.0,
+            // CRITICAL: Must start disabled. Enabling shadows at startup before the scene
+            // is fully initialized breaks rendering (causes stars to disappear). Shadows
+            // can be safely enabled at runtime via inspector or code.
             shadows_enabled: false,
         }
     }
@@ -154,6 +158,39 @@ pub struct RotationInfo {
 #[derive(Component)]
 struct LightDirection(LightPosition);
 
+fn spawn_directional_light(
+    commands: &mut Commands,
+    settings: &LightSettings,
+    position: LightPosition,
+    light_rotation: &RotationInfo,
+) {
+    commands
+        .spawn(DirectionalLight {
+            color: settings.color,
+            illuminance: settings.illuminance,
+            shadows_enabled: settings.shadows_enabled,
+            shadow_depth_bias: 0.02,
+            shadow_normal_bias: 0.6,
+            ..default()
+        })
+        .insert(
+            CascadeShadowConfigBuilder {
+                num_cascades: 4,
+                maximum_distance: 1500.0,
+                first_cascade_far_bound: 50.0,
+                overlap_proportion: 0.3,
+                ..default()
+            }
+            .build(),
+        )
+        .insert(Transform::from_rotation(Quat::from_axis_angle(
+            light_rotation.axis,
+            light_rotation.angle,
+        )))
+        .insert(RenderLayers::from_layers(RenderLayer::Game.layers()))
+        .insert(LightDirection(position));
+}
+
 fn manage_lighting(
     mut commands: Commands,
     mut ambient_light: ResMut<AmbientLight>,
@@ -161,7 +198,7 @@ fn manage_lighting(
     camera_orientation: Res<CameraOrientation>,
     mut query: Query<(Entity, &mut DirectionalLight, &LightDirection)>,
 ) {
-    if !light_config.is_changed() {
+    if !light_config.is_changed() && !light_config.is_added() {
         return;
     }
 
@@ -200,19 +237,7 @@ fn manage_lighting(
             },
             (None, true) => {
                 // Spawn new light
-                commands
-                    .spawn(DirectionalLight {
-                        color: settings.color,
-                        illuminance: settings.illuminance,
-                        shadows_enabled: settings.shadows_enabled,
-                        ..default()
-                    })
-                    .insert(Transform::from_rotation(Quat::from_axis_angle(
-                        light_rotation.axis,
-                        light_rotation.angle,
-                    )))
-                    .insert(RenderLayers::from_layers(RenderLayer::Game.layers()))
-                    .insert(LightDirection(*position));
+                spawn_directional_light(&mut commands, settings, *position, &light_rotation);
             },
             (None, false) => {}, // Do nothing for disabled lights that don't exist
         }

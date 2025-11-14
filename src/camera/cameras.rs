@@ -326,6 +326,7 @@ pub enum Edge {
     Bottom,
 }
 
+/// only runs when a `MoveMe` component is added to the `Camera`
 fn move_camera_system(
     mut commands: Commands,
     mut camera_query: Query<(Entity, &mut PanOrbitCamera, &MoveMe), With<Camera>>,
@@ -351,7 +352,7 @@ fn move_camera_system(
             pan_orbit.target_pitch = move_me.target_pitch;
             pan_orbit.force_update = true;
 
-            println!(
+            info!(
                 "Camera reached target position: focus={:?}, radius={:.1}, yaw={:.2}, pitch={:.2}",
                 move_me.target_focus,
                 move_me.target_radius,
@@ -433,13 +434,13 @@ fn toggle_stars(
         match current_bloom_settings {
             (entity, Some(_)) => {
                 if user_input.just_pressed(&GameAction::Stars) {
-                    println!("stars off");
+                    info!("stars off");
                     commands.entity(entity).remove::<Bloom>();
                 }
             },
             (entity, None) => {
                 if user_input.just_pressed(&GameAction::Stars) {
-                    println!("stars on");
+                    info!("stars on");
                     commands
                         .entity(entity)
                         .insert(get_bloom_settings(camera_config));

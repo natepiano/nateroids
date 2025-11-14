@@ -84,7 +84,7 @@ fn spaceship_destroyed(
     state: Res<State<GameState>>,
 ) {
     if query.single().is_err() {
-        println!(
+        info!(
             "spaceship destroyed: {:?}, count {:?}",
             state,
             query.iter().count()

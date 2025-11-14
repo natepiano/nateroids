@@ -84,7 +84,7 @@ impl Default for Boundary {
             grid_color: Color::from(tailwind::BLUE_500).with_alpha(0.25),
             outer_color: Color::from(tailwind::BLUE_500).with_alpha(1.0),
             grid_line_width: 1.5,
-            boundary_line_width: 6.,
+            boundary_line_width: 4.,
             boundary_scalar,
             transform: Transform::from_scale(boundary_scalar * cell_count.as_vec3()),
         }
@@ -791,7 +791,7 @@ fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -
     let discriminant = b * b - 4.0 * a * c;
 
     if discriminant < 0.0 {
-        return Intersection::NoIntersections;
+        return Intersection::NoneFound;
     }
 
     let t1 = (-b + discriminant.sqrt()) / (2.0 * a);
@@ -801,10 +801,10 @@ fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -
     let t2_valid = (0.0..=1.0).contains(&t2) && (t1 - t2).abs() > 1e-6;
 
     match (t1_valid, t2_valid) {
-        (false, false) => Intersection::NoIntersections,
-        (true, false) => Intersection::OneIntersection(start + t1 * edge),
-        (false, true) => Intersection::OneIntersection(start + t2 * edge),
-        (true, true) => Intersection::TwoIntersections(start + t1 * edge, start + t2 * edge),
+        (false, false) => Intersection::NoneFound,
+        (true, false) => Intersection::One(start + t1 * edge),
+        (false, true) => Intersection::One(start + t2 * edge),
+        (true, true) => Intersection::Two(start + t1 * edge, start + t2 * edge),
     }
 }
 

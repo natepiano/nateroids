@@ -42,6 +42,188 @@ fn init_screen_boundary_gizmo_config(mut config_store: ResMut<GizmoConfigStore>)
     config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
+/// Calculates the color for an edge based on balance state
+const fn calculate_edge_color(edge: Edge, h_balanced: bool, v_balanced: bool) -> Color {
+    match edge {
+        Edge::Left | Edge::Right => {
+            if h_balanced {
+                Color::srgb(0.0, 1.0, 0.0) // Green
+            } else {
+                Color::srgb(1.0, 0.0, 0.0) // Red
+            }
+        },
+        Edge::Top | Edge::Bottom => {
+            if v_balanced {
+                Color::srgb(0.0, 1.0, 0.0) // Green
+            } else {
+                Color::srgb(1.0, 0.0, 0.0) // Red
+            }
+        },
+    }
+}
+
+/// Calculates the normalized screen-space position for a label based on edge type
+fn calculate_label_position(edge: Edge, margins: &ScreenSpaceBoundary) -> (f32, f32) {
+    const TEXT_OFFSET: f32 = 0.01;
+    match edge {
+        Edge::Left => {
+            let (_, screen_y) = margins.screen_edge_center(edge);
+            (
+                -margins.half_tan_hfov + TEXT_OFFSET,
+                TEXT_OFFSET.mul_add(2.0, screen_y),
+            )
+        },
+        Edge::Right => {
+            let (_, screen_y) = margins.screen_edge_center(edge);
+            (
+                margins.half_tan_hfov - TEXT_OFFSET,
+                TEXT_OFFSET.mul_add(2.0, screen_y),
+            )
+        },
+        Edge::Top => {
+            let (screen_x, _) = margins.screen_edge_center(edge);
+            (screen_x + TEXT_OFFSET, margins.half_tan_vfov - TEXT_OFFSET)
+        },
+        Edge::Bottom => {
+            let (screen_x, _) = margins.screen_edge_center(edge);
+            (screen_x + TEXT_OFFSET, -margins.half_tan_vfov + TEXT_OFFSET)
+        },
+    }
+}
+
+/// Creates the 4 corners of the screen-aligned boundary rectangle in world space
+fn create_screen_corners(
+    margins: &ScreenSpaceBoundary,
+    cam_pos: Vec3,
+    cam_right: Vec3,
+    cam_up: Vec3,
+    cam_forward: Vec3,
+) -> [Vec3; 4] {
+    [
+        margins.normalized_to_world(
+            margins.min_norm_x,
+            margins.min_norm_y,
+            cam_pos,
+            cam_right,
+            cam_up,
+            cam_forward,
+        ),
+        margins.normalized_to_world(
+            margins.max_norm_x,
+            margins.min_norm_y,
+            cam_pos,
+            cam_right,
+            cam_up,
+            cam_forward,
+        ),
+        margins.normalized_to_world(
+            margins.max_norm_x,
+            margins.max_norm_y,
+            cam_pos,
+            cam_right,
+            cam_up,
+            cam_forward,
+        ),
+        margins.normalized_to_world(
+            margins.min_norm_x,
+            margins.max_norm_y,
+            cam_pos,
+            cam_right,
+            cam_up,
+            cam_forward,
+        ),
+    ]
+}
+
+/// Draws the yellow boundary rectangle outline
+fn draw_yellow_rectangle(gizmos: &mut Gizmos<ScreenBoundaryGizmo>, corners: &[Vec3; 4]) {
+    for i in 0..4 {
+        let next = (i + 1) % 4;
+        gizmos.line(corners[i], corners[next], Color::from(tailwind::YELLOW_400));
+    }
+}
+
+/// Updates an existing margin label or creates a new one
+fn update_or_create_margin_label(
+    commands: &mut Commands,
+    label_query: &mut Query<
+        (Entity, &MarginLabel, &mut Text, &mut Node, &mut TextColor),
+        Without<Camera>,
+    >,
+    edge: Edge,
+    text: String,
+    color: Color,
+    screen_pos: Vec2,
+    viewport_size: Vec2,
+) {
+    // Find or update existing label for this edge
+    let mut found = false;
+    for (_, label, mut label_text, mut node, mut text_color) in label_query {
+        if label.edge == edge {
+            label_text.0.clone_from(&text);
+            text_color.0 = color;
+            match edge {
+                Edge::Left | Edge::Top => {
+                    node.left = Val::Px(screen_pos.x);
+                    node.top = Val::Px(screen_pos.y);
+                    node.right = Val::Auto;
+                    node.bottom = Val::Auto;
+                },
+                Edge::Right => {
+                    node.right = Val::Px(viewport_size.x - screen_pos.x);
+                    node.top = Val::Px(screen_pos.y);
+                    node.left = Val::Auto;
+                    node.bottom = Val::Auto;
+                },
+                Edge::Bottom => {
+                    node.left = Val::Px(screen_pos.x);
+                    node.bottom = Val::Px(viewport_size.y - screen_pos.y);
+                    node.right = Val::Auto;
+                    node.top = Val::Auto;
+                },
+            }
+            found = true;
+            break;
+        }
+    }
+
+    if !found {
+        // Create new label
+        let node = match edge {
+            Edge::Left | Edge::Top => Node {
+                position_type: PositionType::Absolute,
+                left: Val::Px(screen_pos.x),
+                top: Val::Px(screen_pos.y),
+                ..default()
+            },
+            Edge::Right => Node {
+                position_type: PositionType::Absolute,
+                right: Val::Px(viewport_size.x - screen_pos.x),
+                top: Val::Px(screen_pos.y),
+                ..default()
+            },
+            Edge::Bottom => Node {
+                position_type: PositionType::Absolute,
+                left: Val::Px(screen_pos.x),
+                bottom: Val::Px(viewport_size.y - screen_pos.y),
+                ..default()
+            },
+        };
+
+        commands.spawn((
+            Text::new(text),
+            TextFont {
+                font_size: 11.0,
+                ..default()
+            },
+            TextColor(color),
+            node,
+            RenderLayers::from_layers(RenderLayer::Game.layers()),
+            MarginLabel { edge },
+        ));
+    }
+}
+
 /// used to draw a yellow screen-aligned box around the boundary
 /// used for troubleshooting camera movement logic
 fn draw_screen_aligned_boundary_box(
@@ -88,51 +270,9 @@ fn draw_screen_aligned_boundary_box(
     let cam_right = cam_rot * Vec3::X;
     let cam_up = cam_rot * Vec3::Y;
 
-    // Create the 4 corners using the helper method
-    let rect_corners_world = [
-        margins.normalized_to_world(
-            margins.min_norm_x,
-            margins.min_norm_y,
-            cam_pos,
-            cam_right,
-            cam_up,
-            cam_forward,
-        ),
-        margins.normalized_to_world(
-            margins.max_norm_x,
-            margins.min_norm_y,
-            cam_pos,
-            cam_right,
-            cam_up,
-            cam_forward,
-        ),
-        margins.normalized_to_world(
-            margins.max_norm_x,
-            margins.max_norm_y,
-            cam_pos,
-            cam_right,
-            cam_up,
-            cam_forward,
-        ),
-        margins.normalized_to_world(
-            margins.min_norm_x,
-            margins.max_norm_y,
-            cam_pos,
-            cam_right,
-            cam_up,
-            cam_forward,
-        ),
-    ];
-
-    // Draw the yellow boundary rectangle
-    for i in 0..4 {
-        let next = (i + 1) % 4;
-        gizmos.line(
-            rect_corners_world[i],
-            rect_corners_world[next],
-            Color::from(tailwind::YELLOW_400),
-        );
-    }
+    let rect_corners_world =
+        create_screen_corners(&margins, cam_pos, cam_right, cam_up, cam_forward);
+    draw_yellow_rectangle(&mut gizmos, &rect_corners_world);
 
     // Draw lines from visible boundary edges to screen edges
     // Green if margins are balanced, red otherwise
@@ -164,56 +304,14 @@ fn draw_screen_aligned_boundary_box(
                 cam_forward,
             );
 
-            // Color based on balance: green if balanced, red otherwise
-            let color = match edge {
-                Edge::Left | Edge::Right => {
-                    if h_balanced {
-                        Color::srgb(0.0, 1.0, 0.0) // Green
-                    } else {
-                        Color::srgb(1.0, 0.0, 0.0) // Red
-                    }
-                },
-                Edge::Top | Edge::Bottom => {
-                    if v_balanced {
-                        Color::srgb(0.0, 1.0, 0.0) // Green
-                    } else {
-                        Color::srgb(1.0, 0.0, 0.0) // Red
-                    }
-                },
-            };
-
+            let color = calculate_edge_color(edge, h_balanced, v_balanced);
             gizmos.line(boundary_pos, screen_pos, color);
 
             // Add text label for this edge
             let percentage = margins.margin_percentage(edge);
             let text = format!("{percentage:.3}%");
 
-            // Calculate label position based on edge
-            let text_offset = 0.01;
-            let (label_x, label_y) = match edge {
-                Edge::Left => {
-                    let (_, screen_y) = margins.screen_edge_center(edge);
-                    (
-                        -margins.half_tan_hfov + text_offset,
-                        screen_y + text_offset * 2.0,
-                    )
-                },
-                Edge::Right => {
-                    let (_, screen_y) = margins.screen_edge_center(edge);
-                    (
-                        margins.half_tan_hfov - text_offset,
-                        screen_y + text_offset * 2.0,
-                    )
-                },
-                Edge::Top => {
-                    let (screen_x, _) = margins.screen_edge_center(edge);
-                    (screen_x + text_offset, margins.half_tan_vfov - text_offset)
-                },
-                Edge::Bottom => {
-                    let (screen_x, _) = margins.screen_edge_center(edge);
-                    (screen_x + text_offset, -margins.half_tan_vfov + text_offset)
-                },
-            };
+            let (label_x, label_y) = calculate_label_position(edge, &margins);
 
             let mut world_pos = margins.normalized_to_world(
                 label_x,
@@ -226,78 +324,21 @@ fn draw_screen_aligned_boundary_box(
             world_pos -= cam_forward * 1.0;
 
             // Project to screen space
-            if let Ok(screen_pos) = cam.world_to_viewport(cam_global, world_pos) {
+            if let Ok(label_screen_pos) = cam.world_to_viewport(cam_global, world_pos) {
                 // Extract viewport size - must exist if world_to_viewport succeeded
                 let Some(viewport_size) = cam.logical_viewport_size() else {
                     continue;
                 };
 
-                // Find or update existing label for this edge
-                let mut found = false;
-                for (_, label, mut label_text, mut node, mut text_color) in &mut label_query {
-                    if label.edge == edge {
-                        label_text.0 = (*text).to_string();
-                        text_color.0 = color;
-                        match edge {
-                            Edge::Left | Edge::Top => {
-                                node.left = Val::Px(screen_pos.x);
-                                node.top = Val::Px(screen_pos.y);
-                                node.right = Val::Auto;
-                                node.bottom = Val::Auto;
-                            },
-                            Edge::Right => {
-                                node.right = Val::Px(viewport_size.x - screen_pos.x);
-                                node.top = Val::Px(screen_pos.y);
-                                node.left = Val::Auto;
-                                node.bottom = Val::Auto;
-                            },
-                            Edge::Bottom => {
-                                node.left = Val::Px(screen_pos.x);
-                                node.bottom = Val::Px(viewport_size.y - screen_pos.y);
-                                node.right = Val::Auto;
-                                node.top = Val::Auto;
-                            },
-                        }
-                        found = true;
-                        break;
-                    }
-                }
-
-                if !found {
-                    // Create new label
-                    let node = match edge {
-                        Edge::Left | Edge::Top => Node {
-                            position_type: PositionType::Absolute,
-                            left: Val::Px(screen_pos.x),
-                            top: Val::Px(screen_pos.y),
-                            ..default()
-                        },
-                        Edge::Right => Node {
-                            position_type: PositionType::Absolute,
-                            right: Val::Px(viewport_size.x - screen_pos.x),
-                            top: Val::Px(screen_pos.y),
-                            ..default()
-                        },
-                        Edge::Bottom => Node {
-                            position_type: PositionType::Absolute,
-                            left: Val::Px(screen_pos.x),
-                            bottom: Val::Px(viewport_size.y - screen_pos.y),
-                            ..default()
-                        },
-                    };
-
-                    commands.spawn((
-                        Text::new(text),
-                        TextFont {
-                            font_size: 11.0,
-                            ..default()
-                        },
-                        TextColor(color),
-                        node,
-                        RenderLayers::from_layers(RenderLayer::Game.layers()),
-                        MarginLabel { edge },
-                    ));
-                }
+                update_or_create_margin_label(
+                    &mut commands,
+                    &mut label_query,
+                    edge,
+                    text,
+                    color,
+                    label_screen_pos,
+                    viewport_size,
+                );
             }
         }
     }

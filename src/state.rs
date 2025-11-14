@@ -1,3 +1,5 @@
+#![allow(clippy::used_underscore_binding)] // False positive on GameState::InGame fields
+
 use avian3d::prelude::*;
 use bevy::dev_tools::states::*;
 use bevy::prelude::*;
@@ -116,7 +118,7 @@ fn restart_game(
     // 2. GameOver → InGame: No star regeneration (stars from step 1 persist)
     // 3. Fresh game starts with stars already generated
     if user_input.just_pressed(&GameAction::RestartGame) {
-        println!("Restarting game (quick)");
+        info!("Restarting game (quick)");
         next_state.set(GameState::GameOver);
     }
 }
@@ -130,13 +132,13 @@ fn restart_with_splash(
     // 2. Splash → InGame: No star regeneration (stars from step 1 persist)
     // 3. Game starts with stars that were generated during splash
     if user_input.just_pressed(&GameAction::RestartWithSplash) {
-        println!("Restarting game with splash screen");
+        info!("Restarting game with splash screen");
         next_state.set(GameState::Splash);
     }
 }
 
 fn transition_to_in_game(mut next_state: ResMut<NextState<GameState>>) {
-    println!("Transitioning to InGame");
+    info!("Transitioning to InGame");
     next_state.set(GameState::InGame {
         paused:     false,
         inspecting: false,
@@ -144,11 +146,11 @@ fn transition_to_in_game(mut next_state: ResMut<NextState<GameState>>) {
 }
 
 fn pause_rapier(mut time: ResMut<Time<Physics>>) {
-    println!("pausing game and physics");
+    info!("pausing game and physics");
     time.pause();
 }
 
 fn unpause_rapier(mut time: ResMut<Time<Physics>>) {
-    println!("unpausing game and physics");
+    info!("unpausing game and physics");
     time.unpause();
 }
