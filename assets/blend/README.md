@@ -4,7 +4,7 @@ This directory contains two versions of the nateroids model:
 
 ## Files
 
-### `nateroids.blend` - Editable Source File
+### `nateroid.blend` - Editable Source File
 **Use this file for:** Editing, modeling, adjusting sprinkles
 
 This is the master source file with procedural geometry nodes. The sprinkles on the icing are generated using a Geometry Nodes modifier that instances a sphere template.
@@ -20,7 +20,7 @@ This is the master source file with procedural geometry nodes. The sprinkles on 
 - `sphere sprinkle icing.002` - Icing mesh with Geometry Nodes modifier
 - `Sphere` - Template object used by Geometry Nodes to generate sprinkles
 
-### `nateroids_bake.blend` - Bake-Ready Production File
+### `nateroid_bake.blend` - Bake-Ready Production File
 **Use this file for:** PBR texture baking and game asset export
 
 This is a production-ready version where all procedural modifiers have been applied and the geometry is "realized" (converted to actual mesh data). This file is required for texture baking because:
@@ -45,14 +45,14 @@ This is a production-ready version where all procedural modifiers have been appl
 ## Workflow
 
 ### Editing Sprinkles
-1. Open `nateroids.blend`
+1. Open `nateroid.blend`
 2. Select the icing object (`sphere sprinkle icing.002`)
 3. Modify the Geometry Nodes in the modifier panel
 4. Adjust sprinkle distribution, density, rotation, etc.
 5. Save changes
 
 ### Regenerating Bake File (After Editing)
-If you modify the sprinkles in `nateroids.blend`, you need to regenerate `nateroids_bake.blend`:
+If you modify the sprinkles in `nateroid.blend`, you need to regenerate `nateroid_bake.blend`:
 
 #### CRITICAL: Color Preservation Issue
 The sprinkles use `Object Info -> Random` in the material to get random colors. When instances are realized into a single mesh, they lose per-object randomness and all become the same color. **You must follow this exact process to preserve colors:**
@@ -63,7 +63,7 @@ Ask Claude to regenerate the bake file - it will handle color preservation autom
 #### Manual Process (Step-by-Step)
 **Important:** Do NOT simply apply the geometry nodes modifier, or you will lose the colors!
 
-1. **Open** `nateroids.blend`
+1. **Open** `nateroid.blend`
 
 2. **Modify Geometry Nodes** to preserve random values:
    - Open Geometry Editor for the icing object's "round sprinkles geometry" node group
@@ -94,7 +94,7 @@ Ask Claude to regenerate the bake file - it will handle color preservation autom
 
 6. **Delete** the Sphere template object
 
-7. **Save As** `nateroids_bake.blend`
+7. **Save As** `nateroid_bake.blend`
 
 **Why this works:**
 - Store Named Attribute captures a random value for each sprinkle INSTANCE before realization
@@ -102,11 +102,11 @@ Ask Claude to regenerate the bake file - it will handle color preservation autom
 - The material reads the attribute instead of Object Info, which only has one value per object
 
 ### Baking Textures
-Use `nateroids_bake.blend` as the source file in your bake configuration:
+Use `nateroid_bake.blend` as the source file in your bake configuration:
 
 ```json
 {
-  "blend_file": "/Users/natemccoy/rust/nateroids/assets/blend/nateroids_bake.blend",
+  "blend_file": "/Users/natemccoy/rust/nateroids/assets/blend/nateroid_bake.blend",
   "objects": ["sphere sprinkle donut.002", "sphere sprinkle icing.002"],
   "output_name": "nateroids",
   ...
@@ -124,12 +124,12 @@ Use `nateroids_bake.blend` as the source file in your bake configuration:
 | Sphere Template | 86 vertices | Deleted |
 
 **File Sizes:**
-- `nateroids.blend`: ~4.9 MB (with geometry nodes)
-- `nateroids_bake.blend`: ~7.3 MB (with realized geometry)
+- `nateroid.blend`: ~4.9 MB (with geometry nodes)
+- `nateroid_bake.blend`: ~7.3 MB (with realized geometry)
 
 ## Important Notes
 
-- **Never use `nateroids_bake.blend` for editing** - It has no procedural controls
-- **Always edit `nateroids.blend`** - This is your source of truth
+- **Never use `nateroid_bake.blend` for editing** - It has no procedural controls
+- **Always edit `nateroid.blend`** - This is your source of truth
 - **Regenerate bake file** whenever you change sprinkles in the editable version
 - The bake file is essentially a "compiled" version of your editable file

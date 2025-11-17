@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::ops::Range;
 
 use avian3d::prelude::*;
+use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
 use rand::Rng;
 
@@ -80,6 +81,8 @@ impl Plugin for NateroidPlugin {
             .add_systems(
                 Update,
                 (
+                    apply_nateroid_materials_to_children,
+                    debug_mesh_components.after(apply_nateroid_materials_to_children),
                     spawn_nateroid.in_set(InGameSet::EntityUpdates),
                     despawn_testaroid_on_teleport.in_set(InGameSet::EntityUpdates),
                     spawn_testaroid
@@ -227,6 +230,110 @@ fn despawn_test_missiles(
     }
 }
 
+/// System that applies custom materials to nateroid mesh children (donut and icing)
+fn apply_nateroid_materials_to_children(
+    mut commands: Commands,
+    nateroid_query: Query<(Entity, &Children), (With<Nateroid>, Added<Children>)>,
+    mesh_query: Query<(Entity, Option<&Name>), With<Mesh3d>>,
+    scene_assets: Res<SceneAssets>,
+) {
+    let Some(donut_material) = &scene_assets.nateroid_donut_material else {
+        return;
+    };
+    let Some(icing_material) = &scene_assets.nateroid_icing_material else {
+        return;
+    };
+
+    for (nateroid_entity, children) in nateroid_query.iter() {
+        info!("Applying materials to nateroid {nateroid_entity:?} mesh children");
+
+        let mut donut_count = 0;
+        let mut icing_count = 0;
+        // Find all mesh entities in the hierarchy and apply the appropriate material
+        for child in children.iter() {
+            if let Ok((mesh_entity, name)) = mesh_query.get(child) {
+                // Match mesh name to appropriate material
+                let material = if let Some(name) = name {
+                    if name.as_str().contains("donut") {
+                        donut_count += 1;
+                        donut_material.clone()
+                    } else if name.as_str().contains("icing") {
+                        icing_count += 1;
+                        icing_material.clone()
+                    } else {
+                        info!("Unknown nateroid mesh name: '{name}', defaulting to donut material");
+                        donut_count += 1;
+                        donut_material.clone()
+                    }
+                } else {
+                    info!("Nateroid mesh has no name, defaulting to donut material");
+                    donut_count += 1;
+                    donut_material.clone()
+                };
+
+                commands.entity(mesh_entity).insert(MeshMaterial3d(material));
+            }
+        }
+
+        info!("Applied materials: {donut_count} donut, {icing_count} icing");
+    }
+}
+
+/// Diagnostic system to check mesh entity components
+fn debug_mesh_components(
+    nateroid_query: Query<&Children, With<Nateroid>>,
+    mesh_query: Query<
+        (
+            Entity,
+            &Mesh3d,
+            Option<&MeshMaterial3d<StandardMaterial>>,
+            Option<&ViewVisibility>,
+            Option<&RenderLayers>,
+            Option<&Transform>,
+            Option<&GlobalTransform>,
+        ),
+        With<Mesh3d>,
+    >,
+    all_children_query: Query<&Children>,
+    meshes: Res<Assets<Mesh>>,
+) {
+    for children in nateroid_query.iter() {
+        let mut to_visit: Vec<Entity> = children.iter().collect();
+        let mut visited = std::collections::HashSet::new();
+
+        while let Some(child) = to_visit.pop() {
+            if !visited.insert(child) {
+                continue;
+            }
+
+            if let Ok((entity, mesh3d, material, visibility, render_layers, transform, global_transform)) = mesh_query.get(child) {
+                // Check if the mesh asset actually has data
+                let mesh_data = meshes.get(&mesh3d.0);
+                let vertex_count = mesh_data.map(|m| m.count_vertices()).unwrap_or(0);
+
+                debug!(
+                    "Mesh entity {:?}: has_material={}, visible={:?}, vertices={}, render_layers={:?}, scale={:?}, global_pos={:?}",
+                    entity,
+                    material.is_some(),
+                    visibility.map(|v| v.get()),
+                    vertex_count,
+                    render_layers,
+                    transform.map(|t| t.scale),
+                    global_transform.map(|gt| gt.translation())
+                );
+
+                if vertex_count == 0 {
+                    warn!("Mesh entity {:?} has ZERO vertices!", entity);
+                }
+            }
+
+            if let Ok(grandchildren) = all_children_query.get(child) {
+                to_visit.extend(grandchildren.iter());
+            }
+        }
+    }
+}
+
 fn initialize_nateroid(
     nateroid: On<Add, Nateroid>,
     mut commands: Commands,
@@ -251,6 +358,8 @@ fn initialize_nateroid(
         ));
 
         insert_configured_components(&mut commands, &mut config.actor_config, nateroid.entity);
+
+        // Material will be applied by apply_nateroid_materials_to_children system
 
         // Kill immediately so it has approaching portal when it becomes deaderoid
         commands.entity(nateroid.entity).insert(Health(-1.0));
@@ -308,6 +417,8 @@ fn initialize_nateroid(
         .insert(angular_velocity);
 
     insert_configured_components(&mut commands, &mut config.actor_config, nateroid.entity);
+
+    // Material will be applied by apply_nateroid_materials_to_children system
 }
 
 fn initialize_transform(

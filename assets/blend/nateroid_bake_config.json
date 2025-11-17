@@ -1,0 +1,27 @@
+{
+  "blend_file": "/Users/natemccoy/rust/nateroids/assets/blend/nateroid_bake.blend",
+  "objects": [
+    "donut",
+    "icing"
+  ],
+  "output_name": "nateroid",
+  "texture_resolution": 512,
+  "output_directory": "/Users/natemccoy/rust/nateroids/assets/nateroid",
+  "settings": {
+    "bake_margin": 16,
+    "use_gpu": true,
+    "bake_separate_per_object": true,
+    "export_individual_textures": true,
+    "export_metallic_roughness_packed": true,
+    "save_individual_metallic_roughness": false,
+    "export_glb": true
+  },
+  "texture_maps": {
+    "albedo": true,
+    "normal": true,
+    "roughness": true,
+    "metallic": true,
+    "ambient_occlusion": true,
+    "emission": false
+  }
+}

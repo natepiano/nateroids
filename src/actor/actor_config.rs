@@ -21,7 +21,7 @@ use crate::game_input::toggle_active;
 
 // this is how far off we are from blender for the assets we're loading
 // we need to get them scaled up to generate a usable aabb
-const BLENDER_SCALE: f32 = 100.;
+pub const BLENDER_SCALE: f32 = 100.;
 
 // Spaceship model orientation correction: rotates the model so nose points +Y
 // Shared between initial spawn and runtime 2D enforcement
@@ -178,10 +178,9 @@ fn initialize_actor_config(
     scene_handle: &Handle<Scene>,
 ) -> ActorConfig {
     let aabb = aabb::get_scene_aabb(scenes, meshes, scene_handle);
-    let adjusted_aabb = aabb.scale(BLENDER_SCALE);
 
-    // Calculate the size based on the adjusted AABB
-    let size = adjusted_aabb.size();
+    // Use raw AABB size - transform scale will handle sizing
+    let size = aabb.size();
 
     let collider = match config.collider_type {
         ColliderType::Ball => {
@@ -195,7 +194,7 @@ fn initialize_actor_config(
         ),
     };
 
-    config.aabb = adjusted_aabb;
+    config.aabb = aabb;
     config.collider = collider;
     config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);
     config.scene = scene_handle.clone();
