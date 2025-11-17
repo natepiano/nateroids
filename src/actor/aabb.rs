@@ -1,6 +1,9 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
@@ -11,7 +14,15 @@ pub struct AabbPlugin;
 impl Plugin for AabbPlugin {
     fn build(&self, app: &mut App) {
         app.init_gizmo_group::<AabbGizmo>()
-            .add_systems(Startup, init_aabb_gizmo_config)
+            .init_resource::<AabbConfig>()
+            .add_plugins(
+                ResourceInspectorPlugin::<AabbConfig>::default()
+                    .run_if(toggle_active(false, GameAction::AabbConfigInspector)),
+            )
+            .add_systems(
+                Update,
+                apply_aabb_config.run_if(resource_changed::<AabbConfig>),
+            )
             .add_systems(
                 Update,
                 draw_aabb_system.run_if(toggle_active(false, GameAction::AABBs)),
@@ -22,9 +33,27 @@ impl Plugin for AabbPlugin {
 #[derive(Default, Reflect, GizmoConfigGroup)]
 struct AabbGizmo {}
 
-fn init_aabb_gizmo_config(mut config_store: ResMut<GizmoConfigStore>) {
-    let (config, _) = config_store.config_mut::<AabbGizmo>();
-    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+#[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
+#[reflect(Resource, InspectorOptions)]
+struct AabbConfig {
+    color:      Color,
+    #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
+    line_width: f32,
+}
+
+impl Default for AabbConfig {
+    fn default() -> Self {
+        Self {
+            color:      Color::from(tailwind::GREEN_800),
+            line_width: 1.0,
+        }
+    }
+}
+
+fn apply_aabb_config(mut config_store: ResMut<GizmoConfigStore>, config: Res<AabbConfig>) {
+    let (gizmo_config, _) = config_store.config_mut::<AabbGizmo>();
+    gizmo_config.line.width = config.line_width;
+    gizmo_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
 #[derive(Component, Debug, Clone, Reflect, Default)]
@@ -67,14 +96,17 @@ impl Aabb {
     }
 }
 
-fn draw_aabb_system(mut gizmos: Gizmos<AabbGizmo>, aabbs: Query<(&Transform, &Aabb)>) {
-    // Draw all AABBs in green
+fn draw_aabb_system(
+    mut gizmos: Gizmos<AabbGizmo>,
+    aabbs: Query<(&Transform, &Aabb)>,
+    config: Res<AabbConfig>,
+) {
     for (transform, aabb) in aabbs.iter() {
         let center = transform.transform_point(aabb.center());
 
         gizmos.cuboid(
             Transform::from_trs(center, transform.rotation, aabb.size() * transform.scale),
-            Color::from(tailwind::GREEN_800),
+            config.color,
         );
     }
 }

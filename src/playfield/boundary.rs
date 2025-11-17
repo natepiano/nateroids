@@ -42,12 +42,12 @@ impl Plugin for BoundaryPlugin {
                 ResourceInspectorPlugin::<Boundary>::default()
                     .run_if(toggle_active(false, GameAction::BoundaryInspector)),
             )
-            .add_systems(Update, update_gizmos_config)
+            .add_systems(Update, apply_boundary_config)
             .add_systems(Update, draw_boundary.run_if(in_state(PlayingGame)));
     }
 }
 
-fn update_gizmos_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Res<Boundary>) {
+fn apply_boundary_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Res<Boundary>) {
     let (config, _) = config_store.config_mut::<GridGizmo>();
     config.line.width = boundary.grid_line_width;
     config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());

@@ -3,6 +3,9 @@ use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::light::AmbientLight;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_panorbit_camera::TrackpadBehavior;
@@ -24,11 +27,22 @@ impl Plugin for CamerasPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(PanOrbitCameraPlugin)
             .init_gizmo_group::<FocusGizmo>()
+            .init_resource::<FocusConfig>()
+            .init_resource::<FocusGizmoState>()
+            .add_plugins(
+                ResourceInspectorPlugin::<FocusConfig>::default()
+                    .run_if(toggle_active(false, GameAction::FocusConfigInspector)),
+            )
             .add_systems(Startup, spawn_star_camera.before(spawn_panorbit_camera))
             .add_systems(Startup, spawn_panorbit_camera)
             .add_systems(Update, home_camera.run_if(just_pressed(GameAction::Home)))
             .add_systems(Update, move_camera_system)
-            .add_systems(Update, update_focus_gizmo_config)
+            .add_systems(
+                Update,
+                apply_focus_config.run_if(resource_changed::<FocusConfig>),
+            )
+            .add_systems(PostStartup, update_focus_gizmo_state)
+            .add_systems(Update, update_focus_gizmo_state)
             .add_systems(
                 Update,
                 (
@@ -36,6 +50,7 @@ impl Plugin for CamerasPlugin {
                     update_bloom_settings,
                     update_clear_color,
                     draw_camera_focus_gizmo.run_if(toggle_active(false, GameAction::ShowFocus)),
+                    cleanup_focus_labels.run_if(toggle_active(true, GameAction::ShowFocus)),
                 ),
             );
     }
@@ -44,10 +59,62 @@ impl Plugin for CamerasPlugin {
 #[derive(Default, Reflect, GizmoConfigGroup)]
 struct FocusGizmo {}
 
-fn update_focus_gizmo_config(mut config_store: ResMut<GizmoConfigStore>) {
-    let (config, _) = config_store.config_mut::<FocusGizmo>();
-    config.line.width = 0.5;
-    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+#[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
+#[reflect(Resource, InspectorOptions)]
+struct FocusConfig {
+    color:         Color,
+    #[inspector(min = 0.1, max = 10.0, display = NumberDisplay::Slider)]
+    line_width:    f32,
+    #[inspector(min = 0.1, max = 50.0, display = NumberDisplay::Slider)]
+    sphere_radius: f32,
+}
+
+impl Default for FocusConfig {
+    fn default() -> Self {
+        Self {
+            color:         Color::srgb(1.0, 0.0, 0.0),
+            line_width:    2.0,
+            sphere_radius: 1.0,
+        }
+    }
+}
+
+/// Stores the calculated world-space sphere radius that maintains constant screen-space size
+#[derive(Resource, Reflect, Default, Debug)]
+#[reflect(Resource)]
+struct FocusGizmoState {
+    /// World-space radius scaled to appear constant size on screen
+    sphere_radius: f32,
+}
+
+/// Marker component for the focus distance label
+#[derive(Component)]
+struct FocusDistanceLabel;
+
+fn apply_focus_config(mut config_store: ResMut<GizmoConfigStore>, config: Res<FocusConfig>) {
+    let (gizmo_config, _) = config_store.config_mut::<FocusGizmo>();
+    gizmo_config.line.width = config.line_width;
+    gizmo_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+}
+
+/// Updates the focus gizmo state when camera or config changes to maintain constant screen-space
+/// size
+fn update_focus_gizmo_state(
+    camera_query: Query<&PanOrbitCamera, With<Camera>>,
+    camera_changed: Query<(), (With<Camera>, Changed<PanOrbitCamera>)>,
+    config: Res<FocusConfig>,
+    mut state: ResMut<FocusGizmoState>,
+) {
+    // Only update if camera or config actually changed
+    if camera_changed.is_empty() && !config.is_changed() {
+        return;
+    }
+
+    if let Ok(pan_orbit) = camera_query.single() {
+        // Scale sphere radius proportionally to camera distance to maintain constant screen size
+        let camera_radius = pan_orbit.radius.unwrap_or(100.0);
+        state.sphere_radius = config.sphere_radius * (camera_radius / 100.0);
+    }
 }
 
 /// Component for programmatically moving the camera to a specific position
@@ -522,20 +589,75 @@ fn update_clear_color(camera_config: Res<CameraConfig>, mut clear_color: ResMut<
     }
 }
 
-/// Draws a red gizmo sphere at the `PanOrbit` camera's focus point
-/// and a red arrow from world origin to the focus
+/// Draws a gizmo sphere at the `PanOrbit` camera's focus point
+/// and an arrow from world origin to the focus
 fn draw_camera_focus_gizmo(
+    mut commands: Commands,
     mut gizmos: Gizmos<FocusGizmo>,
-    camera_query: Query<&PanOrbitCamera, With<Camera>>,
+    camera_query: Query<(&Camera, &GlobalTransform, &PanOrbitCamera)>,
+    config: Res<FocusConfig>,
+    state: Res<FocusGizmoState>,
+    mut label_query: Query<(&mut Text, &mut Node, &mut TextColor), With<FocusDistanceLabel>>,
 ) {
-    if let Ok(pan_orbit) = camera_query.single() {
+    if let Ok((cam, cam_transform, pan_orbit)) = camera_query.single() {
         let focus = pan_orbit.target_focus;
 
-        // Draw sphere at focus point
-        gizmos.sphere(focus, 1.0, Color::srgb(1.0, 0.0, 0.0));
+        // Draw sphere at focus point with screen-space constant size
+        gizmos.sphere(focus, state.sphere_radius, config.color);
 
         // Draw arrow from world origin to focus
-        gizmos.arrow(Vec3::ZERO, focus, Color::srgb(1.0, 0.0, 0.0));
+        gizmos.arrow(Vec3::ZERO, focus, config.color);
+
+        // Calculate distance from origin to focus
+        let distance = focus.length();
+        let text = format!("{distance:.1}");
+
+        // Position label directly along arrow line so arrow points at the number
+        let arrow_dir = focus.normalize_or_zero();
+
+        // Offset along arrow direction, far enough to clear the sphere
+        // Use generous offset to prevent occlusion from any camera angle
+        let along_arrow_offset = state.sphere_radius * 2.0 + 20.0;
+
+        let label_world_pos = focus + (arrow_dir * along_arrow_offset);
+
+        // Convert to screen space
+        if let Ok(label_screen_pos) = cam.world_to_viewport(cam_transform, label_world_pos) {
+            // Update existing label or create new one
+            if let Ok((mut label_text, mut node, mut text_color)) = label_query.single_mut() {
+                label_text.0.clone_from(&text);
+                text_color.0 = config.color;
+                node.left = Val::Px(label_screen_pos.x);
+                node.top = Val::Px(label_screen_pos.y);
+            } else {
+                // Create new label
+                commands.spawn((
+                    Text::new(text),
+                    TextFont {
+                        font_size: 11.0,
+                        ..default()
+                    },
+                    TextColor(config.color),
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: Val::Px(label_screen_pos.x),
+                        top: Val::Px(label_screen_pos.y),
+                        ..default()
+                    },
+                    RenderLayers::from_layers(RenderLayer::Game.layers()),
+                    FocusDistanceLabel,
+                ));
+            }
+        }
+    }
+}
+
+fn cleanup_focus_labels(
+    mut commands: Commands,
+    label_query: Query<Entity, With<FocusDistanceLabel>>,
+) {
+    for entity in &label_query {
+        commands.entity(entity).despawn();
     }
 }
 

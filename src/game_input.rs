@@ -17,9 +17,11 @@ impl Plugin for InputPlugin {
 #[derive(Actionlike, EnumIter, Reflect, PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum GameAction {
     AABBs,
+    AabbConfigInspector,
     BoundaryBox,
     BoundaryInspector,
     CameraConfigInspector,
+    FocusConfigInspector,
     ShowFocus,
     Home,
     LightsInspector,
@@ -31,6 +33,7 @@ pub enum GameAction {
     Pause,
     RestartGame,
     RestartWithSplash,
+    ScreenBoundaryConfigInspector,
     SpaceshipInspector,
     SpaceshipControlInspector,
     Stars,
@@ -72,9 +75,11 @@ impl GameAction {
         // accumulation works
         Self::iter().fold(InputMap::default(), |input_map, action| match action {
             Self::AABBs => input_map.with(action, KeyCode::F1),
+            Self::AabbConfigInspector => insert_shift_input(input_map, action, KeyCode::KeyA),
             Self::BoundaryBox => input_map.with(action, KeyCode::KeyB),
             Self::BoundaryInspector => insert_shift_input(input_map, action, KeyCode::KeyB),
             Self::CameraConfigInspector => insert_shift_input(input_map, action, KeyCode::KeyC),
+            Self::FocusConfigInspector => insert_shift_input(input_map, action, KeyCode::Digit5),
             Self::Home => input_map.with(action, KeyCode::F12),
             Self::LightsInspector => insert_shift_input(input_map, action, KeyCode::KeyL),
             Self::MissileInspector => insert_shift_input(input_map, action, KeyCode::Digit1),
@@ -101,6 +106,9 @@ impl GameAction {
                         .with(KeyCode::KeyS),
                 ],
             ),
+            Self::ScreenBoundaryConfigInspector => {
+                insert_shift_input(input_map, action, KeyCode::Digit6)
+            },
             Self::ShowFocus => insert_shift_input(input_map, action, KeyCode::KeyF),
             Self::SpaceshipInspector => insert_shift_input(input_map, action, KeyCode::Digit3),
             Self::SpaceshipControlInspector => {

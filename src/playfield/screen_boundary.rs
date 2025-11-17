@@ -1,6 +1,9 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 
 use crate::camera::Edge;
@@ -16,7 +19,17 @@ pub struct ScreenBoundaryPlugin;
 impl Plugin for ScreenBoundaryPlugin {
     fn build(&self, app: &mut App) {
         app.init_gizmo_group::<ScreenBoundaryGizmo>()
-            .add_systems(Startup, init_screen_boundary_gizmo_config)
+            .init_resource::<ScreenBoundaryConfig>()
+            .add_plugins(
+                ResourceInspectorPlugin::<ScreenBoundaryConfig>::default().run_if(toggle_active(
+                    false,
+                    GameAction::ScreenBoundaryConfigInspector,
+                )),
+            )
+            .add_systems(
+                Update,
+                apply_screen_boundary_config.run_if(resource_changed::<ScreenBoundaryConfig>),
+            )
             .add_systems(
                 Update,
                 draw_screen_aligned_boundary_box
@@ -37,26 +50,56 @@ struct MarginLabel {
 #[derive(Default, Reflect, GizmoConfigGroup)]
 struct ScreenBoundaryGizmo {}
 
-fn init_screen_boundary_gizmo_config(mut config_store: ResMut<GizmoConfigStore>) {
-    let (config, _) = config_store.config_mut::<ScreenBoundaryGizmo>();
-    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+#[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
+#[reflect(Resource, InspectorOptions)]
+struct ScreenBoundaryConfig {
+    rectangle_color:  Color,
+    balanced_color:   Color,
+    unbalanced_color: Color,
+    #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
+    line_width:       f32,
+}
+
+impl Default for ScreenBoundaryConfig {
+    fn default() -> Self {
+        Self {
+            rectangle_color:  Color::from(tailwind::YELLOW_400),
+            balanced_color:   Color::srgb(0.0, 1.0, 0.0),
+            unbalanced_color: Color::srgb(1.0, 0.0, 0.0),
+            line_width:       1.0,
+        }
+    }
+}
+
+fn apply_screen_boundary_config(
+    mut config_store: ResMut<GizmoConfigStore>,
+    config: Res<ScreenBoundaryConfig>,
+) {
+    let (gizmo_config, _) = config_store.config_mut::<ScreenBoundaryGizmo>();
+    gizmo_config.line.width = config.line_width;
+    gizmo_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
 /// Calculates the color for an edge based on balance state
-const fn calculate_edge_color(edge: Edge, h_balanced: bool, v_balanced: bool) -> Color {
+fn calculate_edge_color(
+    edge: Edge,
+    h_balanced: bool,
+    v_balanced: bool,
+    config: &ScreenBoundaryConfig,
+) -> Color {
     match edge {
         Edge::Left | Edge::Right => {
             if h_balanced {
-                Color::srgb(0.0, 1.0, 0.0) // Green
+                config.balanced_color
             } else {
-                Color::srgb(1.0, 0.0, 0.0) // Red
+                config.unbalanced_color
             }
         },
         Edge::Top | Edge::Bottom => {
             if v_balanced {
-                Color::srgb(0.0, 1.0, 0.0) // Green
+                config.balanced_color
             } else {
-                Color::srgb(1.0, 0.0, 0.0) // Red
+                config.unbalanced_color
             }
         },
     }
@@ -135,11 +178,15 @@ fn create_screen_corners(
     ]
 }
 
-/// Draws the yellow boundary rectangle outline
-fn draw_yellow_rectangle(gizmos: &mut Gizmos<ScreenBoundaryGizmo>, corners: &[Vec3; 4]) {
+/// Draws the boundary rectangle outline
+fn draw_rectangle(
+    gizmos: &mut Gizmos<ScreenBoundaryGizmo>,
+    corners: &[Vec3; 4],
+    config: &ScreenBoundaryConfig,
+) {
     for i in 0..4 {
         let next = (i + 1) % 4;
-        gizmos.line(corners[i], corners[next], Color::from(tailwind::YELLOW_400));
+        gizmos.line(corners[i], corners[next], config.rectangle_color);
     }
 }
 
@@ -224,13 +271,14 @@ fn update_or_create_margin_label(
     }
 }
 
-/// used to draw a yellow screen-aligned box around the boundary
+/// used to draw a screen-aligned box around the boundary
 /// used for troubleshooting camera movement logic
 fn draw_screen_aligned_boundary_box(
     mut commands: Commands,
     mut gizmos: Gizmos<ScreenBoundaryGizmo>,
     boundary: Res<Boundary>,
     zoom_config: Res<ZoomConfig>,
+    config: Res<ScreenBoundaryConfig>,
     camera: Query<(&Camera, &GlobalTransform, &Projection), With<PanOrbitCamera>>,
     mut label_query: Query<
         (Entity, &MarginLabel, &mut Text, &mut Node, &mut TextColor),
@@ -272,7 +320,7 @@ fn draw_screen_aligned_boundary_box(
 
     let rect_corners_world =
         create_screen_corners(&margins, cam_pos, cam_right, cam_up, cam_forward);
-    draw_yellow_rectangle(&mut gizmos, &rect_corners_world);
+    draw_rectangle(&mut gizmos, &rect_corners_world, &config);
 
     // Draw lines from visible boundary edges to screen edges
     // Green if margins are balanced, red otherwise
@@ -304,7 +352,7 @@ fn draw_screen_aligned_boundary_box(
                 cam_forward,
             );
 
-            let color = calculate_edge_color(edge, h_balanced, v_balanced);
+            let color = calculate_edge_color(edge, h_balanced, v_balanced, &config);
             gizmos.line(boundary_pos, screen_pos, color);
 
             // Add text label for this edge
