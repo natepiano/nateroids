@@ -7,23 +7,23 @@ license = "Apache-2.0 OR MIT"
 [lints.clippy]
 # Our strict lints
 expect_used = "deny"
-panic       = "deny"
+panic = "deny"
 unwrap_used = "deny"
 
 # Enable lint groups as errors (with lower priority so allows can override)
-all      = { level = "deny", priority = -1 }
-cargo    = { level = "deny", priority = -1 }
-nursery  = { level = "deny", priority = -1 }
+all = { level = "deny", priority = -1 }
+cargo = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
 
 # Allow specific lints that conflict with Bevy patterns
-cargo_common_metadata   = "allow"
+cargo_common_metadata = "allow"
 multiple_crate_versions = "allow"
-needless_pass_by_value  = "allow"
-option_if_let_else      = "allow"
-wildcard_imports        = "allow"
-too_many_arguments      = "allow"
-type_complexity         = "allow"
+needless_pass_by_value = "allow"
+option_if_let_else = "allow"
+wildcard_imports = "allow"
+too_many_arguments = "allow"
+type_complexity = "allow"
 
 [lints.rust]
 missing_docs = "deny"
@@ -31,7 +31,7 @@ missing_docs = "deny"
 [dependencies]
 avian3d = { version = "0.4.1", features = ["simd", "debug-plugin", "parallel"] }
 
-bevy = { version = "0.17.2", features = [
+bevy = { version = "0.17.3", features = [
   "tonemapping_luts",
   "bevy_dev_tools",
   "bevy_remote",
