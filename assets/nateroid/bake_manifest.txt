@@ -18,3 +18,11 @@ Generated Files:
   - textures/nateroid_icing_ao.png
   - textures/nateroid_icing_metallic_roughness.png
   - textures/nateroid_icing_normal.png
+  - textures_old/nateroid_donut_albedo.png
+  - textures_old/nateroid_donut_ao.png
+  - textures_old/nateroid_donut_metallic_roughness.png
+  - textures_old/nateroid_donut_normal.png
+  - textures_old/nateroid_icing_albedo.png
+  - textures_old/nateroid_icing_ao.png
+  - textures_old/nateroid_icing_metallic_roughness.png
+  - textures_old/nateroid_icing_normal.png
