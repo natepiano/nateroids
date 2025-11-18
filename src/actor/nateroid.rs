@@ -233,8 +233,9 @@ fn despawn_test_missiles(
 /// System that applies custom materials to nateroid mesh children (donut and icing)
 fn apply_nateroid_materials_to_children(
     mut commands: Commands,
-    nateroid_query: Query<(Entity, &Children), (With<Nateroid>, Added<Children>)>,
+    nateroid_query: Query<Entity, (With<Nateroid>, Added<Children>)>,
     mesh_query: Query<(Entity, Option<&Name>), With<Mesh3d>>,
+    children_query: Query<&Children>,
     scene_assets: Res<SceneAssets>,
 ) {
     let Some(donut_material) = &scene_assets.nateroid_donut_material else {
@@ -244,34 +245,47 @@ fn apply_nateroid_materials_to_children(
         return;
     };
 
-    for (nateroid_entity, children) in nateroid_query.iter() {
+    for nateroid_entity in nateroid_query.iter() {
         info!("Applying materials to nateroid {nateroid_entity:?} mesh children");
 
         let mut donut_count = 0;
         let mut icing_count = 0;
-        // Find all mesh entities in the hierarchy and apply the appropriate material
-        for child in children.iter() {
-            if let Ok((mesh_entity, name)) = mesh_query.get(child) {
+
+        // Iterate over all descendants to find mesh entities
+        for descendant in children_query.iter_descendants(nateroid_entity) {
+            if let Ok((mesh_entity, name)) = mesh_query.get(descendant) {
+                // Debug: log the actual mesh name
+                if let Some(name) = name {
+                    info!("Found mesh with name: '{}'", name.as_str());
+                } else {
+                    info!("Found mesh with no Name component");
+                }
+
                 // Match mesh name to appropriate material
                 let material = if let Some(name) = name {
-                    if name.as_str().contains("donut") {
+                    let name_str = name.as_str().to_lowercase();
+                    if name_str.contains("donut") {
+                        info!("  -> Matched as donut");
                         donut_count += 1;
                         donut_material.clone()
-                    } else if name.as_str().contains("icing") {
+                    } else if name_str.contains("icing") {
+                        info!("  -> Matched as icing");
                         icing_count += 1;
                         icing_material.clone()
                     } else {
-                        info!("Unknown nateroid mesh name: '{name}', defaulting to donut material");
+                        info!("  -> Unknown mesh name, defaulting to donut material");
                         donut_count += 1;
                         donut_material.clone()
                     }
                 } else {
-                    info!("Nateroid mesh has no name, defaulting to donut material");
+                    info!("  -> No name, defaulting to donut material");
                     donut_count += 1;
                     donut_material.clone()
                 };
 
-                commands.entity(mesh_entity).insert(MeshMaterial3d(material));
+                commands
+                    .entity(mesh_entity)
+                    .insert(MeshMaterial3d(material));
             }
         }
 
@@ -306,7 +320,16 @@ fn debug_mesh_components(
                 continue;
             }
 
-            if let Ok((entity, mesh3d, material, visibility, render_layers, transform, global_transform)) = mesh_query.get(child) {
+            if let Ok((
+                entity,
+                mesh3d,
+                material,
+                visibility,
+                render_layers,
+                transform,
+                global_transform,
+            )) = mesh_query.get(child)
+            {
                 // Check if the mesh asset actually has data
                 let mesh_data = meshes.get(&mesh3d.0);
                 let vertex_count = mesh_data.map(|m| m.count_vertices()).unwrap_or(0);

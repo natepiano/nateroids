@@ -31,17 +31,25 @@ impl Plugin for CameraPlugin {
     }
 }
 
+/// Camera rendering order. Higher order values render later (on top).
+///
+/// Render sequence:
+/// 1. `Stars` (order 0): Background stars with bloom effect
+/// 2. `Game` (order 1): Game objects (spaceships, asteroids, etc.)
+/// 3. `Ui` (order 2): egui inspectors and UI overlays (must be last to appear on top)
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CameraOrder {
-    Game,
     Stars,
+    Game,
+    Ui,
 }
 
 impl CameraOrder {
     pub const fn order(self) -> isize {
         match self {
-            Self::Game => 1,
             Self::Stars => 0,
+            Self::Game => 1,
+            Self::Ui => 2,
         }
     }
 }

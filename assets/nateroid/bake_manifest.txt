@@ -2,13 +2,20 @@ PBR Texture Baking Manifest
 ===========================
 
 Source: /Users/natemccoy/rust/nateroids/assets/blend/nateroid_bake.blend
-Objects: sphere sprinkle donut.002, sphere sprinkle icing.002
-Resolution: 512x512
+Objects: donut, icing
+Resolution: 1024x1024
 Bake Margin: 16px
+Mode: Separate per object
 
 Generated Files:
-  - nateroids.glb
-  - textures/nateroid_albedo.png
-  - textures/nateroid_ao.png
-  - textures/nateroid_metallic_roughness.png
-  - textures/nateroid_normal.png
+  - .DS_Store
+  - nateroid.glb
+  - textures/.DS_Store
+  - textures/nateroid_donut_albedo.png
+  - textures/nateroid_donut_ao.png
+  - textures/nateroid_donut_metallic_roughness.png
+  - textures/nateroid_donut_normal.png
+  - textures/nateroid_icing_albedo.png
+  - textures/nateroid_icing_ao.png
+  - textures/nateroid_icing_metallic_roughness.png
+  - textures/nateroid_icing_normal.png

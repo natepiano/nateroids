@@ -13,8 +13,8 @@ use bevy_inspector_egui::InspectorOptions;
 
 use super::Aabb;
 use super::actor_config::ActorConfig;
-use super::actor_config::ColliderType;
 use super::actor_config::BLENDER_SCALE;
+use super::actor_config::ColliderType;
 use super::actor_config::GLTF_ROTATION_X;
 use super::constants::MAX_MISSILE_ANGULAR_VELOCITY;
 use super::constants::MAX_MISSILE_LINEAR_VELOCITY;

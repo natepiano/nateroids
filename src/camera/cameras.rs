@@ -11,6 +11,7 @@ use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_panorbit_camera::TrackpadBehavior;
 use leafwing_input_manager::prelude::*;
 
+use crate::asset_loader::SceneAssets;
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
 use crate::camera::config::CameraConfig;
@@ -33,6 +34,7 @@ impl Plugin for CamerasPlugin {
                 ResourceInspectorPlugin::<FocusConfig>::default()
                     .run_if(toggle_active(false, GameAction::FocusConfigInspector)),
             )
+            .add_systems(Startup, spawn_ui_camera)
             .add_systems(Startup, spawn_star_camera.before(spawn_panorbit_camera))
             .add_systems(Startup, spawn_panorbit_camera)
             .add_systems(Update, home_camera.run_if(just_pressed(GameAction::Home)))
@@ -49,6 +51,7 @@ impl Plugin for CamerasPlugin {
                     toggle_stars,
                     update_bloom_settings,
                     update_clear_color,
+                    update_environment_map_intensity,
                     draw_camera_focus_gizmo.run_if(toggle_active(false, GameAction::ShowFocus)),
                     cleanup_focus_labels.run_if(toggle_active(true, GameAction::ShowFocus)),
                 ),
@@ -443,6 +446,33 @@ fn move_camera_system(
 #[derive(Component, Reflect)]
 pub struct StarsCamera;
 
+/// Spawns a dedicated UI camera for egui/bevy_inspector_egui to attach to.
+///
+/// **Why this exists:**
+/// - `bevy_egui` automatically attaches to the "first found camera" during setup
+/// - By spawning this camera first, we control which camera egui uses
+/// - This camera has the highest order (2) so egui renders **after** all game content
+///
+/// **Without this camera:**
+/// - egui would attach to the Stars camera (order 0, spawned first among 3D cameras)
+/// - The Game camera (order 1) would then render on top, covering the UI
+/// - Result: inspectors and UI would be invisible beneath game objects
+///
+/// **Camera configuration:**
+/// - `Camera2d`: egui renders 2D UI overlays, doesn't need 3D projection
+/// - `order: 2`: Highest order ensures this renders last (on top)
+/// - `ClearColorConfig::None`: Preserves the 3D scene rendered by lower-order cameras
+fn spawn_ui_camera(mut commands: Commands) {
+    commands.spawn((
+        Camera2d,
+        Camera {
+            order: CameraOrder::Ui.order(),
+            clear_color: ClearColorConfig::None,
+            ..default()
+        },
+    ));
+}
+
 // star camera uses bloom so it needs to be in its own layer as we don't
 // want that effect on the colliders
 fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
@@ -489,6 +519,19 @@ fn get_bloom_settings(camera_config: Res<CameraConfig>) -> Bloom {
     new_bloom_settings
 }
 
+fn update_environment_map_intensity(
+    light_config: Res<crate::camera::lights::LightConfig>,
+    mut query: Query<&mut EnvironmentMapLight, With<Camera3d>>,
+) {
+    if !light_config.is_changed() {
+        return;
+    }
+
+    for mut env_light in &mut query {
+        env_light.intensity = light_config.environment_map_intensity;
+    }
+}
+
 // remove and insert BloomSettings to toggle them off and on
 // this can probably be removed now that bloom is pretty well working...
 fn toggle_stars(
@@ -520,6 +563,8 @@ fn toggle_stars(
 pub fn spawn_panorbit_camera(
     config: Res<Boundary>,
     zoom_config: Res<ZoomConfig>,
+    scene_assets: Res<SceneAssets>,
+    light_config: Res<crate::camera::lights::LightConfig>,
     mut commands: Commands,
     mut q_stars_camera: Query<Entity, With<StarsCamera>>,
 ) {
@@ -571,6 +616,12 @@ pub fn spawn_panorbit_camera(
             // this (speculative) clears the depth buffer of bloom information still - allowing
             // the game entities to render correctly without bloom
             clear_color: ClearColorConfig::Custom(Color::Srgba(Srgba::new(0.0, 0.0, 0.0, 0.0))),
+            ..default()
+        })
+        .insert(EnvironmentMapLight {
+            diffuse_map: scene_assets.env_diffuse_map.clone(),
+            specular_map: scene_assets.env_specular_map.clone(),
+            intensity: light_config.environment_map_intensity,
             ..default()
         })
         .insert(Tonemapping::TonyMcMapface)

@@ -5,7 +5,7 @@
     "icing"
   ],
   "output_name": "nateroid",
-  "texture_resolution": 512,
+  "texture_resolution": 1024,
   "output_directory": "/Users/natemccoy/rust/nateroids/assets/nateroid",
   "settings": {
     "bake_margin": 16,

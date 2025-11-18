@@ -93,7 +93,8 @@
       "Bash(sed:*)",
       "Bash(rustup doc:*)",
       "Bash(open \"https://rust-lang.github.io/rust-clippy/rust-1.91.0/index.html#used_underscore_binding\")",
-      "Bash(1)"
+      "Bash(1)",
+      "Bash(/opt/homebrew/bin/blender:*)"
     ],
     "deny": [],
     "ask": []

@@ -40,7 +40,7 @@ impl Default for LightSettings {
         Self {
             color:           Color::from(tailwind::AMBER_400),
             enabled:         false,
-            illuminance:     3000.0,
+            illuminance:     1700.0,
             // CRITICAL: Must start disabled. Enabling shadows at startup before the scene
             // is fully initialized breaks rendering (causes stars to disappear). Shadows
             // can be safely enabled at runtime via inspector or code.
@@ -52,34 +52,37 @@ impl Default for LightSettings {
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone)]
 #[reflect(Resource, InspectorOptions)]
 pub struct LightConfig {
-    #[inspector(min = 0.0, max = 1_000.0, display = NumberDisplay::Slider)]
-    pub ambient_light_brightness: f32,
-    pub ambient_light_color:      Color,
-    pub front:                    LightSettings,
-    pub back:                     LightSettings,
-    pub top:                      LightSettings,
-    pub bottom:                   LightSettings,
-    pub left:                     LightSettings,
-    pub right:                    LightSettings,
+    #[inspector(min = 0.0, max = 10_000.0, display = NumberDisplay::Slider)]
+    pub ambient_light_brightness:  f32,
+    pub ambient_light_color:       Color,
+    #[inspector(min = 0.0, max = 100_000.0, display = NumberDisplay::Slider)]
+    pub environment_map_intensity: f32,
+    pub front:                     LightSettings,
+    pub back:                      LightSettings,
+    pub top:                       LightSettings,
+    pub bottom:                    LightSettings,
+    pub left:                      LightSettings,
+    pub right:                     LightSettings,
 }
 
 impl Default for LightConfig {
     fn default() -> Self {
         Self {
-            ambient_light_brightness: 100.0,
-            ambient_light_color:      Color::WHITE,
-            front:                    LightSettings {
+            ambient_light_brightness:  100.0,
+            ambient_light_color:       Color::WHITE,
+            environment_map_intensity: 2000.0,
+            front:                     LightSettings {
                 enabled: true,
                 ..Default::default()
             },
-            back:                     LightSettings {
+            back:                      LightSettings {
                 enabled: true,
                 ..Default::default()
             },
-            top:                      LightSettings::default(),
-            bottom:                   LightSettings::default(),
-            left:                     LightSettings::default(),
-            right:                    LightSettings::default(),
+            top:                       LightSettings::default(),
+            bottom:                    LightSettings::default(),
+            left:                      LightSettings::default(),
+            right:                     LightSettings::default(),
         }
     }
 }

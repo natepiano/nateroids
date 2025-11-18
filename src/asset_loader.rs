@@ -34,7 +34,10 @@ pub struct SceneAssets {
     pub nateroid:                Handle<Scene>,
     pub nateroid_donut_material: Option<Handle<StandardMaterial>>,
     pub nateroid_icing_material: Option<Handle<StandardMaterial>>,
-    pub spaceship:               Handle<Scene>, // pub sphere: Handle<Scene>,
+    pub spaceship:               Handle<Scene>,
+    pub env_diffuse_map:         Handle<Image>,
+    pub env_specular_map:        Handle<Image>,
+    pub skybox_image:            Handle<Image>,
 }
 
 pub fn load_assets(
@@ -48,6 +51,12 @@ pub fn load_assets(
         nateroid_donut_material: None,
         nateroid_icing_material: None,
         spaceship:               asset_server.load("models/Spaceship.glb#Scene0"),
+        env_diffuse_map:         asset_server
+            .load("environment_maps/dikhololo_night_2k_diffuse.ktx2"),
+        env_specular_map:        asset_server
+            .load("environment_maps/dikhololo_night_2k_specular.ktx2"),
+        skybox_image:            asset_server
+            .load("environment_maps/dikhololo_night_2k_cubemap.ktx2"),
     };
 }
 
@@ -83,21 +92,28 @@ fn create_nateroid_material(
 
     // Create donut PBR material
     let donut_material = materials.add(StandardMaterial {
-        base_color_texture:        Some(donut_albedo),
-        normal_map_texture:        Some(donut_normal),
+        base_color_texture: Some(donut_albedo),
+        normal_map_texture: Some(donut_normal),
         metallic_roughness_texture: Some(donut_metallic_roughness),
-        occlusion_texture:         Some(donut_ao),
-        cull_mode:                 None,
+        occlusion_texture: Some(donut_ao),
+        // Set scalars to 1.0 so texture values are used directly
+        metallic: 1.0,
+        perceptual_roughness: 1.0,
+        cull_mode: None,
         ..default()
     });
 
     // Create icing PBR material
     let icing_material = materials.add(StandardMaterial {
-        base_color_texture:        Some(icing_albedo),
-        normal_map_texture:        Some(icing_normal),
+        base_color_texture: Some(icing_albedo),
+        normal_map_texture: Some(icing_normal),
         metallic_roughness_texture: Some(icing_metallic_roughness),
-        occlusion_texture:         Some(icing_ao),
-        cull_mode:                 None,
+        occlusion_texture: Some(icing_ao),
+        // Set scalars to 1.0 so texture values are used directly
+        metallic: 1.0,
+        perceptual_roughness: 1.0,
+        reflectance: 1.0,
+        cull_mode: None,
         ..default()
     });
 
@@ -106,17 +122,25 @@ fn create_nateroid_material(
     info!("Nateroid PBR materials created for donut and icing with baked textures");
 }
 
-
 pub fn check_asset_loading(
     mut next_state: ResMut<NextState<AssetsState>>,
     asset_server: Res<AssetServer>,
     scene_assets: Res<SceneAssets>,
 ) {
-    // Collect all asset IDs to check their load states
-    let all_assets_loaded = [
+    // Check scene assets
+    let scenes_loaded = [
         scene_assets.missile.id(),
         scene_assets.nateroid.id(),
         scene_assets.spaceship.id(),
+    ]
+    .iter()
+    .all(|&id| matches!(asset_server.get_load_state(id), Some(LoadState::Loaded)));
+
+    // Check environment map images
+    let env_maps_loaded = [
+        scene_assets.env_diffuse_map.id(),
+        scene_assets.env_specular_map.id(),
+        scene_assets.skybox_image.id(),
     ]
     .iter()
     .all(|&id| matches!(asset_server.get_load_state(id), Some(LoadState::Loaded)));
@@ -125,9 +149,9 @@ pub fn check_asset_loading(
     let materials_ready = scene_assets.nateroid_donut_material.is_some()
         && scene_assets.nateroid_icing_material.is_some();
 
-    // Transition to the Loaded state if all assets are loaded
-    if all_assets_loaded && materials_ready {
-        info!("All assets loaded!");
+    // Transition to the Loaded state if all assets are loaded (including environment maps)
+    if scenes_loaded && env_maps_loaded && materials_ready {
+        info!("All assets loaded (including environment maps)!");
         next_state.set(AssetsState::Loaded);
     }
 }
