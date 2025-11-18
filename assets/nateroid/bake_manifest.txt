@@ -10,7 +10,6 @@ Mode: Separate per object
 Generated Files:
   - .DS_Store
   - nateroid.glb
-  - textures/.DS_Store
   - textures/nateroid_donut_albedo.png
   - textures/nateroid_donut_ao.png
   - textures/nateroid_donut_metallic_roughness.png
