@@ -12,6 +12,7 @@ use crate::actor::actor_template::NateroidConfig;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
+use crate::state::PlayingGame;
 use crate::traits::UsizeExt;
 
 pub struct DespawnPlugin;
@@ -27,8 +28,7 @@ impl Plugin for DespawnPlugin {
             )
                 .in_set(InGameSet::DespawnEntities),
         )
-        .add_systems(OnEnter(GameState::Splash), despawn_all_entities)
-        .add_systems(OnEnter(GameState::GameOver), despawn_all_entities)
+        .add_systems(OnExit(PlayingGame), despawn_all_entities)
         .add_systems(OnExit(GameState::Splash), despawn_splash);
     }
 }
@@ -250,7 +250,7 @@ fn despawn_dead_entities(
 }
 
 fn despawn_all_entities(mut commands: Commands, query: Query<Entity, With<Health>>) {
-    info!("GameOver");
+    info!("despawning game entities");
     for entity in query.iter() {
         despawn(&mut commands, entity);
     }
