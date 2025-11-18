@@ -446,7 +446,7 @@ fn move_camera_system(
 #[derive(Component, Reflect)]
 pub struct StarsCamera;
 
-/// Spawns a dedicated UI camera for egui/bevy_inspector_egui to attach to.
+/// Spawns a dedicated UI camera for `egui`/`bevy_inspector_egui` to attach to.
 ///
 /// **Why this exists:**
 /// - `bevy_egui` automatically attaches to the "first found camera" during setup
@@ -668,7 +668,7 @@ fn draw_camera_focus_gizmo(
 
         // Offset along arrow direction, far enough to clear the sphere
         // Use generous offset to prevent occlusion from any camera angle
-        let along_arrow_offset = state.sphere_radius * 2.0 + 20.0;
+        let along_arrow_offset = state.sphere_radius.mul_add(2.0, 20.0);
 
         let label_world_pos = focus + (arrow_dir * along_arrow_offset);
 

@@ -1,7 +1,7 @@
 //! Minimal reproduction of entity ID hash collision bug affecting dual camera rendering.
 //!
 //! ## Bug Description
-//! When spawning a SpotLight after setting up two Camera3d cameras:
+//! When spawning a `SpotLight` after setting up two `Camera3d` cameras:
 //! - WITHOUT the workaround: Stars camera's render phases get cleared after frame 1
 //! - WITH the workaround: Stars render correctly every frame
 //!
@@ -37,6 +37,7 @@ fn setup(
 ) {
     // Spawn some emissive "stars" on render layer 0
     for i in 0..10 {
+        #[allow(clippy::cast_precision_loss)]
         let x = (i as f32 - 4.5) * 100.0;
         commands.spawn((
             Mesh3d(meshes.add(Cuboid::new(10.0, 10.0, 10.0))),

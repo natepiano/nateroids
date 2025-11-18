@@ -332,7 +332,7 @@ fn debug_mesh_components(
             {
                 // Check if the mesh asset actually has data
                 let mesh_data = meshes.get(&mesh3d.0);
-                let vertex_count = mesh_data.map(|m| m.count_vertices()).unwrap_or(0);
+                let vertex_count = mesh_data.map_or(0, Mesh::count_vertices);
 
                 debug!(
                     "Mesh entity {:?}: has_material={}, visible={:?}, vertices={}, render_layers={:?}, scale={:?}, global_pos={:?}",
@@ -342,7 +342,7 @@ fn debug_mesh_components(
                     vertex_count,
                     render_layers,
                     transform.map(|t| t.scale),
-                    global_transform.map(|gt| gt.translation())
+                    global_transform.map(GlobalTransform::translation)
                 );
 
                 if vertex_count == 0 {

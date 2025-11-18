@@ -81,7 +81,7 @@ fn apply_screen_boundary_config(
 }
 
 /// Calculates the color for an edge based on balance state
-fn calculate_edge_color(
+const fn calculate_edge_color(
     edge: Edge,
     h_balanced: bool,
     v_balanced: bool,
