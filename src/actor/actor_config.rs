@@ -19,10 +19,6 @@ use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
 
-// this is how far off we are from blender for the assets we're loading
-// we need to get them scaled up to generate a usable aabb
-pub const BLENDER_SCALE: f32 = 100.;
-
 // Spaceship model orientation correction: rotates the model so nose points +Y
 // Shared between initial spawn and runtime 2D enforcement
 pub const GLTF_ROTATION_X: f32 = std::f32::consts::FRAC_PI_2; // +90°
