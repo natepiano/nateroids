@@ -14,20 +14,20 @@ use crate::state::GameState;
 
 pub struct SplashPlugin;
 
-const SPLASH_TIME: f32 = 2.;
+const SPLASH_TEXT_TIME: f32 = 2.;
 
 #[derive(Component)]
 pub struct SplashText;
 
 #[derive(Resource, Debug)]
-struct SplashTimer {
+struct SplashTextTimer {
     pub timer: Timer,
 }
 
 impl Plugin for SplashPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(SplashTimer {
-            timer: Timer::from_seconds(SPLASH_TIME, TimerMode::Once),
+        app.insert_resource(SplashTextTimer {
+            timer: Timer::from_seconds(SPLASH_TEXT_TIME, TimerMode::Once),
         })
         .add_systems(
             OnEnter(GameState::Splash),
@@ -42,7 +42,7 @@ impl Plugin for SplashPlugin {
 }
 
 fn reset_timer_and_camera(
-    mut splash_timer: ResMut<SplashTimer>,
+    mut splash_timer: ResMut<SplashTextTimer>,
     camera_config: ResMut<CameraConfig>,
     mut panorbit: Single<&mut PanOrbitCamera>,
 ) {
@@ -78,16 +78,16 @@ fn spawn_splash_text(mut commands: Commands) {
 fn run_splash(
     mut commands: Commands,
     mut next_state: ResMut<NextState<GameState>>,
-    mut spawn_timer: ResMut<SplashTimer>,
+    mut splash_text_timer: ResMut<SplashTextTimer>,
     time: Res<Time>,
     mut q_text: Query<(Entity, &mut TextFont), With<SplashText>>,
     camera_query: Query<(), (With<PanOrbitCamera>, With<MoveQueue>)>,
 ) {
-    spawn_timer.timer.tick(time.delta());
+    splash_text_timer.timer.tick(time.delta());
 
     // Animate text for 2 seconds, then despawn it (observer will spawn objects)
     if let Ok((text_entity, mut text)) = q_text.single_mut() {
-        if spawn_timer.timer.just_finished() {
+        if splash_text_timer.timer.just_finished() {
             // Text timer done - remove the text (triggers On<Remove, SplashText> observer)
             commands.entity(text_entity).despawn();
         } else {
@@ -98,7 +98,7 @@ fn run_splash(
 
     // Exit splash only when BOTH timer is finished AND camera animation is complete
     // This prevents exiting too early on first frame before MoveQueue is visible to query
-    let timer_finished = spawn_timer.timer.is_finished();
+    let timer_finished = splash_text_timer.timer.is_finished();
     let camera_animation_done = camera_query.is_empty(); // No MoveQueue = animation done
 
     if timer_finished && camera_animation_done {
