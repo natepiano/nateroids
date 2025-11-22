@@ -1,6 +1,9 @@
 mod cameras;
 mod config;
+mod constants;
 mod lights;
+mod move_queue;
+mod pan_orbit_ext;
 mod star_twinkling;
 mod stars;
 mod zoom;
@@ -10,10 +13,15 @@ use bevy::prelude::*;
 use cameras::CamerasPlugin;
 pub use cameras::Edge;
 pub use cameras::ScreenSpaceBoundary;
+pub use cameras::calculate_home_radius;
 pub use config::CameraConfig;
 use config::CameraConfigPlugin;
 pub use config::ZoomConfig;
 use lights::DirectionalLightsPlugin;
+pub use move_queue::CameraMove;
+pub use move_queue::MoveQueue;
+use move_queue::MoveQueuePlugin;
+pub use pan_orbit_ext::PanOrbitCameraExt;
 use star_twinkling::StarTwinklingPlugin;
 use stars::StarsPlugin;
 use zoom::ZoomPlugin;
@@ -23,11 +31,12 @@ pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(CameraConfigPlugin)
-            .add_plugins(DirectionalLightsPlugin)
             .add_plugins(CamerasPlugin)
-            .add_plugins(ZoomPlugin)
+            .add_plugins(DirectionalLightsPlugin)
+            .add_plugins(MoveQueuePlugin)
+            .add_plugins(StarTwinklingPlugin)
             .add_plugins(StarsPlugin)
-            .add_plugins(StarTwinklingPlugin);
+            .add_plugins(ZoomPlugin);
     }
 }
 

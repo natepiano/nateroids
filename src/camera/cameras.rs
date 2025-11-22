@@ -11,6 +11,10 @@ use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_panorbit_camera::TrackpadBehavior;
 use leafwing_input_manager::prelude::*;
 
+use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
+use super::constants::CAMERA_ZOOM_SENSITIVITY;
+use super::constants::EDGE_MARKER_FONT_SIZE;
+use super::constants::EDGE_MARKER_SPHERE_RADIUS;
 use crate::asset_loader::SceneAssets;
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
@@ -21,6 +25,9 @@ use crate::game_input::just_pressed;
 use crate::game_input::toggle_active;
 use crate::playfield::Boundary;
 use crate::traits::UsizeExt;
+use super::PanOrbitCameraExt;
+use super::zoom::ZoomToFit;
+use super::move_queue::MoveQueue;
 
 pub struct CamerasPlugin;
 
@@ -34,11 +41,11 @@ impl Plugin for CamerasPlugin {
                 ResourceInspectorPlugin::<FocusConfig>::default()
                     .run_if(toggle_active(false, GameAction::FocusConfigInspector)),
             )
+            .add_observer(reset_camera_after_moves)
             .add_systems(Startup, spawn_ui_camera)
             .add_systems(Startup, spawn_star_camera.before(spawn_panorbit_camera))
             .add_systems(Startup, spawn_panorbit_camera)
             .add_systems(Update, home_camera.run_if(just_pressed(GameAction::Home)))
-            .add_systems(Update, move_camera_system)
             .add_systems(
                 Update,
                 apply_focus_config.run_if(resource_changed::<FocusConfig>),
@@ -77,7 +84,7 @@ impl Default for FocusConfig {
         Self {
             color:         Color::srgb(1.0, 0.0, 0.0),
             line_width:    2.0,
-            sphere_radius: 1.0,
+            sphere_radius: EDGE_MARKER_SPHERE_RADIUS,
         }
     }
 }
@@ -118,18 +125,6 @@ fn update_focus_gizmo_state(
         let camera_radius = pan_orbit.radius.unwrap_or(100.0);
         state.sphere_radius = config.sphere_radius * (camera_radius / 100.0);
     }
-}
-
-/// Component for programmatically moving the camera to a specific position
-/// Used for testing zoom-to-fit from various camera angles
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct MoveMe {
-    pub target_focus:  Vec3,
-    pub target_radius: f32,
-    pub target_yaw:    f32, // Rotation around vertical axis (in radians)
-    pub target_pitch:  f32, // Rotation up/down (in radians)
-    pub speed:         f32, // Interpolation speed (0.0-1.0, higher = faster)
 }
 
 /// Screen-space margin information for a boundary
@@ -396,53 +391,6 @@ pub enum Edge {
     Bottom,
 }
 
-/// only runs when a `MoveMe` component is added to the `Camera`
-fn move_camera_system(
-    mut commands: Commands,
-    mut camera_query: Query<(Entity, &mut PanOrbitCamera, &MoveMe), With<Camera>>,
-) {
-    for (entity, mut pan_orbit, move_me) in &mut camera_query {
-        // Interpolate towards target values
-        let focus_diff = move_me.target_focus - pan_orbit.target_focus;
-        let radius_diff = move_me.target_radius - pan_orbit.target_radius;
-        let yaw_diff = move_me.target_yaw - pan_orbit.target_yaw;
-        let pitch_diff = move_me.target_pitch - pan_orbit.target_pitch;
-
-        // Check if we're close enough to target
-        let close_enough = focus_diff.length() < 0.001
-            && radius_diff.abs() < 0.1
-            && yaw_diff.abs() < 0.001
-            && pitch_diff.abs() < 0.001;
-
-        if close_enough {
-            // Snap to exact target
-            pan_orbit.target_focus = move_me.target_focus;
-            pan_orbit.target_radius = move_me.target_radius;
-            pan_orbit.target_yaw = move_me.target_yaw;
-            pan_orbit.target_pitch = move_me.target_pitch;
-            pan_orbit.force_update = true;
-
-            info!(
-                "Camera reached target position: focus={:?}, radius={:.1}, yaw={:.2}, pitch={:.2}",
-                move_me.target_focus,
-                move_me.target_radius,
-                move_me.target_yaw,
-                move_me.target_pitch
-            );
-
-            // Remove MoveMe component
-            commands.entity(entity).remove::<MoveMe>();
-        } else {
-            // Interpolate towards target
-            pan_orbit.target_focus += focus_diff * move_me.speed;
-            pan_orbit.target_radius += radius_diff * move_me.speed;
-            pan_orbit.target_yaw += yaw_diff * move_me.speed;
-            pan_orbit.target_pitch += pitch_diff * move_me.speed;
-            pan_orbit.force_update = true;
-        }
-    }
-}
-
 #[derive(Component, Reflect)]
 pub struct StarsCamera;
 
@@ -561,8 +509,7 @@ fn toggle_stars(
 }
 
 pub fn spawn_panorbit_camera(
-    config: Res<Boundary>,
-    zoom_config: Res<ZoomConfig>,
+    camera_config: Res<CameraConfig>,
     scene_assets: Res<SceneAssets>,
     light_config: Res<crate::camera::lights::LightConfig>,
     mut commands: Commands,
@@ -577,31 +524,15 @@ pub fn spawn_panorbit_camera(
         return;
     };
 
-    // Use default FOV and aspect ratio values since the camera doesn't exist yet
-    // values determined from home_camera
-    // i tried having home_camera run on first frame using a run condition but it
-    // didn't work it set the correct radius but it didn't actually move the
-    // camera - this doesn't make sense hard coding the initial values here
-    // sucks but I can live with it for now
-    let default_fov = std::f32::consts::FRAC_PI_4;
-    let default_aspect_ratio = 1.777_777_8;
-    let grid_size = config.scale();
-    let initial_radius = calculate_camera_radius(
-        grid_size,
-        default_fov,
-        default_aspect_ratio,
-        zoom_config.zoom_margin_multiplier(),
-    );
-
     commands
         .spawn(PanOrbitCamera {
             focus: Vec3::ZERO,
-            radius: Some(initial_radius), // Some(config.scale().z * 2.),
+            target_radius: camera_config.splash_start_radius,
             button_orbit: MouseButton::Middle,
             button_pan: MouseButton::Middle,
             modifier_pan: Some(KeyCode::ShiftLeft),
-            zoom_sensitivity: 0.2,
-            zoom_lower_limit: 0.001, // Allow zoom-to-fit to get very close
+            zoom_sensitivity: CAMERA_ZOOM_SENSITIVITY,
+            zoom_lower_limit: CAMERA_ZOOM_LOWER_LIMIT,
             trackpad_behavior: TrackpadBehavior::BlenderLike {
                 modifier_pan:  Some(KeyCode::ShiftLeft),
                 modifier_zoom: Some(KeyCode::ControlLeft),
@@ -685,7 +616,7 @@ fn draw_camera_focus_gizmo(
                 commands.spawn((
                     Text::new(text),
                     TextFont {
-                        font_size: 11.0,
+                        font_size: EDGE_MARKER_FONT_SIZE,
                         ..default()
                     },
                     TextColor(config.color),
@@ -713,7 +644,25 @@ fn cleanup_focus_labels(
 }
 
 #[allow(clippy::similar_names)] // x_distance, y_distance, xy_distance are intentionally similar
-pub fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32, buffer: f32) -> f32 {
+pub fn calculate_home_radius(
+    grid_size: Vec3,
+    margin: f32,
+    projection: &Projection,
+    camera: &Camera,
+) -> Option<f32> {
+    let Projection::Perspective(perspective) = projection else {
+        return None;
+    };
+
+    // Get actual viewport aspect ratio
+    let aspect_ratio = if let Some(viewport_size) = camera.logical_viewport_size() {
+        viewport_size.x / viewport_size.y
+    } else {
+        perspective.aspect_ratio
+    };
+
+    let fov = perspective.fov;
+
     // Calculate horizontal FOV based on aspect ratio
     let horizontal_fov = 2.0 * ((fov / 2.0).tan() * aspect_ratio).atan();
 
@@ -727,33 +676,40 @@ pub fn calculate_camera_radius(grid_size: Vec3, fov: f32, aspect_ratio: f32, buf
     // For Z dimension (depth)
     let z_half_depth = grid_size.z / 2.0;
 
-    // Apply buffer to XY distance (for screen-space margin), then add Z depth
-    // This ensures buffer represents actual screen-space margin percentage
-    xy_distance * buffer + z_half_depth
+    // Add Z depth to XY distance, then apply margin to the total
+    // This ensures the entire 3D boundary fits with proper margin
+    Some((xy_distance + z_half_depth) * margin)
 }
 
 /// take us back to the splash screen start position
 pub fn home_camera(
     boundary: Res<Boundary>,
     zoom_config: Res<ZoomConfig>,
-    mut camera_query: Query<(&mut PanOrbitCamera, &Projection)>,
+    camera_config: Res<CameraConfig>,
+    camera_query: Single<(&mut PanOrbitCamera, &Projection, &Camera)>,
 ) {
-    if let Ok((mut pan_orbit, Projection::Perspective(perspective))) = camera_query.single_mut() {
-        let grid_size = boundary.scale();
+    let (mut pan_orbit, projection, camera) = camera_query.into_inner();
 
-        let target_radius = calculate_camera_radius(
-            grid_size,
-            perspective.fov,
-            perspective.aspect_ratio,
-            zoom_config.zoom_margin_multiplier(),
-        );
+    let Some(target_radius) = calculate_home_radius(
+        boundary.scale(),
+        zoom_config.zoom_margin_multiplier(),
+        projection,
+        camera,
+    ) else {
+        return;
+    };
 
-        // Set the camera's orbit parameters
-        pan_orbit.target_focus = Vec3::ZERO;
-        pan_orbit.target_yaw = 0.0;
-        pan_orbit.target_pitch = 0.0;
-        pan_orbit.target_radius = target_radius;
+    // Set the camera's orbit parameters
+    pan_orbit.set_home_position(&camera_config, target_radius);
 
-        pan_orbit.force_update = true;
-    }
+}
+
+/// Observer that runs when `MoveQueue` or `ZoomToFit` is removed from an entity.
+/// Restores camera smoothness values from config.
+fn reset_camera_after_moves(
+    _removed: On<Remove, (MoveQueue, ZoomToFit)>,
+    camera_config: Res<CameraConfig>,
+    mut pan_orbit: Single<&mut PanOrbitCamera>,
+) {
+    pan_orbit.enable_interpolation(&camera_config);
 }

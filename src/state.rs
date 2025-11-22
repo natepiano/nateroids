@@ -24,25 +24,22 @@ impl Plugin for StatePlugin {
                 ),
             )
             .add_systems(OnEnter(IsPaused::Paused), pause_rapier)
-            .add_systems(OnEnter(IsPaused::NotPaused), unpause_rapier)
+            .add_systems(OnEnter(IsPaused::NotPaused), unpause_physics)
+            .add_systems(PostStartup, transition_to_splash_on_startup)
             .add_systems(Update, log_transitions::<GameState>);
     }
 }
 
-// splash is the default so bevy will automatically enter this state
-// we catch that in splash.rs to do the splash screen
-//
-// in state/computed_states bevy example, they have a tutorial state that is
-// active/inactive that is computed and shows tutorial text while in various
-// GameState modes
+// GameOver is the default to prevent OnEnter(Splash) from firing before camera exists.
+// PostStartup transitions to Splash after camera is spawned.
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, Reflect, States)]
 pub enum GameState {
-    #[default]
     Splash,
     InGame {
         paused:     bool,
         inspecting: bool,
     },
+    #[default]
     GameOver,
 }
 
@@ -145,12 +142,17 @@ fn transition_to_in_game(mut next_state: ResMut<NextState<GameState>>) {
     });
 }
 
+fn transition_to_splash_on_startup(mut next_state: ResMut<NextState<GameState>>) {
+    info!("Transitioning to Splash on startup");
+    next_state.set(GameState::Splash);
+}
+
 fn pause_rapier(mut time: ResMut<Time<Physics>>) {
     info!("pausing game and physics");
     time.pause();
 }
 
-fn unpause_rapier(mut time: ResMut<Time<Physics>>) {
+fn unpause_physics(mut time: ResMut<Time<Physics>>) {
     info!("unpausing game and physics");
     time.unpause();
 }

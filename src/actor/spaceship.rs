@@ -9,6 +9,7 @@ use super::actor_template::SpaceshipConfig;
 use super::spaceship_control::SpaceshipControl;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
+use crate::splash::SplashText;
 use crate::state::GameState;
 
 /// Returns the default spaceship rotation: model correction (90° around X)
@@ -21,8 +22,14 @@ impl Plugin for SpaceshipPlugin {
     fn build(&self, app: &mut App) {
         // we can enter InGame a couple of ways - when we do, spawn a spaceship
         app.add_observer(initialize_spaceship)
-            .add_systems(OnExit(GameState::Splash), spawn_spaceship)
-            .add_systems(OnExit(GameState::GameOver), spawn_spaceship)
+            .add_observer(spawn_after_splash_text_removed)
+            .add_systems(
+                OnEnter(GameState::InGame {
+                    paused:     false,
+                    inspecting: false,
+                }),
+                spawn_spaceship,
+            )
             // check if spaceship is destroyed...this will change the GameState
             .add_systems(Update, spaceship_destroyed.in_set(InGameSet::EntityUpdates))
             .add_systems(
@@ -49,6 +56,15 @@ pub struct ContinuousFire;
     AngularVelocity::ZERO,
 )]
 pub struct Spaceship;
+
+/// Observer that spawns the spaceship when splash text is removed
+fn spawn_after_splash_text_removed(
+    _trigger: On<Remove, SplashText>,
+    commands: Commands,
+    spaceship_config: Res<SpaceshipConfig>,
+) {
+    spawn_spaceship(commands, spaceship_config);
+}
 
 fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipConfig>) {
     if !spaceship_config.spawnable {

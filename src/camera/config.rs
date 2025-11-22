@@ -4,8 +4,12 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
-use crate::game_input::GameAction;
+use super::constants::CAMERA_SPLASH_START_FOCUS;
+use super::constants::CAMERA_SPLASH_START_PITCH;
+use super::constants::CAMERA_SPLASH_START_RADIUS;
+use super::constants::CAMERA_SPLASH_START_YAW;
 use crate::game_input::toggle_active;
+use crate::game_input::GameAction;
 
 pub struct CameraConfigPlugin;
 
@@ -40,6 +44,19 @@ pub struct CameraConfig {
     pub zoom_smoothness:           f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub pan_smoothness:            f32,
+    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    pub orbit_smoothness:          f32,
+    /// Camera starting distance for splash screen animation
+    #[inspector(min = 1000.0, max = 50000.0)]
+    pub splash_start_radius:       f32,
+    /// Camera starting focus point for splash screen animation
+    pub splash_start_focus:        Vec3,
+    /// Camera starting pitch angle for splash screen animation
+    #[inspector(min = -std::f32::consts::PI, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
+    pub splash_start_pitch:        f32,
+    /// Camera starting yaw angle for splash screen animation
+    #[inspector(min = -std::f32::consts::PI, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
+    pub splash_start_yaw:          f32,
 }
 
 impl Default for CameraConfig {
@@ -51,7 +68,12 @@ impl Default for CameraConfig {
             bloom_low_frequency_boost: 0.5,
             bloom_high_pass_frequency: 0.5,
             zoom_smoothness:           0.10,
+            orbit_smoothness:          0.02,
             pan_smoothness:            0.02,
+            splash_start_radius:       CAMERA_SPLASH_START_RADIUS,
+            splash_start_focus:        CAMERA_SPLASH_START_FOCUS,
+            splash_start_pitch:        CAMERA_SPLASH_START_PITCH,
+            splash_start_yaw:          CAMERA_SPLASH_START_YAW,
         }
     }
 }

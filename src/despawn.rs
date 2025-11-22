@@ -3,12 +3,12 @@ use bevy::prelude::*;
 use rand::Rng;
 
 use crate::actor::Deaderoid;
+use crate::actor::DeathCorner;
 use crate::actor::Health;
 use crate::actor::MissilePosition;
 use crate::actor::Nateroid;
+use crate::actor::NateroidConfig;
 use crate::actor::NateroidDeathMaterials;
-use crate::actor::actor_template::DeathCorner;
-use crate::actor::actor_template::NateroidConfig;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 use crate::state::GameState;

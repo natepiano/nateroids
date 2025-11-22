@@ -1,11 +1,11 @@
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 
-use crate::camera::CameraConfig;
+use crate::camera::PanOrbitCameraExt;
 use crate::camera::ScreenSpaceBoundary;
 use crate::camera::ZoomConfig;
-use crate::game_input::GameAction;
 use crate::game_input::just_pressed;
+use crate::game_input::GameAction;
 use crate::playfield::Boundary;
 use crate::traits::UsizeExt;
 
@@ -17,41 +17,20 @@ impl Plugin for ZoomPlugin {
             Update,
             start_zoom_to_fit.run_if(just_pressed(GameAction::ZoomToFit)),
         )
-        .add_systems(Update, update_zoom_to_fit)
-        .add_observer(on_remove_zoom_to_fit);
+        .add_systems(Update, update_zoom_to_fit);
     }
 }
 
 #[derive(Component)]
-struct ZoomToFitActive {
+pub struct ZoomToFit {
     iteration_count: usize,
-}
-
-/// Observer that runs whenever `ZoomToFitActive` is removed from an entity.
-/// Restores camera smoothness values from config.
-fn on_remove_zoom_to_fit(
-    remove: On<Remove, ZoomToFitActive>,
-    camera_config: Res<CameraConfig>,
-    mut camera: Query<&mut PanOrbitCamera>,
-) {
-    let Ok(mut pan_orbit) = camera.get_mut(remove.entity) else {
-        return;
-    };
-
-    pan_orbit.zoom_smoothness = camera_config.zoom_smoothness;
-    pan_orbit.pan_smoothness = camera_config.pan_smoothness;
-
-    debug!(
-        "ZoomToFitActive removed: restored smoothness (zoom={:.2}, pan={:.2})",
-        camera_config.zoom_smoothness, camera_config.pan_smoothness
-    );
 }
 
 // Start the zoom-to-fit animation
 fn start_zoom_to_fit(
     mut commands: Commands,
     mut camera_query: Query<
-        (Entity, &mut PanOrbitCamera, Option<&ZoomToFitActive>),
+        (Entity, &mut PanOrbitCamera, Option<&ZoomToFit>),
         With<PanOrbitCamera>,
     >,
 ) {
@@ -62,12 +41,11 @@ fn start_zoom_to_fit(
         }
 
         // Disable smoothing so targets apply immediately
-        pan_orbit.zoom_smoothness = 0.0;
-        pan_orbit.pan_smoothness = 0.0;
+        pan_orbit.disable_interpolation();
 
         commands
             .entity(camera_entity)
-            .insert(ZoomToFitActive { iteration_count: 0 });
+            .insert(ZoomToFit { iteration_count: 0 });
         debug!("Starting zoom-to-fit animation");
     }
 }
@@ -89,7 +67,7 @@ fn update_zoom_to_fit(
         &mut PanOrbitCamera,
         &Projection,
         &Camera,
-        &mut ZoomToFitActive,
+        &mut ZoomToFit,
     )>,
 ) {
     let Ok((entity, cam_global, mut pan_orbit, projection, camera, mut zoom_state)) =
@@ -211,7 +189,7 @@ fn update_zoom_to_fit(
     // Check completion: balanced AND fitted
     if balanced && fitted {
         debug!("  → CONVERGED");
-        commands.entity(entity).remove::<ZoomToFitActive>();
+        commands.entity(entity).remove::<ZoomToFit>();
         return;
     }
 
@@ -220,7 +198,7 @@ fn update_zoom_to_fit(
     // Stop if we hit max iterations
     if zoom_state.iteration_count >= zoom_config.max_iterations {
         debug!("  → MAX ITERATIONS REACHED (not converged)");
-        commands.entity(entity).remove::<ZoomToFitActive>();
+        commands.entity(entity).remove::<ZoomToFit>();
     }
 }
 

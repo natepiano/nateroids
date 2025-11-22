@@ -78,7 +78,7 @@ impl Default for StarConfig {
             twinkle_duration:              0.5..2.,
             twinkle_intensity:             10.0..20.,
             twinkle_choose_multiple_count: 2, // stars to look at each update
-            rotation_cycle_minutes:        6.5,
+            rotation_cycle_minutes:        15., // i mean why not
             rotation_axis:                 Vec3::Y,
         }
     }

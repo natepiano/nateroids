@@ -1,6 +1,6 @@
 mod aabb;
 mod actor_config;
-pub mod actor_template;
+mod actor_template;
 mod collision_detection;
 mod constants;
 mod missile;
@@ -13,6 +13,8 @@ pub use aabb::Aabb;
 use aabb::AabbPlugin;
 use actor_config::ActorConfigPlugin;
 pub use actor_config::Health;
+pub use actor_template::DeathCorner;
+pub use actor_template::NateroidConfig;
 use bevy::prelude::*;
 use collision_detection::CollisionDetectionPlugin;
 use missile::MissilePlugin;

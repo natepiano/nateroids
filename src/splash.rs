@@ -1,7 +1,15 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
+use bevy_panorbit_camera::PanOrbitCamera;
 
+use crate::camera::calculate_home_radius;
+use crate::camera::CameraConfig;
+use crate::camera::CameraMove;
+use crate::camera::MoveQueue;
+use crate::camera::PanOrbitCameraExt;
 use crate::camera::RenderLayer;
+use crate::camera::ZoomConfig;
+use crate::playfield::Boundary;
 use crate::state::GameState;
 
 pub struct SplashPlugin;
@@ -23,15 +31,33 @@ impl Plugin for SplashPlugin {
         })
         .add_systems(
             OnEnter(GameState::Splash),
-            (reset_splash_timer, splash_screen),
+            (
+                reset_timer_and_camera,
+                spawn_splash_text,
+                start_splash_camera_animation,
+            ),
         )
         .add_systems(Update, run_splash.run_if(in_state(GameState::Splash)));
     }
 }
 
-fn reset_splash_timer(mut splash_timer: ResMut<SplashTimer>) { splash_timer.timer.reset(); }
+fn reset_timer_and_camera(
+    mut splash_timer: ResMut<SplashTimer>,
+    camera_config: ResMut<CameraConfig>,
+    mut panorbit: Single<&mut PanOrbitCamera>,
+) {
+    info!("Resetting timer and camera");
+    splash_timer.timer.reset();
 
-fn splash_screen(mut commands: Commands) {
+    panorbit.disable_interpolation();
+    panorbit.target_radius = camera_config.splash_start_radius;
+    panorbit.target_focus = camera_config.splash_start_focus;
+    panorbit.target_pitch = camera_config.splash_start_pitch;
+    panorbit.target_yaw = camera_config.splash_start_yaw;
+    panorbit.force_update = true;
+}
+
+fn spawn_splash_text(mut commands: Commands) {
     commands.spawn((
         SplashText,
         Text::new("nateroids"),
@@ -50,19 +76,145 @@ fn splash_screen(mut commands: Commands) {
 }
 
 fn run_splash(
+    mut commands: Commands,
     mut next_state: ResMut<NextState<GameState>>,
     mut spawn_timer: ResMut<SplashTimer>,
     time: Res<Time>,
-    mut q_text: Query<&mut TextFont, With<SplashText>>,
+    mut q_text: Query<(Entity, &mut TextFont), With<SplashText>>,
+    camera_query: Query<(), (With<PanOrbitCamera>, With<MoveQueue>)>,
 ) {
     spawn_timer.timer.tick(time.delta());
-    if let Ok(mut text) = q_text.single_mut() {
-        text.font_size += 1.2;
+
+    // Animate text for 2 seconds, then despawn it (observer will spawn objects)
+    if let Ok((text_entity, mut text)) = q_text.single_mut() {
+        if spawn_timer.timer.just_finished() {
+            // Text timer done - remove the text (triggers On<Remove, SplashText> observer)
+            commands.entity(text_entity).despawn();
+        } else {
+            // Still animating
+            text.font_size += 1.2;
+        }
     }
-    if spawn_timer.timer.just_finished() {
+
+    // Exit splash only when BOTH timer is finished AND camera animation is complete
+    // This prevents exiting too early on first frame before MoveQueue is visible to query
+    let timer_finished = spawn_timer.timer.is_finished();
+    let camera_animation_done = camera_query.is_empty(); // No MoveQueue = animation done
+
+    if timer_finished && camera_animation_done {
         next_state.set(GameState::InGame {
             paused:     false,
             inspecting: false,
         });
     }
+}
+
+fn start_splash_camera_animation(
+    mut commands: Commands,
+    camera_entity: Single<Entity, With<PanOrbitCamera>>,
+    camera_config: Res<CameraConfig>,
+    boundary: Res<Boundary>,
+    zoom_config: Res<ZoomConfig>,
+    camera_query: Query<(&Projection, &Camera), With<PanOrbitCamera>>,
+) {
+    let Ok((projection, camera)) = camera_query.single() else {
+        return;
+    };
+
+    // Calculate "home" position - same as home_camera command
+    let Some(home_radius) = calculate_home_radius(
+        boundary.scale(),
+        zoom_config.zoom_margin_multiplier(),
+        projection,
+        camera,
+    ) else {
+        return;
+    };
+
+    // Create the camera animation sequence - zoom from far (splash_start_radius) to home position
+    let moves = vec![
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, camera_config.splash_start_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        2000.0,
+        },
+        // start spin 1
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, home_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        2000.0,
+        },
+        CameraMove {
+            target_translation: Vec3::new(home_radius, 0.0, 0.0),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        500.0,
+        },
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, -home_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        400.0,
+        },
+        CameraMove {
+            target_translation: Vec3::new(-home_radius, 0.0, 0.0),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        300.0,
+        },
+        // start spin 2
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, home_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        200.0,
+        },
+        CameraMove {
+            target_translation: Vec3::new(home_radius, 0.0, 0.0),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        100.0,
+        },
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, -home_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        50.0,
+        },
+        CameraMove {
+            target_translation: Vec3::new(-home_radius, 0.0, 0.0),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        25.0,
+        },
+        // start spin 3
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, home_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        10.0,
+        },
+        CameraMove {
+            target_translation: Vec3::new(home_radius, 0.0, 0.0),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        5.0,
+        },
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, -home_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        5.0,
+        },
+        CameraMove {
+            target_translation: Vec3::new(-home_radius, 0.0, 0.0),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        5.0,
+        },
+        // land at home
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, home_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        500.0,
+        },
+    ];
+
+    info!(
+        "start_splash_camera_animation: inserting MoveQueue with 9 moves on camera entity {:?}",
+        *camera_entity
+    );
+
+    commands
+        .entity(*camera_entity)
+        .insert(MoveQueue::new(moves.into()));
 }
