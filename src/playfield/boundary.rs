@@ -837,8 +837,7 @@ fn start_boundary_fade(
     let remaining_time_ms = camera_query
         .iter()
         .next()
-        .map(|move_list| move_list.remaining_time_ms())
-        .unwrap_or(0.0);
+        .map_or(0.0, CameraMoveList::remaining_time_ms);
 
     // Convert milliseconds to seconds for Timer
     let duration_secs = remaining_time_ms / 1000.0;

@@ -2,13 +2,13 @@ use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 
-use crate::camera::calculate_home_radius;
 use crate::camera::CameraConfig;
 use crate::camera::CameraMove;
 use crate::camera::CameraMoveList;
 use crate::camera::PanOrbitCameraExt;
 use crate::camera::RenderLayer;
 use crate::camera::ZoomConfig;
+use crate::camera::calculate_home_radius;
 use crate::playfield::Boundary;
 use crate::state::GameState;
 

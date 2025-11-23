@@ -99,7 +99,7 @@ pub const PORTAL_SMALLEST: f32 = 5.0;
 /// Resolution (segments) for rendering portal circles
 pub const PORTAL_RESOLUTION: u32 = 128;
 
-/// Minimum radius fraction for approaching portals (0.5 = half of max_radius)
+/// Minimum radius fraction for approaching portals (0.5 = half of `max_radius`)
 pub const PORTAL_MIN_RADIUS_FRACTION: f32 = 0.5;
 
 /// Multiplier for boundary diagonal to detect physics burst events
