@@ -1,3 +1,4 @@
+use bevy::input::keyboard::Key;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 use strum::EnumIter;
@@ -88,22 +89,14 @@ impl GameAction {
             Self::PhysicsAABB => input_map.with(action, KeyCode::F2),
             Self::PlanesInspector => insert_shift_input(input_map, action, KeyCode::KeyP),
             Self::PortalInspector => insert_shift_input(input_map, action, KeyCode::KeyG),
-            Self::RestartGame => input_map.with_one_to_many(
-                action,
-                [
-                    ButtonlikeChord::new([KeyCode::SuperLeft, KeyCode::ShiftLeft])
-                        .with(KeyCode::KeyN),
-                    ButtonlikeChord::new([KeyCode::SuperRight, KeyCode::ShiftRight])
-                        .with(KeyCode::KeyN),
-                ],
-            ),
+            Self::RestartGame => insert_shift_input(input_map, action, KeyCode::KeyR),
             Self::RestartWithSplash => input_map.with_one_to_many(
                 action,
                 [
                     ButtonlikeChord::new([KeyCode::SuperLeft, KeyCode::ShiftLeft])
-                        .with(KeyCode::KeyS),
+                        .with(KeyCode::KeyR),
                     ButtonlikeChord::new([KeyCode::SuperRight, KeyCode::ShiftRight])
-                        .with(KeyCode::KeyS),
+                        .with(KeyCode::KeyR),
                 ],
             ),
             Self::ScreenBoundaryConfigInspector => {
@@ -147,7 +140,11 @@ pub fn toggle_active(
             state.state = !state.state;
         }
 
-        if state.state { !default } else { default }
+        if state.state {
+            !default
+        } else {
+            default
+        }
     }
 }
 
