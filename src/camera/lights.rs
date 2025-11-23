@@ -38,7 +38,7 @@ pub struct LightSettings {
 impl Default for LightSettings {
     fn default() -> Self {
         Self {
-            color:           Color::from(tailwind::AMBER_400),
+            color:           Color::from(tailwind::GRAY_50),
             enabled:         false,
             illuminance:     1700.0,
             // CRITICAL: Must start disabled. Enabling shadows at startup before the scene
