@@ -966,6 +966,7 @@ fn handle_input(
    - [ ] Feature behind `zoom_to_fit` flag
    - [ ] All public APIs documented
    - [ ] Example demonstrates all capabilities
+   - [ ] **Both Perspective and Orthographic projection support**
    - [ ] No game-specific code
    - [ ] No new dependencies
    - [ ] CI passes (test, clippy, fmt)
@@ -998,6 +999,7 @@ fn handle_input(
    - **Simple API**: Just insert a component
    - **Observer-driven**: Fully automatic lifecycle
    - **Generic**: Works with any entity with bounds
+   - **Full projection support**: Works with both Perspective and Orthographic cameras
    - **Configurable**: Adjust margins, convergence rate, etc.
    - **Debug visualization**: Optional gizmos for development
 
@@ -1016,6 +1018,331 @@ fn handle_input(
 
    Extensively tested in [nateroids game](link) with various target types.
    ```
+
+### Phase 8: Orthographic Projection Support
+**Goal**: Implement zoom-to-fit for orthographic cameras to support all bevy_panorbit_camera projection types
+
+Since bevy_panorbit_camera supports both Perspective and Orthographic projections, zoom-to-fit must work with both for a complete feature.
+
+#### Key Differences
+
+**Perspective (current implementation):**
+- Objects get smaller/larger with distance (perspective division)
+- Zoom adjusts camera radius (distance from focus point)
+- Uses FOV calculations to determine required distance
+- Formula: `distance = size / tan(fov/2)`
+
+**Orthographic (new):**
+- Objects stay same size regardless of distance (no perspective division)
+- Zoom adjusts orthographic scale factor
+- Uses viewport dimensions to determine required scale
+- Formula: `scale = viewport_size / target_size`
+
+#### Implementation Strategy
+
+**1. Update projection handling in `update_zoom_to_fit`:**
+
+```rust
+fn update_zoom_to_fit(
+    mut commands: Commands,
+    config: Res<ZoomToFitConfig>,
+    mut cameras: Query<(
+        Entity,
+        &GlobalTransform,
+        &mut PanOrbitCamera,
+        &Projection,
+        &Camera,
+        &mut ZoomToFitState,
+    )>,
+    targets: Query<(
+        &Transform,
+        Option<&CustomBounds>,
+        Option<&Aabb>,
+    )>,
+) {
+    for (cam_entity, cam_global, mut pan_orbit, projection, cam, mut state) in &mut cameras {
+        // Get target bounds (same for both projection types)
+        let Ok((transform, custom_bounds, aabb)) = targets.get(state.target_entity) else {
+            commands.entity(cam_entity).remove::<ZoomToFitState>();
+            continue;
+        };
+
+        let bounds = get_bounds(custom_bounds, aabb, transform);
+        let boundary_center = calculate_center(&bounds);
+
+        // Branch based on projection type
+        match projection {
+            Projection::Perspective(perspective) => {
+                update_perspective_zoom(
+                    &mut pan_orbit,
+                    &bounds,
+                    boundary_center,
+                    cam_global,
+                    perspective,
+                    cam,
+                    &config,
+                    &mut state,
+                );
+            }
+            Projection::Orthographic(orthographic) => {
+                update_orthographic_zoom(
+                    &mut pan_orbit,
+                    &bounds,
+                    boundary_center,
+                    cam_global,
+                    orthographic,
+                    cam,
+                    &config,
+                    &mut state,
+                );
+            }
+        }
+
+        // Check convergence (same for both)
+        if is_converged(&state, &config) {
+            pan_orbit.zoom_smoothness = state.saved_zoom_smoothness;
+            pan_orbit.pan_smoothness = state.saved_pan_smoothness;
+            commands.entity(cam_entity).remove::<ZoomToFitState>();
+        }
+    }
+}
+```
+
+**2. Implement `update_orthographic_zoom` function:**
+
+```rust
+fn update_orthographic_zoom(
+    pan_orbit: &mut PanOrbitCamera,
+    bounds: &[Vec3],
+    boundary_center: Vec3,
+    cam_global: &GlobalTransform,
+    orthographic: &OrthographicProjection,
+    camera: &Camera,
+    config: &ZoomToFitConfig,
+    state: &mut ZoomToFitState,
+) {
+    // Step 1: Adjust focus to center target (same concept as perspective)
+    let focus_to_boundary_distance = (pan_orbit.target_focus - boundary_center).length();
+    let far_from_boundary_threshold = pan_orbit.target_radius * 0.5;
+
+    if focus_to_boundary_distance > far_from_boundary_threshold {
+        // Phase 1: Move toward boundary center
+        let focus_delta = boundary_center - pan_orbit.target_focus;
+        pan_orbit.target_focus += focus_delta * config.convergence_rate;
+        pan_orbit.force_update = true;
+        state.iteration_count += 1;
+        return;
+    }
+
+    // Step 2: Calculate required orthographic scale
+    // Project bounds to screen space
+    let view_proj = orthographic.get_clip_from_view()
+        * cam_global.compute_matrix().inverse();
+
+    let mut screen_bounds = ScreenBounds::new();
+    for &world_pos in bounds {
+        let clip_pos = view_proj.project_point3(world_pos);
+
+        // Check if behind camera
+        if clip_pos.z < 0.0 {
+            // Move camera back
+            pan_orbit.target_radius *= 1.5;
+            pan_orbit.force_update = true;
+            state.iteration_count += 1;
+            return;
+        }
+
+        screen_bounds.extend(clip_pos.x, clip_pos.y);
+    }
+
+    // Step 3: Calculate target scale with margins
+    let viewport_size = camera.logical_viewport_size()
+        .unwrap_or(Vec2::new(1920.0, 1080.0));
+
+    let aspect_ratio = viewport_size.x / viewport_size.y;
+
+    // NDC coordinates range from -1 to 1 (total size = 2)
+    let current_width_ndc = screen_bounds.width();
+    let current_height_ndc = screen_bounds.height();
+
+    // Add margin (e.g., 0.15 means target should take up 85% of viewport)
+    let target_width_ndc = 2.0 * (1.0 - config.margin);
+    let target_height_ndc = 2.0 * (1.0 - config.margin);
+
+    // Scale factor needed to fit width and height
+    let scale_for_width = current_width_ndc / target_width_ndc;
+    let scale_for_height = current_height_ndc / target_height_ndc;
+
+    // Use the larger scale to ensure both dimensions fit
+    let target_scale = scale_for_width.max(scale_for_height);
+
+    // Step 4: Apply convergence to PanOrbitCamera
+    // Note: PanOrbitCamera might control orthographic scale via zoom_smoothness
+    // or we might need to modify the Projection directly
+    // This depends on how bevy_panorbit_camera implements orthographic zoom
+
+    // Approach 1: If PanOrbitCamera has orthographic_scale field
+    if let Some(current_scale) = pan_orbit.orthographic_scale {
+        let scale_delta = target_scale - current_scale;
+        pan_orbit.orthographic_scale = Some(current_scale + scale_delta * config.convergence_rate);
+    }
+
+    // Approach 2: If we need to modify projection directly (requires &mut Projection)
+    // orthographic.scale = target_scale;
+
+    pan_orbit.force_update = true;
+    state.iteration_count += 1;
+
+    // Step 5: Fine-tune focus based on screen-space centering
+    let center_x = (screen_bounds.min_x + screen_bounds.max_x) / 2.0;
+    let center_y = (screen_bounds.min_y + screen_bounds.max_y) / 2.0;
+
+    if center_x.abs() > config.margin_tolerance || center_y.abs() > config.margin_tolerance {
+        // Convert screen-space offset to world-space
+        let cam_right = cam_global.right();
+        let cam_up = cam_global.up();
+
+        // Scale offset by orthographic scale
+        let world_offset_x = center_x * orthographic.scale * aspect_ratio;
+        let world_offset_y = center_y * orthographic.scale;
+
+        let focus_correction = cam_right * world_offset_x + cam_up * world_offset_y;
+        pan_orbit.target_focus += focus_correction * config.convergence_rate;
+    }
+}
+
+struct ScreenBounds {
+    min_x: f32,
+    max_x: f32,
+    min_y: f32,
+    max_y: f32,
+}
+
+impl ScreenBounds {
+    fn new() -> Self {
+        Self {
+            min_x: f32::INFINITY,
+            max_x: f32::NEG_INFINITY,
+            min_y: f32::INFINITY,
+            max_y: f32::NEG_INFINITY,
+        }
+    }
+
+    fn extend(&mut self, x: f32, y: f32) {
+        self.min_x = self.min_x.min(x);
+        self.max_x = self.max_x.max(x);
+        self.min_y = self.min_y.min(y);
+        self.max_y = self.max_y.max(y);
+    }
+
+    fn width(&self) -> f32 {
+        self.max_x - self.min_x
+    }
+
+    fn height(&self) -> f32 {
+        self.max_y - self.min_y
+    }
+}
+```
+
+**3. Investigation needed:**
+
+Before implementing, check how `bevy_panorbit_camera` handles orthographic zoom:
+- Does `PanOrbitCamera` have an `orthographic_scale` field?
+- Or does it modify `Projection::Orthographic.scale` directly?
+- How does mouse wheel zoom work for orthographic cameras?
+
+Look at: `bevy_panorbit_camera` source code, specifically:
+- `PanOrbitCamera` struct definition
+- Zoom input handling for orthographic projection
+- Any existing orthographic-specific fields or methods
+
+**4. Update example to demonstrate both:**
+
+Add to `examples/zoom_to_fit.rs`:
+```rust
+// Add key binding to toggle projection
+if keys.just_pressed(KeyCode::KeyP) {
+    if let Ok((entity, projection)) = cameras.single_mut() {
+        let new_projection = match projection {
+            Projection::Perspective(_) => {
+                Projection::Orthographic(OrthographicProjection {
+                    scale: 50.0,
+                    ..default()
+                })
+            }
+            Projection::Orthographic(_) => {
+                Projection::Perspective(PerspectiveProjection {
+                    fov: 0.785,  // 45 degrees
+                    ..default()
+                })
+            }
+        };
+
+        commands.entity(entity).insert(new_projection);
+        info!("Toggled projection mode");
+    }
+}
+```
+
+**5. Testing checklist:**
+
+- [ ] Orthographic zoom fits small objects correctly
+- [ ] Orthographic zoom fits large objects correctly
+- [ ] Orthographic zoom fits wide vs. tall objects correctly
+- [ ] Margin settings work the same as perspective
+- [ ] Convergence rate feels similar to perspective
+- [ ] Switching projection mid-zoom works correctly
+- [ ] Debug visualization shows correct bounds for both modes
+
+#### Simplified Approach (If Complex)
+
+If the full convergence algorithm is too complex for orthographic, consider a simpler direct calculation:
+
+```rust
+fn update_orthographic_zoom_simple(
+    pan_orbit: &mut PanOrbitCamera,
+    bounds: &[Vec3],
+    boundary_center: Vec3,
+    orthographic: &OrthographicProjection,
+    camera: &Camera,
+    config: &ZoomToFitConfig,
+) {
+    // 1. Set focus to boundary center (instant)
+    pan_orbit.target_focus = boundary_center;
+
+    // 2. Calculate bounding box size in world space
+    let mut min = Vec3::splat(f32::INFINITY);
+    let mut max = Vec3::splat(f32::NEG_INFINITY);
+
+    for &point in bounds {
+        min = min.min(point);
+        max = max.max(point);
+    }
+
+    let size = max - min;
+
+    // 3. Calculate required scale (largest dimension with margin)
+    let viewport_size = camera.logical_viewport_size()
+        .unwrap_or(Vec2::new(1920.0, 1080.0));
+    let aspect_ratio = viewport_size.x / viewport_size.y;
+
+    let width_scale = size.x / (aspect_ratio * (1.0 - config.margin));
+    let height_scale = size.y / (1.0 - config.margin);
+
+    let target_scale = width_scale.max(height_scale);
+
+    // 4. Apply scale (assuming PanOrbitCamera has orthographic_scale)
+    pan_orbit.orthographic_scale = Some(target_scale);
+    pan_orbit.force_update = true;
+}
+```
+
+This simpler version:
+- Instantly centers on target (no convergence)
+- Directly calculates required scale
+- No iterative process
+- Good for first implementation, can add convergence later
 
 ## Migration Path
 
@@ -1102,6 +1429,8 @@ let region = commands.spawn((
    - [x] Center calculated from actual bounds (no Vec3::ZERO)
    - [x] Feature-gated
    - [x] Debug visualization
+   - [ ] **Perspective projection support** (current implementation)
+   - [ ] **Orthographic projection support** (Phase 8)
 
 2. **Code Quality**
    - [ ] No game-specific types
@@ -1141,8 +1470,8 @@ let region = commands.spawn((
 
 4. **Orthographic projection?**
    - Current: Only perspective
-   - Future: Support orthographic cameras?
-   - Decision: Start with perspective, extend later
+   - Requirement: bevy_panorbit_camera supports both perspective AND orthographic
+   - Decision: MUST support both for complete PR - see Phase 8 for implementation
 
 5. **Remove ZoomToFit when done?**
    - Current: We remove ZoomToFitState from camera
@@ -1158,5 +1487,17 @@ This plan transforms a camera-centric, game-specific feature into a target-centr
 3. **Bounds priority** (CustomBounds > Aabb > Transform)
 4. **Calculated center** (from actual bounds, not Vec3::ZERO)
 5. **Internal state** on camera (hidden from user)
+6. **Complete projection support** (both Perspective and Orthographic)
 
-The result: A dead-simple API that "just works" for any bounded entity, while hiding all complexity behind the scenes. Perfect for a bevy_panorbit_camera feature!
+The result: A dead-simple API that "just works" for any bounded entity with any camera projection, while hiding all complexity behind the scenes. Perfect for a bevy_panorbit_camera feature!
+
+## Implementation Sequence
+
+For a complete PR to bevy_panorbit_camera:
+
+1. **Phase 1-7**: Refactor and genericize perspective implementation (current)
+2. **Phase 8**: Add orthographic projection support (required for complete feature)
+3. Test both projection types thoroughly
+4. Submit PR with both implementations
+
+Note: Orthographic support is not optional - since bevy_panorbit_camera supports both projections, zoom-to-fit must work with both to be a complete, professional feature worth merging.
