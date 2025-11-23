@@ -1,14 +1,15 @@
 use bevy::camera::visibility::RenderLayers;
+use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 
+use crate::camera::calculate_home_radius;
 use crate::camera::CameraConfig;
 use crate::camera::CameraMove;
 use crate::camera::CameraMoveList;
 use crate::camera::PanOrbitCameraExt;
 use crate::camera::RenderLayer;
 use crate::camera::ZoomConfig;
-use crate::camera::calculate_home_radius;
 use crate::playfield::Boundary;
 use crate::state::GameState;
 
@@ -116,6 +117,109 @@ fn run_splash(
     }
 }
 
+fn create_spin_sequence(home_radius: f32, durations: &[f32]) -> Vec<CameraMove> {
+    let positions = [
+        Vec3::new(0.0, 0.0, home_radius),
+        Vec3::new(home_radius, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -home_radius),
+        Vec3::new(-home_radius, 0.0, 0.0),
+    ];
+
+    positions
+        .iter()
+        .zip(durations.iter().cycle())
+        .map(|(pos, &duration)| CameraMove {
+            target_translation: *pos,
+            target_focus:       Vec3::ZERO,
+            duration_ms:        duration,
+            easing:             EaseFunction::Linear,
+        })
+        .collect()
+}
+
+fn create_splash_camera_moves(splash_start_radius: f32, home_radius: f32) -> Vec<CameraMove> {
+    let mut moves = vec![
+        // sit still at the `splash start radius`
+        // let's the text animate toward camera and moves the pitch/yaw
+        // because our starting position for the camera pitch/yaw is off-kilter
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, splash_start_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        2500.0,
+            easing:             EaseFunction::BounceOut,
+        },
+        // start spin 1
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, home_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        1500.0,
+            easing:             EaseFunction::QuadraticIn,
+        },
+        CameraMove {
+            target_translation: Vec3::new(home_radius, 0.0, 0.0),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        500.0,
+            easing:             EaseFunction::Linear,
+        },
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, -home_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        400.0,
+            easing:             EaseFunction::Linear,
+        },
+        CameraMove {
+            target_translation: Vec3::new(-home_radius, 0.0, 0.0),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        300.0,
+            easing:             EaseFunction::Linear,
+        },
+        // start spin 2
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, home_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        200.0,
+            easing:             EaseFunction::Linear,
+        },
+        CameraMove {
+            target_translation: Vec3::new(home_radius, 0.0, 0.0),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        100.0,
+            easing:             EaseFunction::Linear,
+        },
+        CameraMove {
+            target_translation: Vec3::new(0.0, 0.0, -home_radius),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        50.0,
+            easing:             EaseFunction::Linear,
+        },
+        CameraMove {
+            target_translation: Vec3::new(-home_radius, 0.0, 0.0),
+            target_focus:       Vec3::ZERO,
+            duration_ms:        25.0,
+            easing:             EaseFunction::Linear,
+        },
+    ];
+
+    // Add fast spins 3, 4, 5 (all with 25ms duration)
+    (0..5).for_each(|_| moves.extend(create_spin_sequence(home_radius, &[25.0])));
+
+    // Add spin 6 with increasing durations (slowdown effect)
+    moves.extend(create_spin_sequence(
+        home_radius,
+        &[50.0, 100.0, 150.0, 200.0],
+    ));
+
+    // Land at home with smooth easing
+    moves.push(CameraMove {
+        target_translation: Vec3::new(0.0, 0.0, home_radius),
+        target_focus:       Vec3::ZERO,
+        duration_ms:        1200.0,
+        easing:             EaseFunction::QuadraticOut,
+    });
+
+    moves
+}
+
 fn start_splash_camera_animation(
     mut commands: Commands,
     camera_entity: Single<Entity, With<PanOrbitCamera>>,
@@ -139,82 +243,7 @@ fn start_splash_camera_animation(
     };
 
     // Create the camera animation sequence - zoom from far (splash_start_radius) to home position
-    let moves = vec![
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, camera_config.splash_start_radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        2000.0,
-        },
-        // start spin 1
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, home_radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        2000.0,
-        },
-        CameraMove {
-            target_translation: Vec3::new(home_radius, 0.0, 0.0),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        500.0,
-        },
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, -home_radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        400.0,
-        },
-        CameraMove {
-            target_translation: Vec3::new(-home_radius, 0.0, 0.0),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        300.0,
-        },
-        // start spin 2
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, home_radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        200.0,
-        },
-        CameraMove {
-            target_translation: Vec3::new(home_radius, 0.0, 0.0),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        100.0,
-        },
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, -home_radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        50.0,
-        },
-        CameraMove {
-            target_translation: Vec3::new(-home_radius, 0.0, 0.0),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        25.0,
-        },
-        // start spin 3
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, home_radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        10.0,
-        },
-        CameraMove {
-            target_translation: Vec3::new(home_radius, 0.0, 0.0),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        5.0,
-        },
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, -home_radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        5.0,
-        },
-        CameraMove {
-            target_translation: Vec3::new(-home_radius, 0.0, 0.0),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        5.0,
-        },
-        // land at home
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, home_radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        1500.0,
-        },
-    ];
+    let moves = create_splash_camera_moves(camera_config.splash_start_radius, home_radius);
 
     commands
         .entity(*camera_entity)

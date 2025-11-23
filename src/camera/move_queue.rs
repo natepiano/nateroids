@@ -6,6 +6,8 @@
 
 use std::collections::VecDeque;
 
+use bevy::math::curve::Curve;
+use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 
@@ -23,6 +25,7 @@ pub struct CameraMove {
     pub target_translation: Vec3, // Where to position the camera in world space
     pub target_focus:       Vec3, // What point the camera should look at
     pub duration_ms:        f32,  // Duration in milliseconds to complete this move
+    pub easing:             EaseFunction, // Easing function for this move
 }
 
 /// State tracking for the current camera movement
@@ -144,14 +147,8 @@ pub fn move_camera_system(
             // Clamp t to exactly 1.0 if over (important for smooth completion)
             let t_clamped = t.min(1.0);
 
-            // Apply ease-out only on the final move for gradual slowdown
-            let t_interp = if is_last_move {
-                // Quadratic ease-out: gradual deceleration
-                t_clamped * (2.0 - t_clamped)
-            } else {
-                // Linear for all other moves
-                t_clamped
-            };
+            // Apply easing function from the move
+            let t_interp = current_move.easing.sample_unchecked(t_clamped);
 
             // Determine angle diffs: unwrap during animation, canonical on final frame
             let (yaw_diff, pitch_diff) = if is_last_move && is_final_frame {
