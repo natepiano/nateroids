@@ -3,8 +3,8 @@
 created to teach [natepiano](https://youtube.com/natepiano) how to code games, visualizations and
 simulations in [bevy](https://bevyengine.org) using the awesome programming language, rust. i started
 with [this tutorial](https://www.youtube.com/@ZymartuGames),
-added [bevy_rapier3d](https://www.rapier.rs/docs/user_guides/bevy_plugin/getting_started_bevy) for physics as well as a
-few other dependencies you can find in cargo.toml. the goal is to make this interesting, playable, beautiful and fun.
+added [avian3d](https://docs.rs/avian3d/latest/avian3d/) for physics as well as a
+few other dependencies you can find in cargo.toml. the goal is to make this interesting, playable, and beautiful.
 
 
 ## first install rust
@@ -29,12 +29,10 @@ and to enable it globally create / edit your $HOME/.cargo/config.toml by adding 
 rustc-wrapper = ".cargo/bin/sccache"
 ```
 
-note: apparently it inserts your home directory in front of this path, so you don't have to include it explicitly
-
 ## clone nateroids project 
 
 ```shell
-git clone https://github.com/pianonate/nateroids
+git clone https://github.com/natepiano/nateroids
 ```
 
 run it - the first time will take a while even if you have sccache installed as you have to populate the cache, n'est-ce pas?
@@ -43,8 +41,7 @@ run it - the first time will take a while even if you have sccache installed as 
 cargo run
 ```
 
-start playing! (gawd i like it that rust has such minimal rigamarole)
-
+start playing! 
 ## release targets
 
 you can build a release version locally this way:
@@ -63,6 +60,8 @@ or you can target wasm to run it in a browser.
 you can use http-server (or something equivalent) to serve the wasm target locally. you can install http-server with npm
 or use whatever server you prefer - i've tested the wasm target with http-server and chrome and this combination works.
 ymmv.
+
+(note: it's been a few versions of bevy since I've tried this so, really, ymmv)
 
 ```shell
 RUSTFLAGS="--cfg=web_sys_unstable_apis" cargo build --release --target wasm32-unknown-unknown
@@ -87,24 +86,8 @@ dependency,
 but it's beyond me right now without doing a whole log of rigamarole...would love to clean this up...also...someone saw the 
 [same issue](https://github.com/jakobhellermann/bevy-inspector-egui/pull/210) but it's not yet pulled into the code base
 
-
-## rustfmt
-
-use the nightly rustfmt in order to pick up all the features in the rustfmt.toml - do this once:
-```shell
-rustup toolchain install nightly
-rustup component add rustfmt --toolchain nightly
-```
-
-then run this any time you want your code formatted - at least before committing
-```shell
-cargo +nightly fmt
-```
-why `unstable_features = true` doesn't work i don't know - it's also only available in the nightly...
-
 ## useful
 - [bevy](https://bevyengine.org/learn/) - home to all things bevy
 - [bevy cheatbook](https://bevy-cheatbook.github.io/overview.html) - super useful
 - [blender](https://docs.blender.org/manual/en/latest/) - in case you want to mangle some meshes
-- [rapier physics](https://rapier.rs/docs/user_guides/bevy_plugin/getting_started_bevy) - so we don't have to code the physics
 - [tainted coders](https://taintedcoders.com/) - has a lot of inside baseball about bevy
