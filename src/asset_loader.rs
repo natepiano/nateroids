@@ -37,7 +37,6 @@ pub struct SceneAssets {
     pub spaceship:               Handle<Scene>,
     pub env_diffuse_map:         Handle<Image>,
     pub env_specular_map:        Handle<Image>,
-    pub skybox_image:            Handle<Image>,
 }
 
 pub fn load_assets(
@@ -55,8 +54,6 @@ pub fn load_assets(
             .load("environment_maps/dikhololo_night_2k_diffuse.ktx2"),
         env_specular_map:        asset_server
             .load("environment_maps/dikhololo_night_2k_specular.ktx2"),
-        skybox_image:            asset_server
-            .load("environment_maps/dikhololo_night_2k_cubemap.ktx2"),
     };
 }
 
@@ -137,7 +134,6 @@ pub fn check_asset_loading(
     let env_maps_loaded = [
         scene_assets.env_diffuse_map.id(),
         scene_assets.env_specular_map.id(),
-        scene_assets.skybox_image.id(),
     ]
     .iter()
     .all(|&id| matches!(asset_server.get_load_state(id), Some(LoadState::Loaded)));

@@ -37,16 +37,6 @@ bevy = { version = "0.17.3", features = [
   "bevy_remote",
 ] }
 bevy_brp_extras = "0.17.2"
-#
-# todo: rust question - bevy-inspector-egui explicilty asks for the "manage-clipboard" feature from bevy_egui
-#                       however this feature breaks the wasm build so that i have to disable it
-#                       as follows - IMO this is unnessary because i've configured bevy-inspector-egui
-#                       code to not compile in release with #[cfg(debug_assertions)] but i want to be able
-#                       to just cargo run and get dev stuff and cargo build --release --target wasm32-unknown-unknown
-#                       without the extra rigamarole...is there a better way to do this?
-# RUSTFLAGS="--cfg=web_sys_unstable_apis" cargo build --release --target wasm32-unknown-unknown
-# not sure if this is still true - haven't tried it in a while
-#
 bevy-inspector-egui = "0.35.0"
 bevy_panorbit_camera = { version = "0.33.0", features = ["bevy_egui"] }
 leafwing-input-manager = "0.19.0"
