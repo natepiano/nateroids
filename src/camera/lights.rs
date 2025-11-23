@@ -7,8 +7,8 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use crate::camera::RenderLayer;
-use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
+use crate::game_input::GameAction;
 use crate::orientation::CameraOrientation;
 
 pub struct DirectionalLightsPlugin;
@@ -70,7 +70,7 @@ impl Default for LightConfig {
         Self {
             ambient_light_brightness:  100.0,
             ambient_light_color:       Color::WHITE,
-            environment_map_intensity: 2000.0,
+            environment_map_intensity: 5000.0,
             front:                     LightSettings {
                 enabled: true,
                 ..Default::default()

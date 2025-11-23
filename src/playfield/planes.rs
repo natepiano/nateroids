@@ -5,6 +5,11 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
+use super::constants::PLANE_IOR;
+use super::constants::PLANE_PERCEPTUAL_ROUGHNESS;
+use super::constants::PLANE_REFLECTANCE;
+use super::constants::PLANE_ROTATION_ANGLE;
+use super::constants::PLANE_THICKNESS;
 use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
@@ -79,12 +84,12 @@ impl Default for PlaneConfig {
             diffuse_transmission:  0.,
             double_sided:          false,
             emissive:              LinearRgba::BLACK,
-            ior:                   1.5,
+            ior:                   PLANE_IOR,
             metallic:              0.,
-            perceptual_roughness:  0.5,
-            reflectance:           0.5,
+            perceptual_roughness:  PLANE_PERCEPTUAL_ROUGHNESS,
+            reflectance:           PLANE_REFLECTANCE,
             specular_transmission: 0.,
-            thickness:             0.001,
+            thickness:             PLANE_THICKNESS,
         }
     }
 }
@@ -121,7 +126,7 @@ fn create_or_update_plane(
     };
     let mesh = meshes.add(Mesh::from(cuboid));
     let material_handle = get_plane_material(materials, planes_config);
-    let rotation = Quat::from_axis_angle(axis, 0.);
+    let rotation = Quat::from_axis_angle(axis, PLANE_ROTATION_ANGLE);
     let transform = Transform::from_trs(position, rotation, Vec3::ONE);
 
     if let Some(entity) = existing_entity {

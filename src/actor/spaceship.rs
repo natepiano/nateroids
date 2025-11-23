@@ -28,7 +28,7 @@ impl Plugin for SpaceshipPlugin {
                     paused:     false,
                     inspecting: false,
                 }),
-                spawn_spaceship,
+                spawn_spaceship_if_needed,
             )
             // check if spaceship is destroyed...this will change the GameState
             .add_systems(Update, spaceship_destroyed.in_set(InGameSet::EntityUpdates))
@@ -64,6 +64,18 @@ fn spawn_after_splash_text_removed(
     spaceship_config: Res<SpaceshipConfig>,
 ) {
     spawn_spaceship(commands, spaceship_config);
+}
+
+/// Spawns a spaceship only if one doesn't already exist
+fn spawn_spaceship_if_needed(
+    commands: Commands,
+    spaceship_config: Res<SpaceshipConfig>,
+    query: Query<(), With<Spaceship>>,
+) {
+    // Only spawn if no spaceship exists (e.g., coming from GameOver)
+    if query.is_empty() {
+        spawn_spaceship(commands, spaceship_config);
+    }
 }
 
 fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipConfig>) {

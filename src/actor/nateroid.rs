@@ -246,7 +246,7 @@ fn apply_nateroid_materials_to_children(
     };
 
     for nateroid_entity in nateroid_query.iter() {
-        info!("Applying materials to nateroid {nateroid_entity:?} mesh children");
+        debug!("Applying materials to nateroid {nateroid_entity:?} mesh children");
 
         let mut donut_count = 0;
         let mut icing_count = 0;
@@ -256,7 +256,7 @@ fn apply_nateroid_materials_to_children(
             if let Ok((mesh_entity, name)) = mesh_query.get(descendant) {
                 // Debug: log the actual mesh name
                 if let Some(name) = name {
-                    info!("Found mesh with name: '{}'", name.as_str());
+                    debug!("Found mesh with name: '{}'", name.as_str());
                 } else {
                     info!("Found mesh with no Name component");
                 }
@@ -265,11 +265,11 @@ fn apply_nateroid_materials_to_children(
                 let material = if let Some(name) = name {
                     let name_str = name.as_str().to_lowercase();
                     if name_str.contains("donut") {
-                        info!("  -> Matched as donut");
+                        debug!("  -> Matched as donut");
                         donut_count += 1;
                         donut_material.clone()
                     } else if name_str.contains("icing") {
-                        info!("  -> Matched as icing");
+                        debug!("  -> Matched as icing");
                         icing_count += 1;
                         icing_material.clone()
                     } else {
@@ -289,7 +289,7 @@ fn apply_nateroid_materials_to_children(
             }
         }
 
-        info!("Applied materials: {donut_count} donut, {icing_count} icing");
+        debug!("Applied materials: {donut_count} donut, {icing_count} icing");
     }
 }
 
@@ -516,7 +516,7 @@ fn precompute_death_materials(
         return;
     }
 
-    info!(
+    debug!(
         "Collected {} material handles from nateroid scene",
         material_handles.len()
     );
@@ -548,7 +548,7 @@ fn precompute_death_materials(
         materials: precomputed_materials,
     });
 
-    info!(
+    debug!(
         "Precomputed {num_material_sets} material sets with {num_materials_per_set} materials each"
     );
 }

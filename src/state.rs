@@ -23,7 +23,7 @@ impl Plugin for StatePlugin {
                     transition_to_in_game.run_if(in_state(GameState::GameOver)),
                 ),
             )
-            .add_systems(OnEnter(IsPaused::Paused), pause_rapier)
+            .add_systems(OnEnter(IsPaused::Paused), pause_physics)
             .add_systems(OnEnter(IsPaused::NotPaused), unpause_physics)
             .add_systems(PostStartup, transition_to_splash_on_startup)
             .add_systems(Update, log_transitions::<GameState>);
@@ -115,7 +115,7 @@ fn restart_game(
     // 2. GameOver → InGame: No star regeneration (stars from step 1 persist)
     // 3. Fresh game starts with stars already generated
     if user_input.just_pressed(&GameAction::RestartGame) {
-        info!("Restarting game (quick)");
+        debug!("restart quick");
         next_state.set(GameState::GameOver);
     }
 }
@@ -129,13 +129,13 @@ fn restart_with_splash(
     // 2. Splash → InGame: No star regeneration (stars from step 1 persist)
     // 3. Game starts with stars that were generated during splash
     if user_input.just_pressed(&GameAction::RestartWithSplash) {
-        info!("Restarting game with splash screen");
+        debug!("restart with splash");
         next_state.set(GameState::Splash);
     }
 }
 
 fn transition_to_in_game(mut next_state: ResMut<NextState<GameState>>) {
-    info!("Transitioning to InGame");
+    debug!("transitioning to InGame");
     next_state.set(GameState::InGame {
         paused:     false,
         inspecting: false,
@@ -143,16 +143,16 @@ fn transition_to_in_game(mut next_state: ResMut<NextState<GameState>>) {
 }
 
 fn transition_to_splash_on_startup(mut next_state: ResMut<NextState<GameState>>) {
-    info!("Transitioning to Splash on startup");
+    debug!("transitioning to Splash on startup");
     next_state.set(GameState::Splash);
 }
 
-fn pause_rapier(mut time: ResMut<Time<Physics>>) {
-    info!("pausing game and physics");
+fn pause_physics(mut time: ResMut<Time<Physics>>) {
+    debug!("pausing game and physics");
     time.pause();
 }
 
 fn unpause_physics(mut time: ResMut<Time<Physics>>) {
-    info!("unpausing game and physics");
+    debug!("unpausing game and physics");
     time.unpause();
 }

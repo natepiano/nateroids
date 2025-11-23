@@ -19,7 +19,7 @@ use config::CameraConfigPlugin;
 pub use config::ZoomConfig;
 use lights::DirectionalLightsPlugin;
 pub use move_queue::CameraMove;
-pub use move_queue::MoveQueue;
+pub use move_queue::CameraMoveList;
 use move_queue::MoveQueuePlugin;
 pub use pan_orbit_ext::PanOrbitCameraExt;
 use star_twinkling::StarTwinklingPlugin;

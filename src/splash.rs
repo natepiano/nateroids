@@ -5,7 +5,7 @@ use bevy_panorbit_camera::PanOrbitCamera;
 use crate::camera::calculate_home_radius;
 use crate::camera::CameraConfig;
 use crate::camera::CameraMove;
-use crate::camera::MoveQueue;
+use crate::camera::CameraMoveList;
 use crate::camera::PanOrbitCameraExt;
 use crate::camera::RenderLayer;
 use crate::camera::ZoomConfig;
@@ -45,16 +45,23 @@ fn reset_timer_and_camera(
     mut splash_timer: ResMut<SplashTextTimer>,
     camera_config: ResMut<CameraConfig>,
     mut panorbit: Single<&mut PanOrbitCamera>,
+    mut boundary: ResMut<Boundary>,
 ) {
-    info!("Resetting timer and camera");
+    debug!("Resetting timer and camera");
     splash_timer.timer.reset();
 
     panorbit.disable_interpolation();
+
+    // Set both target and actual values to ensure clean start (matching initial spawn)
     panorbit.target_radius = camera_config.splash_start_radius;
     panorbit.target_focus = camera_config.splash_start_focus;
     panorbit.target_pitch = camera_config.splash_start_pitch;
     panorbit.target_yaw = camera_config.splash_start_yaw;
     panorbit.force_update = true;
+
+    // Reset boundary alpha to 0 (transparent) for fade-in animation
+    boundary.grid_color = boundary.grid_color.with_alpha(0.0);
+    boundary.outer_color = boundary.outer_color.with_alpha(0.0);
 }
 
 fn spawn_splash_text(mut commands: Commands) {
@@ -81,7 +88,7 @@ fn run_splash(
     mut splash_text_timer: ResMut<SplashTextTimer>,
     time: Res<Time>,
     mut q_text: Query<(Entity, &mut TextFont), With<SplashText>>,
-    camera_query: Query<(), (With<PanOrbitCamera>, With<MoveQueue>)>,
+    camera_query: Query<(), (With<PanOrbitCamera>, With<CameraMoveList>)>,
 ) {
     splash_text_timer.timer.tick(time.delta());
 
@@ -205,16 +212,11 @@ fn start_splash_camera_animation(
         CameraMove {
             target_translation: Vec3::new(0.0, 0.0, home_radius),
             target_focus:       Vec3::ZERO,
-            duration_ms:        500.0,
+            duration_ms:        1500.0,
         },
     ];
 
-    info!(
-        "start_splash_camera_animation: inserting MoveQueue with 9 moves on camera entity {:?}",
-        *camera_entity
-    );
-
     commands
         .entity(*camera_entity)
-        .insert(MoveQueue::new(moves.into()));
+        .insert(CameraMoveList::new(moves.into()));
 }

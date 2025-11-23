@@ -250,7 +250,7 @@ fn despawn_dead_entities(
 }
 
 fn despawn_all_entities(mut commands: Commands, query: Query<Entity, With<Health>>) {
-    info!("despawning game entities");
+    debug!("despawning game entities");
     for entity in query.iter() {
         despawn(&mut commands, entity);
     }

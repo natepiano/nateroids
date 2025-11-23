@@ -6,12 +6,12 @@ use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
-use rand::Rng;
 use rand::prelude::ThreadRng;
+use rand::Rng;
 
 use crate::camera::RenderLayer;
-use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
+use crate::game_input::GameAction;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
@@ -26,7 +26,6 @@ impl Plugin for StarsPlugin {
                 ResourceInspectorPlugin::<StarConfig>::default()
                     .run_if(toggle_active(false, GameAction::StarConfigInspector)),
             )
-            .add_systems(Startup, (spawn_stars, setup_star_rendering).chain())
             .add_systems(
                 OnEnter(GameState::Splash),
                 (despawn_stars, spawn_stars, setup_star_rendering).chain(),
@@ -96,10 +95,21 @@ struct StarRotationState {
     current_angle: f32,
 }
 
-fn despawn_stars(mut commands: Commands, stars: Query<Entity, With<Star>>) {
+fn despawn_stars(
+    mut commands: Commands,
+    stars: Query<Entity, With<Star>>,
+    mut rotation_state: ResMut<StarRotationState>,
+) {
     for entity in stars.iter() {
         commands.entity(entity).despawn();
     }
+    // Reset rotation angle so new stars start from 0 (prevents jump on reset)
+    // This was a nasty bug - we couldn't tell why the Splash animation would land smoothly
+    // but when we manally re-invoked this, it looked like the spaceship jumped with
+    // respect to the star background at the end - thinking this was a camera movement but
+    // but it was actually that we needed to reset the rotation angle so we wouldn't be using the
+    // previous rotation state when spawning a new set of stars. dang!
+    rotation_state.current_angle = 0.0;
 }
 
 // just set up the entities with their positions - we'll add an emissive
@@ -137,7 +147,7 @@ fn get_star_position(
     let polar_norm: f32 = rng.random_range(0.0..1.0); // normalized polar angle
 
     let theta = azimuth_norm * std::f32::consts::PI * 2.0; // azimuthal: 0 to 2π
-    // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
+                                                           // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
     let phi = 2.0f32.mul_add(polar_norm, -1.0).acos(); // polar angle
     let radius = rng.random_range(inner_sphere_radius..outer_sphere_radius);
 

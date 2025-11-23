@@ -1,5 +1,6 @@
 mod boundary;
 mod boundary_face;
+mod constants;
 mod planes;
 mod portals;
 mod screen_boundary;

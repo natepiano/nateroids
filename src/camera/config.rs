@@ -8,8 +8,8 @@ use super::constants::CAMERA_SPLASH_START_FOCUS;
 use super::constants::CAMERA_SPLASH_START_PITCH;
 use super::constants::CAMERA_SPLASH_START_RADIUS;
 use super::constants::CAMERA_SPLASH_START_YAW;
-use crate::game_input::toggle_active;
 use crate::game_input::GameAction;
+use crate::game_input::toggle_active;
 
 pub struct CameraConfigPlugin;
 

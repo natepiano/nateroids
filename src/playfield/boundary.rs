@@ -7,6 +7,21 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 
 use super::boundary_face::BoundaryFace;
+use super::constants::BOUNDARY_CELL_COUNT;
+use super::constants::BOUNDARY_DEFAULT_VIEWPORT_SIZE;
+use super::constants::BOUNDARY_GRID_ALPHA;
+use super::constants::BOUNDARY_GRID_LINE_WIDTH;
+use super::constants::BOUNDARY_LINE_WIDTH_MULTIPLIER;
+use super::constants::BOUNDARY_NORMAL_EPSILON;
+use super::constants::BOUNDARY_OUTER_ALPHA;
+use super::constants::BOUNDARY_OUTER_LINE_WIDTH;
+use super::constants::BOUNDARY_OVEREXTENSION_EPSILON;
+use super::constants::BOUNDARY_SCALAR;
+use super::constants::BOUNDARY_SNAP_EPSILON;
+use super::constants::CORNER_COLOR_FRONT_BACK_XY;
+use super::constants::CORNER_COLOR_LEFT_RIGHT_YZ;
+use super::constants::CORNER_COLOR_TOP_BOTTOM_XZ;
+use super::constants::DEADEROID_APPROACHING_COLOR;
 use super::portals::Portal;
 use super::portals::PortalGizmo;
 use super::types::BoundaryGizmo;
@@ -15,21 +30,14 @@ use super::types::GridGizmo;
 use super::types::Intersection;
 use super::types::MultiFaceGeometry;
 use super::types::PortalGeometry;
+use crate::camera::CameraMoveList;
 use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
 use crate::orientation::CameraOrientation;
+use crate::splash::SplashText;
+use crate::state::GameState;
 use crate::state::PlayingGame;
-
-// Epsilon values for boundary position snapping and portal overextension detection
-const BOUNDARY_SNAP_EPSILON: f32 = 0.01;
-const BOUNDARY_OVEREXTENSION_EPSILON: f32 = BOUNDARY_SNAP_EPSILON * 2.0;
-
-// Deaderoid portal colors
-const DEADEROID_APPROACHING_COLOR: Color = Color::srgb(1.0, 0.0, 0.0); // Red
-const CORNER_COLOR_LEFT_RIGHT_YZ: Color = Color::srgb(1.0, 0.0, 0.0); // Red
-const CORNER_COLOR_TOP_BOTTOM_XZ: Color = Color::srgb(0.0, 1.0, 0.0); // Green
-const CORNER_COLOR_FRONT_BACK_XY: Color = Color::srgb(1.0, 1.0, 0.0); // Yellow
 
 pub struct BoundaryPlugin;
 
@@ -43,7 +51,12 @@ impl Plugin for BoundaryPlugin {
                     .run_if(toggle_active(false, GameAction::BoundaryInspector)),
             )
             .add_systems(Update, apply_boundary_config)
-            .add_systems(Update, draw_boundary.run_if(in_state(PlayingGame)));
+            .add_systems(
+                Update,
+                draw_boundary.run_if(in_state(GameState::Splash).or(in_state(PlayingGame))),
+            )
+            .add_systems(Update, fade_boundary_in)
+            .add_observer(start_boundary_fade);
     }
 }
 
@@ -76,20 +89,25 @@ pub struct Boundary {
 
 impl Default for Boundary {
     fn default() -> Self {
-        let cell_count = UVec3::new(3, 2, 1);
-        let boundary_scalar = 110.;
-
         Self {
-            cell_count,
-            grid_color: Color::from(tailwind::BLUE_500).with_alpha(0.25),
-            outer_color: Color::from(tailwind::BLUE_500).with_alpha(1.0),
-            grid_line_width: 1.5,
-            boundary_line_width: 4.,
-            boundary_scalar,
-            transform: Transform::from_scale(boundary_scalar * cell_count.as_vec3()),
+            cell_count:          BOUNDARY_CELL_COUNT,
+            // Start with alpha 0 - will be faded in during splash screen
+            grid_color:          Color::from(tailwind::BLUE_500).with_alpha(0.0),
+            outer_color:         Color::from(tailwind::BLUE_500).with_alpha(0.0),
+            grid_line_width:     BOUNDARY_GRID_LINE_WIDTH,
+            boundary_line_width: BOUNDARY_OUTER_LINE_WIDTH,
+            boundary_scalar:     BOUNDARY_SCALAR,
+            transform:           Transform::from_scale(
+                BOUNDARY_SCALAR * BOUNDARY_CELL_COUNT.as_vec3(),
+            ),
         }
     }
 }
+
+/// Component that triggers a fade-in animation for the `Boundary` gizmo
+/// Lerps the `Boundary` resource's color alphas from 0.0 to target values over time
+#[derive(Component)]
+struct BoundaryFadeIn(Timer);
 
 impl Boundary {
     /// Analyzes portal geometry relative to boundary faces
@@ -578,17 +596,17 @@ impl Boundary {
             .min(dist_to_min_z)
             .min(dist_to_max_z);
 
-        if (dist_to_min_x - min_dist).abs() < 0.001 {
+        if (dist_to_min_x - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
             Dir3::NEG_X
-        } else if (dist_to_max_x - min_dist).abs() < 0.001 {
+        } else if (dist_to_max_x - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
             Dir3::X
-        } else if (dist_to_min_y - min_dist).abs() < 0.001 {
+        } else if (dist_to_min_y - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
             Dir3::NEG_Y
-        } else if (dist_to_max_y - min_dist).abs() < 0.001 {
+        } else if (dist_to_max_y - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
             Dir3::Y
-        } else if (dist_to_min_z - min_dist).abs() < 0.001 {
+        } else if (dist_to_min_z - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
             Dir3::NEG_Z
-        } else if (dist_to_max_z - min_dist).abs() < 0.001 {
+        } else if (dist_to_max_z - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
             Dir3::Z
         } else {
             // Fallback to Y
@@ -722,7 +740,7 @@ fn draw_boundary(
 
     let viewport_size = camera
         .logical_viewport_size()
-        .unwrap_or(Vec2::new(1920.0, 1080.0));
+        .unwrap_or(BOUNDARY_DEFAULT_VIEWPORT_SIZE);
     let camera_distance = camera_transform
         .translation()
         .distance(boundary.transform.translation);
@@ -732,8 +750,8 @@ fn draw_boundary(
     // Gizmo lines are centered on edges
     // Empirically tuned multiplier to account for gizmo rendering
     let total_line_width = boundary.grid_line_width + boundary.boundary_line_width;
-    let outer_scale =
-        boundary.transform.scale + Vec3::splat(total_line_width * world_units_per_pixel * 0.1);
+    let outer_scale = boundary.transform.scale
+        + Vec3::splat(total_line_width * world_units_per_pixel * BOUNDARY_LINE_WIDTH_MULTIPLIER);
 
     outer_boundary_gizmo.primitive_3d(
         &Cuboid::from_size(outer_scale),
@@ -805,6 +823,69 @@ fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -
         (true, false) => Intersection::One(start + t1 * edge),
         (false, true) => Intersection::One(start + t2 * edge),
         (true, true) => Intersection::Two(start + t1 * edge, start + t2 * edge),
+    }
+}
+
+/// Observer that triggers when `SplashText` is removed
+/// Starts the boundary fade-in animation by spawning an entity with `BoundaryFadeIn`
+fn start_boundary_fade(
+    _trigger: On<Remove, SplashText>,
+    mut commands: Commands,
+    camera_query: Query<&CameraMoveList>,
+) {
+    // Get remaining time from camera animation
+    let remaining_time_ms = camera_query
+        .iter()
+        .next()
+        .map(|move_list| move_list.remaining_time_ms())
+        .unwrap_or(0.0);
+
+    // Convert milliseconds to seconds for Timer
+    let duration_secs = remaining_time_ms / 1000.0;
+
+    // Spawn entity with fade timer
+    commands.spawn(BoundaryFadeIn(Timer::from_seconds(
+        duration_secs,
+        TimerMode::Once,
+    )));
+}
+
+/// System that fades in the boundary gizmo by lerping alpha values
+fn fade_boundary_in(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut boundary: ResMut<Boundary>,
+    mut fade_query: Query<(Entity, &mut BoundaryFadeIn)>,
+) {
+    for (entity, mut fade) in &mut fade_query {
+        fade.0.tick(time.delta());
+
+        // Calculate interpolation factor (0.0 to 1.0)
+        let t = fade.0.fraction();
+
+        // Lerp alpha from 0.0 to target values
+        let grid_alpha = BOUNDARY_GRID_ALPHA * t;
+        let outer_alpha = BOUNDARY_OUTER_ALPHA * t;
+
+        // Update boundary colors
+        boundary.grid_color = Color::from(tailwind::BLUE_500).with_alpha(grid_alpha);
+        boundary.outer_color = Color::from(tailwind::BLUE_500).with_alpha(outer_alpha);
+
+        // Log progress occasionally
+        if fade.0.elapsed_secs() % 0.5 < 0.016 {
+            debug!(
+                "🎨 Boundary fade progress: {:.1}% (grid α={:.3}, outer α={:.3})",
+                t * 100.0,
+                grid_alpha,
+                outer_alpha
+            );
+        }
+
+        // Remove component when fade is complete
+        if fade.0.is_finished() {
+            debug!("✅ Boundary fade complete!");
+            commands.entity(entity).despawn();
+        }
     }
 }
 

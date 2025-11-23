@@ -9,7 +9,7 @@ use std::collections::VecDeque;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 
-use crate::camera::PanOrbitCameraExt;
+use super::PanOrbitCameraExt;
 
 pub struct MoveQueuePlugin;
 
@@ -49,17 +49,37 @@ enum MoveState {
 /// restored when the queue completes.
 #[derive(Component, Reflect, Default)]
 #[reflect(Component, Default)]
-pub struct MoveQueue {
+pub struct CameraMoveList {
     pub moves: VecDeque<CameraMove>,
     state:     MoveState,
 }
 
-impl MoveQueue {
+impl CameraMoveList {
     pub const fn new(moves: VecDeque<CameraMove>) -> Self {
         Self {
             moves,
             state: MoveState::Ready,
         }
+    }
+
+    /// Calculates total remaining time in milliseconds for all queued moves
+    pub fn remaining_time_ms(&self) -> f32 {
+        // Get remaining time for current move
+        let current_remaining = match &self.state {
+            MoveState::InProgress { elapsed_ms, .. } => {
+                if let Some(current_move) = self.moves.front() {
+                    (current_move.duration_ms - elapsed_ms).max(0.0)
+                } else {
+                    0.0
+                }
+            },
+            MoveState::Ready => self.moves.front().map_or(0.0, |m| m.duration_ms),
+        };
+
+        // Add duration of all remaining moves (skip first since already counted)
+        let remaining_queue: f32 = self.moves.iter().skip(1).map(|m| m.duration_ms).sum();
+
+        current_remaining + remaining_queue
     }
 }
 
@@ -71,16 +91,19 @@ impl MoveQueue {
 pub fn move_camera_system(
     mut commands: Commands,
     time: Res<Time>,
-    mut camera_query: Single<(Entity, &mut PanOrbitCamera, &mut MoveQueue)>,
+    mut camera_query: Single<(Entity, &mut PanOrbitCamera, &mut CameraMoveList)>,
 ) {
     let (entity, ref mut pan_orbit, ref mut queue) = *camera_query;
 
     // Get the current move from the front of the queue (clone to avoid borrow issues)
     let Some(current_move) = queue.moves.front().cloned() else {
         // Queue is empty - remove component (observer will restore smoothness)
-        commands.entity(entity).remove::<MoveQueue>();
+        commands.entity(entity).remove::<CameraMoveList>();
         return;
     };
+
+    // Check if this is the last move (for easing) - check prior to mutable borrow in the match
+    let is_last_move = queue.moves.len() == 1;
 
     match &mut queue.state {
         MoveState::Ready => {
@@ -109,39 +132,63 @@ pub fn move_camera_system(
             // Calculate interpolation factor (0.0 to 1.0)
             let t = (*elapsed_ms / current_move.duration_ms).min(1.0);
 
-            // Calculate target orbital parameters from target translation and focus
+            let is_final_frame = t >= 1.0;
+
+            // Calculate canonical orbital parameters from target position
             let offset = current_move.target_translation - current_move.target_focus;
-            let target_radius = offset.length();
-            let target_yaw = offset.x.atan2(offset.z);
+            let canonical_radius = offset.length();
+            let canonical_yaw = offset.x.atan2(offset.z);
             let horizontal_dist = offset.x.hypot(offset.z);
-            let mut target_pitch = (-offset.y).atan2(horizontal_dist);
+            let canonical_pitch = (-offset.y).atan2(horizontal_dist);
 
-            // Unwrap yaw angle to ensure continuous rotation
-            let mut yaw_diff = target_yaw - *start_yaw;
-            // Normalize angle difference to [-PI, PI]
-            yaw_diff = std::f32::consts::TAU.mul_add(
-                -((yaw_diff + std::f32::consts::PI) / std::f32::consts::TAU).floor(),
-                yaw_diff,
-            );
+            // Clamp t to exactly 1.0 if over (important for smooth completion)
+            let t_clamped = t.min(1.0);
 
-            // Unwrap pitch angle to avoid discontinuous jumps
-            let pitch_diff = target_pitch - *start_pitch;
-            if pitch_diff > std::f32::consts::PI {
-                target_pitch -= std::f32::consts::TAU;
-            } else if pitch_diff < -std::f32::consts::PI {
-                target_pitch += std::f32::consts::TAU;
-            }
-            let pitch_diff = target_pitch - *start_pitch;
+            // Apply ease-out only on the final move for gradual slowdown
+            let t_interp = if is_last_move {
+                // Quadratic ease-out: gradual deceleration
+                t_clamped * (2.0 - t_clamped)
+            } else {
+                // Linear for all other moves
+                t_clamped
+            };
 
-            // Linear interpolation from start to target
-            pan_orbit.target_focus = start_focus.lerp(current_move.target_focus, t);
-            pan_orbit.target_radius = (target_radius - *start_radius).mul_add(t, *start_radius);
-            pan_orbit.target_yaw = yaw_diff.mul_add(t, *start_yaw);
-            pan_orbit.target_pitch = pitch_diff.mul_add(t, *start_pitch);
+            // Determine angle diffs: unwrap during animation, canonical on final frame
+            let (yaw_diff, pitch_diff) = if is_last_move && is_final_frame {
+                // Final frame of last move: use canonical angles (no unwrapping)
+                (canonical_yaw - *start_yaw, canonical_pitch - *start_pitch)
+            } else {
+                // During animation: unwrap angles for smooth continuous rotation
+                let mut yaw_diff = canonical_yaw - *start_yaw;
+                // Normalize yaw difference to [-PI, PI]
+                yaw_diff = std::f32::consts::TAU.mul_add(
+                    -((yaw_diff + std::f32::consts::PI) / std::f32::consts::TAU).floor(),
+                    yaw_diff,
+                );
+
+                // Unwrap pitch angle to avoid discontinuous jumps
+                let mut pitch_target = canonical_pitch;
+                let pitch_diff = pitch_target - *start_pitch;
+                if pitch_diff > std::f32::consts::PI {
+                    pitch_target -= std::f32::consts::TAU;
+                } else if pitch_diff < -std::f32::consts::PI {
+                    pitch_target += std::f32::consts::TAU;
+                }
+                let pitch_diff = pitch_target - *start_pitch;
+
+                (yaw_diff, pitch_diff)
+            };
+
+            // Interpolate to target (single code path for all cases)
+            pan_orbit.target_focus = start_focus.lerp(current_move.target_focus, t_interp);
+            pan_orbit.target_radius =
+                (canonical_radius - *start_radius).mul_add(t_interp, *start_radius);
+            pan_orbit.target_yaw = yaw_diff.mul_add(t_interp, *start_yaw);
+            pan_orbit.target_pitch = pitch_diff.mul_add(t_interp, *start_pitch);
             pan_orbit.force_update = true;
 
-            // Check if move complete
-            if t >= 1.0 {
+            // Check if move complete and advance to next
+            if is_final_frame {
                 queue.moves.pop_front();
                 queue.state = MoveState::Ready;
             }

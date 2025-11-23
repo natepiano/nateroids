@@ -11,10 +11,13 @@ use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_panorbit_camera::TrackpadBehavior;
 use leafwing_input_manager::prelude::*;
 
+use super::PanOrbitCameraExt;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::constants::EDGE_MARKER_FONT_SIZE;
 use super::constants::EDGE_MARKER_SPHERE_RADIUS;
+use super::move_queue::CameraMoveList;
+use super::zoom::ZoomToFit;
 use crate::asset_loader::SceneAssets;
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
@@ -25,9 +28,6 @@ use crate::game_input::just_pressed;
 use crate::game_input::toggle_active;
 use crate::playfield::Boundary;
 use crate::traits::UsizeExt;
-use super::PanOrbitCameraExt;
-use super::zoom::ZoomToFit;
-use super::move_queue::MoveQueue;
 
 pub struct CamerasPlugin;
 
@@ -701,13 +701,12 @@ pub fn home_camera(
 
     // Set the camera's orbit parameters
     pan_orbit.set_home_position(&camera_config, target_radius);
-
 }
 
 /// Observer that runs when `MoveQueue` or `ZoomToFit` is removed from an entity.
 /// Restores camera smoothness values from config.
 fn reset_camera_after_moves(
-    _removed: On<Remove, (MoveQueue, ZoomToFit)>,
+    _removed: On<Remove, (CameraMoveList, ZoomToFit)>,
     camera_config: Res<CameraConfig>,
     mut pan_orbit: Single<&mut PanOrbitCamera>,
 ) {

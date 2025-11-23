@@ -11,6 +11,19 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
+use super::constants::PORTAL_DIRECTION_CHANGE_FACTOR;
+use super::constants::PORTAL_DISTANCE_APPROACH;
+use super::constants::PORTAL_DISTANCE_SHRINK;
+use super::constants::PORTAL_FADEOUT_DURATION;
+use super::constants::PORTAL_LINE_JOINTS;
+use super::constants::PORTAL_LINE_WIDTH;
+use super::constants::PORTAL_MIN_RADIUS_FRACTION;
+use super::constants::PORTAL_MINIMUM_RADIUS;
+use super::constants::PORTAL_MOVEMENT_SMOOTHING_FACTOR;
+use super::constants::PORTAL_PHYSICS_BURST_MULTIPLIER;
+use super::constants::PORTAL_RESOLUTION;
+use super::constants::PORTAL_SCALAR;
+use super::constants::PORTAL_SMALLEST;
 use crate::actor::Aabb;
 use crate::actor::Deaderoid;
 use crate::actor::Teleporter;
@@ -95,17 +108,17 @@ impl Default for PortalConfig {
         Self {
             color_approaching:         Color::from(tailwind::BLUE_600),
             color_emerging:            Color::from(tailwind::YELLOW_800),
-            direction_change_factor:   0.75,
-            distance_approach:         0.5,
-            distance_shrink:           0.25,
-            fadeout_duration:          14.,
-            line_joints:               4,
-            line_width:                2.,
-            minimum_radius:            0.1,
-            movement_smoothing_factor: 0.08,
-            portal_scalar:             2.,
-            portal_smallest:           5.,
-            resolution:                128,
+            direction_change_factor:   PORTAL_DIRECTION_CHANGE_FACTOR,
+            distance_approach:         PORTAL_DISTANCE_APPROACH,
+            distance_shrink:           PORTAL_DISTANCE_SHRINK,
+            fadeout_duration:          PORTAL_FADEOUT_DURATION,
+            line_joints:               PORTAL_LINE_JOINTS,
+            line_width:                PORTAL_LINE_WIDTH,
+            minimum_radius:            PORTAL_MINIMUM_RADIUS,
+            movement_smoothing_factor: PORTAL_MOVEMENT_SMOOTHING_FACTOR,
+            portal_scalar:             PORTAL_SCALAR,
+            portal_smallest:           PORTAL_SMALLEST,
+            resolution:                PORTAL_RESOLUTION,
         }
     }
 }
@@ -211,7 +224,7 @@ fn is_physics_burst(position: Vec3, boundary: &Boundary) -> bool {
     let boundary_half_size = boundary.transform.scale / 2.0;
     let max_distance_from_center = position.distance(boundary.transform.translation);
     let boundary_diagonal = boundary_half_size.length();
-    max_distance_from_center > boundary_diagonal * 2.0
+    max_distance_from_center > boundary_diagonal * PORTAL_PHYSICS_BURST_MULTIPLIER
 }
 
 /// Snaps position to boundary and calculates the correct face for the snapped position.
@@ -430,11 +443,10 @@ fn draw_approaching_portals(
 
 // extracted for readability
 fn get_approaching_radius(approaching: &Portal) -> f32 {
-    // 0.5 corresponds to making sure that the aabb's of an actor fits
+    // PORTAL_MIN_RADIUS_FRACTION corresponds to making sure that the aabb's of an actor fits
     // once radius shrinks down - we make sure the aabb always fits
-    // for now not parameterizing but maybe i'll care in the future
     let max_radius = approaching.radius;
-    let min_radius = max_radius * 0.5;
+    let min_radius = max_radius * PORTAL_MIN_RADIUS_FRACTION;
 
     // Calculate the radius based on proximity to the boundary
     // as it's approaching we keep it at a fixed size until we enter the shrink zone

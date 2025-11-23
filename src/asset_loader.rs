@@ -70,8 +70,6 @@ fn create_nateroid_material(
         return;
     }
 
-    info!("Loading baked PBR textures for nateroid (donut and icing)...");
-
     // Load the donut texture files
     let donut_albedo: Handle<Image> =
         asset_server.load("nateroid/textures/nateroid_donut_albedo.png");
@@ -119,7 +117,6 @@ fn create_nateroid_material(
 
     scene_assets.nateroid_donut_material = Some(donut_material);
     scene_assets.nateroid_icing_material = Some(icing_material);
-    info!("Nateroid PBR materials created for donut and icing with baked textures");
 }
 
 pub fn check_asset_loading(
@@ -151,7 +148,7 @@ pub fn check_asset_loading(
 
     // Transition to the Loaded state if all assets are loaded (including environment maps)
     if scenes_loaded && env_maps_loaded && materials_ready {
-        info!("All assets loaded (including environment maps)!");
+        debug!("All assets loaded (including environment maps)!");
         next_state.set(AssetsState::Loaded);
     }
 }

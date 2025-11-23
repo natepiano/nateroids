@@ -6,6 +6,10 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 
+use super::constants::SCREEN_BOUNDARY_FONT_SIZE;
+use super::constants::SCREEN_BOUNDARY_LINE_WIDTH;
+use super::constants::SCREEN_BOUNDARY_TEXT_OFFSET;
+use super::constants::SCREEN_BOUNDARY_WORLD_POS_OFFSET;
 use crate::camera::Edge;
 use crate::camera::RenderLayer;
 use crate::camera::ScreenSpaceBoundary;
@@ -66,7 +70,7 @@ impl Default for ScreenBoundaryConfig {
             rectangle_color:  Color::from(tailwind::YELLOW_400),
             balanced_color:   Color::srgb(0.0, 1.0, 0.0),
             unbalanced_color: Color::srgb(1.0, 0.0, 0.0),
-            line_width:       1.0,
+            line_width:       SCREEN_BOUNDARY_LINE_WIDTH,
         }
     }
 }
@@ -107,29 +111,34 @@ const fn calculate_edge_color(
 
 /// Calculates the normalized screen-space position for a label based on edge type
 fn calculate_label_position(edge: Edge, margins: &ScreenSpaceBoundary) -> (f32, f32) {
-    const TEXT_OFFSET: f32 = 0.01;
     match edge {
         Edge::Left => {
             let (_, screen_y) = margins.screen_edge_center(edge);
             (
-                -margins.half_tan_hfov + TEXT_OFFSET,
-                TEXT_OFFSET.mul_add(2.0, screen_y),
+                -margins.half_tan_hfov + SCREEN_BOUNDARY_TEXT_OFFSET,
+                SCREEN_BOUNDARY_TEXT_OFFSET.mul_add(2.0, screen_y),
             )
         },
         Edge::Right => {
             let (_, screen_y) = margins.screen_edge_center(edge);
             (
-                margins.half_tan_hfov - TEXT_OFFSET,
-                TEXT_OFFSET.mul_add(2.0, screen_y),
+                margins.half_tan_hfov - SCREEN_BOUNDARY_TEXT_OFFSET,
+                SCREEN_BOUNDARY_TEXT_OFFSET.mul_add(2.0, screen_y),
             )
         },
         Edge::Top => {
             let (screen_x, _) = margins.screen_edge_center(edge);
-            (screen_x + TEXT_OFFSET, margins.half_tan_vfov - TEXT_OFFSET)
+            (
+                screen_x + SCREEN_BOUNDARY_TEXT_OFFSET,
+                margins.half_tan_vfov - SCREEN_BOUNDARY_TEXT_OFFSET,
+            )
         },
         Edge::Bottom => {
             let (screen_x, _) = margins.screen_edge_center(edge);
-            (screen_x + TEXT_OFFSET, -margins.half_tan_vfov + TEXT_OFFSET)
+            (
+                screen_x + SCREEN_BOUNDARY_TEXT_OFFSET,
+                -margins.half_tan_vfov + SCREEN_BOUNDARY_TEXT_OFFSET,
+            )
         },
     }
 }
@@ -260,7 +269,7 @@ fn update_or_create_margin_label(
         commands.spawn((
             Text::new(text),
             TextFont {
-                font_size: 11.0,
+                font_size: SCREEN_BOUNDARY_FONT_SIZE,
                 ..default()
             },
             TextColor(color),
@@ -369,7 +378,7 @@ fn draw_screen_aligned_boundary_box(
                 cam_up,
                 cam_forward,
             );
-            world_pos -= cam_forward * 1.0;
+            world_pos -= cam_forward * SCREEN_BOUNDARY_WORLD_POS_OFFSET;
 
             // Project to screen space
             if let Ok(label_screen_pos) = cam.world_to_viewport(cam_global, world_pos) {
