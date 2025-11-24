@@ -1,0 +1,274 @@
+{
+  "status": "success",
+  "message": "Discovered 1 type(s)",
+  "call_info": {
+    "mcp_tool": "brp_type_guide"
+  },
+  "metadata": {
+    "type_count": 1
+  },
+  "parameters": {
+    "types": [
+      "bevy_transform::components::transform::Transform"
+    ],
+    "port": 22222
+  },
+  "result": {
+    "discovered_count": 1,
+    "requested_types": [
+      "bevy_transform::components::transform::Transform"
+    ],
+    "summary": {
+      "failed_discoveries": 0,
+      "successful_discoveries": 1,
+      "total_requested": 1
+    },
+    "type_guide": {
+      "bevy_transform::components::transform::Transform": {
+        "type_name": "bevy_transform::components::transform::Transform",
+        "in_registry": true,
+        "spawn_example": {
+          "agent_guidance": "The 'example' below can be used to spawn this component on an entity.",
+          "example": {
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              2,
+              3
+            ],
+            "translation": [
+              1,
+              2,
+              3
+            ]
+          }
+        },
+        "agent_guidance": "The 'mutation_paths' field provides valid 'path' arguments for 'mcp__brp__world_mutate_components' and 'mcp__brp__world_mutate_resources' tools, with example values suitable for testing.",
+        "mutation_paths": [
+          {
+            "path": "",
+            "description": "Replace the entire Transform struct",
+            "path_info": {
+              "path_kind": "RootValue",
+              "type": "bevy_transform::components::transform::Transform",
+              "type_kind": "Struct",
+              "mutability": "mutable"
+            },
+            "example": {
+              "rotation": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "scale": [
+                1,
+                2,
+                3
+              ],
+              "translation": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          {
+            "path": ".rotation",
+            "description": "Mutate the rotation field of Transform struct",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "glam::Quat",
+              "type_kind": "Struct",
+              "mutability": "mutable"
+            },
+            "example": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "path": ".rotation.y",
+            "description": "Mutate the y field of Quat",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "f32",
+              "type_kind": "Value",
+              "mutability": "mutable"
+            },
+            "example": 1
+          },
+          {
+            "path": ".rotation.x",
+            "description": "Mutate the x field of Quat",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "f32",
+              "type_kind": "Value",
+              "mutability": "mutable"
+            },
+            "example": 1
+          },
+          {
+            "path": ".rotation.w",
+            "description": "Mutate the w field of Quat",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "f32",
+              "type_kind": "Value",
+              "mutability": "mutable"
+            },
+            "example": 1
+          },
+          {
+            "path": ".rotation.z",
+            "description": "Mutate the z field of Quat",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "f32",
+              "type_kind": "Value",
+              "mutability": "mutable"
+            },
+            "example": 1
+          },
+          {
+            "path": ".scale",
+            "description": "Mutate the scale field of Transform struct",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "glam::Vec3",
+              "type_kind": "Struct",
+              "mutability": "mutable"
+            },
+            "example": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "path": ".scale.y",
+            "description": "Mutate the y field of Vec3",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "f32",
+              "type_kind": "Value",
+              "mutability": "mutable"
+            },
+            "example": 1
+          },
+          {
+            "path": ".scale.z",
+            "description": "Mutate the z field of Vec3",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "f32",
+              "type_kind": "Value",
+              "mutability": "mutable"
+            },
+            "example": 1
+          },
+          {
+            "path": ".scale.x",
+            "description": "Mutate the x field of Vec3",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "f32",
+              "type_kind": "Value",
+              "mutability": "mutable"
+            },
+            "example": 1
+          },
+          {
+            "path": ".translation",
+            "description": "Mutate the translation field of Transform struct",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "glam::Vec3",
+              "type_kind": "Struct",
+              "mutability": "mutable"
+            },
+            "example": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "path": ".translation.y",
+            "description": "Mutate the y field of Vec3",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "f32",
+              "type_kind": "Value",
+              "mutability": "mutable"
+            },
+            "example": 1
+          },
+          {
+            "path": ".translation.z",
+            "description": "Mutate the z field of Vec3",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "f32",
+              "type_kind": "Value",
+              "mutability": "mutable"
+            },
+            "example": 1
+          },
+          {
+            "path": ".translation.x",
+            "description": "Mutate the x field of Vec3",
+            "path_info": {
+              "path_kind": "StructField",
+              "type": "f32",
+              "type_kind": "Value",
+              "mutability": "mutable"
+            },
+            "example": 1
+          }
+        ],
+        "schema_info": {
+          "type_kind": "Struct",
+          "properties": {
+            "rotation": {
+              "type": {
+                "$ref": "#/$defs/glam::Quat"
+              }
+            },
+            "scale": {
+              "type": {
+                "$ref": "#/$defs/glam::Vec3"
+              }
+            },
+            "translation": {
+              "type": {
+                "$ref": "#/$defs/glam::Vec3"
+              }
+            }
+          },
+          "required": [
+            "translation",
+            "rotation",
+            "scale"
+          ],
+          "module_path": "bevy_transform::components::transform",
+          "crate_name": "bevy_transform",
+          "reflect_traits": [
+            "Default",
+            "Component",
+            "Serialize",
+            "Deserialize"
+          ]
+        }
+      }
+    }
+  }
+}
