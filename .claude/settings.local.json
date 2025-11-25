@@ -97,7 +97,8 @@
       "Bash(/opt/homebrew/bin/blender:*)",
       "mcp__brp__world_insert_resources",
       "Bash(cargo metadata:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(xargs cat:*)"
     ],
     "deny": [],
     "ask": []
