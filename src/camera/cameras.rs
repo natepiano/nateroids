@@ -8,7 +8,6 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_panorbit_camera::TrackpadBehavior;
-use leafwing_input_manager::prelude::*;
 
 use super::PanOrbitCameraExt;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
@@ -55,7 +54,6 @@ impl Plugin for CamerasPlugin {
             .add_systems(
                 Update,
                 (
-                    toggle_stars,
                     update_bloom_settings,
                     update_clear_color,
                     update_environment_map_intensity,
@@ -436,7 +434,6 @@ fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
     ));
 }
 
-
 // propagate bloom settings back to the camera
 fn update_bloom_settings(
     camera_config: Res<CameraConfig>,
@@ -471,35 +468,7 @@ fn update_environment_map_intensity(
     }
 }
 
-// remove and insert BloomSettings to toggle them off and on
-// this can probably be removed now that bloom is pretty well working...
-fn toggle_stars(
-    mut commands: Commands,
-    mut camera: Query<(Entity, Option<&mut Bloom>), With<StarsCamera>>,
-    user_input: Res<ActionState<GameAction>>,
-    camera_config: Res<CameraConfig>,
-) {
-    if let Ok(current_bloom_settings) = camera.single_mut() {
-        match current_bloom_settings {
-            (entity, Some(_)) => {
-                if user_input.just_pressed(&GameAction::Stars) {
-                    info!("stars off");
-                    commands.entity(entity).remove::<Bloom>();
-                }
-            },
-            (entity, None) => {
-                if user_input.just_pressed(&GameAction::Stars) {
-                    info!("stars on");
-                    commands
-                        .entity(entity)
-                        .insert(get_bloom_settings(camera_config));
-                }
-            },
-        }
-    }
-}
-
-pub fn spawn_panorbit_camera(
+fn spawn_panorbit_camera(
     camera_config: Res<CameraConfig>,
     scene_assets: Res<SceneAssets>,
     light_config: Res<crate::camera::lights::LightConfig>,
