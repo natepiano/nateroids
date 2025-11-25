@@ -18,6 +18,7 @@ mod schedule;
 mod splash;
 mod state;
 mod traits;
+mod window_restore;
 
 use bevy::gltf::GltfPlugin;
 use bevy::prelude::*;
@@ -39,6 +40,7 @@ use crate::playfield::PlayfieldPlugin;
 use crate::schedule::SchedulePlugin;
 use crate::splash::SplashPlugin;
 use crate::state::StatePlugin;
+use crate::window_restore::WindowRestorePlugin;
 
 fn main() {
     let mut app = App::new();
@@ -52,6 +54,8 @@ fn main() {
         format!("nateroids - {effective_port}")
     };
 
+    info!("main called");
+
     #[cfg(not(target_arch = "wasm32"))]
     app.add_plugins(
         DefaultPlugins
@@ -60,9 +64,10 @@ fn main() {
                 ..default()
             })
             .set(WindowPlugin {
-                primary_window: Some(Window {
-                    title: window_title,
-                    ..default()
+                primary_window: Some({
+                    let mut window = window_restore::primary_window();
+                    window.title = window_title;
+                    window
                 }),
                 ..default()
             }),
@@ -101,6 +106,7 @@ fn main() {
         SchedulePlugin,
         SplashPlugin,
         StatePlugin,
+        WindowRestorePlugin,
     ))
     .run();
 }

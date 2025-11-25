@@ -100,6 +100,7 @@ fn despawn_stars(
     stars: Query<Entity, With<Star>>,
     mut rotation_state: ResMut<StarRotationState>,
 ) {
+    debug!("despawning stars");
     for entity in stars.iter() {
         commands.entity(entity).despawn();
     }
@@ -115,6 +116,7 @@ fn despawn_stars(
 // just set up the entities with their positions - we'll add an emissive
 // StandardMaterial separately
 fn spawn_stars(mut commands: Commands, config: Res<StarConfig>, boundary_config: Res<Boundary>) {
+    debug!("spawning stars");
     let longest_diagonal = boundary_config.longest_diagonal();
     let inner_sphere_radius = longest_diagonal + config.star_field_inner_diameter;
     let outer_sphere_radius = inner_sphere_radius + config.star_field_outer_diameter;
@@ -200,6 +202,7 @@ fn setup_star_rendering(
     mut materials: ResMut<Assets<StandardMaterial>>,
     stars: Query<(Entity, &Star)>,
 ) {
+    debug!("setting up star rendering");
     let mesh = meshes.add(Sphere::new(1.));
 
     for (entity, star) in stars.iter() {

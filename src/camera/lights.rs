@@ -7,8 +7,8 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use crate::camera::RenderLayer;
-use crate::game_input::toggle_active;
 use crate::game_input::GameAction;
+use crate::game_input::toggle_active;
 use crate::orientation::CameraOrientation;
 
 pub struct DirectionalLightsPlugin;
