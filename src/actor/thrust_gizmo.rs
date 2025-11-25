@@ -21,7 +21,7 @@ pub struct ThrustGizmoPlugin;
 impl Plugin for ThrustGizmoPlugin {
     fn build(&self, app: &mut App) {
         app.init_gizmo_group::<ThrustGizmo>()
-            .add_systems(PostStartup, configure_thrust_gizmo)
+            .add_systems(Startup, configure_thrust_gizmo)
             .add_systems(Update, draw_thrust_flames.run_if(in_state(PlayingGame)));
     }
 }

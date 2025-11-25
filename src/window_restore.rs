@@ -37,16 +37,15 @@ pub struct WindowRestorePlugin;
 
 impl Plugin for WindowRestorePlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<WindowStateTracker>()
-            .add_systems(
-                PostStartup,
-                (log_actual_window_position, save_monitors_on_startup),
-            )
-            .add_systems(
-                Update,
-                (on_window_created, on_window_moved, log_window_resized),
-            )
-        .add_systems(Last, save_on_window_events);
+        app.init_resource::<WindowStateTracker>().add_systems(
+            PostStartup,
+            (log_actual_window_position, save_monitors_on_startup),
+        );
+
+        app.add_systems(Update, on_window_created);
+        app.add_systems(Update, on_window_moved);
+        app.add_systems(Update, log_window_resized);
+        app.add_systems(Last, save_on_window_events);
     }
 }
 
@@ -57,7 +56,6 @@ fn get_app_name() -> String {
         .and_then(|p| p.file_stem().map(|s| s.to_string_lossy().into_owned()))
         .unwrap_or_else(|| "bevy_app".to_string())
 }
-
 
 /// Create the primary `Window` with restored position/size/mode applied (if available)
 /// Set the title and other app-specific settings on the returned window
@@ -84,8 +82,6 @@ struct WindowStateTracker {
     mode:     Option<WindowMode>,
 }
 
-
-
 /// Insert `WindowSettling` component on primary window when created
 fn on_window_created(
     mut reader: MessageReader<WindowCreated>,
@@ -98,9 +94,9 @@ fn on_window_created(
                 "[WindowCreated] {:?} -> inserting WindowSettling::Created",
                 event.window
             );
-            commands
-                .entity(event.window)
-                .insert(WindowSettling::Created);
+            // commands
+            //     .entity(event.window)
+            //     .insert(WindowSettling::Created);
         }
     }
 }

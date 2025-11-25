@@ -1,6 +1,5 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::core_pipeline::tonemapping::Tonemapping;
-use bevy::light::AmbientLight;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
@@ -42,15 +41,16 @@ impl Plugin for CamerasPlugin {
                     .run_if(toggle_active(false, GameAction::FocusConfigInspector)),
             )
             .add_observer(reset_camera_after_moves)
-            .add_systems(Startup, spawn_ui_camera)
-            .add_systems(Startup, spawn_star_camera.before(spawn_panorbit_camera))
-            .add_systems(Startup, spawn_panorbit_camera)
+            .add_systems(
+                Startup,
+                (spawn_ui_camera, spawn_star_camera, spawn_panorbit_camera).chain(),
+            )
             .add_systems(Update, home_camera.run_if(just_pressed(GameAction::Home)))
             .add_systems(
                 Update,
                 apply_focus_config.run_if(resource_changed::<FocusConfig>),
             )
-            .add_systems(PostStartup, update_focus_gizmo_state)
+            .add_systems(Update, update_focus_gizmo_state)
             .add_systems(Update, update_focus_gizmo_state)
             .add_systems(
                 Update,
@@ -415,7 +415,6 @@ fn spawn_ui_camera(mut commands: Commands) {
         Camera2d,
         Camera {
             order: CameraOrder::Ui.order(),
-            clear_color: ClearColorConfig::None,
             ..default()
         },
     ));
@@ -424,27 +423,19 @@ fn spawn_ui_camera(mut commands: Commands) {
 // star camera uses bloom so it needs to be in its own layer as we don't
 // want that effect on the colliders
 fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
-    commands
-        .spawn(Camera3d::default())
-        .insert(Camera {
+    commands.spawn((
+        Camera3d::default(),
+        Camera {
             order: CameraOrder::Stars.order(),
-            clear_color: ClearColorConfig::Default,
             ..default()
-        })
-        .insert(Tonemapping::BlenderFilmic)
-        .insert(RenderLayers::from_layers(RenderLayer::Stars.layers()))
-        .insert(get_bloom_settings(camera_config))
-        // CRITICAL: Adding an `AmbientLight` component to the stars camera overrides the
-        // global `AmbientLight` resource for this camera only. Without this, the global
-        // ambient light (used for lighting game objects) washes out the stars completely,
-        // making the background appear black. The brightness value doesn't matter since
-        // stars are emissive (self-illuminating), but the component must be present.
-        .insert(AmbientLight {
-            brightness: 0.0,
-            ..default()
-        })
-        .insert(StarsCamera);
+        },
+        StarsCamera,
+        get_bloom_settings(camera_config),
+        RenderLayers::from_layers(RenderLayer::Stars.layers()),
+        Tonemapping::BlenderFilmic,
+    ));
 }
+
 
 // propagate bloom settings back to the camera
 fn update_bloom_settings(
@@ -546,7 +537,7 @@ pub fn spawn_panorbit_camera(
             // transparent because the game sits on top of the stars
             // this (speculative) clears the depth buffer of bloom information still - allowing
             // the game entities to render correctly without bloom
-            clear_color: ClearColorConfig::Custom(Color::Srgba(Srgba::new(0.0, 0.0, 0.0, 0.0))),
+            clear_color: ClearColorConfig::Custom(Color::Srgba(Srgba::new(0.0, 0.0, 0.0, 0.01))),
             ..default()
         })
         .insert(EnvironmentMapLight {

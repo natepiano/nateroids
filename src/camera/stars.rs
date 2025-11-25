@@ -2,11 +2,11 @@ use std::f32::consts::PI;
 
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
-use rand::prelude::ThreadRng;
 use rand::Rng;
+use rand::prelude::ThreadRng;
 
-use super::config::StarConfig;
 use super::RenderLayer;
+use super::config::StarConfig;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
@@ -19,13 +19,39 @@ impl Plugin for StarsPlugin {
         app.insert_resource(StarRotationState { current_angle: 0.0 })
             .add_systems(
                 OnEnter(GameState::Splash),
-                (despawn_stars, spawn_stars, setup_star_rendering).chain(),
+                (despawn_stars, spawn_stars).chain(),
             )
             .add_systems(
                 OnEnter(GameState::GameOver),
-                (despawn_stars, spawn_stars, setup_star_rendering).chain(),
+                (despawn_stars, spawn_stars).chain(),
             )
-            .add_systems(Update, rotate_stars.in_set(InGameSet::EntityUpdates));
+            .add_systems(Update, rotate_stars.in_set(InGameSet::EntityUpdates))
+            .add_systems(Update, debug_stars);
+    }
+}
+
+fn debug_stars(
+    stars: Query<(Entity, Option<&ViewVisibility>), With<Star>>,
+    stars_camera: Query<
+        (Entity, &Camera, Option<&RenderLayers>),
+        With<super::cameras::StarsCamera>,
+    >,
+) {
+    let count = stars.iter().count();
+    if count > 0 {
+        let visible_count = stars
+            .iter()
+            .filter(|(_, v)| v.is_some_and(|vv| vv.get()))
+            .count();
+
+        if let Ok((cam_entity, camera, render_layers)) = stars_camera.single() {
+            debug!(
+                "Stars: {count} total, {visible_count} visible | Camera {cam_entity}: active={}, layers={:?}",
+                camera.is_active, render_layers
+            );
+        } else {
+            debug!("Stars: {count} total, {visible_count} visible | NO STARS CAMERA!");
+        }
     }
 }
 
@@ -59,28 +85,42 @@ fn despawn_stars(
     rotation_state.current_angle = 0.0;
 }
 
-// just set up the entities with their positions - we'll add an emissive
-// StandardMaterial separately
-fn spawn_stars(mut commands: Commands, config: Res<StarConfig>, boundary_config: Res<Boundary>) {
+/// Spawn stars with all components at once to avoid archetype changes after spawn
+fn spawn_stars(
+    mut commands: Commands,
+    config: Res<StarConfig>,
+    boundary_config: Res<Boundary>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     debug!("spawning stars");
     let longest_diagonal = boundary_config.longest_diagonal();
     let inner_sphere_radius = longest_diagonal + config.star_field_inner_diameter;
     let outer_sphere_radius = inner_sphere_radius + config.star_field_outer_diameter;
 
+    let mesh = meshes.add(Sphere::new(1.));
     let mut rng = rand::rng();
 
     for _ in 0..config.star_count {
-        let point = get_star_position(inner_sphere_radius, outer_sphere_radius, &mut rng);
+        let position = get_star_position(inner_sphere_radius, outer_sphere_radius, &mut rng);
         let radius = rng.random_range(config.star_radius_min..config.star_radius_max);
         let emissive = get_star_color(&config, &mut rng);
 
+        let material = materials.add(StandardMaterial {
+            emissive: LinearRgba::new(emissive.x, emissive.y, emissive.z, emissive.w),
+            ..default()
+        });
+
         commands.spawn((
             Star {
-                position: point,
+                position,
                 radius,
                 emissive,
             },
             RenderLayers::from_layers(RenderLayer::Stars.layers()),
+            Mesh3d(mesh.clone()),
+            MeshMaterial3d(material),
+            Transform::from_trs(position, Quat::IDENTITY, Vec3::splat(radius)),
         ));
     }
 }
@@ -95,7 +135,7 @@ fn get_star_position(
     let polar_norm: f32 = rng.random_range(0.0..1.0); // normalized polar angle
 
     let theta = azimuth_norm * std::f32::consts::PI * 2.0; // azimuthal: 0 to 2π
-                                                           // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
+    // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
     let phi = 2.0f32.mul_add(polar_norm, -1.0).acos(); // polar angle
     let radius = rng.random_range(inner_sphere_radius..outer_sphere_radius);
 
@@ -139,39 +179,6 @@ fn get_star_color(config: &StarConfig, rng: &mut impl Rng) -> Vec4 {
     let a = rng.random_range(start..end);
 
     Vec4::new(r, g, b, a)
-}
-
-// add the emissive standard material generated randomly in spawn_stars
-fn setup_star_rendering(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    stars: Query<(Entity, &Star)>,
-) {
-    debug!("setting up star rendering");
-    let mesh = meshes.add(Sphere::new(1.));
-
-    for (entity, star) in stars.iter() {
-        let material = materials.add(StandardMaterial {
-            emissive: LinearRgba::new(
-                star.emissive.x,
-                star.emissive.y,
-                star.emissive.z,
-                star.emissive.w,
-            ),
-            ..default()
-        });
-
-        commands
-            .entity(entity)
-            .insert(Mesh3d(mesh.clone()))
-            .insert(MeshMaterial3d(material))
-            .insert(Transform::from_trs(
-                star.position,
-                Quat::IDENTITY,
-                Vec3::splat(star.radius),
-            ));
-    }
 }
 
 fn rotate_stars(
