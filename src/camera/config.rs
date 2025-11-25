@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
@@ -8,8 +10,8 @@ use super::constants::CAMERA_SPLASH_START_FOCUS;
 use super::constants::CAMERA_SPLASH_START_PITCH;
 use super::constants::CAMERA_SPLASH_START_RADIUS;
 use super::constants::CAMERA_SPLASH_START_YAW;
-use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
+use crate::game_input::GameAction;
 
 pub struct CameraConfigPlugin;
 
@@ -19,11 +21,16 @@ impl Plugin for CameraConfigPlugin {
             ResourceInspectorPlugin::<CameraConfig>::default()
                 .run_if(toggle_active(false, GameAction::CameraConfigInspector)),
         )
-        .init_resource::<CameraConfig>()
+        .add_plugins(
+            ResourceInspectorPlugin::<StarConfig>::default()
+                .run_if(toggle_active(false, GameAction::StarConfigInspector)),
+        )
         .add_plugins(
             ResourceInspectorPlugin::<ZoomConfig>::default()
                 .run_if(toggle_active(false, GameAction::ZoomConfigInspector)),
         )
+        .init_resource::<CameraConfig>()
+        .init_resource::<StarConfig>()
         .init_resource::<ZoomConfig>();
     }
 }
@@ -80,6 +87,51 @@ impl Default for CameraConfig {
 
 impl CameraConfig {
     pub const fn darkening_multiplier(&self) -> f32 { 1.0 - self.darkening_factor }
+}
+
+#[derive(Debug, Clone, Reflect, Resource, InspectorOptions)]
+#[reflect(Resource, InspectorOptions)]
+pub struct StarConfig {
+    pub batch_size_replace:            usize,
+    pub duration_replace_timer:        f32,
+    pub star_color:                    Range<f32>,
+    pub star_color_white_probability:  f32,
+    pub star_color_white_start_ratio:  f32,
+    pub star_count:                    usize,
+    pub star_radius_max:               f32,
+    pub star_radius_min:               f32,
+    pub star_field_inner_diameter:     f32,
+    pub star_field_outer_diameter:     f32,
+    pub start_twinkling_delay:         f32,
+    pub twinkle_duration:              Range<f32>,
+    pub twinkle_intensity:             Range<f32>,
+    pub twinkle_choose_multiple_count: usize,
+    #[inspector(min = 0.01667, max = 30.0, display = NumberDisplay::Slider)]
+    pub rotation_cycle_minutes:        f32,
+    pub rotation_axis:                 Vec3,
+}
+
+impl Default for StarConfig {
+    fn default() -> Self {
+        Self {
+            batch_size_replace:            10,
+            duration_replace_timer:        1.,
+            star_count:                    1000,
+            star_color:                    -30.0..30.0,
+            star_color_white_probability:  0.85,
+            star_color_white_start_ratio:  0.7,
+            star_radius_max:               2.5,
+            star_radius_min:               0.3,
+            star_field_inner_diameter:     200.,
+            star_field_outer_diameter:     400.,
+            start_twinkling_delay:         0.5,
+            twinkle_duration:              0.5..2.,
+            twinkle_intensity:             10.0..20.,
+            twinkle_choose_multiple_count: 2, // stars to look at each update
+            rotation_cycle_minutes:        15., // i mean why not
+            rotation_axis:                 Vec3::Y,
+        }
+    }
 }
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]

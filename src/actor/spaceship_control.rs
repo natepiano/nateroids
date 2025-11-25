@@ -34,7 +34,7 @@ impl Plugin for SpaceshipControlPlugin {
         .init_resource::<ActionState<SpaceshipControl>>()
         .insert_resource(SpaceshipControl::generate_input_map())
         .add_systems(
-            FixedUpdate,
+            Update,
             (spaceship_movement_controls, toggle_continuous_fire)
                 .chain()
                 .in_set(InGameSet::UserInput),
@@ -104,7 +104,18 @@ fn spaceship_movement_controls(
     movement_config: Res<SpaceshipControlConfig>,
     time: Res<Time>,
     orientation_mode: Res<CameraOrientation>,
+    game_input: Res<ActionState<GameAction>>,
+    mut debug_state: Local<bool>,
 ) {
+    // Toggle debug logging with F4
+    if game_input.just_pressed(&GameAction::DebugSpaceshipInput) {
+        *debug_state = !*debug_state;
+        info!(
+            "Spaceship input debug: {}",
+            if *debug_state { "ON" } else { "OFF" }
+        );
+    }
+
     // we can use this because there is only exactly one spaceship - so we're not
     // looping over the query
     if let Ok((mut spaceship_transform, mut linear_velocity, mut angular_velocity)) =
@@ -117,10 +128,14 @@ fn spaceship_movement_controls(
         let rotation_speed = movement_config.rotation_speed;
 
         // Set angular velocity based on input
+        let turn_right = controls.pressed(&SpaceshipControl::TurnRight);
+        let turn_left = controls.pressed(&SpaceshipControl::TurnLeft);
+        let accelerate = controls.pressed(&SpaceshipControl::Accelerate);
+
         let mut target_angular_velocity = 0.0;
-        if controls.pressed(&SpaceshipControl::TurnRight) {
+        if turn_right {
             target_angular_velocity = rotation_speed;
-        } else if controls.pressed(&SpaceshipControl::TurnLeft) {
+        } else if turn_left {
             target_angular_velocity = -rotation_speed;
         }
 
@@ -129,6 +144,14 @@ fn spaceship_movement_controls(
         let facing_opposite = camera_forward.dot(Vec3::new(0.0, 0.0, -1.0)) > 0.0;
         if facing_opposite {
             target_angular_velocity = -target_angular_velocity;
+        }
+
+        // Debug logging when enabled
+        if *debug_state {
+            let ang_vel_before = angular_velocity.z;
+            info!(
+                "INPUT: L={turn_left} R={turn_right} A={accelerate} | ang_vel: {ang_vel_before:.2} -> {target_angular_velocity:.2}"
+            );
         }
 
         // Apply angular velocity through physics engine
@@ -140,7 +163,7 @@ fn spaceship_movement_controls(
         let max_speed = movement_config.max_speed;
         let accel = movement_config.acceleration;
 
-        if controls.pressed(&SpaceshipControl::Accelerate) {
+        if accelerate {
             apply_acceleration(
                 &mut linear_velocity,
                 spaceship_transform.forward().as_vec3(),

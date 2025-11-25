@@ -32,6 +32,24 @@ const WINDOW_STATE_FILENAME: &str = "windows.ron";
 /// The filename for monitor configuration
 const MONITORS_FILENAME: &str = "monitors.ron";
 
+/// Plugin that handles window state persistence (saving on move/resize/mode change)
+pub struct WindowRestorePlugin;
+
+impl Plugin for WindowRestorePlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<WindowStateTracker>()
+            .add_systems(
+                PostStartup,
+                (log_actual_window_position, save_monitors_on_startup),
+            )
+            .add_systems(
+                Update,
+                (on_window_created, on_window_moved, log_window_resized),
+            )
+        .add_systems(Last, save_on_window_events);
+    }
+}
+
 /// Get the application name from the executable for config directory naming
 fn get_app_name() -> String {
     std::env::current_exe()
@@ -40,8 +58,6 @@ fn get_app_name() -> String {
         .unwrap_or_else(|| "bevy_app".to_string())
 }
 
-/// Plugin that handles window state persistence (saving on move/resize/mode change)
-pub struct WindowRestorePlugin;
 
 /// Create the primary `Window` with restored position/size/mode applied (if available)
 /// Set the title and other app-specific settings on the returned window
@@ -68,20 +84,7 @@ struct WindowStateTracker {
     mode:     Option<WindowMode>,
 }
 
-impl Plugin for WindowRestorePlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<WindowStateTracker>()
-            .add_systems(
-                PostStartup,
-                (log_actual_window_position, save_monitors_on_startup),
-            )
-            .add_systems(
-                Update,
-                (on_window_created, on_window_moved, log_window_resized),
-            )
-            .add_systems(Last, save_on_window_events);
-    }
-}
+
 
 /// Insert `WindowSettling` component on primary window when created
 fn on_window_created(

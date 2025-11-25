@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use bevy::prelude::*;
 use rand::Rng;
 
+use super::config::StarConfig;
 use crate::camera::stars::Star;
-use crate::camera::stars::StarConfig;
 use crate::schedule::InGameSet;
 
 pub struct StarTwinklingPlugin;
@@ -12,15 +12,13 @@ pub struct StarTwinklingPlugin;
 impl Plugin for StarTwinklingPlugin {
     fn build(&self, app: &mut App) {
         let start_twinkling_timer_duration = StarConfig::default().start_twinkling_delay;
-
-        app.init_resource::<StarConfig>()
-            .insert_resource(StartTwinklingTimer {
-                timer: Timer::from_seconds(start_twinkling_timer_duration, TimerMode::Repeating),
-            })
-            .add_systems(
-                Update,
-                ((start_twinkling, update_twinkling),).in_set(InGameSet::EntityUpdates),
-            );
+        app.insert_resource(StartTwinklingTimer {
+            timer: Timer::from_seconds(start_twinkling_timer_duration, TimerMode::Repeating),
+        })
+        .add_systems(
+            Update,
+            ((start_twinkling, update_twinkling),).in_set(InGameSet::EntityUpdates),
+        );
     }
 }
 

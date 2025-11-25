@@ -8,6 +8,7 @@ mod nateroid;
 mod spaceship;
 mod spaceship_control;
 mod teleport;
+mod thrust_gizmo;
 
 pub use aabb::Aabb;
 use aabb::AabbPlugin;
@@ -28,6 +29,7 @@ use spaceship::SpaceshipPlugin;
 use spaceship_control::SpaceshipControlPlugin;
 use teleport::TeleportPlugin;
 pub use teleport::Teleporter;
+use thrust_gizmo::ThrustGizmoPlugin;
 
 pub struct ActorPlugin;
 
@@ -40,6 +42,7 @@ impl Plugin for ActorPlugin {
             .add_plugins(NateroidPlugin)
             .add_plugins(SpaceshipPlugin)
             .add_plugins(SpaceshipControlPlugin)
-            .add_plugins(TeleportPlugin);
+            .add_plugins(TeleportPlugin)
+            .add_plugins(ThrustGizmoPlugin);
     }
 }

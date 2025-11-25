@@ -1,17 +1,12 @@
 use std::f32::consts::PI;
-use std::ops::Range;
 
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
-use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
-use bevy_inspector_egui::prelude::*;
-use bevy_inspector_egui::quick::ResourceInspectorPlugin;
-use rand::Rng;
 use rand::prelude::ThreadRng;
+use rand::Rng;
 
-use crate::camera::RenderLayer;
-use crate::game_input::GameAction;
-use crate::game_input::toggle_active;
+use super::config::StarConfig;
+use super::RenderLayer;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
@@ -22,10 +17,6 @@ pub struct StarsPlugin;
 impl Plugin for StarsPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(StarRotationState { current_angle: 0.0 })
-            .add_plugins(
-                ResourceInspectorPlugin::<StarConfig>::default()
-                    .run_if(toggle_active(false, GameAction::StarConfigInspector)),
-            )
             .add_systems(
                 OnEnter(GameState::Splash),
                 (despawn_stars, spawn_stars, setup_star_rendering).chain(),
@@ -35,51 +26,6 @@ impl Plugin for StarsPlugin {
                 (despawn_stars, spawn_stars, setup_star_rendering).chain(),
             )
             .add_systems(Update, rotate_stars.in_set(InGameSet::EntityUpdates));
-    }
-}
-
-#[derive(Debug, Clone, Reflect, Resource, InspectorOptions)]
-#[reflect(Resource, InspectorOptions)]
-pub struct StarConfig {
-    pub batch_size_replace:            usize,
-    pub duration_replace_timer:        f32,
-    pub star_color:                    Range<f32>,
-    pub star_color_white_probability:  f32,
-    pub star_color_white_start_ratio:  f32,
-    pub star_count:                    usize,
-    pub star_radius_max:               f32,
-    pub star_radius_min:               f32,
-    pub star_field_inner_diameter:     f32,
-    pub star_field_outer_diameter:     f32,
-    pub start_twinkling_delay:         f32,
-    pub twinkle_duration:              Range<f32>,
-    pub twinkle_intensity:             Range<f32>,
-    pub twinkle_choose_multiple_count: usize,
-    #[inspector(min = 0.01667, max = 30.0, display = NumberDisplay::Slider)]
-    pub rotation_cycle_minutes:        f32,
-    pub rotation_axis:                 Vec3,
-}
-
-impl Default for StarConfig {
-    fn default() -> Self {
-        Self {
-            batch_size_replace:            10,
-            duration_replace_timer:        1.,
-            star_count:                    1000,
-            star_color:                    -30.0..30.0,
-            star_color_white_probability:  0.85,
-            star_color_white_start_ratio:  0.7,
-            star_radius_max:               2.5,
-            star_radius_min:               0.3,
-            star_field_inner_diameter:     200.,
-            star_field_outer_diameter:     400.,
-            start_twinkling_delay:         0.5,
-            twinkle_duration:              0.5..2.,
-            twinkle_intensity:             10.0..20.,
-            twinkle_choose_multiple_count: 2, // stars to look at each update
-            rotation_cycle_minutes:        15., // i mean why not
-            rotation_axis:                 Vec3::Y,
-        }
     }
 }
 
@@ -149,7 +95,7 @@ fn get_star_position(
     let polar_norm: f32 = rng.random_range(0.0..1.0); // normalized polar angle
 
     let theta = azimuth_norm * std::f32::consts::PI * 2.0; // azimuthal: 0 to 2π
-    // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
+                                                           // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
     let phi = 2.0f32.mul_add(polar_norm, -1.0).acos(); // polar angle
     let radius = rng.random_range(inner_sphere_radius..outer_sphere_radius);
 
