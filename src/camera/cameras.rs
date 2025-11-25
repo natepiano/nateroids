@@ -14,6 +14,7 @@ use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::constants::EDGE_MARKER_FONT_SIZE;
 use super::constants::EDGE_MARKER_SPHERE_RADIUS;
+use super::lights::LightConfig;
 use super::move_queue::CameraMoveList;
 use super::zoom::ZoomToFit;
 use crate::asset_loader::SceneAssets;
@@ -390,7 +391,7 @@ pub enum Edge {
 }
 
 #[derive(Component, Reflect)]
-pub struct StarsCamera;
+pub struct StarCamera;
 
 /// Spawns a dedicated UI camera for `egui`/`bevy_inspector_egui` to attach to.
 ///
@@ -427,7 +428,7 @@ fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
             order: CameraOrder::Stars.order(),
             ..default()
         },
-        StarsCamera,
+        StarCamera,
         get_bloom_settings(camera_config),
         RenderLayers::from_layers(RenderLayer::Stars.layers()),
         Tonemapping::BlenderFilmic,
@@ -437,7 +438,7 @@ fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
 // propagate bloom settings back to the camera
 fn update_bloom_settings(
     camera_config: Res<CameraConfig>,
-    mut q_current_settings: Query<&mut Bloom, With<StarsCamera>>,
+    mut q_current_settings: Query<&mut Bloom, With<StarCamera>>,
 ) {
     if camera_config.is_changed()
         && let Ok(mut old_bloom_settings) = q_current_settings.single_mut()
@@ -456,7 +457,7 @@ fn get_bloom_settings(camera_config: Res<CameraConfig>) -> Bloom {
 }
 
 fn update_environment_map_intensity(
-    light_config: Res<crate::camera::lights::LightConfig>,
+    light_config: Res<LightConfig>,
     mut query: Query<&mut EnvironmentMapLight, With<Camera3d>>,
 ) {
     if !light_config.is_changed() {
@@ -471,53 +472,47 @@ fn update_environment_map_intensity(
 fn spawn_panorbit_camera(
     camera_config: Res<CameraConfig>,
     scene_assets: Res<SceneAssets>,
-    light_config: Res<crate::camera::lights::LightConfig>,
+    light_config: Res<LightConfig>,
     mut commands: Commands,
-    mut q_stars_camera: Query<Entity, With<StarsCamera>>,
+    stars_camera_entity: Single<Entity, With<StarCamera>>,
 ) {
-    // we know we have one because we spawn the stars camera prior to this system
-    // we're going to attach it to the primary as a child so it always has the same
-    // view as the primary camera but can show the stars with bloom while the
-    // primary shows everything else
-    let Ok(stars_camera_entity) = q_stars_camera.single_mut() else {
-        error!("Stars camera not found during setup");
-        return;
-    };
-
     commands
-        .spawn(PanOrbitCamera {
-            focus: Vec3::ZERO,
-            target_radius: camera_config.splash_start_radius,
-            button_orbit: MouseButton::Middle,
-            button_pan: MouseButton::Middle,
-            modifier_pan: Some(KeyCode::ShiftLeft),
-            zoom_sensitivity: CAMERA_ZOOM_SENSITIVITY,
-            zoom_lower_limit: CAMERA_ZOOM_LOWER_LIMIT,
-            trackpad_behavior: TrackpadBehavior::BlenderLike {
-                modifier_pan:  Some(KeyCode::ShiftLeft),
-                modifier_zoom: Some(KeyCode::ControlLeft),
+        .spawn((
+            PanOrbitCamera {
+                focus: Vec3::ZERO,
+                target_radius: camera_config.splash_start_radius,
+                button_orbit: MouseButton::Middle,
+                button_pan: MouseButton::Middle,
+                modifier_pan: Some(KeyCode::ShiftLeft),
+                zoom_sensitivity: CAMERA_ZOOM_SENSITIVITY,
+                zoom_lower_limit: CAMERA_ZOOM_LOWER_LIMIT,
+                trackpad_behavior: TrackpadBehavior::BlenderLike {
+                    modifier_pan:  Some(KeyCode::ShiftLeft),
+                    modifier_zoom: Some(KeyCode::ControlLeft),
+                },
+                trackpad_pinch_to_zoom_enabled: true,
+                ..default()
             },
-            trackpad_pinch_to_zoom_enabled: true,
-            ..default()
-        })
-        //  .insert(transform)
-        .insert(Camera {
-            order: CameraOrder::Game.order(),
-            // transparent because the game sits on top of the stars
-            // this (speculative) clears the depth buffer of bloom information still - allowing
-            // the game entities to render correctly without bloom
-            clear_color: ClearColorConfig::Custom(Color::Srgba(Srgba::new(0.0, 0.0, 0.0, 0.01))),
-            ..default()
-        })
-        .insert(EnvironmentMapLight {
-            diffuse_map: scene_assets.env_diffuse_map.clone(),
-            specular_map: scene_assets.env_specular_map.clone(),
-            intensity: light_config.environment_map_intensity,
-            ..default()
-        })
-        .insert(Tonemapping::TonyMcMapface)
-        .insert(RenderLayers::from_layers(RenderLayer::Game.layers()))
-        .add_child(stars_camera_entity);
+            Camera {
+                order: CameraOrder::Game.order(),
+                // transparent because the game sits on top of the stars
+                // this (speculative) clears the depth buffer of bloom information still - allowing
+                // the game entities to render correctly without bloom
+                clear_color: ClearColorConfig::Custom(Color::Srgba(Srgba::new(
+                    0.0, 0.0, 0.0, 0.01,
+                ))),
+                ..default()
+            },
+            RenderLayers::from_layers(RenderLayer::Game.layers()),
+            EnvironmentMapLight {
+                diffuse_map: scene_assets.env_diffuse_map.clone(),
+                specular_map: scene_assets.env_specular_map.clone(),
+                intensity: light_config.environment_map_intensity,
+                ..default()
+            },
+            Tonemapping::TonyMcMapface,
+        ))
+        .add_child(*stars_camera_entity);
 }
 
 // this allows us to use Inspector reflection to manually update ClearColor to

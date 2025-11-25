@@ -61,21 +61,27 @@ fn draw_thrust_flames(
     let color_orange = Color::from(tailwind::ORANGE_500);
     let color_red = Color::from(tailwind::RED_600);
 
+    // Pre-cast to avoid repeated usize->f32 conversions in loop
+    #[allow(clippy::cast_precision_loss)]
+    let line_count_f32 = THRUST_LINE_COUNT as f32;
+
     for i in 0..THRUST_LINE_COUNT {
+        #[allow(clippy::cast_precision_loss)]
         let line_index = i as f32;
-        let angle_offset = (line_index - (THRUST_LINE_COUNT as f32 - 1.0) / 2.0)
-            / (THRUST_LINE_COUNT as f32 / 2.0)
+        let angle_offset = (line_index - (line_count_f32 - 1.0) / 2.0) / (line_count_f32 / 2.0)
             * THRUST_CONE_HALF_ANGLE;
 
         // Vibration offset unique to each line
         let phase = line_index * 1.7;
         let vibration_lateral =
-            (elapsed * THRUST_VIBRATION_SPEED + phase).sin() * THRUST_VIBRATION_AMPLITUDE;
-        let vibration_vertical = (elapsed * THRUST_VIBRATION_SPEED * 1.3 + phase * 0.7).cos()
+            elapsed.mul_add(THRUST_VIBRATION_SPEED, phase).sin() * THRUST_VIBRATION_AMPLITUDE;
+        let vibration_vertical = (elapsed * THRUST_VIBRATION_SPEED)
+            .mul_add(1.3, phase * 0.7)
+            .cos()
             * THRUST_VIBRATION_AMPLITUDE;
 
         // Length variation per line with time-based flicker
-        let length_flicker = (elapsed * 15.0 + phase * 2.3).sin() * 0.5 + 0.5;
+        let length_flicker = elapsed.mul_add(15.0, phase * 2.3).sin().mul_add(0.5, 0.5);
         let line_length = THRUST_LINE_LENGTH_BASE + length_flicker * THRUST_LINE_LENGTH_VARIANCE;
 
         // Spread direction based on cone angle
@@ -88,7 +94,7 @@ fn draw_thrust_flames(
         // Color: 3-zone gradient (red -> orange -> yellow) based on distance from center
         // center_factor: 0.0 = outermost, 1.0 = center
         let center_factor = 1.0 - (angle_offset.abs() / THRUST_CONE_HALF_ANGLE);
-        let time_flicker = (elapsed * 12.0 + phase).sin() * 0.5 + 0.5;
+        let time_flicker = elapsed.mul_add(12.0, phase).sin().mul_add(0.5, 0.5);
 
         // Map center_factor to 3 color zones with smooth transitions
         // 0.0-0.33: red to orange, 0.33-0.66: orange, 0.66-1.0: orange to yellow
@@ -98,7 +104,7 @@ fn draw_thrust_flames(
             lerp_color(color_red, color_orange, t)
         } else if center_factor < 0.66 {
             // Middle zone: orange with flicker toward red or yellow
-            let flicker_bias = (elapsed * 8.0 + phase * 1.3).sin();
+            let flicker_bias = elapsed.mul_add(8.0, phase * 1.3).sin();
             if flicker_bias > 0.0 {
                 lerp_color(color_orange, color_yellow, flicker_bias * 0.4)
             } else {
@@ -120,9 +126,9 @@ fn lerp_color(a: Color, b: Color, t: f32) -> Color {
     let t = t.clamp(0.0, 1.0);
 
     Color::linear_rgba(
-        a_linear.red + (b_linear.red - a_linear.red) * t,
-        a_linear.green + (b_linear.green - a_linear.green) * t,
-        a_linear.blue + (b_linear.blue - a_linear.blue) * t,
-        a_linear.alpha + (b_linear.alpha - a_linear.alpha) * t,
+        (b_linear.red - a_linear.red).mul_add(t, a_linear.red),
+        (b_linear.green - a_linear.green).mul_add(t, a_linear.green),
+        (b_linear.blue - a_linear.blue).mul_add(t, a_linear.blue),
+        (b_linear.alpha - a_linear.alpha).mul_add(t, a_linear.alpha),
     )
 }

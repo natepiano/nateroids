@@ -94,9 +94,9 @@ fn on_window_created(
                 "[WindowCreated] {:?} -> inserting WindowSettling::Created",
                 event.window
             );
-            // commands
-            //     .entity(event.window)
-            //     .insert(WindowSettling::Created);
+            commands
+                .entity(event.window)
+                .insert(WindowSettling::Created);
         }
     }
 }

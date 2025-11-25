@@ -30,8 +30,8 @@ impl Plugin for StatePlugin {
     }
 }
 
-/// GameState's for Nateroids
-/// PostStartup transitions to Splash _after_ camera is spawned.
+/// `GameState`'s for Nateroids
+/// `PostStartup` transitions to Splash _after_ camera is spawned.
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, Reflect, States)]
 pub enum GameState {
     // Launch is the default to prevent OnEnter(Splash) from firing before camera exists. (is that

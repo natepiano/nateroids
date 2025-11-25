@@ -1,11 +1,16 @@
+use std::any::TypeId;
 use std::f32::consts::PI;
 
 use bevy::camera::visibility::RenderLayers;
+use bevy::camera::visibility::VisibleEntities;
+use bevy::diagnostic::FrameCount;
+use bevy::mesh::Mesh3d;
 use bevy::prelude::*;
 use rand::Rng;
 use rand::prelude::ThreadRng;
 
 use super::RenderLayer;
+use super::cameras::StarCamera;
 use super::config::StarConfig;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
@@ -31,12 +36,19 @@ impl Plugin for StarsPlugin {
 }
 
 fn debug_stars(
+    frame_count: Res<FrameCount>,
     stars: Query<(Entity, Option<&ViewVisibility>), With<Star>>,
     stars_camera: Query<
-        (Entity, &Camera, Option<&RenderLayers>),
-        With<super::cameras::StarsCamera>,
+        (
+            Entity,
+            &Camera,
+            Option<&RenderLayers>,
+            Option<&VisibleEntities>,
+        ),
+        With<StarCamera>,
     >,
 ) {
+    let frame = frame_count.0;
     let count = stars.iter().count();
     if count > 0 {
         let visible_count = stars
@@ -44,13 +56,18 @@ fn debug_stars(
             .filter(|(_, v)| v.is_some_and(|vv| vv.get()))
             .count();
 
-        if let Ok((cam_entity, camera, render_layers)) = stars_camera.single() {
+        if let Ok((cam_entity, camera, render_layers, visible_entities)) = stars_camera.single() {
+            let mesh3d_visible = visible_entities.map_or(0, |ve| {
+                ve.entities.get(&TypeId::of::<Mesh3d>()).map_or(0, Vec::len)
+            });
             debug!(
-                "Stars: {count} total, {visible_count} visible | Camera {cam_entity}: active={}, layers={:?}",
+                "Frame {frame}: Stars: {count} total, {visible_count} ViewVisible | Camera {cam_entity}: active={}, layers={:?}, VisibleEntities(Mesh3d)={mesh3d_visible}",
                 camera.is_active, render_layers
             );
         } else {
-            debug!("Stars: {count} total, {visible_count} visible | NO STARS CAMERA!");
+            debug!(
+                "Frame {frame}: Stars: {count} total, {visible_count} ViewVisible | NO STARS CAMERA!"
+            );
         }
     }
 }

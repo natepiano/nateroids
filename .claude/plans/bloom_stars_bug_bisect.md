@@ -12,26 +12,45 @@ Systematically replay each change from the current uncommitted diff to identify 
 ## Progress Checklist
 
 ### Step 1: Save Current State
-- [ ] Save diff: `git diff > /tmp/stars_fix.patch`
-- [ ] Stash changes: `git stash`
+- [x] Save diff: `git diff > /tmp/stars_fix.patch` (227 lines)
+- [x] Stash changes: `git stash`
 
 ### Step 2: Verify Bug Exists
-- [ ] Build app
-- [ ] Run app and confirm stars flash then disappear
+- [x] Build app
+- [x] Run app and confirm stars flash then disappear - **REPRODUCED**
 
-### Step 3: Test Groups (in order of probability)
+### Step 3: Test Groups (least likely → most likely)
 
 | Order | Status | Group | File | Change |
 |-------|--------|-------|------|--------|
-| 1 | [ ] | 4 | cameras.rs | Tuple spawn refactor |
-| 2 | [ ] | 1 | stars.rs | `Visibility::Visible` |
-| 3 | [ ] | 5 | cameras.rs | `Query` → `Single` |
-| 4 | [ ] | 2 | stars.rs | Debug logging |
-| 5 | [ ] | 3 | cameras.rs | Rename |
+| 1 | [x] | 3 | cameras.rs | Rename `StarsCamera` → `StarCamera` | **NOT THE FIX** |
+| 2 | [x] | 2 | stars.rs | Debug logging additions | **NOT THE FIX** |
+| 3 | [x] | 5 | cameras.rs | `Query` → `Single` | **NOT THE FIX** |
+| 4 | [x] | 1 | stars.rs | `Visibility::Visible` | **NOT THE FIX** |
+| 5 | [x] | 4 | cameras.rs | Tuple spawn refactor | **THE FIX** ✓ |
 
 ### Step 4: Document Result
-- [ ] Identify minimal fix
-- [ ] Document root cause understanding
+- [x] Identify minimal fix
+- [x] Document root cause understanding
+
+---
+
+## Root Cause Analysis
+
+**The Fix**: Converting `spawn_panorbit_camera` from sequential `.insert()` calls to a single tuple spawn.
+
+**Why it works**: Sequential `.insert()` calls create intermediate archetypes as each component is added. The bloom post-processing system's render world extraction appears sensitive to archetype creation order/timing. Spawning all components atomically in a tuple creates the final archetype in one step, avoiding the intermediate states that triggered the bug.
+
+**Affected code pattern**:
+```rust
+// BUG: Sequential inserts create intermediate archetypes
+commands.spawn(A).insert(B).insert(C);
+
+// FIX: Tuple spawn creates archetype atomically
+commands.spawn((A, B, C));
+```
+
+This is likely a Bevy rendering pipeline edge case where the bloom `ExtractComponent` system runs during an intermediate archetype state.
 
 ---
 
