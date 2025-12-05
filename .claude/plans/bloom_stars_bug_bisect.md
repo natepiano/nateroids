@@ -1,3 +1,30 @@
+# Followup when you can:
+Probably some fun render target reuse issues. Please run it through renderdoc and see what passes write to what
+render targets
+
+i asked i claude and claude said: 
+
+⏺ RenderDoc is a free GPU debugger that lets you capture a frame and inspect every render pass - what it draws,
+  what textures it reads/writes.
+
+  Render target reuse - Bevy reuses GPU textures between passes to save memory. The dev suspects the bloom pass's
+  render target is being incorrectly overwritten or shared with another pass when the archetype timing changes.
+
+  What they're asking: Capture the buggy frame in RenderDoc, then look at the render passes to see:
+  - Which pass should be writing the bloom objects
+  - Whether that pass's output texture is getting clobbered by another pass
+
+  To use RenderDoc:
+  1. Install from https://renderdoc.org
+  2. Launch your example through RenderDoc (File → Launch Application)
+  3. Press F12 or PrintScreen to capture a frame
+  4. Inspect the pass list to see what's writing where
+
+  Want me to help interpret results once you capture it?
+
+
+
+
 # Plan: Identify the Fix for Bloom/Stars Rendering Bug
 
 ## Goal
