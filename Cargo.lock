@@ -1792,6 +1792,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_window_manager"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70e20909fe4c9b13af16ab3314679c7ecf403739311d9e8279cade75d8f87b50"
+dependencies = [
+ "bevy",
+ "dirs",
+ "ron 0.12.0",
+ "serde",
+]
+
+[[package]]
 name = "bevy_winit"
 version = "0.17.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3929,13 +3941,10 @@ dependencies = [
  "bevy-inspector-egui",
  "bevy_brp_extras",
  "bevy_panorbit_camera",
- "dirs",
+ "bevy_window_manager",
  "leafwing-input-manager",
  "rand",
- "ron 0.12.0",
- "serde",
  "strum",
- "winit",
 ]
 
 [[package]]
@@ -6160,7 +6169,6 @@ checksum = "34949b42822155826b41db8e5d0c1be3a2bd296c747577a43a3e6daefc296142"
 dependencies = [
  "dlib",
  "log",
- "once_cell",
  "pkg-config",
 ]
 

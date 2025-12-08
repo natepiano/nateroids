@@ -18,16 +18,12 @@ mod schedule;
 mod splash;
 mod state;
 mod traits;
-mod window_restore;
 
 use bevy::gltf::GltfPlugin;
 use bevy::prelude::*;
-#[cfg(target_arch = "wasm32")]
-use bevy::window::PresentMode;
-#[cfg(target_arch = "wasm32")]
-use bevy::window::WindowMode;
 use bevy_brp_extras::BrpExtrasPlugin;
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
+use bevy_window_manager::WindowManagerPlugin;
 
 use crate::actor::ActorPlugin;
 use crate::asset_loader::AssetLoaderPlugin;
@@ -40,7 +36,6 @@ use crate::playfield::PlayfieldPlugin;
 use crate::schedule::SchedulePlugin;
 use crate::splash::SplashPlugin;
 use crate::state::StatePlugin;
-use crate::window_restore::WindowRestorePlugin;
 
 fn main() {
     let mut app = App::new();
@@ -54,38 +49,15 @@ fn main() {
         format!("nateroids - {effective_port}")
     };
 
-    info!("main called");
-
-    #[cfg(not(target_arch = "wasm32"))]
     app.add_plugins(
         DefaultPlugins
             .set(GltfPlugin {
                 use_model_forward_direction: true,
                 ..default()
             })
-            .set(WindowPlugin {
-                primary_window: Some({
-                    let mut window = window_restore::primary_window();
-                    window.title = window_title;
-                    window
-                }),
-                ..default()
-            }),
-    );
-
-    #[cfg(target_arch = "wasm32")]
-    app.add_plugins(
-        DefaultPlugins
-            .set(GltfPlugin {
-                use_model_forward_direction: true,
-                ..default()
-            })
-            .set(ImagePlugin::default_nearest())
             .set(WindowPlugin {
                 primary_window: Some(Window {
                     title: window_title,
-                    present_mode: PresentMode::AutoNoVsync, // Reduces input lag.
-                    mode: WindowMode::BorderlessFullscreen,
                     ..default()
                 }),
                 ..default()
@@ -106,7 +78,7 @@ fn main() {
         SchedulePlugin,
         SplashPlugin,
         StatePlugin,
-        WindowRestorePlugin,
+        WindowManagerPlugin,
     ))
     .run();
 }
