@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Read(//Users/natemccoy/rust/bevy-0.17.0/**)",
+      "Read(//Users/natemccoy/rust/bevy-*/**)",
       "WebFetch(domain:bevy.org)",
       "WebSearch",
       "Bash(cargo build:*)",
@@ -21,7 +21,6 @@
       "Bash(~/.claude/scripts/bevy_migration_dependency_check.py:*)",
       "Bash(gh api:*)",
       "Bash(mkdir:*)",
-      "Read(//Users/natemccoy/rust/bevy-0.17.1/release-content/migration-guides/**)",
       "Bash(~/.claude/scripts/bevy_migration_count_pattern.sh:*)",
       "Bash(bash:*)",
       "Bash(find:*)",
