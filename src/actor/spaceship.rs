@@ -1,12 +1,12 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use super::Teleporter;
+use super::actor_config::insert_configured_components;
 use super::actor_config::GLTF_ROTATION_X;
 use super::actor_config::LOCKED_AXES_SPACESHIP;
-use super::actor_config::insert_configured_components;
 use super::actor_template::SpaceshipConfig;
 use super::spaceship_control::SpaceshipControl;
+use super::Teleporter;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
 use crate::splash::SplashText;
@@ -24,10 +24,7 @@ impl Plugin for SpaceshipPlugin {
         app.add_observer(initialize_spaceship)
             .add_observer(spawn_after_splash_text_removed)
             .add_systems(
-                OnEnter(GameState::InGame {
-                    paused:     false,
-                    inspecting: false,
-                }),
+                OnEnter(GameState::InGame { paused: false }),
                 spawn_spaceship_if_needed,
             )
             // check if spaceship is destroyed...this will change the GameState

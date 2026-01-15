@@ -49,7 +49,6 @@ pub enum GameState {
     Splash,
     InGame {
         paused:     bool,
-        inspecting: bool,
     },
     GameOver,
 }
@@ -113,11 +112,10 @@ fn toggle_pause(
     state: Res<State<GameState>>,
 ) {
     if user_input.just_pressed(&GameAction::Pause)
-        && let GameState::InGame { paused, inspecting } = state.get()
+        && let GameState::InGame { paused,  } = state.get()
     {
         next_state.set(GameState::InGame {
             paused:     !*paused,
-            inspecting: *inspecting,
         });
     }
 }
@@ -154,7 +152,6 @@ fn transition_to_in_game(mut next_state: ResMut<NextState<GameState>>) {
     debug!("transitioning to InGame");
     next_state.set(GameState::InGame {
         paused:     false,
-        inspecting: false,
     });
 }
 
