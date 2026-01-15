@@ -1,6 +1,6 @@
 [package]
 name = "nateroids"
-version = "0.17.0"
+version = "0.18.0"
 edition = "2024"
 license = "Apache-2.0 OR MIT"
 
@@ -29,18 +29,18 @@ type_complexity = "allow"
 missing_docs = "deny"
 
 [dependencies]
-avian3d = { version = "0.4.1", features = ["simd", "debug-plugin", "parallel"] }
+avian3d = { path = "../avian-bevy18-patch/crates/avian3d", features = ["simd", "debug-plugin", "parallel"] }
 
-bevy = { version = "0.17.3", features = [
+bevy = { version = "0.18.0", features = [
   "tonemapping_luts",
   "bevy_dev_tools",
   "bevy_remote",
 ] }
-bevy_brp_extras = "0.17.2"
-bevy-inspector-egui = "0.35.0"
-bevy_panorbit_camera = { version = "0.33.0", features = ["bevy_egui"] }
-bevy_window_manager = "0.17.0"
-leafwing-input-manager = "0.19.0"
+bevy_brp_extras = "0.18.0"
+bevy-inspector-egui = "0.36.0"
+bevy_panorbit_camera = { version = "0.34.0", features = ["bevy_egui"] }
+bevy_window_manager = "0.18.0"
+leafwing-input-manager = "0.20.0"
 rand = "0.9.2"
 strum = { version = "0.27.2", features = ["derive"] }
 

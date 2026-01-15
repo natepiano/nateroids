@@ -1,6 +1,7 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::light::CascadeShadowConfigBuilder;
+use bevy::light::GlobalAmbientLight;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
@@ -15,7 +16,7 @@ pub struct DirectionalLightsPlugin;
 
 impl Plugin for DirectionalLightsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<AmbientLight>()
+        app.init_resource::<GlobalAmbientLight>()
             .add_plugins(
                 ResourceInspectorPlugin::<LightConfig>::default()
                     .run_if(toggle_active(false, GameAction::LightsInspector)),
@@ -196,7 +197,7 @@ fn spawn_directional_light(
 
 fn manage_lighting(
     mut commands: Commands,
-    mut ambient_light: ResMut<AmbientLight>,
+    mut ambient_light: ResMut<GlobalAmbientLight>,
     light_config: Res<LightConfig>,
     camera_orientation: Res<CameraOrientation>,
     mut query: Query<(Entity, &mut DirectionalLight, &LightDirection)>,

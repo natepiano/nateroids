@@ -98,7 +98,11 @@
       "Bash(cargo metadata:*)",
       "Bash(pkill:*)",
       "Bash(xargs cat:*)",
-      "Bash(timeout 5 cargo run:*)"
+      "Bash(timeout 5 cargo run:*)",
+      "Bash(xargs:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(git clone:*)"
     ],
     "deny": [],
     "ask": []

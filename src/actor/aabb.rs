@@ -104,7 +104,7 @@ fn draw_aabb_system(
     for (transform, aabb) in aabbs.iter() {
         let center = transform.transform_point(aabb.center());
 
-        gizmos.cuboid(
+        gizmos.cube(
             Transform::from_trs(center, transform.rotation, aabb.size() * transform.scale),
             config.color,
         );

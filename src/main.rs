@@ -1,4 +1,4 @@
-//! Nateroids - An asteroids-style game built with Bevy 0.17
+//! Nateroids - An asteroids-style game built with Bevy 0.18
 //!
 //! A 3D space shooter featuring:
 //! - Portal-based boundary wrapping mechanics
@@ -20,6 +20,7 @@ mod state;
 mod traits;
 
 use bevy::gltf::GltfPlugin;
+use bevy::gltf::convert_coordinates::GltfConvertCoordinates;
 use bevy::prelude::*;
 use bevy_brp_extras::BrpExtrasPlugin;
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
@@ -52,7 +53,10 @@ fn main() {
     app.add_plugins(
         DefaultPlugins
             .set(GltfPlugin {
-                use_model_forward_direction: true,
+                convert_coordinates: GltfConvertCoordinates {
+                    rotate_scene_entity: true,
+                    rotate_meshes:       true,
+                },
                 ..default()
             })
             .set(WindowPlugin {

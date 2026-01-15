@@ -67,6 +67,11 @@ impl ComputedStates for PlayingGame {
     // SourceStates type.
     type SourceStates = GameState;
 
+    // Bevy 0.18: Prevent OnEnter/OnExit from firing when computed value is unchanged.
+    // Without this, pausing (InGame { paused: false } → InGame { paused: true }) would
+    // trigger OnExit(PlayingGame) even though both compute to Some(PlayingGame).
+    const ALLOW_SAME_STATE_TRANSITIONS: bool = false;
+
     // The compute function takes in the `SourceStates`
     fn compute(sources: GameState) -> Option<Self> {
         // You might notice that InGame has no values - instead, in this case, the
