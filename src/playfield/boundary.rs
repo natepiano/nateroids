@@ -37,7 +37,6 @@ use crate::game_input::toggle_active;
 use crate::orientation::CameraOrientation;
 use crate::splash::SplashText;
 use crate::state::GameState;
-use crate::state::PlayingGame;
 
 pub struct BoundaryPlugin;
 
@@ -53,7 +52,7 @@ impl Plugin for BoundaryPlugin {
             .add_systems(Update, apply_boundary_config)
             .add_systems(
                 Update,
-                draw_boundary.run_if(in_state(GameState::Splash).or(in_state(PlayingGame))),
+                draw_boundary.run_if(in_state(GameState::Splash).or(in_state(GameState::InGame))),
             )
             .add_systems(Update, fade_boundary_in)
             .add_observer(start_boundary_fade);

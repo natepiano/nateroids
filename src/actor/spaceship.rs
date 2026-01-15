@@ -1,16 +1,17 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use super::actor_config::insert_configured_components;
+use super::Teleporter;
 use super::actor_config::GLTF_ROTATION_X;
 use super::actor_config::LOCKED_AXES_SPACESHIP;
+use super::actor_config::insert_configured_components;
 use super::actor_template::SpaceshipConfig;
 use super::spaceship_control::SpaceshipControl;
-use super::Teleporter;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
 use crate::splash::SplashText;
 use crate::state::GameState;
+use crate::state::PauseState;
 
 /// Returns the default spaceship rotation: model correction (90° around X)
 fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X) }
@@ -20,13 +21,10 @@ pub struct SpaceshipPlugin;
 impl Plugin for SpaceshipPlugin {
     // make sure this is done after asset_loader has run
     fn build(&self, app: &mut App) {
-        // we can enter InGame a couple of ways - when we do, spawn a spaceship
+        // Spawn spaceship when entering `PauseState::Playing` (game start or unpause)
         app.add_observer(initialize_spaceship)
             .add_observer(spawn_after_splash_text_removed)
-            .add_systems(
-                OnEnter(GameState::InGame { paused: false }),
-                spawn_spaceship_if_needed,
-            )
+            .add_systems(OnEnter(PauseState::Playing), spawn_spaceship_if_needed)
             // check if spaceship is destroyed...this will change the GameState
             .add_systems(Update, spaceship_destroyed.in_set(InGameSet::EntityUpdates))
             .add_systems(

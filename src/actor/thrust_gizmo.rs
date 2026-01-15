@@ -14,7 +14,7 @@ use super::constants::THRUST_VIBRATION_SPEED;
 use super::spaceship::Spaceship;
 use super::spaceship_control::SpaceshipControl;
 use crate::camera::RenderLayer;
-use crate::state::PlayingGame;
+use crate::state::GameState;
 
 pub struct ThrustGizmoPlugin;
 
@@ -22,7 +22,10 @@ impl Plugin for ThrustGizmoPlugin {
     fn build(&self, app: &mut App) {
         app.init_gizmo_group::<ThrustGizmo>()
             .add_systems(Startup, configure_thrust_gizmo)
-            .add_systems(Update, draw_thrust_flames.run_if(in_state(PlayingGame)));
+            .add_systems(
+                Update,
+                draw_thrust_flames.run_if(in_state(GameState::InGame)),
+            );
     }
 }
 

@@ -3,13 +3,13 @@ use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 
-use crate::camera::calculate_home_radius;
 use crate::camera::CameraConfig;
 use crate::camera::CameraMove;
 use crate::camera::CameraMoveList;
 use crate::camera::PanOrbitCameraExt;
 use crate::camera::RenderLayer;
 use crate::camera::ZoomConfig;
+use crate::camera::calculate_home_radius;
 use crate::playfield::Boundary;
 use crate::state::GameState;
 
@@ -110,7 +110,7 @@ fn run_splash(
     let camera_animation_done = camera_query.is_empty(); // No MoveQueue = animation done
 
     if timer_finished && camera_animation_done {
-        next_state.set(GameState::InGame { paused: false });
+        next_state.set(GameState::InGame);
     }
 }
 

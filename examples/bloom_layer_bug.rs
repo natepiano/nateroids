@@ -1,6 +1,6 @@
-//! Bloom + RenderLayers bug: objects disappear when second camera uses sequential `.insert()`.
+//! Bloom + `RenderLayers` bug: objects disappear when second camera uses sequential `.insert()`.
 //!
-//! Conditions: Bloom camera + second camera via `.insert()` + DirectionalLight spawn.
+//! Conditions: Bloom camera + second camera via `.insert()` + `DirectionalLight` spawn.
 //! BUG: Emissive sphere on bloom layer is invisible.
 //! FIX: Swap commented camera spawns (use tuple spawn) - sphere appears.
 //!

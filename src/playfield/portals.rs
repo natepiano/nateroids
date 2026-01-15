@@ -33,8 +33,8 @@ use crate::game_input::toggle_active;
 use crate::orientation::CameraOrientation;
 use crate::playfield::Boundary;
 use crate::playfield::boundary_face::BoundaryFace;
-use crate::state::IsPaused;
-use crate::state::PlayingGame;
+use crate::state::GameState;
+use crate::state::PauseState;
 
 pub struct PortalPlugin;
 
@@ -49,12 +49,12 @@ impl Plugin for PortalPlugin {
             .add_systems(
                 Update,
                 (
-                    apply_portal_config.run_if(in_state(PlayingGame)),
-                    init_portals.run_if(in_state(IsPaused::NotPaused)),
-                    update_approaching_portals.run_if(in_state(IsPaused::NotPaused)),
-                    update_emerging_portals.run_if(in_state(IsPaused::NotPaused)),
-                    draw_approaching_portals.run_if(in_state(PlayingGame)),
-                    draw_emerging_portals.run_if(in_state(PlayingGame)),
+                    apply_portal_config.run_if(in_state(GameState::InGame)),
+                    init_portals.run_if(in_state(PauseState::Playing)),
+                    update_approaching_portals.run_if(in_state(PauseState::Playing)),
+                    update_emerging_portals.run_if(in_state(PauseState::Playing)),
+                    draw_approaching_portals.run_if(in_state(GameState::InGame)),
+                    draw_emerging_portals.run_if(in_state(GameState::InGame)),
                 )
                     .chain(),
             );

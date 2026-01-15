@@ -1,5 +1,3 @@
-#![allow(clippy::used_underscore_binding)] // False positive on GameState::InGame fields
-
 use avian3d::prelude::*;
 use bevy::dev_tools::states::*;
 use bevy::prelude::*;
@@ -12,19 +10,18 @@ pub struct StatePlugin;
 impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>()
-            .add_computed_state::<PlayingGame>()
-            .add_computed_state::<IsPaused>()
+            .add_sub_state::<PauseState>()
             .add_systems(
                 Update,
                 (
-                    toggle_pause.run_if(in_state(PlayingGame)),
-                    restart_game.run_if(in_state(PlayingGame)),
-                    restart_with_splash.run_if(in_state(PlayingGame)),
+                    toggle_pause.run_if(in_state(GameState::InGame)),
+                    restart_game.run_if(in_state(GameState::InGame)),
+                    restart_with_splash.run_if(in_state(GameState::InGame)),
                     transition_to_in_game.run_if(in_state(GameState::GameOver)),
                 ),
             )
-            .add_systems(OnEnter(IsPaused::Paused), pause_physics)
-            .add_systems(OnEnter(IsPaused::NotPaused), unpause_physics)
+            .add_systems(OnEnter(PauseState::Paused), physics_paused)
+            .add_systems(OnEnter(PauseState::Playing), physics_playing)
             .add_systems(PostStartup, transition_to_splash_on_startup)
             .add_systems(Update, log_transitions::<GameState>);
     }
@@ -47,76 +44,30 @@ pub enum GameState {
     #[default]
     Launch,
     Splash,
-    InGame {
-        paused:     bool,
-    },
+    InGame,
     GameOver,
 }
 
-// as PlayingGame is a computed state that covers paused - we wanted it to have
-// a different name than InGame.  Playing is "true" whether we are paused or not
-// in the future, as in the bevy computed_states example - we might add other
-// "modes" other than paused. The example has turbo mode - which is global, just
-// like paused so that might be useful to have around
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub struct PlayingGame;
-
-impl ComputedStates for PlayingGame {
-    // Our computed state depends on `AppState`, so we need to specify it as the
-    // SourceStates type.
-    type SourceStates = GameState;
-
-    // Bevy 0.18: Prevent OnEnter/OnExit from firing when computed value is unchanged.
-    // Without this, pausing (InGame { paused: false } → InGame { paused: true }) would
-    // trigger OnExit(PlayingGame) even though both compute to Some(PlayingGame).
-    const ALLOW_SAME_STATE_TRANSITIONS: bool = false;
-
-    // The compute function takes in the `SourceStates`
-    fn compute(sources: GameState) -> Option<Self> {
-        // You might notice that InGame has no values - instead, in this case, the
-        // `State<InGame>` resource only exists if the `compute` function would
-        // return `Some` - so only when we are in game.
-        match sources {
-            // No matter what the value of `paused` or `turbo` is, we're still in the game rather
-            // than a menu
-            GameState::InGame { .. } => Some(Self),
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum IsPaused {
-    NotPaused,
+/// Pause state as a `SubState` of `GameState::InGame`.
+/// Only exists when in `GameState::InGame`.
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, SubStates)]
+#[source(GameState = GameState::InGame)]
+pub enum PauseState {
+    #[default]
+    Playing,
     Paused,
-}
-
-impl ComputedStates for IsPaused {
-    type SourceStates = GameState;
-
-    fn compute(sources: GameState) -> Option<Self> {
-        // Here we convert from our [`GameState`] to all potential [`IsPaused`]
-        // versions.
-        match sources {
-            GameState::InGame { paused: true, .. } => Some(Self::Paused),
-            GameState::InGame { paused: false, .. } => Some(Self::NotPaused),
-            // If `GameState` is not `InGame`, pausing is meaningless, and so we set it to `None`.
-            _ => None,
-        }
-    }
 }
 
 fn toggle_pause(
     user_input: Res<ActionState<GameAction>>,
-    mut next_state: ResMut<NextState<GameState>>,
-    state: Res<State<GameState>>,
+    mut next_state: ResMut<NextState<PauseState>>,
+    state: Res<State<PauseState>>,
 ) {
-    if user_input.just_pressed(&GameAction::Pause)
-        && let GameState::InGame { paused,  } = state.get()
-    {
-        next_state.set(GameState::InGame {
-            paused:     !*paused,
-        });
+    if user_input.just_pressed(&GameAction::Pause) {
+        match state.get() {
+            PauseState::Playing => next_state.set(PauseState::Paused),
+            PauseState::Paused => next_state.set(PauseState::Playing),
+        }
     }
 }
 
@@ -150,9 +101,7 @@ fn restart_with_splash(
 
 fn transition_to_in_game(mut next_state: ResMut<NextState<GameState>>) {
     debug!("transitioning to InGame");
-    next_state.set(GameState::InGame {
-        paused:     false,
-    });
+    next_state.set(GameState::InGame);
 }
 
 fn transition_to_splash_on_startup(mut next_state: ResMut<NextState<GameState>>) {
@@ -160,12 +109,12 @@ fn transition_to_splash_on_startup(mut next_state: ResMut<NextState<GameState>>)
     next_state.set(GameState::Splash);
 }
 
-fn pause_physics(mut time: ResMut<Time<Physics>>) {
+fn physics_paused(mut time: ResMut<Time<Physics>>) {
     debug!("pausing game and physics");
     time.pause();
 }
 
-fn unpause_physics(mut time: ResMut<Time<Physics>>) {
+fn physics_playing(mut time: ResMut<Time<Physics>>) {
     debug!("unpausing game and physics");
     time.unpause();
 }

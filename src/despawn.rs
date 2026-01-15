@@ -12,7 +12,6 @@ use crate::actor::NateroidDeathMaterials;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
-use crate::state::PlayingGame;
 use crate::traits::UsizeExt;
 
 pub struct DespawnPlugin;
@@ -28,7 +27,7 @@ impl Plugin for DespawnPlugin {
             )
                 .in_set(InGameSet::DespawnEntities),
         )
-        .add_systems(OnExit(PlayingGame), despawn_all_entities)
+        .add_systems(OnExit(GameState::InGame), despawn_all_entities)
         .add_systems(OnExit(GameState::Splash), despawn_splash);
     }
 }
