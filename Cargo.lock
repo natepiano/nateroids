@@ -373,7 +373,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "avian3d"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b82608b43397affac139547dfa9beb3208034c53e1a3cfe5d4079db1af362104"
 dependencies = [
  "approx",
  "avian_derive",
@@ -398,6 +400,8 @@ dependencies = [
 [[package]]
 name = "avian_derive"
 version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12b257f601a1535e0d4a7a7796f535e3a13de62fd422b16dff7c14d27f0d4048"
 dependencies = [
  "proc-macro-error2",
  "proc-macro2",
@@ -1017,8 +1021,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_heavy"
-version = "0.4.0-dev"
-source = "git+https://github.com/MushineLament/bevy_heavy?branch=support_bevy0.18#4147ebd44da13902cf412be787e4317d5d9bcb3d"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc496d1d43b890896cf561d8ce3dcf7b7b8e4c03c4e837a49a83a530abccbc5e"
 dependencies = [
  "bevy_math",
  "bevy_reflect",
@@ -1708,8 +1713,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_transform_interpolation"
-version = "0.4.0-dev"
-source = "git+https://github.com/MushineLament/bevy_transform_interpolation?branch=support_bevy0.18#a63fca5388b32819575d183f512bd91545d18337"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88545c8b0fa8f3502b9a439c71fa6b596ee9e808bfb16f27a51c8c6f7405a657"
 dependencies = [
  "bevy",
 ]
@@ -3103,8 +3109,9 @@ dependencies = [
 
 [[package]]
 name = "glam_matrix_extras"
-version = "0.2.0-dev"
-source = "git+https://github.com/Jondolf/glam_matrix_extras#8ac14e9bc582ca259166ec99121a5acac0efb3ca"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4664468a60479272b880a8bfc00ad2915229b93d2b2d585556fb33f9ba80e72"
 dependencies = [
  "bevy_reflect",
  "glam 0.30.8",
