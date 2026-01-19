@@ -617,7 +617,7 @@ impl Boundary {
         let boundary_min = self.transform.translation - self.transform.scale / 2.0;
         let boundary_max = self.transform.translation + self.transform.scale / 2.0;
 
-        let mut t_min = f32::MAX;
+        let mut t_min: Option<f32> = None;
 
         for (start, dir, pos_bound, neg_bound) in [
             (origin.x, direction.x, boundary_max.x, boundary_min.x),
@@ -629,10 +629,10 @@ impl Boundary {
                     let t = (boundary - start) / dir;
                     let point = origin + direction * t;
                     if t > 0.0
-                        && t < t_min
+                        && t_min.is_none_or(|current| t < current)
                         && is_in_bounds(point, start, origin, boundary_min, boundary_max)
                     {
-                        t_min = t;
+                        t_min = Some(t);
                     }
                 };
 
@@ -641,11 +641,7 @@ impl Boundary {
             }
         }
 
-        if t_min != f32::MAX {
-            let edge_point = origin + direction * t_min;
-            return Some(edge_point);
-        }
-        None
+        t_min.map(|t| origin + direction * t)
     }
 
     pub fn longest_diagonal(&self) -> f32 {
