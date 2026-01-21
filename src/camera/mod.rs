@@ -13,6 +13,7 @@ use bevy::prelude::*;
 use cameras::CamerasPlugin;
 pub use cameras::Edge;
 pub use cameras::ScreenSpaceBoundary;
+pub use cameras::TargetWindowSize;
 pub use cameras::calculate_home_radius;
 pub use config::CameraConfig;
 use config::CameraConfigPlugin;

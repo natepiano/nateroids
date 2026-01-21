@@ -8,6 +8,7 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_panorbit_camera::TrackpadBehavior;
+use bevy_window_manager::WindowTargetLoaded;
 
 use super::PanOrbitCameraExt;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
@@ -40,6 +41,7 @@ impl Plugin for CamerasPlugin {
                 ResourceInspectorPlugin::<FocusConfig>::default()
                     .run_if(toggle_active(false, GameAction::FocusConfigInspector)),
             )
+            .add_observer(on_window_target_loaded)
             .add_observer(reset_camera_after_moves)
             .add_systems(
                 Startup,
@@ -393,6 +395,17 @@ pub enum Edge {
 #[derive(Component, Reflect)]
 pub struct StarCamera;
 
+/// Stores target window dimensions from `bevy_window_manager` for accurate `home_radius`
+/// calculation.
+///
+/// This resource captures the intended window size early in startup (before the actual window
+/// is sized) and is used during splash animation to calculate the correct zoom level.
+/// It is removed after first use so subsequent calculations use actual window dimensions.
+#[derive(Resource)]
+pub struct TargetWindowSize {
+    pub size: Vec2,
+}
+
 /// Spawns a dedicated UI camera for `egui`/`bevy_inspector_egui` to attach to.
 ///
 /// **Why this exists:**
@@ -598,19 +611,35 @@ fn cleanup_focus_labels(
     }
 }
 
+/// Observer that captures target window dimensions from `bevy_window_manager` on startup.
+///
+/// This runs when `WindowTargetLoaded` is triggered on the `PrimaryWindow` entity,
+/// storing the intended window size as a resource for accurate `home_radius` calculation
+/// during splash animation.
+fn on_window_target_loaded(trigger: On<WindowTargetLoaded>, mut commands: Commands) {
+    let event = trigger.event();
+    commands.insert_resource(TargetWindowSize {
+        size: event.size.as_vec2(),
+    });
+}
+
 #[allow(clippy::similar_names)] // x_distance, y_distance, xy_distance are intentionally similar
 pub fn calculate_home_radius(
     grid_size: Vec3,
     margin: f32,
     projection: &Projection,
     camera: &Camera,
+    target_size: Option<Vec2>,
 ) -> Option<f32> {
     let Projection::Perspective(perspective) = projection else {
         return None;
     };
 
     // Get actual viewport aspect ratio
-    let aspect_ratio = if let Some(viewport_size) = camera.logical_viewport_size() {
+    // Priority: target_size (from bevy_window_manager) > viewport > perspective fallback
+    let aspect_ratio = if let Some(size) = target_size {
+        size.x / size.y
+    } else if let Some(viewport_size) = camera.logical_viewport_size() {
         viewport_size.x / viewport_size.y
     } else {
         perspective.aspect_ratio
@@ -650,6 +679,7 @@ pub fn home_camera(
         zoom_config.zoom_margin_multiplier(),
         projection,
         camera,
+        None,
     ) else {
         return;
     };

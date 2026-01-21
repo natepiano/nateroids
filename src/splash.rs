@@ -8,6 +8,7 @@ use crate::camera::CameraMove;
 use crate::camera::CameraMoveList;
 use crate::camera::PanOrbitCameraExt;
 use crate::camera::RenderLayer;
+use crate::camera::TargetWindowSize;
 use crate::camera::ZoomConfig;
 use crate::camera::calculate_home_radius;
 use crate::playfield::Boundary;
@@ -219,15 +220,22 @@ fn create_splash_camera_moves(splash_start_radius: f32, home_radius: f32) -> Vec
 
 fn start_splash_camera_animation(
     mut commands: Commands,
-    camera_entity: Single<Entity, With<PanOrbitCamera>>,
     camera_config: Res<CameraConfig>,
     boundary: Res<Boundary>,
     zoom_config: Res<ZoomConfig>,
-    camera_query: Query<(&Projection, &Camera), With<PanOrbitCamera>>,
+    target_window_size: Option<Res<TargetWindowSize>>,
+    camera_query: Query<(Entity, &Projection, &Camera), With<PanOrbitCamera>>,
 ) {
-    let Ok((projection, camera)) = camera_query.single() else {
+    let Ok((entity, projection, camera)) = camera_query.single() else {
         return;
     };
+
+    // Use TargetWindowSize if present (startup), then remove it.
+    // After removal, future calls will use actual window dimensions.
+    let target_size = target_window_size.map(|tws| {
+        commands.remove_resource::<TargetWindowSize>();
+        tws.size
+    });
 
     // Calculate "home" position - same as home_camera command
     let Some(home_radius) = calculate_home_radius(
@@ -235,6 +243,7 @@ fn start_splash_camera_animation(
         zoom_config.zoom_margin_multiplier(),
         projection,
         camera,
+        target_size,
     ) else {
         return;
     };
@@ -243,6 +252,6 @@ fn start_splash_camera_animation(
     let moves = create_splash_camera_moves(camera_config.splash_start_radius, home_radius);
 
     commands
-        .entity(*camera_entity)
+        .entity(entity)
         .insert(CameraMoveList::new(moves.into()));
 }

@@ -1819,7 +1819,7 @@ dependencies = [
 [[package]]
 name = "bevy_window_manager"
 version = "0.19.0-dev"
-source = "git+https://github.com/natepiano/bevy_window_manager#17fe9160c49e7213c30667430e38ff13a53a2af5"
+source = "git+https://github.com/natepiano/bevy_window_manager#0a0c7b1b1ab19266f742405cf7e8cae69db816ef"
 dependencies = [
  "bevy",
  "dirs",
