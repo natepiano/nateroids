@@ -39,7 +39,7 @@ bevy = { version = "0.18.0", features = [
 bevy_brp_extras = "0.18.0"
 bevy-inspector-egui = "0.36.0"
 bevy_panorbit_camera = { version = "0.34.0", features = ["bevy_egui"] }
-bevy_window_manager = "0.18.0"
+bevy_window_manager = { git = "https://github.com/natepiano/bevy_window_manager" }
 leafwing-input-manager = "0.20.0"
 rand = "0.9.2"
 strum = { version = "0.27.2", features = ["derive"] }

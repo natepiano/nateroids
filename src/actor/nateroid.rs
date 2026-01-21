@@ -132,7 +132,14 @@ pub struct Testaroid {
     pub velocity: Vec3,
 }
 
-fn spawn_nateroid(mut commands: Commands, mut config: ResMut<NateroidConfig>, time: Res<Time>) {
+fn spawn_nateroid(
+    mut commands: Commands,
+    mut config: ResMut<NateroidConfig>,
+    time: Res<Time>,
+    boundary: Res<Boundary>,
+    spatial_query: SpatialQuery,
+    mut spawn_stats: ResMut<NateroidSpawnStats>,
+) {
     if !config.spawnable {
         return;
     }
@@ -146,7 +153,45 @@ fn spawn_nateroid(mut commands: Commands, mut config: ResMut<NateroidConfig>, ti
         return;
     }
 
-    commands.spawn((Nateroid, Name::new("Nateroid")));
+    // Pre-validate: only spawn if we can find a valid position
+    let current_time = time.elapsed_secs();
+    let Some(transform) = initialize_transform(&boundary, &config, &spatial_query) else {
+        spawn_stats.record_attempt(false);
+
+        // Check if we should output warning (once per second)
+        if current_time - spawn_stats.last_warning_time >= 1.0 {
+            let success_rate = spawn_stats.success_rate() * 100.0;
+            warn!(
+                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last {} spawns",
+                spawn_stats.successes_count(),
+                spawn_stats.attempts_count(),
+                success_rate,
+                spawn_stats.attempts_count()
+            );
+            spawn_stats.last_warning_time = current_time;
+        }
+        return;
+    };
+
+    spawn_stats.record_attempt(true);
+
+    // Check if we should output stats (once per second, even on success)
+    if current_time - spawn_stats.last_warning_time >= 1.0 {
+        let success_rate = spawn_stats.success_rate() * 100.0;
+        let successes = spawn_stats.successes_count();
+        let attempts = spawn_stats.attempts_count();
+
+        // Only warn if there were failures
+        if successes < attempts {
+            warn!(
+                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last {} spawns",
+                successes, attempts, success_rate, attempts
+            );
+        }
+        spawn_stats.last_warning_time = current_time;
+    }
+
+    commands.spawn((Nateroid, Name::new("Nateroid"), transform));
 }
 
 fn despawn_testaroid_on_teleport(
@@ -360,11 +405,7 @@ fn debug_mesh_components(
 fn initialize_nateroid(
     nateroid: On<Add, Nateroid>,
     mut commands: Commands,
-    boundary: Res<Boundary>,
     mut config: ResMut<NateroidConfig>,
-    spatial_query: SpatialQuery,
-    mut spawn_stats: ResMut<NateroidSpawnStats>,
-    time: Res<Time>,
     test_query: Query<&Testaroid>,
 ) {
     // Check if this is a testaroid
@@ -382,66 +423,21 @@ fn initialize_nateroid(
 
         insert_configured_components(&mut commands, &mut config.actor_config, nateroid.entity);
 
-        // Material will be applied by apply_nateroid_materials_to_children system
-
         // Kill immediately so it has approaching portal when it becomes deaderoid
         commands.entity(nateroid.entity).insert(Health(-1.0));
         return;
     }
 
-    // Normal nateroid initialization
-    let current_time = time.elapsed_secs();
-
-    let Some(transform) = initialize_transform(&boundary, &config, &spatial_query) else {
-        spawn_stats.record_attempt(false);
-        commands.entity(nateroid.entity).despawn();
-
-        // Check if we should output warning (once per second)
-        if current_time - spawn_stats.last_warning_time >= 1.0 {
-            let success_rate = spawn_stats.success_rate() * 100.0;
-            warn!(
-                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last {} spawns",
-                spawn_stats.successes_count(),
-                spawn_stats.attempts_count(),
-                success_rate,
-                spawn_stats.attempts_count()
-            );
-            spawn_stats.last_warning_time = current_time;
-        }
-        return;
-    };
-
-    spawn_stats.record_attempt(true);
-
-    // Check if we should output stats (once per second, even on success)
-    if current_time - spawn_stats.last_warning_time >= 1.0 {
-        let success_rate = spawn_stats.success_rate() * 100.0;
-        let successes = spawn_stats.successes_count();
-        let attempts = spawn_stats.attempts_count();
-
-        // Only warn if there were failures
-        if successes < attempts {
-            warn!(
-                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last {} spawns",
-                successes, attempts, success_rate, attempts
-            );
-        }
-        spawn_stats.last_warning_time = current_time;
-    }
-
-    // Calculate random velocities for nateroid
+    // Normal nateroid: transform already set by spawn_nateroid, just add velocities
     let (linear_velocity, angular_velocity) =
         calculate_nateroid_velocity(config.linear_velocity, config.angular_velocity);
 
     commands
         .entity(nateroid.entity)
-        .insert(transform)
         .insert(linear_velocity)
         .insert(angular_velocity);
 
     insert_configured_components(&mut commands, &mut config.actor_config, nateroid.entity);
-
-    // Material will be applied by apply_nateroid_materials_to_children system
 }
 
 fn initialize_transform(

@@ -3,12 +3,12 @@ mod actor_config;
 mod actor_template;
 mod collision_detection;
 mod constants;
+mod flame_gizmo;
 mod missile;
 mod nateroid;
 mod spaceship;
 mod spaceship_control;
 mod teleport;
-mod thrust_gizmo;
 
 pub use aabb::Aabb;
 use aabb::AabbPlugin;
@@ -18,6 +18,7 @@ pub use actor_template::DeathCorner;
 pub use actor_template::NateroidConfig;
 use bevy::prelude::*;
 use collision_detection::CollisionDetectionPlugin;
+use flame_gizmo::FlameGizmoPlugin;
 use missile::MissilePlugin;
 pub use missile::MissilePosition;
 pub use nateroid::Deaderoid;
@@ -29,7 +30,6 @@ use spaceship::SpaceshipPlugin;
 use spaceship_control::SpaceshipControlPlugin;
 use teleport::TeleportPlugin;
 pub use teleport::Teleporter;
-use thrust_gizmo::ThrustGizmoPlugin;
 
 pub struct ActorPlugin;
 
@@ -38,11 +38,11 @@ impl Plugin for ActorPlugin {
         app.add_plugins(AabbPlugin)
             .add_plugins(ActorConfigPlugin)
             .add_plugins(CollisionDetectionPlugin)
+            .add_plugins(FlameGizmoPlugin)
             .add_plugins(MissilePlugin)
             .add_plugins(NateroidPlugin)
             .add_plugins(SpaceshipPlugin)
             .add_plugins(SpaceshipControlPlugin)
-            .add_plugins(TeleportPlugin)
-            .add_plugins(ThrustGizmoPlugin);
+            .add_plugins(TeleportPlugin);
     }
 }
