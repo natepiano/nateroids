@@ -8,7 +8,7 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
-use bevy::render::view::Hdr;
+// use bevy::render::view::Hdr;
 
 fn main() {
     App::new()
