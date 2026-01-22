@@ -2,6 +2,7 @@ use bevy::camera::visibility::RenderLayers;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
+use bevy::render::view::Hdr;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -429,11 +430,15 @@ fn spawn_ui_camera(mut commands: Commands) {
             order: CameraOrder::Ui.order(),
             ..default()
         },
+        Hdr,
     ));
 }
 
 // star camera uses bloom so it needs to be in its own layer as we don't
 // want that effect on the colliders
+// Hdr is brought in by a require on `Bloom` but adding it explicitly because
+// (apparently) we need to have Hdr on all cameras so we don't run into spurious errors
+// hopefully this is a long term fix for issues where i code something unrelated and the Stars layer disappears
 fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
     commands.spawn((
         Camera3d::default(),
@@ -445,6 +450,7 @@ fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
         get_bloom_settings(camera_config),
         RenderLayers::from_layers(RenderLayer::Stars.layers()),
         Tonemapping::BlenderFilmic,
+        Hdr,
     ));
 }
 
@@ -524,6 +530,7 @@ fn spawn_panorbit_camera(
                 ..default()
             },
             Tonemapping::TonyMcMapface,
+            Hdr,
         ))
         .add_child(*stars_camera_entity);
 }
