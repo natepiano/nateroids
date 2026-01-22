@@ -103,7 +103,8 @@
       "Bash(curl:*)",
       "Bash(python3:*)",
       "Bash(git clone:*)",
-      "mcp__brp__brp_launch_bevy_example"
+      "mcp__brp__brp_launch_bevy_example",
+      "Bash(git config:*)"
     ],
     "deny": [],
     "ask": []
