@@ -1,6 +1,6 @@
 //! Bloom + `RenderLayers` bug: objects disappear when second camera uses sequential `.insert()`.
 //!
-//! See https://github.com/bevyengine/bevy/issues/22000 - you need to have Hdr on all cameras
+//! See <https://github.com/bevyengine/bevy/issues/22000> - you need to have Hdr on all cameras
 //! or at least apparently this seems to be the problem.
 //!
 //! Run: `cargo run --example bloom_layer_bug`
