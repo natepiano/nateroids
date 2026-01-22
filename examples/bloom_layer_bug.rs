@@ -1,14 +1,14 @@
 //! Bloom + `RenderLayers` bug: objects disappear when second camera uses sequential `.insert()`.
 //!
-//! Conditions: Bloom camera + second camera via `.insert()` + `DirectionalLight` spawn.
-//! BUG: Emissive sphere on bloom layer is invisible.
-//! FIX: Swap commented camera spawns (use tuple spawn) - sphere appears.
+//! See https://github.com/bevyengine/bevy/issues/22000 - you need to have Hdr on all cameras
+//! or at least apparently this seems to be the problem.
 //!
 //! Run: `cargo run --example bloom_layer_bug`
 
 use bevy::camera::visibility::RenderLayers;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
+use bevy::render::view::Hdr;
 
 fn main() {
     App::new()
@@ -39,19 +39,19 @@ fn setup(
         camera_pos,
     ));
 
-    // Camera 2: No bloom, renders layer 2
-    // BUG: Sequential .insert() causes bloom layer to not render
-    commands
-        .spawn(Camera3d::default())
-        .insert(Camera {
+    // BUG: Camera 2: Bloom layer gets hidden, renders game layer only
+    commands.spawn((
+        Camera3d::default(),
+        Camera {
             order: 1,
             clear_color: ClearColorConfig::None,
             ..default()
-        })
-        .insert(game_layer.clone())
-        .insert(camera_pos);
+        },
+        game_layer.clone(),
+        camera_pos,
+    ));
 
-    // FIX: Tuple spawn works correctly - uncomment below, comment out above
+    // FIX: adding Hdr works
     // commands.spawn((
     //     Camera3d::default(),
     //     Camera {
@@ -61,6 +61,7 @@ fn setup(
     //     },
     //     game_layer.clone(),
     //     camera_pos,
+    //     Hdr,
     // ));
 
     // Bloom layer: emissive sphere - should glow orange, but invisible with BUG
