@@ -438,7 +438,8 @@ fn spawn_ui_camera(mut commands: Commands) {
 // want that effect on the colliders
 // Hdr is brought in by a require on `Bloom` but adding it explicitly because
 // (apparently) we need to have Hdr on all cameras so we don't run into spurious errors
-// hopefully this is a long term fix for issues where i code something unrelated and the Stars layer disappears
+// hopefully this is a long term fix for issues where i code something unrelated and the Stars layer
+// disappears
 fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
     commands.spawn((
         Camera3d::default(),
