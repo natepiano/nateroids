@@ -104,7 +104,8 @@
       "Bash(python3:*)",
       "Bash(git clone:*)",
       "mcp__brp__brp_launch_bevy_example",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
