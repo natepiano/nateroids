@@ -8,7 +8,7 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
-// use bevy::render::view::Hdr;
+use bevy::render::view::Hdr;
 
 fn main() {
     App::new()
@@ -40,18 +40,6 @@ fn setup(
     ));
 
     // BUG: Camera 2: Bloom layer gets hidden, renders game layer only
-    commands.spawn((
-        Camera3d::default(),
-        Camera {
-            order: 1,
-            clear_color: ClearColorConfig::None,
-            ..default()
-        },
-        game_layer.clone(),
-        camera_pos,
-    ));
-
-    // FIX: adding Hdr works
     // commands.spawn((
     //     Camera3d::default(),
     //     Camera {
@@ -61,8 +49,20 @@ fn setup(
     //     },
     //     game_layer.clone(),
     //     camera_pos,
-    //     Hdr,
     // ));
+
+    // FIX: adding Hdr works
+    commands.spawn((
+        Camera3d::default(),
+        Camera {
+            order: 1,
+            clear_color: ClearColorConfig::None,
+            ..default()
+        },
+        game_layer.clone(),
+        camera_pos,
+        Hdr,
+    ));
 
     // Bloom layer: emissive sphere - should glow orange, but invisible with BUG
     commands.spawn((
