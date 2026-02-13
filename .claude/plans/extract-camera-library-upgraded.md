@@ -318,14 +318,10 @@ cargo build
 **Expected Result**: Nateroids compiles with library available
 
 **Implementation**:
-Add to workspace `Cargo.toml`:
+Add to `nateroids/Cargo.toml`:
 ```toml
+[dependencies]
 bevy_panorbit_camera_ext = { path = "../bevy_panorbit_camera_ext" }
-```
-
-Add to nateroids' `Cargo.toml`:
-```toml
-bevy_panorbit_camera_ext.workspace = true
 ```
 
 ---
