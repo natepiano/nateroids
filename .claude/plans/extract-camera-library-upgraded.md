@@ -55,7 +55,25 @@ If all steps are COMPLETED:
 
 ## INTERACTIVE IMPLEMENTATION SEQUENCE
 
-### Step 1: Create Library Foundation ⏳ PENDING
+### Step 1: Create Git Branch ⏳ PENDING
+
+**Objective**: Create a dedicated branch for the camera library extraction work
+
+**Changes**:
+- Create and checkout a new branch `extract-camera-library`
+
+**Build Commands**:
+```bash
+git checkout -b extract-camera-library
+```
+
+**Status**: ⏳ PENDING
+**Change Type**: Safe (branch creation)
+**Expected Result**: Working on new branch, ready to begin implementation
+
+---
+
+### Step 2: Create Library Foundation ⏳ PENDING
 
 **Objective**: Set up the new `bevy_panorbit_camera_ext` crate structure
 
@@ -80,7 +98,7 @@ cargo build
 
 ---
 
-### Step 2: Implement Smoothness Module ⏳ PENDING
+### Step 3: Implement Smoothness Module ⏳ PENDING
 
 **Objective**: Add `SmoothnessStash` component with observer-based restore mechanism
 
@@ -136,7 +154,7 @@ fn restore_smoothness_on_complete(
 
 ---
 
-### Step 3: Implement Animation Module ⏳ PENDING
+### Step 4: Implement Animation Module ⏳ PENDING
 
 **Objective**: Extract `CameraMoveList` from nateroids, remove game-specific dependencies
 
@@ -160,7 +178,7 @@ cargo build
 
 ---
 
-### Step 4: Implement Extension Trait & Events ⏳ PENDING
+### Step 5: Implement Extension Trait & Events ⏳ PENDING
 
 **Objective**: Add `PanOrbitCameraExt` trait and EntityEvents for camera control
 
@@ -208,7 +226,7 @@ pub struct StartAnimation {
 
 ---
 
-### Step 5: Implement Zoom-to-Fit System ⏳ PENDING
+### Step 6: Implement Zoom-to-Fit System ⏳ PENDING
 
 **Objective**: Add Transform-based bounding calculation and zoom convergence system
 
@@ -233,7 +251,7 @@ cargo build
 
 ---
 
-### Step 6: Complete Library Public API ⏳ PENDING
+### Step 7: Complete Library Public API ⏳ PENDING
 
 **Objective**: Finalize `lib.rs` with prelude and plugin
 
@@ -297,7 +315,7 @@ impl Plugin for CameraExtPlugin {
 
 ---
 
-### Step 7: Add Library Dependency to Nateroids ⏳ PENDING
+### Step 8: Add Library Dependency to Nateroids ⏳ PENDING
 
 **Objective**: Make library available to nateroids
 
@@ -326,7 +344,7 @@ bevy_panorbit_camera_ext = { path = "../bevy_panorbit_camera_ext" }
 
 ---
 
-### Step 8: Migrate Splash Animation ⏳ PENDING
+### Step 9: Migrate Splash Animation ⏳ PENDING
 
 **Objective**: Update splash screen to use `StartAnimation` EntityEvent
 
@@ -361,7 +379,7 @@ commands.trigger(StartAnimation::new(camera_entity, moves));
 
 ---
 
-### Step 9: Migrate Extension Trait Usage ⏳ PENDING
+### Step 10: Migrate Extension Trait Usage ⏳ PENDING
 
 **Objective**: Update `enable_interpolation` calls to use explicit parameters
 
@@ -397,7 +415,7 @@ pan_orbit.enable_interpolation(
 
 ---
 
-### Step 10: Migrate Zoom-to-Fit ⏳ PENDING
+### Step 11: Migrate Zoom-to-Fit ⏳ PENDING
 
 **Objective**: Replace `start_zoom_to_fit` with `ZoomToFit` EntityEvent
 
@@ -437,7 +455,7 @@ fn start_zoom_to_fit(
 
 ---
 
-### Step 11: Migrate Home Camera ⏳ PENDING
+### Step 12: Migrate Home Camera ⏳ PENDING
 
 **Objective**: Replace `home_camera()` with `SnapToFit` event
 
@@ -477,7 +495,7 @@ fn home_camera(
 
 ---
 
-### Step 12: Update Plugin Registration ⏳ PENDING
+### Step 13: Update Plugin Registration ⏳ PENDING
 
 **Objective**: Add library plugin, remove old plugin registrations
 
@@ -513,7 +531,7 @@ app.add_plugins(CameraExtPlugin)
 
 ---
 
-### Step 13: Cleanup Nateroids - Remove Old Code ⏳ PENDING
+### Step 14: Cleanup Nateroids - Remove Old Code ⏳ PENDING
 
 **Objective**: Delete old code that's been moved to the library
 
@@ -544,7 +562,7 @@ cargo build
 
 ---
 
-### Step 14: Final Validation ⏳ PENDING
+### Step 15: Final Validation ⏳ PENDING
 
 **Objective**: Verify everything works correctly
 
