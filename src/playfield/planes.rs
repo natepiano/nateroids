@@ -15,7 +15,7 @@ use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
 use crate::orientation::CameraOrientation;
 use crate::orientation::OrientationConfig;
-use crate::playfield::Boundary;
+use crate::playfield::BoundaryVolume;
 use crate::traits::TransformExt;
 
 pub struct PlanesPlugin;
@@ -150,7 +150,7 @@ fn create_or_update_plane(
 
 fn manage_box_planes(
     mut commands: Commands,
-    boundary: Res<Boundary>,
+    boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     orientation: Res<CameraOrientation>,
@@ -161,9 +161,13 @@ fn manage_box_planes(
         return;
     }
 
+    let Ok(boundary_transform) = boundary_volume_query.single() else {
+        return;
+    };
+
     let plane_specifications = get_plane_specifications(
         &planes_config,
-        boundary.transform.scale,
+        boundary_transform.scale,
         &orientation.config,
     );
 

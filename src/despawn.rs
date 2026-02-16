@@ -9,7 +9,7 @@ use crate::actor::MissilePosition;
 use crate::actor::Nateroid;
 use crate::actor::NateroidConfig;
 use crate::actor::NateroidDeathMaterials;
-use crate::playfield::Boundary;
+use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
 use crate::traits::UsizeExt;
@@ -49,13 +49,13 @@ pub fn despawn(commands: &mut Commands, entity: Entity) { commands.entity(entity
 fn calculate_death_velocity(
     position: Vec3,
     current_velocity: Vec3,
-    boundary: &Boundary,
+    boundary_transform: &Transform,
     death_duration: f32,
     death_corner: DeathCorner,
 ) -> Vec3 {
     const EPSILON: f32 = 0.001;
-    let half_size = boundary.transform.scale / 2.0;
-    let center = boundary.transform.translation;
+    let half_size = boundary_transform.scale / 2.0;
+    let center = boundary_transform.translation;
 
     // All 8 corners of the boundary cube
     let corners = [
@@ -177,11 +177,15 @@ fn despawn_dead_entities(
         Without<Deaderoid>,
     >,
     config: Res<NateroidConfig>,
-    boundary: Res<Boundary>,
+    boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     death_materials: Option<Res<NateroidDeathMaterials>>,
     children_query: Query<&Children>,
     material_query: Query<&MeshMaterial3d<StandardMaterial>>,
 ) {
+    let Ok(boundary_transform) = boundary_volume_query.single() else {
+        return;
+    };
+
     for (entity, health, transform, linear_velocity, nateroid, name) in query.iter() {
         if health.0 <= 0.0 {
             if nateroid.is_some() {
@@ -195,7 +199,7 @@ fn despawn_dead_entities(
                 let death_velocity = calculate_death_velocity(
                     transform.translation,
                     linear_velocity.0,
-                    &boundary,
+                    boundary_transform,
                     config.death_duration_secs,
                     config.death_corner,
                 );

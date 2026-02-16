@@ -18,7 +18,7 @@ use crate::despawn::despawn;
 use crate::game_input::GameAction;
 use crate::game_input::just_pressed;
 use crate::playfield::ActorPortals;
-use crate::playfield::Boundary;
+use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
 use crate::traits::TransformExt;
 use crate::traits::UsizeExt;
@@ -136,7 +136,7 @@ fn spawn_nateroid(
     mut commands: Commands,
     mut config: ResMut<NateroidConfig>,
     time: Res<Time>,
-    boundary: Res<Boundary>,
+    boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     spatial_query: SpatialQuery,
     mut spawn_stats: ResMut<NateroidSpawnStats>,
 ) {
@@ -153,9 +153,13 @@ fn spawn_nateroid(
         return;
     }
 
+    let Ok(boundary_transform) = boundary_volume_query.single() else {
+        return;
+    };
+
     // Pre-validate: only spawn if we can find a valid position
     let current_time = time.elapsed_secs();
-    let Some(transform) = initialize_transform(&boundary, &config, &spatial_query) else {
+    let Some(transform) = initialize_transform(boundary_transform, &config, &spatial_query) else {
         spawn_stats.record_attempt(false);
 
         // Check if we should output warning (once per second)
@@ -214,18 +218,25 @@ fn spawn_testaroid(mut commands: Commands) {
     commands.spawn((Nateroid, Name::new("Nateroid"), testaroid));
 }
 
-fn spawn_test_missile(mut commands: Commands, boundary: Res<Boundary>) {
+fn spawn_test_missile(
+    mut commands: Commands,
+    boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
+) {
     use rand::Rng;
     let mut rng = rand::rng();
 
+    let Ok(boundary_transform) = boundary_volume_query.single() else {
+        return;
+    };
+
     // Pick a random corner from the 4 front corners (positive z to ensure heading away from z=0)
-    let half_size = boundary.transform.scale / 2.0;
+    let half_size = boundary_transform.scale / 2.0;
     let corner_signs = Vec3::new(
         if rng.random::<bool>() { 1.0 } else { -1.0 },
         if rng.random::<bool>() { 1.0 } else { -1.0 },
         1.0, // Always positive z (front wall) to avoid crossing z=0 before reaching corner
     );
-    let corner = boundary.transform.translation + half_size * corner_signs;
+    let corner = boundary_transform.translation + half_size * corner_signs;
 
     // Target the corner directly (small offset for variety but guaranteed corner hit)
     let target_offset_radius = 1.0; // Very small offset to add variety
@@ -239,9 +250,9 @@ fn spawn_test_missile(mut commands: Commands, boundary: Res<Boundary>) {
     // Spawn near z=0 plane at random x,y position within boundary (z=5 to avoid immediate despawn)
     let spawn_position = Vec3::new(
         rng.random_range(-half_size.x..half_size.x)
-            .mul_add(0.8, boundary.transform.translation.x), /* 80% of boundary */
+            .mul_add(0.8, boundary_transform.translation.x), /* 80% of boundary */
         rng.random_range(-half_size.y..half_size.y)
-            .mul_add(0.8, boundary.transform.translation.y),
+            .mul_add(0.8, boundary_transform.translation.y),
         5.0, // Slightly offset from z=0 to avoid immediate despawn
     );
 
@@ -441,15 +452,15 @@ fn initialize_nateroid(
 }
 
 fn initialize_transform(
-    boundary: &Boundary,
+    boundary_transform: &Transform,
     nateroid_config: &NateroidConfig,
     spatial_query: &SpatialQuery,
 ) -> Option<Transform> {
     const MAX_ATTEMPTS: u32 = 20;
 
     let bounds = Transform {
-        translation: boundary.transform.translation,
-        scale: boundary.transform.scale * SPAWN_WINDOW,
+        translation: boundary_transform.translation,
+        scale: boundary_transform.scale * SPAWN_WINDOW,
         ..default()
     };
 

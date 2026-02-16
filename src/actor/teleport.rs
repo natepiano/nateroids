@@ -10,6 +10,7 @@ use super::actor_template::NateroidConfig;
 use super::spaceship::Spaceship;
 use crate::despawn::despawn;
 use crate::playfield::Boundary;
+use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
 
 pub struct TeleportPlugin;
@@ -132,23 +133,32 @@ fn on_teleported(
 
 pub fn teleport_at_boundary(
     boundary: Res<Boundary>,
+    boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     mut commands: Commands,
-    mut teleporting_entities: Query<(
-        Entity,
-        &mut Transform,
-        &mut Teleporter,
-        &Collider,
-        Option<&Name>,
-        Option<&Spaceship>,
-        Option<&Deaderoid>,
-    )>,
+    mut teleporting_entities: Query<
+        (
+            Entity,
+            &mut Transform,
+            &mut Teleporter,
+            &Collider,
+            Option<&Name>,
+            Option<&Spaceship>,
+            Option<&Deaderoid>,
+        ),
+        Without<BoundaryVolume>,
+    >,
 ) {
+    let Ok(boundary_transform) = boundary_volume_query.single() else {
+        return;
+    };
+
     for (entity, mut transform, mut teleporter, collider, name, is_spaceship, is_deaderoid) in
         &mut teleporting_entities
     {
         let original_position = transform.translation;
 
-        let teleported_position = boundary.calculate_teleport_position(original_position);
+        let teleported_position =
+            boundary.calculate_teleport_position(original_position, boundary_transform);
 
         if teleported_position == original_position {
             teleporter.just_teleported = false;
@@ -180,7 +190,7 @@ pub fn teleport_at_boundary(
             teleporter.just_teleported = true;
             teleporter.last_teleported_position = Some(teleported_position);
             teleporter.last_teleported_normal =
-                Some(boundary.get_normal_for_position(teleported_position));
+                Some(boundary.get_normal_for_position(teleported_position, boundary_transform));
 
             // Trigger event to handle overlapping entities
             commands.trigger(Teleported {

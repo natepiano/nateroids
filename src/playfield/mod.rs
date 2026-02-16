@@ -10,6 +10,7 @@ use bevy::prelude::*;
 
 pub use crate::playfield::boundary::Boundary;
 use crate::playfield::boundary::BoundaryPlugin;
+pub use crate::playfield::boundary::BoundaryVolume;
 use crate::playfield::planes::PlanesPlugin;
 pub use crate::playfield::portals::ActorPortals;
 use crate::playfield::portals::PortalPlugin;

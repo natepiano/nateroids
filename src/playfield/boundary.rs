@@ -1,3 +1,4 @@
+use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
@@ -38,18 +39,28 @@ use crate::orientation::CameraOrientation;
 use crate::splash::SplashText;
 use crate::state::GameState;
 
+/// Marker component for the boundary volume entity.
+/// Holds the Transform and Aabb for camera zoom-to-fit operations.
+/// Syncs with `Boundary` resource configuration.
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub struct BoundaryVolume;
+
 pub struct BoundaryPlugin;
 
 impl Plugin for BoundaryPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Boundary>()
+            .register_type::<BoundaryVolume>()
             .init_gizmo_group::<GridGizmo>()
             .init_gizmo_group::<BoundaryGizmo>()
             .add_plugins(
                 ResourceInspectorPlugin::<Boundary>::default()
                     .run_if(toggle_active(false, GameAction::BoundaryInspector)),
             )
+            .add_systems(Startup, spawn_boundary_volume)
             .add_systems(Update, apply_boundary_config)
+            .add_systems(Update, sync_boundary_volume)
             .add_systems(
                 Update,
                 draw_boundary.run_if(in_state(GameState::Splash).or(in_state(GameState::InGame))),
@@ -69,6 +80,45 @@ fn apply_boundary_config(mut config_store: ResMut<GizmoConfigStore>, boundary: R
     outer_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
+/// Spawns the `BoundaryVolume` entity with `Transform` and `Aabb` components.
+/// This entity represents the spatial data for the boundary.
+fn spawn_boundary_volume(mut commands: Commands, boundary: Res<Boundary>) {
+    let scale = boundary.boundary_scalar * boundary.cell_count.as_vec3();
+    let half_extents = scale / 2.0;
+
+    commands.spawn((
+        BoundaryVolume,
+        Transform::from_scale(scale),
+        GlobalTransform::default(),
+        Aabb {
+            center:       Vec3A::ZERO.into(),
+            half_extents: Vec3A::from(half_extents).into(),
+        },
+    ));
+
+    debug!("Spawned BoundaryVolume entity");
+}
+
+/// Synchronizes the `BoundaryVolume` entity's `Transform` and `Aabb` with the `Boundary` resource.
+/// Called when the `Boundary` resource changes.
+fn sync_boundary_volume(
+    boundary: Res<Boundary>,
+    mut volume_query: Query<(&mut Transform, &mut Aabb), With<BoundaryVolume>>,
+) {
+    let Ok((mut transform, mut aabb)) = volume_query.single_mut() else {
+        return;
+    };
+
+    // Recalculate scale from boundary config
+    let scale = boundary.boundary_scalar * boundary.cell_count.as_vec3();
+    transform.scale = scale;
+
+    // Update Aabb
+    let half_extents = scale / 2.0;
+    aabb.center = Vec3A::ZERO.into();
+    aabb.half_extents = Vec3A::from(half_extents).into();
+}
+
 /// defines
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
@@ -83,7 +133,6 @@ pub struct Boundary {
     pub boundary_line_width: f32,
     #[inspector(min = 50., max = 300., display = NumberDisplay::Slider)]
     pub boundary_scalar:     f32,
-    pub transform:           Transform,
 }
 
 impl Default for Boundary {
@@ -96,9 +145,6 @@ impl Default for Boundary {
             grid_line_width:     BOUNDARY_GRID_LINE_WIDTH,
             boundary_line_width: BOUNDARY_OUTER_LINE_WIDTH,
             boundary_scalar:     BOUNDARY_SCALAR,
-            transform:           Transform::from_scale(
-                BOUNDARY_SCALAR * BOUNDARY_CELL_COUNT.as_vec3(),
-            ),
         }
     }
 }
@@ -110,8 +156,8 @@ struct BoundaryFadeIn(Timer);
 
 impl Boundary {
     /// Analyzes portal geometry relative to boundary faces
-    fn classify_portal_geometry(&self, portal: &Portal) -> PortalGeometry {
-        let overextended_faces = self.get_overextended_faces_for(portal);
+    fn classify_portal_geometry(&self, portal: &Portal, transform: &Transform) -> PortalGeometry {
+        let overextended_faces = self.get_overextended_faces_for(portal, transform);
 
         if overextended_faces.is_empty() {
             PortalGeometry::SingleFace
@@ -146,9 +192,9 @@ impl Boundary {
     ///   valid intersection is found.
     /// - Finally, it returns the intersection point corresponding to the minimum distance, or
     ///   `None` if no valid intersection is found.
-    pub fn calculate_teleport_position(&self, position: Vec3) -> Vec3 {
-        let boundary_min = self.transform.translation - self.transform.scale / 2.0;
-        let boundary_max = self.transform.translation + self.transform.scale / 2.0;
+    pub fn calculate_teleport_position(&self, position: Vec3, transform: &Transform) -> Vec3 {
+        let boundary_min = transform.translation - transform.scale / 2.0;
+        let boundary_max = transform.translation + transform.scale / 2.0;
 
         let mut teleport_position = position;
 
@@ -182,9 +228,14 @@ impl Boundary {
     /// Snaps a position to slightly inside the boundary face based on the normal.
     /// Offsets by epsilon to prevent false-positive overextension detection that would trigger
     /// corner wrapping arcs. Clamps perpendicular axes to handle corner/edge teleportation cases.
-    pub fn snap_position_to_boundary_face(&self, position: Vec3, normal: Dir3) -> Vec3 {
-        let boundary_min = self.transform.translation - self.transform.scale / 2.0;
-        let boundary_max = self.transform.translation + self.transform.scale / 2.0;
+    pub fn snap_position_to_boundary_face(
+        &self,
+        position: Vec3,
+        normal: Dir3,
+        transform: &Transform,
+    ) -> Vec3 {
+        let boundary_min = transform.translation - transform.scale / 2.0;
+        let boundary_max = transform.translation + transform.scale / 2.0;
 
         // Without this offset, portals on exact boundary would be flagged as overextended
         let epsilon = BOUNDARY_SNAP_EPSILON;
@@ -230,23 +281,28 @@ impl Boundary {
     }
 
     /// Calculates how many faces a portal spans at a given position
-    pub fn calculate_portal_face_count(&self, portal: &Portal) -> usize {
-        let geometry = self.classify_portal_geometry(portal);
+    pub fn calculate_portal_face_count(&self, portal: &Portal, transform: &Transform) -> usize {
+        let geometry = self.classify_portal_geometry(portal, transform);
 
         match geometry {
             PortalGeometry::SingleFace => 1,
             PortalGeometry::MultiFace(multiface) => {
-                self.count_faces_with_valid_arcs(portal, &multiface)
+                self.count_faces_with_valid_arcs(portal, &multiface, transform)
             },
         }
     }
 
     /// Counts how many faces have valid arc intersections for a multi-face portal
-    fn count_faces_with_valid_arcs(&self, portal: &Portal, multiface: &MultiFaceGeometry) -> usize {
+    fn count_faces_with_valid_arcs(
+        &self,
+        portal: &Portal,
+        multiface: &MultiFaceGeometry,
+        transform: &Transform,
+    ) -> usize {
         // Calculate boundary extents for constraint checking
-        let half_size = self.transform.scale / 2.0;
-        let min = self.transform.translation - half_size;
-        let max = self.transform.translation + half_size;
+        let half_size = transform.scale / 2.0;
+        let min = transform.translation - half_size;
+        let max = transform.translation + half_size;
 
         // Collect all faces from the geometry (primary from portal.face + overextended)
         let all_faces_in_corner = match multiface {
@@ -282,8 +338,9 @@ impl Boundary {
         resolution: u32,
         orientation: &CameraOrientation,
         is_deaderoid: bool,
+        transform: &Transform,
     ) {
-        let geometry = self.classify_portal_geometry(portal);
+        let geometry = self.classify_portal_geometry(portal, transform);
         self.render_portal_by_geometry(
             gizmos,
             portal,
@@ -292,6 +349,7 @@ impl Boundary {
             orientation,
             is_deaderoid,
             &geometry,
+            transform,
         );
     }
 
@@ -304,6 +362,7 @@ impl Boundary {
         orientation: &CameraOrientation,
         is_deaderoid: bool,
         geometry: &PortalGeometry,
+        transform: &Transform,
     ) {
         match geometry {
             PortalGeometry::SingleFace => {
@@ -325,6 +384,7 @@ impl Boundary {
                     resolution,
                     is_deaderoid,
                     multiface,
+                    transform,
                 );
             },
         }
@@ -338,6 +398,7 @@ impl Boundary {
         resolution: u32,
         is_deaderoid: bool,
         geometry: &MultiFaceGeometry,
+        transform: &Transform,
     ) {
         // Extract overextended faces from geometry (primary is always portal.face)
         let primary_face = portal.face;
@@ -347,9 +408,9 @@ impl Boundary {
         };
 
         // Calculate boundary extents for constraint checking
-        let half_size = self.transform.scale / 2.0;
-        let min = self.transform.translation - half_size;
-        let max = self.transform.translation + half_size;
+        let half_size = transform.scale / 2.0;
+        let min = transform.translation - half_size;
+        let max = transform.translation + half_size;
 
         // Collect ALL faces that need arcs (primary + overextended)
         let mut all_faces_for_drawing = vec![primary_face];
@@ -393,6 +454,7 @@ impl Boundary {
                         portal.position,
                         portal.normal(),
                         face,
+                        transform,
                     );
                     gizmos
                         .short_arc_3d_between(center, points[0], points[1], face_color)
@@ -417,6 +479,7 @@ impl Boundary {
         position: Vec3,
         normal: Dir3,
         target_face: BoundaryFace,
+        transform: &Transform,
     ) -> Vec3 {
         let current_normal = normal.as_vec3();
         let target_normal = target_face.get_normal();
@@ -426,7 +489,7 @@ impl Boundary {
 
         // Find the closest point on the rotation axis to the current position
         let rotation_point =
-            self.find_closest_point_on_edge(position, current_normal, target_normal);
+            self.find_closest_point_on_edge(position, current_normal, target_normal, transform);
 
         // Create a rotation quaternion (90 degrees around the rotation axis)
         let rotation = Quat::from_axis_angle(rotation_axis, std::f32::consts::FRAC_PI_2);
@@ -439,8 +502,8 @@ impl Boundary {
 
         // Rotation math at corners can produce off-plane positions - force result onto target
         // face's plane
-        let half_extents = self.transform.scale / 2.0;
-        let center = self.transform.translation;
+        let half_extents = transform.scale / 2.0;
+        let center = transform.translation;
 
         match target_face {
             BoundaryFace::Right => result.x = center.x + half_extents.x,
@@ -454,9 +517,15 @@ impl Boundary {
         result
     }
 
-    fn find_closest_point_on_edge(&self, position: Vec3, normal1: Vec3, normal2: Vec3) -> Vec3 {
-        let half = self.transform.scale / 2.0;
-        let center = self.transform.translation;
+    fn find_closest_point_on_edge(
+        &self,
+        position: Vec3,
+        normal1: Vec3,
+        normal2: Vec3,
+        transform: &Transform,
+    ) -> Vec3 {
+        let half = transform.scale / 2.0;
+        let center = transform.translation;
         let min = center - half;
         let max = center + half;
 
@@ -537,11 +606,15 @@ impl Boundary {
             .resolution(resolution);
     }
 
-    fn get_overextended_faces_for(&self, portal: &Portal) -> Vec<BoundaryFace> {
+    fn get_overextended_faces_for(
+        &self,
+        portal: &Portal,
+        transform: &Transform,
+    ) -> Vec<BoundaryFace> {
         let mut overextended_faces = Vec::new();
-        let half_size = self.transform.scale / 2.0;
-        let min = self.transform.translation - half_size;
-        let max = self.transform.translation + half_size;
+        let half_size = transform.scale / 2.0;
+        let min = transform.translation - half_size;
+        let max = transform.translation + half_size;
         let radius = portal.radius;
 
         // Portals are snapped 0.01 inside boundary - without this margin, they'd be incorrectly
@@ -575,10 +648,10 @@ impl Boundary {
     /// Returns the normal of the closest boundary face to a position.
     /// Uses distance-based matching because teleported positions have offsets (e.g., -54.97 instead
     /// of -55.0) that break simple epsilon matching.
-    pub fn get_normal_for_position(&self, position: Vec3) -> Dir3 {
-        let half_size = self.transform.scale / 2.0;
-        let boundary_min = self.transform.translation - half_size;
-        let boundary_max = self.transform.translation + half_size;
+    pub fn get_normal_for_position(&self, position: Vec3, transform: &Transform) -> Dir3 {
+        let half_size = transform.scale / 2.0;
+        let boundary_min = transform.translation - half_size;
+        let boundary_max = transform.translation + half_size;
 
         // Calculate distance to all 6 faces and return normal of closest
         let dist_to_min_x = (position.x - boundary_min.x).abs();
@@ -613,9 +686,14 @@ impl Boundary {
         }
     }
 
-    pub fn find_edge_point(&self, origin: Vec3, direction: Vec3) -> Option<Vec3> {
-        let boundary_min = self.transform.translation - self.transform.scale / 2.0;
-        let boundary_max = self.transform.translation + self.transform.scale / 2.0;
+    pub fn find_edge_point(
+        &self,
+        origin: Vec3,
+        direction: Vec3,
+        transform: &Transform,
+    ) -> Option<Vec3> {
+        let boundary_min = transform.translation - transform.scale / 2.0;
+        let boundary_max = transform.translation + transform.scale / 2.0;
 
         let mut t_min: Option<f32> = None;
 
@@ -705,20 +783,22 @@ fn is_in_bounds(
 /// draw the grid and then slightly outside the grid, draw the boundary around the whole grid
 /// transform
 fn draw_boundary(
-    mut boundary: ResMut<Boundary>,
+    boundary: Res<Boundary>,
+    mut boundary_volume_query: Query<&mut Transform, With<BoundaryVolume>>,
     mut grid_gizmo: Gizmos<GridGizmo>,
     mut outer_boundary_gizmo: Gizmos<BoundaryGizmo>,
     camera_query: Query<(&Camera, &Projection, &GlobalTransform), With<PanOrbitCamera>>,
 ) {
-    // updating the boundary resource transform from its configuration so it can be
-    // dynamically changed with the inspector while the game is running
-    // the boundary transform is used both for position but also
-    // so the fixed camera can be positioned based on the boundary scale
-    boundary.transform.scale = boundary.scale();
+    let Ok(mut boundary_transform) = boundary_volume_query.single_mut() else {
+        return;
+    };
+
+    // Update entity's transform from boundary config
+    boundary_transform.scale = boundary.scale();
 
     grid_gizmo
         .grid_3d(
-            Isometry3d::new(boundary.transform.translation, Quat::IDENTITY),
+            Isometry3d::new(boundary_transform.translation, Quat::IDENTITY),
             boundary.cell_count,
             Vec3::splat(boundary.boundary_scalar),
             boundary.grid_color,
@@ -738,19 +818,19 @@ fn draw_boundary(
         .unwrap_or(BOUNDARY_DEFAULT_VIEWPORT_SIZE);
     let camera_distance = camera_transform
         .translation()
-        .distance(boundary.transform.translation);
+        .distance(boundary_transform.translation);
     let world_height_at_boundary = 2.0 * camera_distance * (perspective.fov / 2.0).tan();
     let world_units_per_pixel = world_height_at_boundary / viewport_size.y;
 
     // Gizmo lines are centered on edges
     // Empirically tuned multiplier to account for gizmo rendering
     let total_line_width = boundary.grid_line_width + boundary.boundary_line_width;
-    let outer_scale = boundary.transform.scale
+    let outer_scale = boundary_transform.scale
         + Vec3::splat(total_line_width * world_units_per_pixel * BOUNDARY_LINE_WIDTH_MULTIPLIER);
 
     outer_boundary_gizmo.primitive_3d(
         &Cuboid::from_size(outer_scale),
-        Isometry3d::new(boundary.transform.translation, Quat::IDENTITY),
+        Isometry3d::new(boundary_transform.translation, Quat::IDENTITY),
         boundary.outer_color,
     );
 }
@@ -889,20 +969,20 @@ mod tests {
     use super::*;
 
     /// Helper function to create a test boundary centered at origin with given size
-    fn create_test_boundary(size: Vec3) -> Boundary {
-        Boundary {
-            transform: Transform {
+    fn create_test_boundary(size: Vec3) -> (Boundary, Transform) {
+        (
+            Boundary::default(),
+            Transform {
                 translation: Vec3::ZERO,
                 scale: size,
                 ..default()
             },
-            ..default()
-        }
+        )
     }
 
     #[test]
     fn test_no_teleport_when_inside_boundary() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
 
         // Test positions well inside boundary
         let inside_positions = vec![
@@ -914,7 +994,7 @@ mod tests {
         ];
 
         for pos in inside_positions {
-            let result = boundary.calculate_teleport_position(pos);
+            let result = boundary.calculate_teleport_position(pos, &transform);
             assert_eq!(
                 result, pos,
                 "Position {pos} inside boundary should not be teleported"
@@ -924,12 +1004,12 @@ mod tests {
 
     #[test]
     fn test_teleport_right_face_to_left() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
         // boundary_max.x = 50.0, boundary_min.x = -50.0
 
         // Entity exits right face (+X) at x=55.0 (5.0 past boundary)
         let position = Vec3::new(55.0, 0.0, 0.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
 
         // Should wrap to left face at x=-45.0 (5.0 offset from left boundary)
         assert_eq!(result.x, -45.0);
@@ -939,11 +1019,11 @@ mod tests {
 
     #[test]
     fn test_teleport_left_face_to_right() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
 
         // Entity exits left face (-X) at x=-60.0 (10.0 past boundary)
         let position = Vec3::new(-60.0, 0.0, 0.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
 
         // Should wrap to right face at x=40.0 (10.0 offset from right boundary)
         assert_eq!(result.x, 40.0);
@@ -953,11 +1033,11 @@ mod tests {
 
     #[test]
     fn test_teleport_top_face_to_bottom() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
 
         // Entity exits top face (+Y) at y=53.0 (3.0 past boundary)
         let position = Vec3::new(0.0, 53.0, 0.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
 
         // Should wrap to bottom face at y=-47.0 (3.0 offset from bottom boundary)
         assert_eq!(result.x, 0.0);
@@ -967,11 +1047,11 @@ mod tests {
 
     #[test]
     fn test_teleport_bottom_face_to_top() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
 
         // Entity exits bottom face (-Y) at y=-58.0 (8.0 past boundary)
         let position = Vec3::new(0.0, -58.0, 0.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
 
         // Should wrap to top face at y=42.0 (8.0 offset from top boundary)
         assert_eq!(result.x, 0.0);
@@ -981,11 +1061,11 @@ mod tests {
 
     #[test]
     fn test_teleport_front_face_to_back() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
 
         // Entity exits front face (+Z) at z=52.0 (2.0 past boundary)
         let position = Vec3::new(0.0, 0.0, 52.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
 
         // Should wrap to back face at z=-48.0 (2.0 offset from back boundary)
         assert_eq!(result.x, 0.0);
@@ -995,11 +1075,11 @@ mod tests {
 
     #[test]
     fn test_teleport_back_face_to_front() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
 
         // Entity exits back face (-Z) at z=-57.0 (7.0 past boundary)
         let position = Vec3::new(0.0, 0.0, -57.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
 
         // Should wrap to front face at z=43.0 (7.0 offset from front boundary)
         assert_eq!(result.x, 0.0);
@@ -1009,11 +1089,11 @@ mod tests {
 
     #[test]
     fn test_teleport_preserves_offset_on_other_axes() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
 
         // Entity exits right face with Y and Z offsets
         let position = Vec3::new(55.0, 20.0, -10.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
 
         // X should wrap, but Y and Z should remain unchanged
         assert_eq!(result.x, -45.0);
@@ -1023,11 +1103,11 @@ mod tests {
 
     #[test]
     fn test_teleport_edge_wrapping() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
 
         // Entity exits both right face (+X) and top face (+Y)
         let position = Vec3::new(53.0, 52.0, 0.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
 
         // Both axes should wrap independently
         assert_eq!(result.x, -47.0); // Wrapped from right to left
@@ -1037,11 +1117,11 @@ mod tests {
 
     #[test]
     fn test_teleport_corner_wrapping() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
 
         // Entity exits all three faces (corner case)
         let position = Vec3::new(55.0, 58.0, 52.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
 
         // All three axes should wrap independently
         assert_eq!(result.x, -45.0);
@@ -1051,11 +1131,11 @@ mod tests {
 
     #[test]
     fn test_teleport_large_offset() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
 
         // Entity far past boundary (offset = 150.0, larger than boundary itself)
         let position = Vec3::new(200.0, 0.0, 0.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
 
         // Should maintain the full offset from opposite boundary
         // offset = 200.0 - 50.0 = 150.0
@@ -1068,26 +1148,24 @@ mod tests {
     #[test]
     fn test_teleport_with_non_centered_boundary() {
         // Boundary centered at (100, 50, -25) with size (200, 100, 50)
-        let boundary = Boundary {
-            transform: Transform {
-                translation: Vec3::new(100.0, 50.0, -25.0),
-                scale: Vec3::new(200.0, 100.0, 50.0),
-                ..default()
-            },
+        let boundary = Boundary::default();
+        let transform = Transform {
+            translation: Vec3::new(100.0, 50.0, -25.0),
+            scale: Vec3::new(200.0, 100.0, 50.0),
             ..default()
         };
         // boundary_min = (0, 0, -50), boundary_max = (200, 100, 0)
 
         // Test right face wrap
         let position = Vec3::new(205.0, 50.0, -25.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
         assert_eq!(result.x, 5.0); // Offset 5.0 from left boundary
         assert_eq!(result.y, 50.0);
         assert_eq!(result.z, -25.0);
 
         // Test top face wrap
         let position = Vec3::new(100.0, 103.0, -25.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
         assert_eq!(result.x, 100.0);
         assert_eq!(result.y, 3.0); // Offset 3.0 from bottom boundary
         assert_eq!(result.z, -25.0);
@@ -1095,11 +1173,11 @@ mod tests {
 
     #[test]
     fn test_teleport_exactly_at_boundary() {
-        let boundary = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(100.0, 100.0, 100.0));
 
         // Position exactly at boundary (should not wrap, as condition is >= not >)
         let position = Vec3::new(50.0, 0.0, 0.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
 
         // At x=50.0 (boundary_max), should wrap to boundary_min
         assert_eq!(result.x, -50.0);
@@ -1110,22 +1188,22 @@ mod tests {
     #[test]
     fn test_teleport_asymmetric_boundary() {
         // Test with different dimensions on each axis
-        let boundary = create_test_boundary(Vec3::new(200.0, 50.0, 80.0));
+        let (boundary, transform) = create_test_boundary(Vec3::new(200.0, 50.0, 80.0));
         // boundary_min = (-100, -25, -40), boundary_max = (100, 25, 40)
 
         // Test X axis (larger)
         let position = Vec3::new(110.0, 0.0, 0.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
         assert_eq!(result.x, -90.0);
 
         // Test Y axis (smaller)
         let position = Vec3::new(0.0, 30.0, 0.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
         assert_eq!(result.y, -20.0);
 
         // Test Z axis (medium)
         let position = Vec3::new(0.0, 0.0, -45.0);
-        let result = boundary.calculate_teleport_position(position);
+        let result = boundary.calculate_teleport_position(position, &transform);
         assert_eq!(result.z, 35.0);
     }
 }

@@ -25,7 +25,7 @@ use crate::camera::config::CameraConfig;
 use crate::game_input::GameAction;
 use crate::game_input::just_pressed;
 use crate::game_input::toggle_active;
-use crate::playfield::Boundary;
+use crate::playfield::BoundaryVolume;
 
 pub struct CamerasPlugin;
 
@@ -370,13 +370,18 @@ fn on_window_target_loaded(trigger: On<WindowTargetLoaded>, mut commands: Comman
 /// take us back to the splash screen start position
 pub fn home_camera(
     mut commands: Commands,
-    boundary: Res<Boundary>,
+    boundary_volume_query: Query<Entity, With<BoundaryVolume>>,
     camera_query: Query<Entity, With<PanOrbitCamera>>,
 ) {
     let Ok(camera_entity) = camera_query.single() else {
         return;
     };
 
+    let Ok(boundary_entity) = boundary_volume_query.single() else {
+        warn!("No BoundaryVolume entity found");
+        return;
+    };
+
     // Trigger SnapToFit event to instantly position camera at boundary
-    commands.trigger(SnapToFit::new(camera_entity, boundary.transform));
+    commands.trigger(SnapToFit::new(camera_entity, boundary_entity));
 }

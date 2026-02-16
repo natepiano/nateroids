@@ -32,6 +32,7 @@ use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
 use crate::orientation::CameraOrientation;
 use crate::playfield::Boundary;
+use crate::playfield::BoundaryVolume;
 use crate::playfield::boundary_face::BoundaryFace;
 use crate::state::GameState;
 use crate::state::PauseState;
@@ -172,15 +173,19 @@ fn init_portals(
         &mut ActorPortals,
     )>,
     boundary: Res<Boundary>,
+    boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     portal_config: Res<PortalConfig>,
     time: Res<Time>,
 ) {
-    let boundary_size = boundary
-        .transform
+    let Ok(boundary_transform) = boundary_volume_query.single() else {
+        return;
+    };
+
+    let boundary_size = boundary_transform
         .scale
         .x
-        .min(boundary.transform.scale.y)
-        .min(boundary.transform.scale.z);
+        .min(boundary_transform.scale.y)
+        .min(boundary_transform.scale.z);
     let boundary_distance_approach = boundary_size * portal_config.distance_approach;
     let boundary_distance_shrink = boundary_size * portal_config.distance_shrink;
 
@@ -202,6 +207,7 @@ fn init_portals(
 
         handle_approaching_visual(
             &boundary,
+            boundary_transform,
             portal.clone(),
             &portal_config,
             &time,
@@ -214,15 +220,16 @@ fn init_portals(
             &time,
             &mut visual,
             &boundary,
+            boundary_transform,
         );
     }
 }
 
 /// Checks if a position is way beyond the boundary (physics burst).
 /// Prevents drawing portals when actors burst past boundary due to high physics stress.
-fn is_physics_burst(position: Vec3, boundary: &Boundary) -> bool {
-    let boundary_half_size = boundary.transform.scale / 2.0;
-    let max_distance_from_center = position.distance(boundary.transform.translation);
+fn is_physics_burst(position: Vec3, boundary_transform: &Transform) -> bool {
+    let boundary_half_size = boundary_transform.scale / 2.0;
+    let max_distance_from_center = position.distance(boundary_transform.translation);
     let boundary_diagonal = boundary_half_size.length();
     max_distance_from_center > boundary_diagonal * PORTAL_PHYSICS_BURST_MULTIPLIER
 }
@@ -234,9 +241,11 @@ fn snap_and_get_face(
     position: Vec3,
     initial_normal: Dir3,
     boundary: &Boundary,
+    boundary_transform: &Transform,
 ) -> (Vec3, Option<BoundaryFace>) {
-    let snapped_position = boundary.snap_position_to_boundary_face(position, initial_normal);
-    let final_normal = boundary.get_normal_for_position(snapped_position);
+    let snapped_position =
+        boundary.snap_position_to_boundary_face(position, initial_normal, boundary_transform);
+    let final_normal = boundary.get_normal_for_position(snapped_position, boundary_transform);
     let face = BoundaryFace::from_normal(final_normal);
     (snapped_position, face)
 }
@@ -248,6 +257,7 @@ fn handle_emerging_visual(
     time: &Res<Time>,
     visual: &mut Mut<ActorPortals>,
     boundary: &Res<Boundary>,
+    boundary_transform: &Transform,
 ) {
     if teleporter.just_teleported {
         if let Some(normal) = teleporter.last_teleported_normal {
@@ -256,14 +266,14 @@ fn handle_emerging_visual(
                 && let Some(teleported_position) = teleporter.last_teleported_position
             {
                 // If actor burst way past boundary, don't create emerging portal
-                if is_physics_burst(teleported_position, boundary) {
+                if is_physics_burst(teleported_position, boundary_transform) {
                     visual.emerging = None;
                     return;
                 }
 
                 // Snap to boundary face and recalculate face to prevent corner glitches
                 let (snapped_position, final_face) =
-                    snap_and_get_face(teleported_position, normal, boundary);
+                    snap_and_get_face(teleported_position, normal, boundary, boundary_transform);
 
                 visual.emerging = Some(Portal {
                     actor_distance_to_wall: 0.0,
@@ -286,17 +296,19 @@ fn handle_emerging_visual(
 
 fn handle_approaching_visual(
     boundary: &Res<Boundary>,
+    boundary_transform: &Transform,
     portal: Portal,
     portal_config: &Res<PortalConfig>,
     time: &Res<Time>,
     visual: &mut Mut<ActorPortals>,
 ) {
-    if let Some(collision_point) = boundary.find_edge_point(portal.position, portal.actor_direction)
+    if let Some(collision_point) =
+        boundary.find_edge_point(portal.position, portal.actor_direction, boundary_transform)
     {
         let actor_distance_to_wall = portal.position.distance(collision_point);
 
         if actor_distance_to_wall <= portal.boundary_distance_approach {
-            let normal = boundary.get_normal_for_position(collision_point);
+            let normal = boundary.get_normal_for_position(collision_point, boundary_transform);
 
             // Create temporary portal at collision point to calculate face count BEFORE smoothing
             let face = BoundaryFace::from_normal(normal).unwrap_or(BoundaryFace::Right);
@@ -306,7 +318,8 @@ fn handle_approaching_visual(
                 radius: portal.radius,
                 ..portal
             };
-            let current_face_count = boundary.calculate_portal_face_count(&temp_portal);
+            let current_face_count =
+                boundary.calculate_portal_face_count(&temp_portal, boundary_transform);
 
             // Get previous face count
             let previous_face_count = visual.approaching.as_ref().map_or(1, |p| p.face_count);
@@ -319,7 +332,8 @@ fn handle_approaching_visual(
             };
 
             // Snap to boundary face and recalculate face to prevent corner glitches
-            let (snapped_position, face) = snap_and_get_face(smoothed_position, normal, boundary);
+            let (snapped_position, face) =
+                snap_and_get_face(smoothed_position, normal, boundary, boundary_transform);
 
             if let Some(face) = face {
                 visual.approaching = Some(Portal {
@@ -337,7 +351,7 @@ fn handle_approaching_visual(
     // If we reach this point, actor is not approaching
     // Check if actor burst way beyond boundary (physics stress) or teleported normally
     if let Some(approaching) = &mut visual.approaching {
-        if is_physics_burst(portal.position, boundary) {
+        if is_physics_burst(portal.position, boundary_transform) {
             // Actor burst way past boundary - immediately remove
             visual.approaching = None;
         } else if approaching.fade_out_started.is_none() {
@@ -422,11 +436,16 @@ fn update_approaching_portals(
 
 fn draw_approaching_portals(
     boundary: Res<Boundary>,
+    boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     config: Res<PortalConfig>,
     orientation: Res<CameraOrientation>,
     q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
 ) {
+    let Ok(boundary_transform) = boundary_volume_query.single() else {
+        return;
+    };
+
     for (portal, deaderoid) in q_portals.iter() {
         if let Some(ref approaching) = portal.approaching {
             boundary.draw_portal(
@@ -436,6 +455,7 @@ fn draw_approaching_portals(
                 config.resolution,
                 &orientation,
                 deaderoid.is_some(),
+                boundary_transform,
             );
         }
     }
@@ -498,11 +518,16 @@ fn update_emerging_portals(
 
 fn draw_emerging_portals(
     boundary: Res<Boundary>,
+    boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     config: Res<PortalConfig>,
     orientation: Res<CameraOrientation>,
     q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
 ) {
+    let Ok(boundary_transform) = boundary_volume_query.single() else {
+        return;
+    };
+
     for (portal, deaderoid) in q_portals.iter() {
         if let Some(ref emerging) = portal.emerging {
             boundary.draw_portal(
@@ -512,6 +537,7 @@ fn draw_emerging_portals(
                 config.resolution,
                 &orientation,
                 deaderoid.is_some(),
+                boundary_transform,
             );
         }
     }
