@@ -5,6 +5,7 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
+use bevy_panorbit_camera_ext::CameraMoveList;
 
 use super::boundary_face::BoundaryFace;
 use super::constants::BOUNDARY_CELL_COUNT;
@@ -30,7 +31,6 @@ use super::types::GridGizmo;
 use super::types::Intersection;
 use super::types::MultiFaceGeometry;
 use super::types::PortalGeometry;
-use crate::camera::CameraMoveList;
 use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;

@@ -105,7 +105,19 @@
       "Bash(git clone:*)",
       "mcp__brp__brp_launch_bevy_example",
       "Bash(git config:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git init:*)",
+      "mcp__brp__brp_extras_scroll_mouse",
+      "mcp__brp__world_trigger_event",
+      "mcp__brp__brp_stop_watch",
+      "mcp__brp__world_get_components_watch",
+      "Bash(chmod:*)",
+      "mcp__brp__brp_list_active_watches",
+      "Bash(for donut in 4294966173 4294966167 4294966161 4294966155 4294966149 4294966143 4294966137 4294966131 4294966125 4294966119 4294966113 4294966107 4294966101 4294966095 4294966089 4294966083)",
+      "Bash(do)",
+      "Bash(done)",
+      "Bash(shuf:*)",
+      "mcp__brp__world_despawn_entity"
     ],
     "deny": [],
     "ask": []

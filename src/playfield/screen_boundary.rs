@@ -5,18 +5,228 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
+use bevy_panorbit_camera_ext::ZoomConfig;
 
 use super::constants::SCREEN_BOUNDARY_FONT_SIZE;
 use super::constants::SCREEN_BOUNDARY_LINE_WIDTH;
 use super::constants::SCREEN_BOUNDARY_TEXT_OFFSET;
 use super::constants::SCREEN_BOUNDARY_WORLD_POS_OFFSET;
-use crate::camera::Edge;
 use crate::camera::RenderLayer;
-use crate::camera::ScreenSpaceBoundary;
-use crate::camera::ZoomConfig;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
 use crate::playfield::Boundary;
+use crate::traits::UsizeExt;
+
+/// Boundary box edges
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
+enum Edge {
+    Left,
+    Right,
+    Top,
+    Bottom,
+}
+
+/// Screen-space margin information for a boundary
+struct ScreenSpaceBoundary {
+    /// Distance from left edge (positive = inside, negative = outside)
+    left_margin:   f32,
+    /// Distance from right edge (positive = inside, negative = outside)
+    right_margin:  f32,
+    /// Distance from top edge (positive = inside, negative = outside)
+    top_margin:    f32,
+    /// Distance from bottom edge (positive = inside, negative = outside)
+    bottom_margin: f32,
+    /// Minimum normalized x coordinate in screen space
+    min_norm_x:    f32,
+    /// Maximum normalized x coordinate in screen space
+    max_norm_x:    f32,
+    /// Minimum normalized y coordinate in screen space
+    min_norm_y:    f32,
+    /// Maximum normalized y coordinate in screen space
+    max_norm_y:    f32,
+    /// Average depth of boundary corners from camera
+    avg_depth:     f32,
+    /// Half tangent of vertical field of view
+    half_tan_vfov: f32,
+    /// Half tangent of horizontal field of view (vfov * `aspect_ratio`)
+    half_tan_hfov: f32,
+}
+
+impl ScreenSpaceBoundary {
+    /// Creates screen space margins from a camera's view of a boundary.
+    /// Returns `None` if any boundary corner is behind the camera.
+    #[allow(clippy::similar_names)] // half_tan_hfov vs half_tan_vfov are standard FOV terms
+    fn from_camera_view(
+        boundary: &Boundary,
+        cam_global: &GlobalTransform,
+        perspective: &PerspectiveProjection,
+        viewport_aspect: f32,
+        _zoom_multiplier: f32,
+    ) -> Option<Self> {
+        let half_tan_vfov = (perspective.fov * 0.5).tan();
+        let half_tan_hfov = half_tan_vfov * viewport_aspect;
+
+        // Get boundary corners
+        let boundary_corners = boundary.corners();
+
+        // Get camera basis vectors from global transform (world position, not local)
+        let cam_pos = cam_global.translation();
+        let cam_rot = cam_global.rotation();
+        let cam_forward = cam_rot * Vec3::NEG_Z;
+        let cam_right = cam_rot * Vec3::X;
+        let cam_up = cam_rot * Vec3::Y;
+
+        // Project corners to screen space
+        let mut min_norm_x = f32::INFINITY;
+        let mut max_norm_x = f32::NEG_INFINITY;
+        let mut min_norm_y = f32::INFINITY;
+        let mut max_norm_y = f32::NEG_INFINITY;
+        let mut avg_depth = 0.0;
+
+        for corner in &boundary_corners {
+            let relative = *corner - cam_pos;
+            let depth = relative.dot(cam_forward);
+
+            // Check if corner is behind camera
+            if depth <= 0.1 {
+                return None;
+            }
+
+            let x = relative.dot(cam_right);
+            let y = relative.dot(cam_up);
+
+            let norm_x = x / depth;
+            let norm_y = y / depth;
+
+            min_norm_x = min_norm_x.min(norm_x);
+            max_norm_x = max_norm_x.max(norm_x);
+            min_norm_y = min_norm_y.min(norm_y);
+            max_norm_y = max_norm_y.max(norm_y);
+            avg_depth += depth;
+        }
+        avg_depth /= boundary_corners.len().to_f32();
+
+        // Calculate margins as distance from bounds to screen edges
+        // Positive = within screen, negative = outside
+        let left_margin = min_norm_x - (-half_tan_hfov);
+        let right_margin = half_tan_hfov - max_norm_x;
+        let bottom_margin = min_norm_y - (-half_tan_vfov);
+        let top_margin = half_tan_vfov - max_norm_y;
+
+        Some(Self {
+            left_margin,
+            right_margin,
+            top_margin,
+            bottom_margin,
+            min_norm_x,
+            max_norm_x,
+            min_norm_y,
+            max_norm_y,
+            avg_depth,
+            half_tan_vfov,
+            half_tan_hfov,
+        })
+    }
+
+    /// Returns true if horizontal margins are balanced (left == right)
+    fn is_horizontally_balanced(&self, tolerance: f32) -> bool {
+        (self.left_margin - self.right_margin).abs() < tolerance
+    }
+
+    /// Returns true if vertical margins are balanced (top == bottom)
+    fn is_vertically_balanced(&self, tolerance: f32) -> bool {
+        (self.top_margin - self.bottom_margin).abs() < tolerance
+    }
+
+    /// Returns the screen edges in normalized space (left, right, top, bottom)
+    fn screen_edges_normalized(&self) -> (f32, f32, f32, f32) {
+        (
+            -self.half_tan_hfov,
+            self.half_tan_hfov,
+            self.half_tan_vfov,
+            -self.half_tan_vfov,
+        )
+    }
+
+    /// Returns the center of a boundary edge in normalized space, clipped to visible portion
+    /// Returns None if the edge is not visible (entirely off-screen)
+    fn boundary_edge_center(&self, edge: Edge) -> Option<(f32, f32)> {
+        let (left_edge, right_edge, top_edge, bottom_edge) = self.screen_edges_normalized();
+
+        match edge {
+            Edge::Left if self.min_norm_x > left_edge => {
+                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
+                Some((self.min_norm_x, y))
+            },
+            Edge::Right if self.max_norm_x < right_edge => {
+                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
+                Some((self.max_norm_x, y))
+            },
+            Edge::Top if self.max_norm_y < top_edge => {
+                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
+                Some((x, self.max_norm_y))
+            },
+            Edge::Bottom if self.min_norm_y > bottom_edge => {
+                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
+                Some((x, self.min_norm_y))
+            },
+            _ => None,
+        }
+    }
+
+    /// Returns the center of a screen edge in normalized space, clipped to visible boundary portion
+    fn screen_edge_center(&self, edge: Edge) -> (f32, f32) {
+        let (left_edge, right_edge, top_edge, bottom_edge) = self.screen_edges_normalized();
+
+        match edge {
+            Edge::Left => {
+                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
+                (left_edge, y)
+            },
+            Edge::Right => {
+                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
+                (right_edge, y)
+            },
+            Edge::Top => {
+                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
+                (x, top_edge)
+            },
+            Edge::Bottom => {
+                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
+                (x, bottom_edge)
+            },
+        }
+    }
+
+    /// Converts normalized screen-space coordinates to world space
+    fn normalized_to_world(
+        &self,
+        norm_x: f32,
+        norm_y: f32,
+        cam_pos: Vec3,
+        cam_right: Vec3,
+        cam_up: Vec3,
+        cam_forward: Vec3,
+    ) -> Vec3 {
+        let world_x = norm_x * self.avg_depth;
+        let world_y = norm_y * self.avg_depth;
+        cam_pos + cam_right * world_x + cam_up * world_y + cam_forward * self.avg_depth
+    }
+
+    /// Returns the margin percentage for a given edge.
+    /// Percentage represents how much of the screen width/height is margin.
+    fn margin_percentage(&self, edge: Edge) -> f32 {
+        let screen_width = 2.0 * self.half_tan_hfov;
+        let screen_height = 2.0 * self.half_tan_vfov;
+
+        match edge {
+            Edge::Left => (self.left_margin / screen_width) * 100.0,
+            Edge::Right => (self.right_margin / screen_width) * 100.0,
+            Edge::Top => (self.top_margin / screen_height) * 100.0,
+            Edge::Bottom => (self.bottom_margin / screen_height) * 100.0,
+        }
+    }
+}
 
 pub struct ScreenBoundaryPlugin;
 

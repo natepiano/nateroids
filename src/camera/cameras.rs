@@ -9,26 +9,23 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_panorbit_camera::TrackpadBehavior;
+use bevy_panorbit_camera_ext::prelude::*;
 use bevy_window_manager::WindowTargetLoaded;
 
-use super::PanOrbitCameraExt;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::constants::EDGE_MARKER_FONT_SIZE;
 use super::constants::EDGE_MARKER_SPHERE_RADIUS;
 use super::lights::LightConfig;
-use super::move_queue::CameraMoveList;
-use super::zoom::ZoomToFit;
+use super::zoom::start_zoom_to_fit;
 use crate::asset_loader::SceneAssets;
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
 use crate::camera::config::CameraConfig;
-use crate::camera::config::ZoomConfig;
 use crate::game_input::GameAction;
 use crate::game_input::just_pressed;
 use crate::game_input::toggle_active;
 use crate::playfield::Boundary;
-use crate::traits::UsizeExt;
 
 pub struct CamerasPlugin;
 
@@ -43,12 +40,15 @@ impl Plugin for CamerasPlugin {
                     .run_if(toggle_active(false, GameAction::FocusConfigInspector)),
             )
             .add_observer(on_window_target_loaded)
-            .add_observer(reset_camera_after_moves)
             .add_systems(
                 Startup,
                 (spawn_ui_camera, spawn_star_camera, spawn_panorbit_camera).chain(),
             )
             .add_systems(Update, home_camera.run_if(just_pressed(GameAction::Home)))
+            .add_systems(
+                Update,
+                start_zoom_to_fit.run_if(just_pressed(GameAction::ZoomToFit)),
+            )
             .add_systems(
                 Update,
                 apply_focus_config.run_if(resource_changed::<FocusConfig>),
@@ -127,270 +127,6 @@ fn update_focus_gizmo_state(
         let camera_radius = pan_orbit.radius.unwrap_or(100.0);
         state.sphere_radius = config.sphere_radius * (camera_radius / 100.0);
     }
-}
-
-/// Screen-space margin information for a boundary
-pub struct ScreenSpaceBoundary {
-    /// Distance from left edge (positive = inside, negative = outside)
-    pub left_margin:     f32,
-    /// Distance from right edge (positive = inside, negative = outside)
-    pub right_margin:    f32,
-    /// Distance from top edge (positive = inside, negative = outside)
-    pub top_margin:      f32,
-    /// Distance from bottom edge (positive = inside, negative = outside)
-    pub bottom_margin:   f32,
-    /// Target margin for horizontal (in screen-space units)
-    pub target_margin_x: f32,
-    /// Target margin for vertical (in screen-space units)
-    pub target_margin_y: f32,
-    /// Minimum normalized x coordinate in screen space
-    pub min_norm_x:      f32,
-    /// Maximum normalized x coordinate in screen space
-    pub max_norm_x:      f32,
-    /// Minimum normalized y coordinate in screen space
-    pub min_norm_y:      f32,
-    /// Maximum normalized y coordinate in screen space
-    pub max_norm_y:      f32,
-    /// Average depth of boundary corners from camera
-    pub avg_depth:       f32,
-    /// Half tangent of vertical field of view
-    pub half_tan_vfov:   f32,
-    /// Half tangent of horizontal field of view (vfov * `aspect_ratio`)
-    pub half_tan_hfov:   f32,
-}
-
-impl ScreenSpaceBoundary {
-    /// Creates screen space margins from a camera's view of a boundary.
-    /// Returns `None` if any boundary corner is behind the camera.
-    #[allow(clippy::similar_names)] // half_tan_hfov vs half_tan_vfov are standard FOV terms
-    pub fn from_camera_view(
-        boundary: &Boundary,
-        cam_global: &GlobalTransform,
-        perspective: &PerspectiveProjection,
-        viewport_aspect: f32,
-        zoom_multiplier: f32,
-    ) -> Option<Self> {
-        let half_tan_vfov = (perspective.fov * 0.5).tan();
-        let half_tan_hfov = half_tan_vfov * viewport_aspect;
-
-        // Get boundary corners
-        let boundary_corners = boundary.corners();
-
-        // Get camera basis vectors from global transform (world position, not local)
-        let cam_pos = cam_global.translation();
-        let cam_rot = cam_global.rotation();
-        let cam_forward = cam_rot * Vec3::NEG_Z;
-        let cam_right = cam_rot * Vec3::X;
-        let cam_up = cam_rot * Vec3::Y;
-
-        // Project corners to screen space
-        let mut min_norm_x = f32::INFINITY;
-        let mut max_norm_x = f32::NEG_INFINITY;
-        let mut min_norm_y = f32::INFINITY;
-        let mut max_norm_y = f32::NEG_INFINITY;
-        let mut avg_depth = 0.0;
-
-        for corner in &boundary_corners {
-            let relative = *corner - cam_pos;
-            let depth = relative.dot(cam_forward);
-
-            // Check if corner is behind camera
-            if depth <= 0.1 {
-                return None;
-            }
-
-            let x = relative.dot(cam_right);
-            let y = relative.dot(cam_up);
-
-            let norm_x = x / depth;
-            let norm_y = y / depth;
-
-            min_norm_x = min_norm_x.min(norm_x);
-            max_norm_x = max_norm_x.max(norm_x);
-            min_norm_y = min_norm_y.min(norm_y);
-            max_norm_y = max_norm_y.max(norm_y);
-            avg_depth += depth;
-        }
-        avg_depth /= boundary_corners.len().to_f32();
-
-        // Screen edges are at ±half_tan_hfov and ±half_tan_vfov
-        // Target edges (with margin) are at ±(half_tan_hfov / zoom_multiplier)
-        let target_edge_x = half_tan_hfov / zoom_multiplier;
-        let target_edge_y = half_tan_vfov / zoom_multiplier;
-
-        // Calculate margins as distance from bounds to screen edges
-        // Positive = within screen, negative = outside
-        let left_margin = min_norm_x - (-half_tan_hfov);
-        let right_margin = half_tan_hfov - max_norm_x;
-        let bottom_margin = min_norm_y - (-half_tan_vfov);
-        let top_margin = half_tan_vfov - max_norm_y;
-
-        // Target margins are the difference between screen edge and target edge
-        let target_margin_x = half_tan_hfov - target_edge_x;
-        let target_margin_y = half_tan_vfov - target_edge_y;
-
-        Some(Self {
-            left_margin,
-            right_margin,
-            top_margin,
-            bottom_margin,
-            target_margin_x,
-            target_margin_y,
-            min_norm_x,
-            max_norm_x,
-            min_norm_y,
-            max_norm_y,
-            avg_depth,
-            half_tan_vfov,
-            half_tan_hfov,
-        })
-    }
-
-    /// Returns true if the margins are balanced (opposite sides are equal)
-    pub fn is_balanced(&self, tolerance: f32) -> bool {
-        let horizontal_balanced = (self.left_margin - self.right_margin).abs() < tolerance;
-        let vertical_balanced = (self.top_margin - self.bottom_margin).abs() < tolerance;
-        horizontal_balanced && vertical_balanced
-    }
-
-    /// Returns true if horizontal margins are balanced (left == right)
-    pub fn is_horizontally_balanced(&self, tolerance: f32) -> bool {
-        (self.left_margin - self.right_margin).abs() < tolerance
-    }
-
-    /// Returns true if vertical margins are balanced (top == bottom)
-    pub fn is_vertically_balanced(&self, tolerance: f32) -> bool {
-        (self.top_margin - self.bottom_margin).abs() < tolerance
-    }
-
-    /// Returns true if the constraining dimension has reached its target margin.
-    /// The constraining dimension is whichever has the smaller margin (tighter fit).
-    pub fn is_fitted(&self, at_target_tolerance: f32) -> bool {
-        let h_min = self.left_margin.min(self.right_margin);
-        let v_min = self.top_margin.min(self.bottom_margin);
-
-        // The constraining dimension is the one with smaller margin
-        let (constraining_margin, target_margin) = if h_min < v_min {
-            (h_min, self.target_margin_x)
-        } else {
-            (v_min, self.target_margin_y)
-        };
-
-        // Check if constraining dimension is at target
-        (constraining_margin - target_margin).abs() < at_target_tolerance
-    }
-
-    /// Returns the center of the boundary in normalized screen space
-    pub fn center(&self) -> (f32, f32) {
-        let center_x = (self.min_norm_x + self.max_norm_x) * 0.5;
-        let center_y = (self.min_norm_y + self.max_norm_y) * 0.5;
-        (center_x, center_y)
-    }
-
-    /// Returns the span (width, height) of the boundary in normalized screen space
-    pub fn span(&self) -> (f32, f32) {
-        let span_x = self.max_norm_x - self.min_norm_x;
-        let span_y = self.max_norm_y - self.min_norm_y;
-        (span_x, span_y)
-    }
-
-    /// Returns the screen edges in normalized space (left, right, top, bottom)
-    pub fn screen_edges_normalized(&self) -> (f32, f32, f32, f32) {
-        (
-            -self.half_tan_hfov,
-            self.half_tan_hfov,
-            self.half_tan_vfov,
-            -self.half_tan_vfov,
-        )
-    }
-
-    /// Returns the center of a boundary edge in normalized space, clipped to visible portion
-    /// Returns None if the edge is not visible (entirely off-screen)
-    pub fn boundary_edge_center(&self, edge: Edge) -> Option<(f32, f32)> {
-        let (left_edge, right_edge, top_edge, bottom_edge) = self.screen_edges_normalized();
-
-        match edge {
-            Edge::Left if self.min_norm_x > left_edge => {
-                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
-                Some((self.min_norm_x, y))
-            },
-            Edge::Right if self.max_norm_x < right_edge => {
-                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
-                Some((self.max_norm_x, y))
-            },
-            Edge::Top if self.max_norm_y < top_edge => {
-                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
-                Some((x, self.max_norm_y))
-            },
-            Edge::Bottom if self.min_norm_y > bottom_edge => {
-                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
-                Some((x, self.min_norm_y))
-            },
-            _ => None,
-        }
-    }
-
-    /// Returns the center of a screen edge in normalized space, clipped to visible boundary portion
-    pub fn screen_edge_center(&self, edge: Edge) -> (f32, f32) {
-        let (left_edge, right_edge, top_edge, bottom_edge) = self.screen_edges_normalized();
-
-        match edge {
-            Edge::Left => {
-                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
-                (left_edge, y)
-            },
-            Edge::Right => {
-                let y = (self.min_norm_y.max(bottom_edge) + self.max_norm_y.min(top_edge)) * 0.5;
-                (right_edge, y)
-            },
-            Edge::Top => {
-                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
-                (x, top_edge)
-            },
-            Edge::Bottom => {
-                let x = (self.min_norm_x.max(left_edge) + self.max_norm_x.min(right_edge)) * 0.5;
-                (x, bottom_edge)
-            },
-        }
-    }
-
-    /// Converts normalized screen-space coordinates to world space
-    pub fn normalized_to_world(
-        &self,
-        norm_x: f32,
-        norm_y: f32,
-        cam_pos: Vec3,
-        cam_right: Vec3,
-        cam_up: Vec3,
-        cam_forward: Vec3,
-    ) -> Vec3 {
-        let world_x = norm_x * self.avg_depth;
-        let world_y = norm_y * self.avg_depth;
-        cam_pos + cam_right * world_x + cam_up * world_y + cam_forward * self.avg_depth
-    }
-
-    /// Returns the margin percentage for a given edge.
-    /// Percentage represents how much of the screen width/height is margin.
-    pub fn margin_percentage(&self, edge: Edge) -> f32 {
-        let screen_width = 2.0 * self.half_tan_hfov;
-        let screen_height = 2.0 * self.half_tan_vfov;
-
-        match edge {
-            Edge::Left => (self.left_margin / screen_width) * 100.0,
-            Edge::Right => (self.right_margin / screen_width) * 100.0,
-            Edge::Top => (self.top_margin / screen_height) * 100.0,
-            Edge::Bottom => (self.bottom_margin / screen_height) * 100.0,
-        }
-    }
-}
-
-/// Boundary box edges
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
-pub enum Edge {
-    Left,
-    Right,
-    Top,
-    Bottom,
 }
 
 #[derive(Component, Reflect)]
@@ -631,77 +367,16 @@ fn on_window_target_loaded(trigger: On<WindowTargetLoaded>, mut commands: Comman
     });
 }
 
-#[allow(clippy::similar_names)] // x_distance, y_distance, xy_distance are intentionally similar
-pub fn calculate_home_radius(
-    grid_size: Vec3,
-    margin: f32,
-    projection: &Projection,
-    camera: &Camera,
-    target_size: Option<Vec2>,
-) -> Option<f32> {
-    let Projection::Perspective(perspective) = projection else {
-        return None;
-    };
-
-    // Get actual viewport aspect ratio
-    // Priority: target_size (from bevy_window_manager) > viewport > perspective fallback
-    let aspect_ratio = if let Some(size) = target_size {
-        size.x / size.y
-    } else if let Some(viewport_size) = camera.logical_viewport_size() {
-        viewport_size.x / viewport_size.y
-    } else {
-        perspective.aspect_ratio
-    };
-
-    let fov = perspective.fov;
-
-    // Calculate horizontal FOV based on aspect ratio
-    let horizontal_fov = 2.0 * ((fov / 2.0).tan() * aspect_ratio).atan();
-
-    // Calculate distances required for X and Y dimensions to fit in viewport
-    let x_distance = (grid_size.x / 2.0) / (horizontal_fov / 2.0).tan();
-    let y_distance = (grid_size.y / 2.0) / (fov / 2.0).tan();
-
-    // Take the max of X and Y distances
-    let xy_distance = x_distance.max(y_distance);
-
-    // For Z dimension (depth)
-    let z_half_depth = grid_size.z / 2.0;
-
-    // Add Z depth to XY distance, then apply margin to the total
-    // This ensures the entire 3D boundary fits with proper margin
-    Some((xy_distance + z_half_depth) * margin)
-}
-
 /// take us back to the splash screen start position
 pub fn home_camera(
+    mut commands: Commands,
     boundary: Res<Boundary>,
-    zoom_config: Res<ZoomConfig>,
-    camera_config: Res<CameraConfig>,
-    camera_query: Single<(&mut PanOrbitCamera, &Projection, &Camera)>,
+    camera_query: Query<Entity, With<PanOrbitCamera>>,
 ) {
-    let (mut pan_orbit, projection, camera) = camera_query.into_inner();
-
-    let Some(target_radius) = calculate_home_radius(
-        boundary.scale(),
-        zoom_config.zoom_margin_multiplier(),
-        projection,
-        camera,
-        None,
-    ) else {
+    let Ok(camera_entity) = camera_query.single() else {
         return;
     };
 
-    // Set the camera's orbit parameters
-    pan_orbit.set_home_position(&camera_config, target_radius);
-}
-
-/// Observer that runs when `MoveQueue` or `ZoomToFit` is removed from an entity.
-/// Restores camera smoothness values from config.
-fn reset_camera_after_moves(
-    _removed: On<Remove, (CameraMoveList, ZoomToFit)>,
-    camera_config: Res<CameraConfig>,
-    mut pan_orbit: Single<&mut PanOrbitCamera>,
-) {
-    pan_orbit.enable_interpolation(&camera_config);
+    // Trigger SnapToFit event to instantly position camera at boundary
+    commands.trigger(SnapToFit::new(camera_entity, boundary.transform));
 }

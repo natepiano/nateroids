@@ -675,13 +675,14 @@ dependencies = [
 
 [[package]]
 name = "bevy_brp_extras"
-version = "0.18.0"
+version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f109fffa38b4c1951ecd29e6acd8538fe12ea927ae861cb37db83d47db074f7f"
+checksum = "fa69442bc5be98ccd08fcfffe7e4be12f1256442397b006288bbb4ad4932b4d9"
 dependencies = [
  "bevy",
  "serde",
  "serde_json",
+ "smol_str",
  "strum",
  "strum_macros",
  "thiserror 2.0.17",
@@ -1260,6 +1261,14 @@ checksum = "ec2a3ef5147368953aecb485e6362ea0e23acbd3e4adb02e47058a8c16e9bfe5"
 dependencies = [
  "bevy",
  "bevy_egui",
+]
+
+[[package]]
+name = "bevy_panorbit_camera_ext"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_panorbit_camera",
 ]
 
 [[package]]
@@ -3921,6 +3930,7 @@ dependencies = [
  "bevy-inspector-egui",
  "bevy_brp_extras",
  "bevy_panorbit_camera",
+ "bevy_panorbit_camera_ext",
  "bevy_window_manager",
  "leafwing-input-manager",
  "rand",

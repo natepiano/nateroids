@@ -1,0 +1,41 @@
+# Zoom Dance Configuration
+# Controls the timing of the automated camera zoom sequence
+# Note: Camera and spaceship entities are queried dynamically
+
+[behavior]
+# Percentage chance (0-100) to zoom to spaceship instead of donut
+spaceship_chance = 10
+
+[timing]
+# Duration in seconds to stay paused after zooming in (frozen view of target)
+paused_duration = 2
+
+# Duration in seconds to watch target spinning up close (after unpause)
+spin_watch_duration = 3
+
+# Duration in milliseconds for the zoom-out animation
+zoom_out_animation_ms = 1000
+
+# Duration in seconds to watch from distance after zooming out
+distance_watch_duration = 3
+
+# Duration in seconds to wait when no donuts are found before retrying
+no_donut_retry_delay = 1
+
+[camera]
+# Random distance range for zoom-out position (in units)
+min_distance = 300
+max_distance = 1000
+
+# Pitch angle range for random camera positions (in radians)
+# Default: -0.5 to 0.5 (roughly -28° to +28°)
+pitch_min = -0.5
+pitch_max = 0.5
+
+[connection]
+# BRP port
+port = 20000
+
+# Easing function for zoom-out animation
+# Options: Linear, QuadraticIn, QuadraticOut, QuadraticInOut, CubicIn, CubicOut, etc.
+easing = "QuadraticInOut"

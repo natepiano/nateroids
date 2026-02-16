@@ -2,15 +2,11 @@ use bevy::camera::visibility::RenderLayers;
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
+use bevy_panorbit_camera_ext::prelude::*;
 
 use crate::camera::CameraConfig;
-use crate::camera::CameraMove;
-use crate::camera::CameraMoveList;
-use crate::camera::PanOrbitCameraExt;
 use crate::camera::RenderLayer;
 use crate::camera::TargetWindowSize;
-use crate::camera::ZoomConfig;
-use crate::camera::calculate_home_radius;
 use crate::playfield::Boundary;
 use crate::state::GameState;
 
@@ -113,6 +109,48 @@ fn run_splash(
     if timer_finished && camera_animation_done {
         next_state.set(GameState::InGame);
     }
+}
+
+#[allow(clippy::similar_names)] // x_distance, y_distance, xy_distance are intentionally similar
+fn calculate_home_radius(
+    grid_size: Vec3,
+    margin: f32,
+    projection: &Projection,
+    camera: &Camera,
+    target_size: Option<Vec2>,
+) -> Option<f32> {
+    let Projection::Perspective(perspective) = projection else {
+        return None;
+    };
+
+    // Get actual viewport aspect ratio
+    // Priority: target_size (from bevy_window_manager) > viewport > perspective fallback
+    let aspect_ratio = if let Some(size) = target_size {
+        size.x / size.y
+    } else if let Some(viewport_size) = camera.logical_viewport_size() {
+        viewport_size.x / viewport_size.y
+    } else {
+        perspective.aspect_ratio
+    };
+
+    let fov = perspective.fov;
+
+    // Calculate horizontal FOV based on aspect ratio
+    let horizontal_fov = 2.0 * ((fov / 2.0).tan() * aspect_ratio).atan();
+
+    // Calculate distances required for X and Y dimensions to fit in viewport
+    let x_distance = (grid_size.x / 2.0) / (horizontal_fov / 2.0).tan();
+    let y_distance = (grid_size.y / 2.0) / (fov / 2.0).tan();
+
+    // Take the max of X and Y distances
+    let xy_distance = x_distance.max(y_distance);
+
+    // For Z dimension (depth)
+    let z_half_depth = grid_size.z / 2.0;
+
+    // Add Z depth to XY distance, then apply margin to the total
+    // This ensures the entire 3D boundary fits with proper margin
+    Some((xy_distance + z_half_depth) * margin)
 }
 
 fn create_spin_sequence(home_radius: f32, durations: &[f32]) -> Vec<CameraMove> {
@@ -251,7 +289,5 @@ fn start_splash_camera_animation(
     // Create the camera animation sequence - zoom from far (splash_start_radius) to home position
     let moves = create_splash_camera_moves(camera_config.splash_start_radius, home_radius);
 
-    commands
-        .entity(entity)
-        .insert(CameraMoveList::new(moves.into()));
+    commands.trigger(StartAnimation::new(entity, moves.into()));
 }
