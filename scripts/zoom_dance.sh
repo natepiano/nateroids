@@ -29,6 +29,8 @@ load_config() {
   MAX_DISTANCE=$(get_config "max_distance")
   PITCH_MIN=$(get_config "pitch_min")
   PITCH_MAX=$(get_config "pitch_max")
+  FOCUS_OFFSET_CHANCE=$(get_config "focus_offset_chance")
+  FOCUS_OFFSET_RANGE=$(get_config "focus_offset_range")
   PORT=$(get_config "port")
   EASING=$(get_config "easing")
   DISTANCE_RANGE=$((MAX_DISTANCE - MIN_DISTANCE))
@@ -149,9 +151,21 @@ while true; do
   y=$(echo "scale=2; $radius * s($pitch)" | bc -l)
   z=$(echo "scale=2; $radius * c($yaw) * c($pitch)" | bc -l)
 
+  # Sometimes offset the focus to test off-center convergence
+  if (( RANDOM % 100 < FOCUS_OFFSET_CHANCE )); then
+    focus_x=$(awk -v range=$FOCUS_OFFSET_RANGE "BEGIN {srand(); print (rand() - 0.5) * range}")
+    focus_y=$(awk -v range=$FOCUS_OFFSET_RANGE "BEGIN {srand(); print (rand() - 0.5) * range}")
+    focus_z=$(awk -v range=$FOCUS_OFFSET_RANGE "BEGIN {srand(); print (rand() - 0.5) * range}")
+    echo "Zooming out with offset focus: [$focus_x, $focus_y, $focus_z]"
+  else
+    focus_x=0
+    focus_y=0
+    focus_z=0
+  fi
+
   # Zoom out
   curl -s -X POST http://127.0.0.1:$PORT/jsonrpc -H "Content-Type: application/json" \
-    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_panorbit_camera_ext::extension::StartAnimation\", \"value\": {\"entity\": $CAMERA, \"moves\": [{\"target_translation\": [$x, $y, $z], \"target_focus\": [0, 0, 0], \"duration_ms\": $ZOOM_OUT_ANIMATION_MS, \"easing\": \"$EASING\"}]}}}" >/dev/null 2>&1
+    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_panorbit_camera_ext::extension::StartAnimation\", \"value\": {\"entity\": $CAMERA, \"moves\": [{\"target_translation\": [$x, $y, $z], \"target_focus\": [$focus_x, $focus_y, $focus_z], \"duration_ms\": $ZOOM_OUT_ANIMATION_MS, \"easing\": \"$EASING\"}]}}}" >/dev/null 2>&1
   echo "Zooming out (${ZOOM_OUT_ANIMATION_MS}ms animation, watching for ${DISTANCE_WATCH_DURATION}s)"
 
   sleep "$DISTANCE_WATCH_DURATION"

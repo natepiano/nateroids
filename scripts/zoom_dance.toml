@@ -32,6 +32,13 @@ max_distance = 1000
 pitch_min = -0.5
 pitch_max = 0.5
 
+# Focus offset settings (tests off-center convergence)
+# Percentage chance (0-100) to offset focus instead of centering at [0,0,0]
+focus_offset_chance = 100
+
+# Maximum offset distance for focus (±half this value in each axis)
+focus_offset_range = 200
+
 [connection]
 # BRP port
 port = 20000

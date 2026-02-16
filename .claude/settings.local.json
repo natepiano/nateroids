@@ -117,7 +117,8 @@
       "Bash(do)",
       "Bash(done)",
       "Bash(shuf:*)",
-      "mcp__brp__world_despawn_entity"
+      "mcp__brp__world_despawn_entity",
+      "Bash(./zoom_dance.sh:*)"
     ],
     "deny": [],
     "ask": []
