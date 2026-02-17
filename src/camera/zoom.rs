@@ -34,6 +34,7 @@ pub fn start_zoom_to_fit(
         target,
         ZOOM_MARGIN,
         ZOOM_TO_FIT_DURATION_MS,
+        EaseFunction::Linear,
     ));
     debug!("Triggered zoom-to-fit to {target:?}");
 }

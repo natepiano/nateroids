@@ -9,7 +9,7 @@ mod zoom;
 
 use bevy::camera::visibility::Layer;
 use bevy::prelude::*;
-use bevy_panorbit_camera_ext::CameraExtPlugin;
+use bevy_panorbit_camera_ext::PanOrbitCameraExtPlugin;
 use cameras::CamerasPlugin;
 pub use config::CameraConfig;
 use config::CameraConfigPlugin;
@@ -24,7 +24,7 @@ impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(CameraConfigPlugin)
             .add_plugins(CamerasPlugin)
-            .add_plugins(CameraExtPlugin)
+            .add_plugins(PanOrbitCameraExtPlugin)
             .add_plugins(DirectionalLightsPlugin)
             .add_plugins(StarTwinklingPlugin)
             .add_plugins(StarsPlugin);

@@ -2,12 +2,12 @@ use bevy::camera::visibility::RenderLayers;
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
-use bevy_panorbit_camera_ext::AnimationComplete;
+use bevy_panorbit_camera_ext::AnimationEnd;
 use bevy_panorbit_camera_ext::CameraMove;
 use bevy_panorbit_camera_ext::CameraMoveList;
 use bevy_panorbit_camera_ext::PanOrbitCameraExt;
-use bevy_panorbit_camera_ext::StartAnimation;
-use bevy_panorbit_camera_ext::ZoomComplete;
+use bevy_panorbit_camera_ext::PlayAnimation;
+use bevy_panorbit_camera_ext::ZoomEnd;
 use bevy_panorbit_camera_ext::ZoomToFit;
 
 use crate::camera::CameraConfig;
@@ -49,8 +49,8 @@ impl Plugin for SplashPlugin {
             ),
         )
         .add_systems(Update, run_splash.run_if(in_state(GameState::Splash)))
-        .add_observer(on_animation_complete)
-        .add_observer(on_zoom_complete);
+        .add_observer(on_animation_end)
+        .add_observer(on_zoom_end);
     }
 }
 
@@ -132,8 +132,8 @@ fn run_splash(
 }
 
 /// When the hold animation completes, trigger `ZoomToFit` to the boundary.
-fn on_animation_complete(
-    _trigger: On<AnimationComplete>,
+fn on_animation_end(
+    _trigger: On<AnimationEnd>,
     mut commands: Commands,
     camera_query: Query<Entity, (With<PanOrbitCamera>, With<SplashZoomActive>)>,
     boundary_volume: Query<Entity, With<BoundaryVolume>>,
@@ -152,12 +152,13 @@ fn on_animation_complete(
         boundary_entity,
         ZOOM_MARGIN,
         SPLASH_ZOOM_DURATION_MS,
+        EaseFunction::Linear,
     ));
 }
 
 /// When zoom-to-fit completes during splash, read the radius and launch spins.
-fn on_zoom_complete(
-    _trigger: On<ZoomComplete>,
+fn on_zoom_end(
+    _trigger: On<ZoomEnd>,
     mut commands: Commands,
     camera_query: Query<(Entity, &PanOrbitCamera), With<SplashZoomActive>>,
 ) {
@@ -170,7 +171,7 @@ fn on_zoom_complete(
     commands.entity(camera_entity).remove::<SplashZoomActive>();
 
     let moves = create_spin_moves(orbit_radius);
-    commands.trigger(StartAnimation::new(camera_entity, moves.into()));
+    commands.trigger(PlayAnimation::new(camera_entity, moves.into()));
 }
 
 fn create_spin_sequence(radius: f32, durations: &[f32]) -> Vec<CameraMove> {
@@ -279,5 +280,5 @@ fn start_splash_camera_animation(
         easing:             EaseFunction::BounceOut,
     };
 
-    commands.trigger(StartAnimation::new(entity, vec![hold_move].into()));
+    commands.trigger(PlayAnimation::new(entity, vec![hold_move].into()));
 }
