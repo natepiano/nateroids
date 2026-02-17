@@ -13,6 +13,7 @@ use bevy_panorbit_camera_ext::CameraExtPlugin;
 use cameras::CamerasPlugin;
 pub use config::CameraConfig;
 use config::CameraConfigPlugin;
+pub use constants::ZOOM_MARGIN;
 use lights::DirectionalLightsPlugin;
 use star_twinkling::StarTwinklingPlugin;
 use stars::StarsPlugin;

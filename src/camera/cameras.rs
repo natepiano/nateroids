@@ -11,10 +11,10 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_panorbit_camera::TrackpadBehavior;
+use bevy_panorbit_camera_ext::AnimateToFit;
 use bevy_panorbit_camera_ext::FitTargetGizmo;
 use bevy_panorbit_camera_ext::FitTargetVisualizationPlugin;
 use bevy_panorbit_camera_ext::SetFitTarget;
-use bevy_panorbit_camera_ext::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
@@ -22,6 +22,7 @@ use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::constants::EDGE_MARKER_FONT_SIZE;
 use super::constants::EDGE_MARKER_SPHERE_RADIUS;
 use super::constants::HOME_ANIMATION_DURATION_MS;
+use super::constants::ZOOM_MARGIN;
 use super::lights::LightConfig;
 use super::selection::SelectionPlugin;
 use super::zoom::start_zoom_to_fit;
@@ -380,7 +381,7 @@ pub fn home_camera(
         boundary_entity,
         0.0,
         0.0,
-        DEFAULT_MARGIN,
+        ZOOM_MARGIN,
         HOME_ANIMATION_DURATION_MS,
         EaseFunction::QuadraticOut,
     ));

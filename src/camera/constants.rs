@@ -7,6 +7,9 @@ pub const CAMERA_SPLASH_START_FOCUS: Vec3 = Vec3::ZERO;
 pub const CAMERA_SPLASH_START_PITCH: f32 = std::f32::consts::FRAC_PI_2;
 pub const CAMERA_SPLASH_START_YAW: f32 = -std::f32::consts::PI;
 
+/// Default margin for zoom-to-fit operations (0.1 = 10% margin on each side)
+pub const ZOOM_MARGIN: f32 = 0.1;
+
 /// Duration in milliseconds for zoom-to-fit animation
 pub const ZOOM_TO_FIT_DURATION_MS: f32 = 500.0;
 

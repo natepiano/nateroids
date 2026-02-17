@@ -1,13 +1,18 @@
-use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::RenderLayers;
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
-use bevy_panorbit_camera_ext::calculate_fit_radius;
-use bevy_panorbit_camera_ext::prelude::*;
+use bevy_panorbit_camera_ext::AnimationComplete;
+use bevy_panorbit_camera_ext::CameraMove;
+use bevy_panorbit_camera_ext::CameraMoveList;
+use bevy_panorbit_camera_ext::PanOrbitCameraExt;
+use bevy_panorbit_camera_ext::StartAnimation;
+use bevy_panorbit_camera_ext::ZoomComplete;
+use bevy_panorbit_camera_ext::ZoomToFit;
 
 use crate::camera::CameraConfig;
 use crate::camera::RenderLayer;
+use crate::camera::ZOOM_MARGIN;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
 use crate::state::GameState;
@@ -15,9 +20,15 @@ use crate::state::GameState;
 pub struct SplashPlugin;
 
 const SPLASH_TEXT_TIME: f32 = 2.;
+const SPLASH_ZOOM_DURATION_MS: f32 = 1000.0;
 
 #[derive(Component)]
 pub struct SplashText;
+
+/// Marker component indicating the splash zoom-to-fit sequence is active.
+/// Present during hold and zoom phases, removed before spins start.
+#[derive(Component)]
+struct SplashZoomActive;
 
 #[derive(Resource, Debug)]
 struct SplashTextTimer {
@@ -37,7 +48,9 @@ impl Plugin for SplashPlugin {
                 start_splash_camera_animation,
             ),
         )
-        .add_systems(Update, run_splash.run_if(in_state(GameState::Splash)));
+        .add_systems(Update, run_splash.run_if(in_state(GameState::Splash)))
+        .add_observer(on_animation_complete)
+        .add_observer(on_zoom_complete);
     }
 }
 
@@ -104,21 +117,62 @@ fn run_splash(
     }
 
     // Exit splash only when BOTH timer is finished AND camera animation is complete
-    // This prevents exiting too early on first frame before MoveQueue is visible to query
     let timer_finished = splash_text_timer.timer.is_finished();
-    let camera_animation_done = camera_query.is_empty(); // No MoveQueue = animation done
+    let camera_animation_done = camera_query.is_empty();
 
     if timer_finished && camera_animation_done {
         next_state.set(GameState::InGame);
     }
 }
 
-fn create_spin_sequence(home_radius: f32, durations: &[f32]) -> Vec<CameraMove> {
+/// When the hold animation completes, trigger `ZoomToFit` to the boundary.
+fn on_animation_complete(
+    _trigger: On<AnimationComplete>,
+    mut commands: Commands,
+    camera_query: Query<Entity, (With<PanOrbitCamera>, With<SplashZoomActive>)>,
+    boundary_volume: Query<Entity, With<BoundaryVolume>>,
+) {
+    let Ok(camera_entity) = camera_query.single() else {
+        return;
+    };
+
+    let Ok(boundary_entity) = boundary_volume.single() else {
+        warn!("No BoundaryVolume entity found for splash zoom-to-fit");
+        return;
+    };
+
+    commands.trigger(ZoomToFit::new(
+        camera_entity,
+        boundary_entity,
+        ZOOM_MARGIN,
+        SPLASH_ZOOM_DURATION_MS,
+    ));
+}
+
+/// When zoom-to-fit completes during splash, read the radius and launch spins.
+fn on_zoom_complete(
+    _trigger: On<ZoomComplete>,
+    mut commands: Commands,
+    camera_query: Query<(Entity, &PanOrbitCamera), With<SplashZoomActive>>,
+) {
+    let Ok((camera_entity, panorbit)) = camera_query.single() else {
+        return;
+    };
+
+    let orbit_radius = panorbit.target_radius;
+
+    commands.entity(camera_entity).remove::<SplashZoomActive>();
+
+    let moves = create_spin_moves(orbit_radius);
+    commands.trigger(StartAnimation::new(camera_entity, moves.into()));
+}
+
+fn create_spin_sequence(radius: f32, durations: &[f32]) -> Vec<CameraMove> {
     let positions = [
-        Vec3::new(0.0, 0.0, home_radius),
-        Vec3::new(home_radius, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, -home_radius),
-        Vec3::new(-home_radius, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, radius),
+        Vec3::new(radius, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -radius),
+        Vec3::new(-radius, 0.0, 0.0),
     ];
 
     positions
@@ -133,63 +187,49 @@ fn create_spin_sequence(home_radius: f32, durations: &[f32]) -> Vec<CameraMove> 
         .collect()
 }
 
-fn create_splash_camera_moves(splash_start_radius: f32, home_radius: f32) -> Vec<CameraMove> {
+/// Creates the spin animation sequence using the orbit radius from zoom-to-fit.
+fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
     let mut moves = vec![
-        // sit still at the `splash start radius`
-        // let's the text animate toward camera and moves the pitch/yaw
-        // because our starting position for the camera pitch/yaw is off-kilter
+        // start spin 1 (already at radius from zoom-to-fit, just orbit)
         CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, splash_start_radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        2500.0,
-            easing:             EaseFunction::BounceOut,
-        },
-        // start spin 1
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, home_radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        1500.0,
-            easing:             EaseFunction::QuadraticIn,
-        },
-        CameraMove {
-            target_translation: Vec3::new(home_radius, 0.0, 0.0),
+            target_translation: Vec3::new(radius, 0.0, 0.0),
             target_focus:       Vec3::ZERO,
             duration_ms:        500.0,
             easing:             EaseFunction::Linear,
         },
         CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, -home_radius),
+            target_translation: Vec3::new(0.0, 0.0, -radius),
             target_focus:       Vec3::ZERO,
             duration_ms:        400.0,
             easing:             EaseFunction::Linear,
         },
         CameraMove {
-            target_translation: Vec3::new(-home_radius, 0.0, 0.0),
+            target_translation: Vec3::new(-radius, 0.0, 0.0),
             target_focus:       Vec3::ZERO,
             duration_ms:        300.0,
             easing:             EaseFunction::Linear,
         },
         // start spin 2
         CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, home_radius),
+            target_translation: Vec3::new(0.0, 0.0, radius),
             target_focus:       Vec3::ZERO,
             duration_ms:        200.0,
             easing:             EaseFunction::Linear,
         },
         CameraMove {
-            target_translation: Vec3::new(home_radius, 0.0, 0.0),
+            target_translation: Vec3::new(radius, 0.0, 0.0),
             target_focus:       Vec3::ZERO,
             duration_ms:        100.0,
             easing:             EaseFunction::Linear,
         },
         CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, -home_radius),
+            target_translation: Vec3::new(0.0, 0.0, -radius),
             target_focus:       Vec3::ZERO,
             duration_ms:        50.0,
             easing:             EaseFunction::Linear,
         },
         CameraMove {
-            target_translation: Vec3::new(-home_radius, 0.0, 0.0),
+            target_translation: Vec3::new(-radius, 0.0, 0.0),
             target_focus:       Vec3::ZERO,
             duration_ms:        25.0,
             easing:             EaseFunction::Linear,
@@ -197,17 +237,14 @@ fn create_splash_camera_moves(splash_start_radius: f32, home_radius: f32) -> Vec
     ];
 
     // Add fast spins 3, 4, 5 (all with 25ms duration)
-    (0..5).for_each(|_| moves.extend(create_spin_sequence(home_radius, &[25.0])));
+    (0..5).for_each(|_| moves.extend(create_spin_sequence(radius, &[25.0])));
 
     // Add spin 6 with increasing durations (slowdown effect)
-    moves.extend(create_spin_sequence(
-        home_radius,
-        &[50.0, 100.0, 150.0, 200.0],
-    ));
+    moves.extend(create_spin_sequence(radius, &[50.0, 100.0, 150.0, 200.0]));
 
     // Land at home with smooth easing
     moves.push(CameraMove {
-        target_translation: Vec3::new(0.0, 0.0, home_radius),
+        target_translation: Vec3::new(0.0, 0.0, radius),
         target_focus:       Vec3::ZERO,
         duration_ms:        1200.0,
         easing:             EaseFunction::QuadraticOut,
@@ -216,45 +253,25 @@ fn create_splash_camera_moves(splash_start_radius: f32, home_radius: f32) -> Vec
     moves
 }
 
+/// Phase 1: Start with a single hold animation at splash start radius.
 fn start_splash_camera_animation(
     mut commands: Commands,
     camera_config: Res<CameraConfig>,
-    camera_query: Query<(Entity, &Projection, &Camera, &PanOrbitCamera)>,
-    boundary_volume_query: Query<Entity, With<BoundaryVolume>>,
-    aabb_query: Query<&Aabb>,
-    children_query: Query<&Children>,
-    global_transform_query: Query<&GlobalTransform>,
+    camera_query: Query<Entity, With<PanOrbitCamera>>,
 ) {
-    let Ok((entity, projection, camera, panorbit)) = camera_query.single() else {
+    let Ok(entity) = camera_query.single() else {
         return;
     };
 
-    let Ok(boundary_entity) = boundary_volume_query.single() else {
-        warn!("No BoundaryVolume entity found for splash animation");
-        return;
+    commands.entity(entity).insert(SplashZoomActive);
+
+    // Single hold move — camera sits at splash start radius while text animates
+    let hold_move = CameraMove {
+        target_translation: Vec3::new(0.0, 0.0, camera_config.splash_start_radius),
+        target_focus:       Vec3::ZERO,
+        duration_ms:        2500.0,
+        easing:             EaseFunction::BounceOut,
     };
 
-    // Calculate "home" position for the landing orientation (yaw=0, pitch=0)
-    // The animation lands at Vec3::new(0, 0, home_radius) which corresponds to yaw=0, pitch=0.
-    // We must compute the radius for that orientation, not the splash start orientation.
-    let Some(home_radius) = calculate_fit_radius(
-        boundary_entity,
-        panorbit.target_radius,
-        0.0,
-        0.0,
-        DEFAULT_MARGIN,
-        projection,
-        camera,
-        &aabb_query,
-        &children_query,
-        &global_transform_query,
-    ) else {
-        warn!("Failed to calculate home radius for splash animation");
-        return;
-    };
-
-    // Create the camera animation sequence - zoom from far (splash_start_radius) to home position
-    let moves = create_splash_camera_moves(camera_config.splash_start_radius, home_radius);
-
-    commands.trigger(StartAnimation::new(entity, moves.into()));
+    commands.trigger(StartAnimation::new(entity, vec![hold_move].into()));
 }
