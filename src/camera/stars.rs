@@ -14,7 +14,6 @@ use super::RenderLayer;
 use super::cameras::StarCamera;
 use super::config::StarConfig;
 use crate::playfield::Boundary;
-use crate::schedule::InGameSet;
 use crate::state::GameState;
 use crate::traits::TransformExt;
 
@@ -31,7 +30,7 @@ impl Plugin for StarsPlugin {
                 OnEnter(GameState::GameOver),
                 (despawn_stars, spawn_stars).chain(),
             )
-            .add_systems(Update, rotate_stars.in_set(InGameSet::EntityUpdates))
+            .add_systems(Update, rotate_stars)
             .add_systems(Update, debug_stars);
     }
 }

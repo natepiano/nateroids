@@ -5,7 +5,6 @@ use rand::RngExt;
 
 use super::config::StarConfig;
 use crate::camera::stars::Star;
-use crate::schedule::InGameSet;
 
 pub struct StarTwinklingPlugin;
 
@@ -15,10 +14,7 @@ impl Plugin for StarTwinklingPlugin {
         app.insert_resource(StartTwinklingTimer {
             timer: Timer::from_seconds(start_twinkling_timer_duration, TimerMode::Repeating),
         })
-        .add_systems(
-            Update,
-            ((start_twinkling, update_twinkling),).in_set(InGameSet::EntityUpdates),
-        );
+        .add_systems(Update, (start_twinkling, update_twinkling));
     }
 }
 

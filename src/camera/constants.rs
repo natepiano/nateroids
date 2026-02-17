@@ -7,6 +7,12 @@ pub const CAMERA_SPLASH_START_FOCUS: Vec3 = Vec3::ZERO;
 pub const CAMERA_SPLASH_START_PITCH: f32 = std::f32::consts::FRAC_PI_2;
 pub const CAMERA_SPLASH_START_YAW: f32 = -std::f32::consts::PI;
 
+/// Duration in milliseconds for zoom-to-fit animation
+pub const ZOOM_TO_FIT_DURATION_MS: f32 = 500.0;
+
+/// Duration in milliseconds for home camera animation
+pub const HOME_ANIMATION_DURATION_MS: f32 = 1200.0;
+
 /// Default zoom sensitivity for pan-orbit camera controls
 pub const CAMERA_ZOOM_SENSITIVITY: f32 = 0.2;
 

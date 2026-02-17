@@ -1,5 +1,6 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::core_pipeline::tonemapping::Tonemapping;
+use bevy::math::curve::easing::EaseFunction;
 use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
@@ -20,6 +21,7 @@ use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::constants::EDGE_MARKER_FONT_SIZE;
 use super::constants::EDGE_MARKER_SPHERE_RADIUS;
+use super::constants::HOME_ANIMATION_DURATION_MS;
 use super::lights::LightConfig;
 use super::selection::SelectionPlugin;
 use super::zoom::start_zoom_to_fit;
@@ -54,7 +56,6 @@ impl Plugin for CamerasPlugin {
                     spawn_star_camera,
                     spawn_panorbit_camera,
                     set_fit_target_debug,
-                    enable_fit_target_visualization,
                 )
                     .chain(),
             )
@@ -359,15 +360,13 @@ fn cleanup_focus_labels(
     }
 }
 
-/// Observer that captures target window dimensions from `bevy_window_manager` on startup.
-///
-/// take us back to the splash screen start position
+/// Animate the camera back to the home position (yaw=0, pitch=0, fitted to boundary).
 pub fn home_camera(
     mut commands: Commands,
     boundary_volume_query: Query<Entity, With<BoundaryVolume>>,
-    mut camera_query: Query<(Entity, &mut PanOrbitCamera)>,
+    camera_query: Query<Entity, With<PanOrbitCamera>>,
 ) {
-    let Ok((camera_entity, mut camera)) = camera_query.single_mut() else {
+    let Ok(camera_entity) = camera_query.single() else {
         return;
     };
 
@@ -376,16 +375,14 @@ pub fn home_camera(
         return;
     };
 
-    // Set canonical orientation for home position
-    camera.target_yaw = 0.0;
-    camera.target_pitch = 0.0;
-    camera.force_update = true;
-
-    // Trigger SnapToFit event to instantly position camera at boundary
-    commands.trigger(SnapToFit::new(
+    commands.trigger(AnimateToFit::new(
         camera_entity,
         boundary_entity,
+        0.0,
+        0.0,
         DEFAULT_MARGIN,
+        HOME_ANIMATION_DURATION_MS,
+        EaseFunction::QuadraticOut,
     ));
 }
 
@@ -419,11 +416,4 @@ fn set_fit_target_debug(
     // Set boundary as the fit target for debug visualization
     commands.trigger(SetFitTarget::new(camera_entity, boundary_entity));
     info!("Set boundary as fit target for debug visualization");
-}
-
-/// Enables fit target visualization by default at startup
-fn enable_fit_target_visualization(mut config_store: ResMut<GizmoConfigStore>) {
-    let (config, _) = config_store.config_mut::<FitTargetGizmo>();
-    config.enabled = true;
-    info!("Enabled fit target visualization");
 }

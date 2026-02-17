@@ -2,6 +2,9 @@
 
 # Zoom Dance - Automated camera sequence for Nateroids
 # Reads configuration from zoom_dance.toml
+# Usage: zoom_dance.sh [PORT]  (default: 15702)
+
+PORT_OVERRIDE="${1:-15702}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="$SCRIPT_DIR/zoom_dance.toml"
@@ -31,7 +34,7 @@ load_config() {
   PITCH_MAX=$(get_config "pitch_max")
   FOCUS_OFFSET_CHANCE=$(get_config "focus_offset_chance")
   FOCUS_OFFSET_RANGE=$(get_config "focus_offset_range")
-  PORT=$(get_config "port")
+  PORT="$PORT_OVERRIDE"
   EASING=$(get_config "easing")
   DISTANCE_RANGE=$((MAX_DISTANCE - MIN_DISTANCE))
 }
@@ -129,7 +132,7 @@ while true; do
 
   # Zoom in (while paused)
   curl -s -X POST http://127.0.0.1:$PORT/jsonrpc -H "Content-Type: application/json" \
-    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_panorbit_camera_ext::extension::ZoomToFit\", \"value\": {\"entity\": $CAMERA, \"target\": $target, \"margin\": 0.1}}}" >/dev/null 2>&1
+    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_panorbit_camera_ext::extension::ZoomToFit\", \"value\": {\"entity\": $CAMERA, \"target\": $target, \"margin\": 0.1, \"duration_ms\": 500.0}}}" >/dev/null 2>&1
   echo "Zoomed in (paused for ${PAUSED_DURATION}s)"
 
   sleep "$PAUSED_DURATION"
