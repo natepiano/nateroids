@@ -1,6 +1,7 @@
 use avian3d::prelude::*;
 use bevy::app::App;
 use bevy::app::Plugin;
+use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::RenderLayers;
 use bevy::color::Color;
 use bevy::color::palettes::tailwind;
@@ -24,9 +25,9 @@ use super::constants::PORTAL_PHYSICS_BURST_MULTIPLIER;
 use super::constants::PORTAL_RESOLUTION;
 use super::constants::PORTAL_SCALAR;
 use super::constants::PORTAL_SMALLEST;
-use crate::actor::Aabb;
 use crate::actor::Deaderoid;
 use crate::actor::Teleporter;
+use crate::actor::aabb_max_dimension;
 use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
@@ -189,8 +190,8 @@ fn init_portals(
     let boundary_distance_shrink = boundary_size * portal_config.distance_shrink;
 
     for (aabb, transform, velocity, teleporter, mut visual) in &mut q_actor {
-        let radius =
-            aabb.max_dimension().max(portal_config.portal_smallest) * portal_config.portal_scalar;
+        let radius = aabb_max_dimension(aabb).max(portal_config.portal_smallest)
+            * portal_config.portal_scalar;
 
         let portal_position = transform.translation;
         let actor_direction = velocity.normalize_or_zero();

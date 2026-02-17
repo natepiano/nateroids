@@ -1,3 +1,4 @@
+use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::math::Isometry3d;
@@ -5,8 +6,8 @@ use bevy::prelude::*;
 use leafwing_input_manager::action_state::ActionState;
 use rand::RngExt;
 
-use super::Aabb;
 use super::Deaderoid;
+use super::aabb;
 use super::constants::DEATH_EFFECT_DURATION_SECS;
 use super::constants::DEATH_EFFECT_EXPANDING_RING_START_SCALE;
 use super::constants::DEATH_EFFECT_LINE_COUNT;
@@ -65,7 +66,7 @@ fn configure_flame_gizmo(mut config_store: ResMut<GizmoConfigStore>) {
 /// observer that adds a death effect to a `Deaderoid`
 fn on_deaderoid_added(deaderoid: On<Add, Deaderoid>, mut commands: Commands, query: Query<&Aabb>) {
     if let Ok(aabb) = query.get(deaderoid.entity) {
-        let death_effect = DeathEffect::new(aabb.max_dimension());
+        let death_effect = DeathEffect::new(aabb::max_dimension(aabb));
         commands.entity(deaderoid.entity).insert(death_effect);
     }
 }

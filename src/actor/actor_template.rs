@@ -11,7 +11,6 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
 
-use super::Aabb;
 use super::actor_config::ActorConfig;
 use super::actor_config::ColliderType;
 use super::actor_config::GLTF_ROTATION_X;
@@ -81,9 +80,7 @@ impl Default for MissileConfig {
         Self {
             actor_config:            ActorConfig {
                 spawnable:                true,
-                aabb:                     Aabb::default(),
                 angular_damping:          None,
-                collider:                 Collider::cuboid(1., 1., 1.),
                 collider_margin:          MISSILE_COLLIDER_MARGIN,
                 collider_type:            ColliderType::Cuboid,
                 collision_damage:         MISSILE_COLLISION_DAMAGE,
@@ -153,9 +150,7 @@ impl Default for NateroidConfig {
         Self {
             actor_config:              ActorConfig {
                 spawnable:                true,
-                aabb:                     Aabb::default(),
                 angular_damping:          Some(NATEROID_ANGULAR_DAMPING),
-                collider:                 Collider::cuboid(1., 1., 1.),
                 collider_margin:          NATEROID_COLLIDER_MARGIN,
                 collider_type:            ColliderType::Ball,
                 collision_damage:         NATEROID_COLLISION_DAMAGE,
@@ -216,9 +211,7 @@ impl Default for SpaceshipConfig {
         Self {
             actor_config: ActorConfig {
                 spawnable:                true,
-                aabb:                     Aabb::default(),
                 angular_damping:          Some(SPACESHIP_ANGULAR_DAMPING),
-                collider:                 Collider::cuboid(1., 1., 1.),
                 collider_margin:          SPACESHIP_COLLIDER_MARGIN,
                 collider_type:            ColliderType::Cuboid,
                 collision_damage:         SPACESHIP_COLLISION_DAMAGE,

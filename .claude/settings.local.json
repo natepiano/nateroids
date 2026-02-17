@@ -122,7 +122,8 @@
       "mcp__brp__brp_extras_send_mouse_button",
       "mcp__brp__brp_all_type_guides",
       "mcp__brp__rpc_discover",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "mcp__brp__brp_list_bevy_examples"
     ],
     "deny": [],
     "ask": []

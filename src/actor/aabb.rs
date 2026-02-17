@@ -1,10 +1,14 @@
+use avian3d::prelude::Collider;
+use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::RenderLayers;
+use bevy::camera::visibility::VisibilitySystems;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
+use super::actor_config::ColliderType;
 use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
@@ -26,8 +30,20 @@ impl Plugin for AabbPlugin {
             .add_systems(
                 Update,
                 draw_aabb_system.run_if(toggle_active(false, GameAction::AABBs)),
+            )
+            .add_systems(
+                PostUpdate,
+                compute_actor_aabb.after(VisibilitySystems::CalculateBounds),
             );
     }
+}
+
+/// Inserted at spawn time to defer `Aabb` + `Collider` creation until Bevy
+/// has computed `Aabb` on child mesh entities via `calculate_bounds`.
+#[derive(Component)]
+pub struct PendingCollider {
+    pub collider_type: ColliderType,
+    pub margin:        f32,
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -56,117 +72,92 @@ fn apply_aabb_config(mut config_store: ResMut<GizmoConfigStore>, config: Res<Aab
     gizmo_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
-#[derive(Component, Debug, Clone, Reflect, Default)]
-pub struct Aabb {
-    pub min: Vec3,
-    pub max: Vec3,
+/// Returns the full size of the `Aabb` as a `Vec3`.
+pub fn size(aabb: &Aabb) -> Vec3 { Vec3::from(aabb.half_extents * 2.0) }
+
+/// Returns the largest axis dimension of the `Aabb`.
+pub fn max_dimension(aabb: &Aabb) -> f32 {
+    let he = aabb.half_extents;
+    he.x.max(he.y).max(he.z) * 2.0
 }
 
-impl Aabb {
-    pub fn size(&self) -> Vec3 { self.max - self.min }
-
-    pub fn center(&self) -> Vec3 { (self.min + self.max) / 2.0 }
-
-    pub fn max_dimension(&self) -> f32 {
-        let size = self.size();
-        size.x.max(size.y).max(size.z)
-    }
-
-    pub fn scale(&self, scale: f32) -> Self {
-        Self {
-            min: self.min * scale,
-            max: self.max * scale,
-        }
-    }
-
-    pub fn intersects(&self, other: &Self) -> bool {
-        self.min.x <= other.max.x
-            && self.max.x >= other.min.x
-            && self.min.y <= other.max.y
-            && self.max.y >= other.min.y
-            && self.min.z <= other.max.z
-            && self.max.z >= other.min.z
-    }
-
-    pub fn transform(&self, position: Vec3, scale: Vec3) -> Self {
-        Self {
-            min: (self.min * scale) + position,
-            max: (self.max * scale) + position,
-        }
-    }
-}
-
+/// Draws AABB gizmos for root actor entities only. `Without<ChildOf>` excludes
+/// child mesh entities which also have Bevy-computed `Aabb` components.
 fn draw_aabb_system(
     mut gizmos: Gizmos<AabbGizmo>,
-    aabbs: Query<(&Transform, &Aabb)>,
+    aabbs: Query<(&Transform, &Aabb), Without<ChildOf>>,
     config: Res<AabbConfig>,
 ) {
     for (transform, aabb) in aabbs.iter() {
-        let center = transform.transform_point(aabb.center());
+        let center = transform.transform_point(Vec3::from(aabb.center));
 
         gizmos.cube(
-            Transform::from_trs(center, transform.rotation, aabb.size() * transform.scale),
+            Transform::from_trs(center, transform.rotation, size(aabb) * transform.scale),
             config.color,
         );
     }
 }
 
-pub fn get_scene_aabb(
-    scenes: &Assets<Scene>,
-    meshes: &Assets<Mesh>,
-    handle: &Handle<Scene>,
-) -> Aabb {
-    if let Some(scene) = scenes.get(handle) {
-        let mut aabb = None;
-        if let Some(mut query_state) = scene.world.try_query::<EntityRef>() {
-            for entity in query_state.iter(&scene.world) {
-                if let Some(mesh_handle) = entity.get::<Mesh3d>()
-                    && let Some(mesh) = meshes.get(mesh_handle)
-                {
-                    let mesh_aabb = get_mesh_aabb(mesh);
-                    aabb = Some(match aabb {
-                        Some(existing) => combine_aabb(existing, mesh_aabb),
-                        None => mesh_aabb,
-                    });
+/// Runs after `CalculateBounds` to combine Bevy's per-mesh `Aabb` components
+/// into a single root-local `Aabb` on actor entities, then creates the `Collider`.
+fn compute_actor_aabb(
+    mut commands: Commands,
+    actors: Query<(Entity, &PendingCollider, &GlobalTransform), Without<Aabb>>,
+    children_query: Query<&Children>,
+    child_aabbs: Query<(&GlobalTransform, &Aabb), With<Mesh3d>>,
+) {
+    for (entity, pending, root_global) in &actors {
+        let root_inverse = root_global.affine().inverse();
+
+        let mut all_points = Vec::new();
+
+        for descendant in children_query.iter_descendants(entity) {
+            if let Ok((child_global, child_aabb)) = child_aabbs.get(descendant) {
+                let child_to_root = root_inverse * child_global.affine();
+                for corner in aabb_corners(child_aabb) {
+                    all_points.push(child_to_root.transform_point3(corner));
                 }
             }
         }
-        aabb.unwrap_or(Aabb {
-            min: Vec3::ZERO,
-            max: Vec3::ONE,
-        })
-    } else {
-        Aabb {
-            min: Vec3::ZERO,
-            max: Vec3::ONE,
+
+        if all_points.is_empty() {
+            continue;
         }
+
+        let aabb = Aabb::enclosing(all_points).expect("non-empty points must produce an Aabb");
+        let aabb_size = size(&aabb);
+
+        let collider = match pending.collider_type {
+            ColliderType::Ball => {
+                let radius = aabb_size.length() * pending.margin;
+                Collider::sphere(radius)
+            },
+            ColliderType::Cuboid => Collider::cuboid(
+                aabb_size.x * pending.margin,
+                aabb_size.y * pending.margin,
+                aabb_size.z * pending.margin,
+            ),
+        };
+
+        commands
+            .entity(entity)
+            .insert((aabb, collider))
+            .remove::<PendingCollider>();
     }
 }
 
-fn get_mesh_aabb(mesh: &Mesh) -> Aabb {
-    if let Some(positions) = mesh
-        .attribute(Mesh::ATTRIBUTE_POSITION)
-        .and_then(|attr| attr.as_float3())
-    {
-        let mut min = Vec3::splat(f32::MAX);
-        let mut max = Vec3::splat(f32::MIN);
-        for position in positions {
-            min = min.min(Vec3::from(*position));
-            max = max.max(Vec3::from(*position));
-        }
-        Aabb { min, max }
-    } else {
-        // Default to a unit cube if no vertex data is found
-        Aabb {
-            min: Vec3::splat(-0.5),
-            max: Vec3::splat(0.5),
-        }
-    }
-}
-
-fn combine_aabb(a: Aabb, b: Aabb) -> Aabb {
-    Aabb {
-        min: a.min.min(b.min),
-        max: a.max.max(b.max),
-    }
+/// Returns the 8 corner points of an `Aabb`.
+fn aabb_corners(aabb: &Aabb) -> [Vec3; 8] {
+    let min = Vec3::from(aabb.min());
+    let max = Vec3::from(aabb.max());
+    [
+        Vec3::new(min.x, min.y, min.z),
+        Vec3::new(max.x, min.y, min.z),
+        Vec3::new(min.x, max.y, min.z),
+        Vec3::new(max.x, max.y, min.z),
+        Vec3::new(min.x, min.y, max.z),
+        Vec3::new(max.x, min.y, max.z),
+        Vec3::new(min.x, max.y, max.z),
+        Vec3::new(max.x, max.y, max.z),
+    ]
 }

@@ -5,7 +5,6 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
-use super::Aabb;
 use super::aabb;
 use super::actor_template::MissileConfig;
 use super::actor_template::NateroidConfig;
@@ -50,12 +49,8 @@ impl Plugin for ActorConfigPlugin {
 #[reflect(InspectorOptions)]
 pub struct ActorConfig {
     pub spawnable:                bool,
-    #[reflect(ignore)]
-    pub aabb:                     Aabb,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub angular_damping:          Option<f32>,
-    #[reflect(ignore)]
-    pub collider:                 Collider,
     #[inspector(min = 0.1, max = 3.0, display = NumberDisplay::Slider)]
     pub collider_margin:          f32,
     pub collider_type:            ColliderType,
@@ -126,40 +121,20 @@ pub const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
     .lock_rotation_y()
     .lock_translation_z();
 
-pub fn initialize_actor_configs(
-    mut commands: Commands,
-    meshes: Res<Assets<Mesh>>,
-    scenes: Res<Assets<Scene>>,
-    scene_assets: Res<SceneAssets>,
-) {
+pub fn initialize_actor_configs(mut commands: Commands, scene_assets: Res<SceneAssets>) {
     let mut nateroid_defaults = NateroidConfig::default();
-    let nateroid_actor_config = initialize_actor_config(
-        nateroid_defaults.actor_config,
-        &scenes,
-        &meshes,
-        &scene_assets.nateroid,
-    );
-    nateroid_defaults.actor_config = nateroid_actor_config;
+    initialize_actor_config(&mut nateroid_defaults.actor_config, &scene_assets.nateroid);
     commands.insert_resource(nateroid_defaults);
 
     let mut missile_defaults = MissileConfig::default();
-    let missile_actor_config = initialize_actor_config(
-        missile_defaults.actor_config,
-        &scenes,
-        &meshes,
-        &scene_assets.missile,
-    );
-    missile_defaults.actor_config = missile_actor_config;
+    initialize_actor_config(&mut missile_defaults.actor_config, &scene_assets.missile);
     commands.insert_resource(missile_defaults);
 
     let mut spaceship_defaults = SpaceshipConfig::default();
-    let spaceship_actor_config = initialize_actor_config(
-        spaceship_defaults.actor_config.clone(),
-        &scenes,
-        &meshes,
+    initialize_actor_config(
+        &mut spaceship_defaults.actor_config,
         &scene_assets.spaceship,
     );
-    spaceship_defaults.actor_config = spaceship_actor_config;
     commands.insert_resource(spaceship_defaults);
 }
 
@@ -167,34 +142,9 @@ pub fn create_spawn_timer(spawn_timer_seconds: Option<f32>) -> Option<Timer> {
     spawn_timer_seconds.map(|seconds| Timer::from_seconds(seconds, TimerMode::Repeating))
 }
 
-fn initialize_actor_config(
-    mut config: ActorConfig,
-    scenes: &Assets<Scene>,
-    meshes: &Assets<Mesh>,
-    scene_handle: &Handle<Scene>,
-) -> ActorConfig {
-    let aabb = aabb::get_scene_aabb(scenes, meshes, scene_handle);
-
-    // Use raw AABB size - transform scale will handle sizing
-    let size = aabb.size();
-
-    let collider = match config.collider_type {
-        ColliderType::Ball => {
-            let radius = size.length() * config.collider_margin;
-            Collider::sphere(radius)
-        },
-        ColliderType::Cuboid => Collider::cuboid(
-            size.x * config.collider_margin,
-            size.y * config.collider_margin,
-            size.z * config.collider_margin,
-        ),
-    };
-
-    config.aabb = aabb;
-    config.collider = collider;
+fn initialize_actor_config(config: &mut ActorConfig, scene_handle: &Handle<Scene>) {
     config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);
     config.scene = scene_handle.clone();
-    config
 }
 
 /// use config values so inspectors can provide new defaults
@@ -205,8 +155,10 @@ pub fn insert_configured_components(
 ) {
     // Insert all components on the actor entity
     commands.entity(actor_entity).insert((
-        config.aabb.clone(),
-        config.collider.clone(),
+        aabb::PendingCollider {
+            collider_type: config.collider_type.clone(),
+            margin:        config.collider_margin,
+        },
         CollisionDamage(config.collision_damage),
         config.collision_layers,
         GravityScale(config.gravity_scale),

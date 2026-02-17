@@ -1,3 +1,4 @@
+use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::basic;
 use bevy::picking::hover::PickingInteraction;
@@ -5,9 +6,9 @@ use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera_ext::SetFitTarget;
 
-use crate::actor::Aabb;
 use crate::actor::Nateroid;
 use crate::actor::Spaceship;
+use crate::actor::aabb_size;
 use crate::camera::RenderLayer;
 use crate::playfield::BoundaryVolume;
 
@@ -157,11 +158,11 @@ fn draw_selected_aabb_gizmo(
     selected: Query<(&Transform, &Aabb), With<Selected>>,
 ) {
     for (transform, aabb) in selected.iter() {
-        let center = transform.transform_point(aabb.center());
+        let center = transform.transform_point(Vec3::from(aabb.center));
         gizmos.cube(
             Transform::from_translation(center)
                 .with_rotation(transform.rotation)
-                .with_scale(aabb.size() * transform.scale),
+                .with_scale(aabb_size(aabb) * transform.scale),
             Color::from(basic::PURPLE),
         );
     }

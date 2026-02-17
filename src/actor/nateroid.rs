@@ -8,6 +8,7 @@ use rand::Rng;
 use rand::RngExt;
 
 use super::Teleporter;
+use super::actor_config::ColliderType;
 use super::actor_config::Health;
 use super::actor_config::LOCKED_AXES_2D;
 use super::actor_config::insert_configured_components;
@@ -473,12 +474,17 @@ fn initialize_transform(
         let position = get_random_position_within_bounds(&bounds);
         let rotation = get_random_rotation();
 
-        let intersections = spatial_query.shape_intersections(
-            &nateroid_config.actor_config.collider,
-            position,
-            rotation,
-            &filter,
-        );
+        // Approximate collider for spawn overlap check — the real collider is
+        // computed from child AABBs after the entity spawns.
+        let spawn_collider = match nateroid_config.actor_config.collider_type {
+            ColliderType::Ball => Collider::sphere(nateroid_config.actor_config.collider_margin),
+            ColliderType::Cuboid => {
+                let m = nateroid_config.actor_config.collider_margin;
+                Collider::cuboid(m, m, m)
+            },
+        };
+        let intersections =
+            spatial_query.shape_intersections(&spawn_collider, position, rotation, &filter);
 
         if intersections.is_empty() {
             return Some(Transform::from_trs(position, rotation, scale));
