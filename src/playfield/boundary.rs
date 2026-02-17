@@ -5,15 +5,12 @@ use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
-use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera_ext::CameraMoveList;
 
 use super::boundary_face::BoundaryFace;
 use super::constants::BOUNDARY_CELL_COUNT;
-use super::constants::BOUNDARY_DEFAULT_VIEWPORT_SIZE;
 use super::constants::BOUNDARY_GRID_ALPHA;
 use super::constants::BOUNDARY_GRID_LINE_WIDTH;
-use super::constants::BOUNDARY_LINE_WIDTH_MULTIPLIER;
 use super::constants::BOUNDARY_NORMAL_EPSILON;
 use super::constants::BOUNDARY_OUTER_ALPHA;
 use super::constants::BOUNDARY_OUTER_LINE_WIDTH;
@@ -84,15 +81,13 @@ fn apply_boundary_config(mut config_store: ResMut<GizmoConfigStore>, boundary: R
 /// This entity represents the spatial data for the boundary.
 fn spawn_boundary_volume(mut commands: Commands, boundary: Res<Boundary>) {
     let scale = boundary.boundary_scalar * boundary.cell_count.as_vec3();
-    let half_extents = scale / 2.0;
 
     commands.spawn((
         BoundaryVolume,
-        Transform::from_scale(scale),
-        GlobalTransform::default(),
+        Transform::from_scale(scale), // Transform has actual size, Aabb is unit cube (like meshes)
         Aabb {
             center:       Vec3A::ZERO.into(),
-            half_extents: Vec3A::from(half_extents).into(),
+            half_extents: Vec3A::splat(0.5).into(), // Unit cube in local space
         },
     ));
 
@@ -103,20 +98,14 @@ fn spawn_boundary_volume(mut commands: Commands, boundary: Res<Boundary>) {
 /// Called when the `Boundary` resource changes.
 fn sync_boundary_volume(
     boundary: Res<Boundary>,
-    mut volume_query: Query<(&mut Transform, &mut Aabb), With<BoundaryVolume>>,
+    mut volume_query: Query<&mut Transform, With<BoundaryVolume>>,
 ) {
-    let Ok((mut transform, mut aabb)) = volume_query.single_mut() else {
+    let Ok(mut transform) = volume_query.single_mut() else {
         return;
     };
 
-    // Recalculate scale from boundary config
-    let scale = boundary.boundary_scalar * boundary.cell_count.as_vec3();
-    transform.scale = scale;
-
-    // Update Aabb
-    let half_extents = scale / 2.0;
-    aabb.center = Vec3A::ZERO.into();
-    aabb.half_extents = Vec3A::from(half_extents).into();
+    // Update Transform scale to match boundary size (Aabb stays as unit cube)
+    transform.scale = boundary.boundary_scalar * boundary.cell_count.as_vec3();
 }
 
 /// defines
@@ -784,17 +773,13 @@ fn is_in_bounds(
 /// transform
 fn draw_boundary(
     boundary: Res<Boundary>,
-    mut boundary_volume_query: Query<&mut Transform, With<BoundaryVolume>>,
+    boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     mut grid_gizmo: Gizmos<GridGizmo>,
     mut outer_boundary_gizmo: Gizmos<BoundaryGizmo>,
-    camera_query: Query<(&Camera, &Projection, &GlobalTransform), With<PanOrbitCamera>>,
 ) {
-    let Ok(mut boundary_transform) = boundary_volume_query.single_mut() else {
+    let Ok(boundary_transform) = boundary_volume_query.single() else {
         return;
     };
-
-    // Update entity's transform from boundary config
-    boundary_transform.scale = boundary.scale();
 
     grid_gizmo
         .grid_3d(
@@ -805,31 +790,9 @@ fn draw_boundary(
         )
         .outer_edges();
 
-    // Calculate world-space offset based on camera projection
-    let Ok((camera, projection, camera_transform)) = camera_query.single() else {
-        return; // No camera yet, skip gizmo rendering this frame
-    };
-    let Projection::Perspective(perspective) = projection else {
-        return; // Not perspective camera, skip
-    };
-
-    let viewport_size = camera
-        .logical_viewport_size()
-        .unwrap_or(BOUNDARY_DEFAULT_VIEWPORT_SIZE);
-    let camera_distance = camera_transform
-        .translation()
-        .distance(boundary_transform.translation);
-    let world_height_at_boundary = 2.0 * camera_distance * (perspective.fov / 2.0).tan();
-    let world_units_per_pixel = world_height_at_boundary / viewport_size.y;
-
-    // Gizmo lines are centered on edges
-    // Empirically tuned multiplier to account for gizmo rendering
-    let total_line_width = boundary.grid_line_width + boundary.boundary_line_width;
-    let outer_scale = boundary_transform.scale
-        + Vec3::splat(total_line_width * world_units_per_pixel * BOUNDARY_LINE_WIDTH_MULTIPLIER);
-
+    // Draw outer boundary box
     outer_boundary_gizmo.primitive_3d(
-        &Cuboid::from_size(outer_scale),
+        &Cuboid::from_size(boundary_transform.scale),
         Isometry3d::new(boundary_transform.translation, Quat::IDENTITY),
         boundary.outer_color,
     );

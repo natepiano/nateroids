@@ -1,13 +1,15 @@
+use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::RenderLayers;
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
+use bevy_panorbit_camera_ext::calculate_fit_radius;
 use bevy_panorbit_camera_ext::prelude::*;
 
 use crate::camera::CameraConfig;
 use crate::camera::RenderLayer;
-use crate::camera::TargetWindowSize;
 use crate::playfield::Boundary;
+use crate::playfield::BoundaryVolume;
 use crate::state::GameState;
 
 pub struct SplashPlugin;
@@ -109,48 +111,6 @@ fn run_splash(
     if timer_finished && camera_animation_done {
         next_state.set(GameState::InGame);
     }
-}
-
-#[allow(clippy::similar_names)] // x_distance, y_distance, xy_distance are intentionally similar
-fn calculate_home_radius(
-    grid_size: Vec3,
-    margin: f32,
-    projection: &Projection,
-    camera: &Camera,
-    target_size: Option<Vec2>,
-) -> Option<f32> {
-    let Projection::Perspective(perspective) = projection else {
-        return None;
-    };
-
-    // Get actual viewport aspect ratio
-    // Priority: target_size (from bevy_window_manager) > viewport > perspective fallback
-    let aspect_ratio = if let Some(size) = target_size {
-        size.x / size.y
-    } else if let Some(viewport_size) = camera.logical_viewport_size() {
-        viewport_size.x / viewport_size.y
-    } else {
-        perspective.aspect_ratio
-    };
-
-    let fov = perspective.fov;
-
-    // Calculate horizontal FOV based on aspect ratio
-    let horizontal_fov = 2.0 * ((fov / 2.0).tan() * aspect_ratio).atan();
-
-    // Calculate distances required for X and Y dimensions to fit in viewport
-    let x_distance = (grid_size.x / 2.0) / (horizontal_fov / 2.0).tan();
-    let y_distance = (grid_size.y / 2.0) / (fov / 2.0).tan();
-
-    // Take the max of X and Y distances
-    let xy_distance = x_distance.max(y_distance);
-
-    // For Z dimension (depth)
-    let z_half_depth = grid_size.z / 2.0;
-
-    // Add Z depth to XY distance, then apply margin to the total
-    // This ensures the entire 3D boundary fits with proper margin
-    Some((xy_distance + z_half_depth) * margin)
 }
 
 fn create_spin_sequence(home_radius: f32, durations: &[f32]) -> Vec<CameraMove> {
@@ -259,30 +219,37 @@ fn create_splash_camera_moves(splash_start_radius: f32, home_radius: f32) -> Vec
 fn start_splash_camera_animation(
     mut commands: Commands,
     camera_config: Res<CameraConfig>,
-    boundary: Res<Boundary>,
-    zoom_config: Res<ZoomConfig>,
-    target_window_size: Option<Res<TargetWindowSize>>,
-    camera_query: Query<(Entity, &Projection, &Camera), With<PanOrbitCamera>>,
+    camera_query: Query<(Entity, &Projection, &Camera, &PanOrbitCamera)>,
+    boundary_volume_query: Query<Entity, With<BoundaryVolume>>,
+    aabb_query: Query<&Aabb>,
+    children_query: Query<&Children>,
+    global_transform_query: Query<&GlobalTransform>,
 ) {
-    let Ok((entity, projection, camera)) = camera_query.single() else {
+    let Ok((entity, projection, camera, panorbit)) = camera_query.single() else {
         return;
     };
 
-    // Use TargetWindowSize if present (startup), then remove it.
-    // After removal, future calls will use actual window dimensions.
-    let target_size = target_window_size.map(|tws| {
-        commands.remove_resource::<TargetWindowSize>();
-        tws.size
-    });
+    let Ok(boundary_entity) = boundary_volume_query.single() else {
+        warn!("No BoundaryVolume entity found for splash animation");
+        return;
+    };
 
-    // Calculate "home" position - same as home_camera command
-    let Some(home_radius) = calculate_home_radius(
-        boundary.scale(),
-        zoom_config.zoom_margin_multiplier(),
+    // Calculate "home" position for the landing orientation (yaw=0, pitch=0)
+    // The animation lands at Vec3::new(0, 0, home_radius) which corresponds to yaw=0, pitch=0.
+    // We must compute the radius for that orientation, not the splash start orientation.
+    let Some(home_radius) = calculate_fit_radius(
+        boundary_entity,
+        panorbit.target_radius,
+        0.0,
+        0.0,
+        DEFAULT_MARGIN,
         projection,
         camera,
-        target_size,
+        &aabb_query,
+        &children_query,
+        &global_transform_query,
     ) else {
+        warn!("Failed to calculate home radius for splash animation");
         return;
     };
 

@@ -3,7 +3,6 @@
 
 use bevy::color::Color;
 use bevy::math::UVec3;
-use bevy::math::Vec2;
 
 // =============================================================================
 // Boundary Configuration
@@ -26,12 +25,6 @@ pub const BOUNDARY_GRID_ALPHA: f32 = 0.25;
 
 /// Target alpha value for outer boundary color
 pub const BOUNDARY_OUTER_ALPHA: f32 = 1.0;
-
-/// Default viewport size used when camera viewport size is unavailable
-pub const BOUNDARY_DEFAULT_VIEWPORT_SIZE: Vec2 = Vec2::new(1920.0, 1080.0);
-
-/// Multiplier for total line width when calculating outer scale
-pub const BOUNDARY_LINE_WIDTH_MULTIPLIER: f32 = 0.1;
 
 // =============================================================================
 // Boundary Position Snapping
@@ -123,19 +116,3 @@ pub const PLANE_THICKNESS: f32 = 0.001;
 
 /// Rotation angle for plane orientation (no rotation)
 pub const PLANE_ROTATION_ANGLE: f32 = 0.0;
-
-// =============================================================================
-// Screen Boundary Configuration
-// =============================================================================
-
-/// Default line width for screen boundary gizmo
-pub const SCREEN_BOUNDARY_LINE_WIDTH: f32 = 1.0;
-
-/// Text offset from screen edge for margin labels
-pub const SCREEN_BOUNDARY_TEXT_OFFSET: f32 = 0.01;
-
-/// Font size for margin labels
-pub const SCREEN_BOUNDARY_FONT_SIZE: f32 = 11.0;
-
-/// Offset distance for world position label placement
-pub const SCREEN_BOUNDARY_WORLD_POS_OFFSET: f32 = 1.0;

@@ -118,7 +118,10 @@
       "Bash(done)",
       "Bash(shuf:*)",
       "mcp__brp__world_despawn_entity",
-      "Bash(./zoom_dance.sh:*)"
+      "Bash(./zoom_dance.sh:*)",
+      "mcp__brp__brp_extras_send_mouse_button",
+      "mcp__brp__brp_all_type_guides",
+      "mcp__brp__rpc_discover"
     ],
     "deny": [],
     "ask": []

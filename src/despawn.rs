@@ -1,6 +1,6 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use rand::Rng;
+use rand::RngExt;
 
 use crate::actor::Deaderoid;
 use crate::actor::DeathCorner;

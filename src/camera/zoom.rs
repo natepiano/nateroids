@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
+use bevy_panorbit_camera_ext::DEFAULT_MARGIN;
 use bevy_panorbit_camera_ext::ZoomToFit as ZoomToFitEvent;
 
 use crate::playfield::BoundaryVolume;
@@ -19,6 +20,10 @@ pub fn start_zoom_to_fit(
         return;
     };
 
-    commands.trigger(ZoomToFitEvent::new(camera_entity, boundary_entity));
+    commands.trigger(ZoomToFitEvent::new(
+        camera_entity,
+        boundary_entity,
+        DEFAULT_MARGIN,
+    ));
     debug!("Triggered zoom-to-fit to boundary");
 }

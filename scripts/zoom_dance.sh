@@ -129,7 +129,7 @@ while true; do
 
   # Zoom in (while paused)
   curl -s -X POST http://127.0.0.1:$PORT/jsonrpc -H "Content-Type: application/json" \
-    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_panorbit_camera_ext::extension::ZoomToFit\", \"value\": {\"entity\": $CAMERA, \"target\": $target}}}" >/dev/null 2>&1
+    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_panorbit_camera_ext::extension::ZoomToFit\", \"value\": {\"entity\": $CAMERA, \"target\": $target, \"margin\": 0.1}}}" >/dev/null 2>&1
   echo "Zoomed in (paused for ${PAUSED_DURATION}s)"
 
   sleep "$PAUSED_DURATION"

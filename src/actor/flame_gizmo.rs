@@ -3,7 +3,7 @@ use bevy::color::palettes::tailwind;
 use bevy::math::Isometry3d;
 use bevy::prelude::*;
 use leafwing_input_manager::action_state::ActionState;
-use rand::Rng;
+use rand::RngExt;
 
 use super::Aabb;
 use super::Deaderoid;

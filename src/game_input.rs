@@ -34,7 +34,6 @@ pub enum GameAction {
     Pause,
     RestartGame,
     RestartWithSplash,
-    ScreenBoundaryConfigInspector,
     SpaceshipInspector,
     SpaceshipControlInspector,
     StarConfigInspector,
@@ -99,9 +98,6 @@ impl GameAction {
                         .with(KeyCode::KeyR),
                 ],
             ),
-            Self::ScreenBoundaryConfigInspector => {
-                insert_shift_input(input_map, action, KeyCode::Digit6)
-            },
             Self::ShowFocus => insert_shift_input(input_map, action, KeyCode::KeyF),
             Self::SpaceshipInspector => insert_shift_input(input_map, action, KeyCode::Digit3),
             Self::SpaceshipControlInspector => {

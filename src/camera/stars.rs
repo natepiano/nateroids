@@ -7,6 +7,7 @@ use bevy::diagnostic::FrameCount;
 use bevy::mesh::Mesh3d;
 use bevy::prelude::*;
 use rand::Rng;
+use rand::RngExt;
 use rand::prelude::ThreadRng;
 
 use super::RenderLayer;

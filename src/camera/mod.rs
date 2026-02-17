@@ -10,7 +10,6 @@ use bevy::camera::visibility::Layer;
 use bevy::prelude::*;
 use bevy_panorbit_camera_ext::CameraExtPlugin;
 use cameras::CamerasPlugin;
-pub use cameras::TargetWindowSize;
 pub use config::CameraConfig;
 use config::CameraConfigPlugin;
 use lights::DirectionalLightsPlugin;

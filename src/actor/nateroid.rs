@@ -5,6 +5,7 @@ use avian3d::prelude::*;
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
 use rand::Rng;
+use rand::RngExt;
 
 use super::Teleporter;
 use super::actor_config::Health;
@@ -222,7 +223,7 @@ fn spawn_test_missile(
     mut commands: Commands,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
 ) {
-    use rand::Rng;
+    use rand::RngExt;
     let mut rng = rand::rng();
 
     let Ok(boundary_transform) = boundary_volume_query.single() else {

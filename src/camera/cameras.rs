@@ -9,8 +9,11 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_panorbit_camera::TrackpadBehavior;
+use bevy_panorbit_camera_ext::FitTargetGizmo;
+use bevy_panorbit_camera_ext::FitTargetVisualizationPlugin;
+use bevy_panorbit_camera_ext::SetFitTarget;
 use bevy_panorbit_camera_ext::prelude::*;
-use bevy_window_manager::WindowTargetLoaded;
+use leafwing_input_manager::prelude::ActionState;
 
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
@@ -32,6 +35,7 @@ pub struct CamerasPlugin;
 impl Plugin for CamerasPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(PanOrbitCameraPlugin)
+            .add_plugins(FitTargetVisualizationPlugin)
             .init_gizmo_group::<FocusGizmo>()
             .init_resource::<FocusConfig>()
             .init_resource::<FocusGizmoState>()
@@ -39,16 +43,23 @@ impl Plugin for CamerasPlugin {
                 ResourceInspectorPlugin::<FocusConfig>::default()
                     .run_if(toggle_active(false, GameAction::FocusConfigInspector)),
             )
-            .add_observer(on_window_target_loaded)
             .add_systems(
                 Startup,
-                (spawn_ui_camera, spawn_star_camera, spawn_panorbit_camera).chain(),
+                (
+                    spawn_ui_camera,
+                    spawn_star_camera,
+                    spawn_panorbit_camera,
+                    set_fit_target_debug,
+                    enable_fit_target_visualization,
+                )
+                    .chain(),
             )
             .add_systems(Update, home_camera.run_if(just_pressed(GameAction::Home)))
             .add_systems(
                 Update,
                 start_zoom_to_fit.run_if(just_pressed(GameAction::ZoomToFit)),
             )
+            .add_systems(Update, toggle_fit_target_debug)
             .add_systems(
                 Update,
                 apply_focus_config.run_if(resource_changed::<FocusConfig>),
@@ -131,17 +142,6 @@ fn update_focus_gizmo_state(
 
 #[derive(Component, Reflect)]
 pub struct StarCamera;
-
-/// Stores target window dimensions from `bevy_window_manager` for accurate `home_radius`
-/// calculation.
-///
-/// This resource captures the intended window size early in startup (before the actual window
-/// is sized) and is used during splash animation to calculate the correct zoom level.
-/// It is removed after first use so subsequent calculations use actual window dimensions.
-#[derive(Resource)]
-pub struct TargetWindowSize {
-    pub size: Vec2,
-}
 
 /// Spawns a dedicated UI camera for `egui`/`bevy_inspector_egui` to attach to.
 ///
@@ -357,23 +357,13 @@ fn cleanup_focus_labels(
 
 /// Observer that captures target window dimensions from `bevy_window_manager` on startup.
 ///
-/// This runs when `WindowTargetLoaded` is triggered on the `PrimaryWindow` entity,
-/// storing the intended window size as a resource for accurate `home_radius` calculation
-/// during splash animation.
-fn on_window_target_loaded(trigger: On<WindowTargetLoaded>, mut commands: Commands) {
-    let event = trigger.event();
-    commands.insert_resource(TargetWindowSize {
-        size: event.size.as_vec2(),
-    });
-}
-
 /// take us back to the splash screen start position
 pub fn home_camera(
     mut commands: Commands,
     boundary_volume_query: Query<Entity, With<BoundaryVolume>>,
-    camera_query: Query<Entity, With<PanOrbitCamera>>,
+    mut camera_query: Query<(Entity, &mut PanOrbitCamera)>,
 ) {
-    let Ok(camera_entity) = camera_query.single() else {
+    let Ok((camera_entity, mut camera)) = camera_query.single_mut() else {
         return;
     };
 
@@ -382,6 +372,54 @@ pub fn home_camera(
         return;
     };
 
+    // Set canonical orientation for home position
+    camera.target_yaw = 0.0;
+    camera.target_pitch = 0.0;
+    camera.force_update = true;
+
     // Trigger SnapToFit event to instantly position camera at boundary
-    commands.trigger(SnapToFit::new(camera_entity, boundary_entity));
+    commands.trigger(SnapToFit::new(
+        camera_entity,
+        boundary_entity,
+        DEFAULT_MARGIN,
+    ));
+}
+
+/// Toggle fit target visualization (mimics physics debug pattern)
+fn toggle_fit_target_debug(
+    user_input: Res<ActionState<GameAction>>,
+    mut config_store: ResMut<GizmoConfigStore>,
+) {
+    if user_input.just_pressed(&GameAction::BoundaryBox) {
+        let (config, _) = config_store.config_mut::<FitTargetGizmo>();
+        config.enabled = !config.enabled;
+        info!("Fit target visualization: {}", config.enabled);
+    }
+}
+
+/// Sets the boundary as the debug target for fit visualization at startup
+fn set_fit_target_debug(
+    mut commands: Commands,
+    camera_query: Query<Entity, With<PanOrbitCamera>>,
+    boundary_volume_query: Query<Entity, With<BoundaryVolume>>,
+) {
+    let Ok(camera_entity) = camera_query.single() else {
+        return;
+    };
+
+    let Ok(boundary_entity) = boundary_volume_query.single() else {
+        warn!("No BoundaryVolume entity found for fit target debug");
+        return;
+    };
+
+    // Set boundary as the fit target for debug visualization
+    commands.trigger(SetFitTarget::new(camera_entity, boundary_entity));
+    info!("Set boundary as fit target for debug visualization");
+}
+
+/// Enables fit target visualization by default at startup
+fn enable_fit_target_visualization(mut config_store: ResMut<GizmoConfigStore>) {
+    let (config, _) = config_store.config_mut::<FitTargetGizmo>();
+    config.enabled = true;
+    info!("Enabled fit target visualization");
 }
