@@ -37,7 +37,7 @@ bevy = { version = "0.18.0", features = [
   "bevy_remote",
 ] }
 bevy_brp_extras = "0.18.1"
-bevy_panorbit_camera_ext = { path = "../bevy_panorbit_camera_ext" }
+bevy_panorbit_camera_ext = { git = "https://github.com/natepiano/bevy_panorbit_camera_ext/" }
 bevy-inspector-egui = "0.36.0"
 bevy_panorbit_camera = { version = "0.34.0", features = ["bevy_egui"] }
 bevy_window_manager = "0.18.1"

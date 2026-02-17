@@ -100,10 +100,10 @@ fn on_selected_removed(
     zoom_target.0 = None;
 
     // Point fit-target visualization back at boundary
-    if let Ok(camera) = camera_query.single() {
-        if let Ok(boundary) = boundary_query.single() {
-            commands.trigger(SetFitTarget::new(camera, boundary));
-        }
+    if let Ok(camera) = camera_query.single()
+        && let Ok(boundary) = boundary_query.single()
+    {
+        commands.trigger(SetFitTarget::new(camera, boundary));
     }
 
     debug!("Selection cleared, reverted to boundary");

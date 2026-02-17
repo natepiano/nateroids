@@ -132,7 +132,6 @@ fn on_teleported(
 }
 
 pub fn teleport_at_boundary(
-    boundary: Res<Boundary>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     mut commands: Commands,
     mut teleporting_entities: Query<
@@ -158,7 +157,7 @@ pub fn teleport_at_boundary(
         let original_position = transform.translation;
 
         let teleported_position =
-            boundary.calculate_teleport_position(original_position, boundary_transform);
+            Boundary::calculate_teleport_position(original_position, boundary_transform);
 
         if teleported_position == original_position {
             teleporter.just_teleported = false;
@@ -189,8 +188,10 @@ pub fn teleport_at_boundary(
             transform.translation = teleported_position;
             teleporter.just_teleported = true;
             teleporter.last_teleported_position = Some(teleported_position);
-            teleporter.last_teleported_normal =
-                Some(boundary.get_normal_for_position(teleported_position, boundary_transform));
+            teleporter.last_teleported_normal = Some(Boundary::get_normal_for_position(
+                teleported_position,
+                boundary_transform,
+            ));
 
             // Trigger event to handle overlapping entities
             commands.trigger(Teleported {

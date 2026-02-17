@@ -101,7 +101,13 @@ fn run_splash(
     mut splash_text_timer: ResMut<SplashTextTimer>,
     time: Res<Time>,
     mut q_text: Query<(Entity, &mut TextFont), With<SplashText>>,
-    camera_query: Query<(), (With<PanOrbitCamera>, With<CameraMoveList>)>,
+    camera_query: Query<
+        (),
+        (
+            With<PanOrbitCamera>,
+            Or<(With<CameraMoveList>, With<SplashZoomActive>)>,
+        ),
+    >,
 ) {
     splash_text_timer.timer.tick(time.delta());
 

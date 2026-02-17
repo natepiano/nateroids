@@ -172,7 +172,6 @@ fn init_portals(
         &Teleporter,
         &mut ActorPortals,
     )>,
-    boundary: Res<Boundary>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     portal_config: Res<PortalConfig>,
     time: Res<Time>,
@@ -206,7 +205,6 @@ fn init_portals(
         };
 
         handle_approaching_visual(
-            &boundary,
             boundary_transform,
             portal.clone(),
             &portal_config,
@@ -219,7 +217,6 @@ fn init_portals(
             teleporter,
             &time,
             &mut visual,
-            &boundary,
             boundary_transform,
         );
     }
@@ -240,12 +237,11 @@ fn is_physics_burst(position: Vec3, boundary_transform: &Transform) -> bool {
 fn snap_and_get_face(
     position: Vec3,
     initial_normal: Dir3,
-    boundary: &Boundary,
     boundary_transform: &Transform,
 ) -> (Vec3, Option<BoundaryFace>) {
     let snapped_position =
-        boundary.snap_position_to_boundary_face(position, initial_normal, boundary_transform);
-    let final_normal = boundary.get_normal_for_position(snapped_position, boundary_transform);
+        Boundary::snap_position_to_boundary_face(position, initial_normal, boundary_transform);
+    let final_normal = Boundary::get_normal_for_position(snapped_position, boundary_transform);
     let face = BoundaryFace::from_normal(final_normal);
     (snapped_position, face)
 }
@@ -256,7 +252,6 @@ fn handle_emerging_visual(
     teleporter: &Teleporter,
     time: &Res<Time>,
     visual: &mut Mut<ActorPortals>,
-    boundary: &Res<Boundary>,
     boundary_transform: &Transform,
 ) {
     if teleporter.just_teleported {
@@ -273,7 +268,7 @@ fn handle_emerging_visual(
 
                 // Snap to boundary face and recalculate face to prevent corner glitches
                 let (snapped_position, final_face) =
-                    snap_and_get_face(teleported_position, normal, boundary, boundary_transform);
+                    snap_and_get_face(teleported_position, normal, boundary_transform);
 
                 visual.emerging = Some(Portal {
                     actor_distance_to_wall: 0.0,
@@ -295,7 +290,6 @@ fn handle_emerging_visual(
 }
 
 fn handle_approaching_visual(
-    boundary: &Res<Boundary>,
     boundary_transform: &Transform,
     portal: Portal,
     portal_config: &Res<PortalConfig>,
@@ -303,12 +297,12 @@ fn handle_approaching_visual(
     visual: &mut Mut<ActorPortals>,
 ) {
     if let Some(collision_point) =
-        boundary.find_edge_point(portal.position, portal.actor_direction, boundary_transform)
+        Boundary::find_edge_point(portal.position, portal.actor_direction, boundary_transform)
     {
         let actor_distance_to_wall = portal.position.distance(collision_point);
 
         if actor_distance_to_wall <= portal.boundary_distance_approach {
-            let normal = boundary.get_normal_for_position(collision_point, boundary_transform);
+            let normal = Boundary::get_normal_for_position(collision_point, boundary_transform);
 
             // Create temporary portal at collision point to calculate face count BEFORE smoothing
             let face = BoundaryFace::from_normal(normal).unwrap_or(BoundaryFace::Right);
@@ -319,7 +313,7 @@ fn handle_approaching_visual(
                 ..portal
             };
             let current_face_count =
-                boundary.calculate_portal_face_count(&temp_portal, boundary_transform);
+                Boundary::calculate_portal_face_count(&temp_portal, boundary_transform);
 
             // Get previous face count
             let previous_face_count = visual.approaching.as_ref().map_or(1, |p| p.face_count);
@@ -333,7 +327,7 @@ fn handle_approaching_visual(
 
             // Snap to boundary face and recalculate face to prevent corner glitches
             let (snapped_position, face) =
-                snap_and_get_face(smoothed_position, normal, boundary, boundary_transform);
+                snap_and_get_face(smoothed_position, normal, boundary_transform);
 
             if let Some(face) = face {
                 visual.approaching = Some(Portal {
@@ -435,7 +429,6 @@ fn update_approaching_portals(
 }
 
 fn draw_approaching_portals(
-    boundary: Res<Boundary>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     config: Res<PortalConfig>,
     orientation: Res<CameraOrientation>,
@@ -448,7 +441,7 @@ fn draw_approaching_portals(
 
     for (portal, deaderoid) in q_portals.iter() {
         if let Some(ref approaching) = portal.approaching {
-            boundary.draw_portal(
+            Boundary::draw_portal(
                 &mut gizmos,
                 approaching,
                 config.color_approaching,
@@ -517,7 +510,6 @@ fn update_emerging_portals(
 }
 
 fn draw_emerging_portals(
-    boundary: Res<Boundary>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     config: Res<PortalConfig>,
     orientation: Res<CameraOrientation>,
@@ -530,7 +522,7 @@ fn draw_emerging_portals(
 
     for (portal, deaderoid) in q_portals.iter() {
         if let Some(ref emerging) = portal.emerging {
-            boundary.draw_portal(
+            Boundary::draw_portal(
                 &mut gizmos,
                 emerging,
                 config.color_emerging,
