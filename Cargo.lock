@@ -1242,7 +1242,7 @@ dependencies = [
 [[package]]
 name = "bevy_panorbit_camera_ext"
 version = "0.1.0"
-source = "git+https://github.com/natepiano/bevy_panorbit_camera_ext#94804301b4b4276b5b8474dbd4606e9ef288e697"
+source = "git+https://github.com/natepiano/bevy_panorbit_camera_ext#ef01f59daeb6324aec946a05291987c08133c75f"
 dependencies = [
  "bevy",
  "bevy_panorbit_camera",

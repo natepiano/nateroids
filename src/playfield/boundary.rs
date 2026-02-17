@@ -1,4 +1,3 @@
-use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
@@ -37,8 +36,8 @@ use crate::splash::SplashText;
 use crate::state::GameState;
 
 /// Marker component for the boundary volume entity.
-/// Holds the Transform and Aabb for camera zoom-to-fit operations.
-/// Syncs with `Boundary` resource configuration.
+/// Holds a hidden unit-cube mesh so zoom-to-fit can extract vertices.
+/// Syncs with `Boundary` resource configuration via `Transform` scale.
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 pub struct BoundaryVolume;
@@ -77,25 +76,26 @@ fn apply_boundary_config(mut config_store: ResMut<GizmoConfigStore>, boundary: R
     outer_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
-/// Spawns the `BoundaryVolume` entity with `Transform` and `Aabb` components.
-/// This entity represents the spatial data for the boundary.
-fn spawn_boundary_volume(mut commands: Commands, boundary: Res<Boundary>) {
+/// Spawns the `BoundaryVolume` entity with a hidden unit-cube mesh.
+/// The `Transform` scale sizes it to the boundary; the mesh provides vertices for zoom-to-fit.
+fn spawn_boundary_volume(
+    mut commands: Commands,
+    boundary: Res<Boundary>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
     let scale = boundary.boundary_scalar * boundary.cell_count.as_vec3();
 
     commands.spawn((
         BoundaryVolume,
-        Transform::from_scale(scale), // Transform has actual size, Aabb is unit cube (like meshes)
-        Aabb {
-            center:       Vec3A::ZERO,
-            half_extents: Vec3A::splat(0.5), // Unit cube in local space
-        },
+        Transform::from_scale(scale),
+        Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
+        Visibility::Hidden,
     ));
 
     debug!("Spawned BoundaryVolume entity");
 }
 
-/// Synchronizes the `BoundaryVolume` entity's `Transform` and `Aabb` with the `Boundary` resource.
-/// Called when the `Boundary` resource changes.
+/// Synchronizes the `BoundaryVolume` entity's `Transform` with the `Boundary` resource.
 fn sync_boundary_volume(
     boundary: Res<Boundary>,
     mut volume_query: Query<&mut Transform, With<BoundaryVolume>>,
@@ -104,7 +104,7 @@ fn sync_boundary_volume(
         return;
     };
 
-    // Update Transform scale to match boundary size (Aabb stays as unit cube)
+    // Update Transform scale to match boundary size (mesh is a unit cube scaled by Transform)
     transform.scale = boundary.boundary_scalar * boundary.cell_count.as_vec3();
 }
 

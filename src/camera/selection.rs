@@ -4,6 +4,7 @@ use bevy::color::palettes::basic;
 use bevy::picking::hover::PickingInteraction;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
+use bevy_panorbit_camera_ext::FitTargetGizmo;
 use bevy_panorbit_camera_ext::SetFitTarget;
 
 use crate::actor::Nateroid;
@@ -152,11 +153,18 @@ fn configure_selection_gizmo(mut config_store: ResMut<GizmoConfigStore>) {
     config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
 }
 
-/// Draws a purple wireframe cube around the selected entity's `Aabb`
+/// Draws a purple wireframe cube around the selected entity's `Aabb`.
+/// Suppressed when `FitTargetGizmo` debug visualization is active.
 fn draw_selected_aabb_gizmo(
     mut gizmos: Gizmos<SelectionGizmo>,
     selected: Query<(&Transform, &Aabb), With<Selected>>,
+    config_store: Res<GizmoConfigStore>,
 ) {
+    let (fit_config, _) = config_store.config::<FitTargetGizmo>();
+    if fit_config.enabled {
+        return;
+    }
+
     for (transform, aabb) in selected.iter() {
         let center = transform.transform_point(Vec3::from(aabb.center));
         gizmos.cube(

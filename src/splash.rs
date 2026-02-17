@@ -185,11 +185,11 @@ fn create_spin_sequence(radius: f32, durations: &[f32]) -> Vec<CameraMove> {
     positions
         .iter()
         .zip(durations.iter().cycle())
-        .map(|(pos, &duration)| CameraMove {
-            target_translation: *pos,
-            target_focus:       Vec3::ZERO,
-            duration_ms:        duration,
-            easing:             EaseFunction::Linear,
+        .map(|(pos, &duration)| CameraMove::ToPosition {
+            translation: *pos,
+            focus:       Vec3::ZERO,
+            duration_ms: duration,
+            easing:      EaseFunction::Linear,
         })
         .collect()
 }
@@ -198,48 +198,48 @@ fn create_spin_sequence(radius: f32, durations: &[f32]) -> Vec<CameraMove> {
 fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
     let mut moves = vec![
         // start spin 1 (already at radius from zoom-to-fit, just orbit)
-        CameraMove {
-            target_translation: Vec3::new(radius, 0.0, 0.0),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        500.0,
-            easing:             EaseFunction::Linear,
+        CameraMove::ToPosition {
+            translation: Vec3::new(radius, 0.0, 0.0),
+            focus:       Vec3::ZERO,
+            duration_ms: 500.0,
+            easing:      EaseFunction::Linear,
         },
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, -radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        400.0,
-            easing:             EaseFunction::Linear,
+        CameraMove::ToPosition {
+            translation: Vec3::new(0.0, 0.0, -radius),
+            focus:       Vec3::ZERO,
+            duration_ms: 400.0,
+            easing:      EaseFunction::Linear,
         },
-        CameraMove {
-            target_translation: Vec3::new(-radius, 0.0, 0.0),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        300.0,
-            easing:             EaseFunction::Linear,
+        CameraMove::ToPosition {
+            translation: Vec3::new(-radius, 0.0, 0.0),
+            focus:       Vec3::ZERO,
+            duration_ms: 300.0,
+            easing:      EaseFunction::Linear,
         },
         // start spin 2
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        200.0,
-            easing:             EaseFunction::Linear,
+        CameraMove::ToPosition {
+            translation: Vec3::new(0.0, 0.0, radius),
+            focus:       Vec3::ZERO,
+            duration_ms: 200.0,
+            easing:      EaseFunction::Linear,
         },
-        CameraMove {
-            target_translation: Vec3::new(radius, 0.0, 0.0),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        100.0,
-            easing:             EaseFunction::Linear,
+        CameraMove::ToPosition {
+            translation: Vec3::new(radius, 0.0, 0.0),
+            focus:       Vec3::ZERO,
+            duration_ms: 100.0,
+            easing:      EaseFunction::Linear,
         },
-        CameraMove {
-            target_translation: Vec3::new(0.0, 0.0, -radius),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        50.0,
-            easing:             EaseFunction::Linear,
+        CameraMove::ToPosition {
+            translation: Vec3::new(0.0, 0.0, -radius),
+            focus:       Vec3::ZERO,
+            duration_ms: 50.0,
+            easing:      EaseFunction::Linear,
         },
-        CameraMove {
-            target_translation: Vec3::new(-radius, 0.0, 0.0),
-            target_focus:       Vec3::ZERO,
-            duration_ms:        25.0,
-            easing:             EaseFunction::Linear,
+        CameraMove::ToPosition {
+            translation: Vec3::new(-radius, 0.0, 0.0),
+            focus:       Vec3::ZERO,
+            duration_ms: 25.0,
+            easing:      EaseFunction::Linear,
         },
     ];
 
@@ -250,11 +250,11 @@ fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
     moves.extend(create_spin_sequence(radius, &[50.0, 100.0, 150.0, 200.0]));
 
     // Land at home with smooth easing
-    moves.push(CameraMove {
-        target_translation: Vec3::new(0.0, 0.0, radius),
-        target_focus:       Vec3::ZERO,
-        duration_ms:        1200.0,
-        easing:             EaseFunction::QuadraticOut,
+    moves.push(CameraMove::ToPosition {
+        translation: Vec3::new(0.0, 0.0, radius),
+        focus:       Vec3::ZERO,
+        duration_ms: 1200.0,
+        easing:      EaseFunction::QuadraticOut,
     });
 
     moves
@@ -273,11 +273,11 @@ fn start_splash_camera_animation(
     commands.entity(entity).insert(SplashZoomActive);
 
     // Single hold move — camera sits at splash start radius while text animates
-    let hold_move = CameraMove {
-        target_translation: Vec3::new(0.0, 0.0, camera_config.splash_start_radius),
-        target_focus:       Vec3::ZERO,
-        duration_ms:        2500.0,
-        easing:             EaseFunction::BounceOut,
+    let hold_move = CameraMove::ToPosition {
+        translation: Vec3::new(0.0, 0.0, camera_config.splash_start_radius),
+        focus:       Vec3::ZERO,
+        duration_ms: 2500.0,
+        easing:      EaseFunction::BounceOut,
     };
 
     commands.trigger(PlayAnimation::new(entity, vec![hold_move].into()));
