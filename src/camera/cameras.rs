@@ -1,5 +1,6 @@
 use bevy::camera::visibility::RenderLayers;
 use bevy::core_pipeline::tonemapping::Tonemapping;
+use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
 use bevy::render::view::Hdr;
@@ -20,6 +21,7 @@ use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::constants::EDGE_MARKER_FONT_SIZE;
 use super::constants::EDGE_MARKER_SPHERE_RADIUS;
 use super::lights::LightConfig;
+use super::selection::SelectionPlugin;
 use super::zoom::start_zoom_to_fit;
 use crate::asset_loader::SceneAssets;
 use crate::camera::CameraOrder;
@@ -35,6 +37,8 @@ pub struct CamerasPlugin;
 impl Plugin for CamerasPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(PanOrbitCameraPlugin)
+            .add_plugins(MeshPickingPlugin)
+            .add_plugins(SelectionPlugin)
             .add_plugins(FitTargetVisualizationPlugin)
             .init_gizmo_group::<FocusGizmo>()
             .init_resource::<FocusConfig>()

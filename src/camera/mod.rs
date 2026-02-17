@@ -2,6 +2,7 @@ mod cameras;
 mod config;
 mod constants;
 mod lights;
+mod selection;
 mod star_twinkling;
 mod stars;
 mod zoom;

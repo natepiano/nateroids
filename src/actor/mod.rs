@@ -26,6 +26,7 @@ pub use nateroid::Nateroid;
 pub use nateroid::NateroidDeathMaterials;
 use nateroid::NateroidPlugin;
 pub use nateroid::NateroidSpawnStats;
+pub use spaceship::Spaceship;
 use spaceship::SpaceshipPlugin;
 use spaceship_control::SpaceshipControlPlugin;
 use teleport::TeleportPlugin;
