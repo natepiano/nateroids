@@ -1,6 +1,5 @@
 use std::ops::Range;
 
-use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
@@ -38,9 +37,6 @@ impl Plugin for CameraConfigPlugin {
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct CameraConfig {
-    pub clear_color:               Color,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub darkening_factor:          f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub bloom_intensity:           f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
@@ -69,8 +65,6 @@ pub struct CameraConfig {
 impl Default for CameraConfig {
     fn default() -> Self {
         Self {
-            clear_color:               Color::from(tailwind::SLATE_900),
-            darkening_factor:          0.002,
             bloom_intensity:           0.5,
             bloom_low_frequency_boost: 0.5,
             bloom_high_pass_frequency: 0.5,
@@ -83,10 +77,6 @@ impl Default for CameraConfig {
             splash_start_yaw:          CAMERA_SPLASH_START_YAW,
         }
     }
-}
-
-impl CameraConfig {
-    pub const fn darkening_multiplier(&self) -> f32 { 1.0 - self.darkening_factor }
 }
 
 #[derive(Debug, Clone, Reflect, Resource, InspectorOptions)]

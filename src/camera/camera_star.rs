@@ -17,15 +17,16 @@ impl Plugin for StarCameraPlugin {
 
 pub fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
     commands.spawn((
+        RequiredCameraComponents,
         Camera3d::default(),
         Camera {
             order: CameraOrder::Stars.order(),
+            clear_color: ClearColorConfig::Custom(Color::BLACK),
             ..default()
         },
         StarCamera,
         get_bloom_settings(camera_config),
         RenderLayer::Stars.layers(),
-        RequiredCameraComponents,
     ));
 }
 

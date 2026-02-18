@@ -28,6 +28,7 @@ impl Plugin for CameraPlugin {
             .add_plugins(bevy_panorbit_camera_ext::PanOrbitCameraExtPlugin)
             .add_plugins(camera_game::GameCameraPlugin)
             .add_plugins(camera_star::StarCameraPlugin)
+            .add_plugins(zoom::ZoomPlugin)
             .add_plugins(config::CameraConfigPlugin)
             .add_plugins(lights::DirectionalLightsPlugin)
             .add_plugins(selection::SelectionPlugin)
@@ -39,7 +40,6 @@ impl Plugin for CameraPlugin {
                     camera_ui::spawn_ui_camera,
                     camera_star::spawn_star_camera,
                     camera_game::spawn_game_camera,
-                    camera_game::set_fit_target_debug,
                 )
                     .chain(),
             );
