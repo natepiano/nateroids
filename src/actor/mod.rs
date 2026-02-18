@@ -12,7 +12,6 @@ mod teleport;
 
 use aabb::AabbPlugin;
 pub use aabb::max_dimension as aabb_max_dimension;
-pub use aabb::size as aabb_size;
 use actor_config::ActorConfigPlugin;
 pub use actor_config::Health;
 pub use actor_template::DeathCorner;

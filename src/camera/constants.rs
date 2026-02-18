@@ -1,4 +1,5 @@
 use bevy::math::Vec3;
+use bevy::prelude::Color;
 
 /// Initial camera distance for splash screen animation.
 /// Camera spawns at this distance to appear stationary during the opening text.
@@ -27,3 +28,17 @@ pub const EDGE_MARKER_FONT_SIZE: f32 = 11.0;
 
 /// Radius for edge marker spheres
 pub const EDGE_MARKER_SPHERE_RADIUS: f32 = 1.0;
+
+/// Outline width in screen-space pixels for selected entities
+pub const SELECTION_OUTLINE_WIDTH: f32 = 5.0;
+
+/// Outline intensity for selected entities (values > 1.0 create glow with bloom)
+pub const SELECTION_OUTLINE_INTENSITY: f32 = 4.0;
+
+/// Outline color for selected entities
+pub const SELECTION_OUTLINE_COLOR: Color = Color::Srgba(bevy::color::Srgba {
+    red:   0.0,
+    green: 0.24,
+    blue:  1.0,
+    alpha: 1.0,
+});

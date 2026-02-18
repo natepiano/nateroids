@@ -13,6 +13,7 @@ mod zoom;
 
 use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::prelude::*;
+use bevy_mesh_outline::MeshOutlinePlugin;
 pub use components::RequiredCameraComponents;
 pub use config::CameraConfig;
 pub use constants::ZOOM_MARGIN;
@@ -26,6 +27,7 @@ impl Plugin for CameraPlugin {
         app.add_plugins(MeshPickingPlugin)
             .add_plugins(bevy_panorbit_camera::PanOrbitCameraPlugin)
             .add_plugins(bevy_panorbit_camera_ext::PanOrbitCameraExtPlugin)
+            .add_plugins(MeshOutlinePlugin)
             .add_plugins(camera_game::GameCameraPlugin)
             .add_plugins(camera_star::StarCameraPlugin)
             .add_plugins(zoom::ZoomPlugin)

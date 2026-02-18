@@ -1,5 +1,6 @@
 use bevy::core_pipeline::prepass::DepthPrepass;
 use bevy::prelude::*;
+use bevy_mesh_outline::OutlineCamera;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera::TrackpadBehavior;
 
@@ -30,6 +31,7 @@ pub fn spawn_game_camera(
         .spawn((
             RequiredCameraComponents,
             DepthPrepass,
+            OutlineCamera,
             PanOrbitCamera {
                 focus: Vec3::ZERO,
                 target_radius: camera_config.splash_start_radius,

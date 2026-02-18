@@ -1,42 +1,63 @@
-use bevy::camera::primitives::Aabb;
-use bevy::color::palettes::basic;
 use bevy::picking::hover::PickingInteraction;
 use bevy::prelude::*;
+use bevy_inspector_egui::bevy_egui::EguiContexts;
+use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
+use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+use bevy_mesh_outline::MeshOutline;
 use bevy_panorbit_camera::PanOrbitCamera;
-use bevy_panorbit_camera_ext::FitTargetGizmo;
 use bevy_panorbit_camera_ext::SetFitTarget;
 
+use super::constants::SELECTION_OUTLINE_COLOR;
+use super::constants::SELECTION_OUTLINE_INTENSITY;
+use super::constants::SELECTION_OUTLINE_WIDTH;
+use super::zoom::ZoomTarget;
 use crate::actor::Nateroid;
 use crate::actor::Spaceship;
-use crate::actor::aabb_size;
-use crate::camera::RenderLayer;
+use crate::game_input::GameAction;
+use crate::game_input::toggle_active;
 use crate::playfield::BoundaryVolume;
-
-/// Custom gizmo group so selection gizmo only renders on the game camera
-#[derive(Default, Reflect, GizmoConfigGroup)]
-struct SelectionGizmo {}
 
 /// Marker component added to the selected actor entity
 #[derive(Component)]
 pub struct Selected;
 
-/// Resource tracking the currently selected entity for zoom-to-fit.
-/// When `None`, Z zooms to boundary.
-#[derive(Resource, Default)]
-pub struct ZoomTarget(pub Option<Entity>);
+/// Inspector-tunable configuration for selection outlines
+#[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
+#[reflect(Resource, InspectorOptions)]
+pub struct SelectionOutlineConfig {
+    #[inspector(min = 0.0, max = 30.0, display = NumberDisplay::Slider)]
+    pub width:     f32,
+    #[inspector(min = 0.0, max = 30.0, display = NumberDisplay::Slider)]
+    pub intensity: f32,
+    pub color:     Color,
+}
+
+impl Default for SelectionOutlineConfig {
+    fn default() -> Self {
+        Self {
+            width:     SELECTION_OUTLINE_WIDTH,
+            intensity: SELECTION_OUTLINE_INTENSITY,
+            color:     SELECTION_OUTLINE_COLOR,
+        }
+    }
+}
 
 pub struct SelectionPlugin;
 
 impl Plugin for SelectionPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ZoomTarget>()
-            .init_gizmo_group::<SelectionGizmo>()
+        app.init_resource::<SelectionOutlineConfig>()
+            .add_plugins(
+                ResourceInspectorPlugin::<SelectionOutlineConfig>::default()
+                    .run_if(toggle_active(false, GameAction::OutlineInspector)),
+            )
             .add_observer(on_nateroid_added)
             .add_observer(on_spaceship_added)
+            .add_observer(on_selected_added)
             .add_observer(on_selected_removed)
-            .add_systems(Startup, configure_selection_gizmo)
             .add_systems(Update, clear_selection_on_background_click)
-            .add_systems(Update, draw_selected_aabb_gizmo);
+            .add_systems(Update, sync_outline_config);
     }
 }
 
@@ -84,15 +105,47 @@ fn on_actor_clicked(
     debug!("Selected actor {actor:?}");
 }
 
-/// When `Selected` is removed (despawn or manual deselect), revert to boundary.
+/// When `Selected` is added, walk all descendants and add `MeshOutline` to mesh entities.
+fn on_selected_added(
+    added: On<Add, Selected>,
+    mut commands: Commands,
+    children_query: Query<&Children>,
+    mesh_query: Query<Entity, With<Mesh3d>>,
+    config: Res<SelectionOutlineConfig>,
+) {
+    let entity = added.entity;
+    let outline = MeshOutline::new(config.width)
+        .with_color(config.color)
+        .with_intensity(config.intensity);
+
+    for descendant in children_query.iter_descendants(entity) {
+        if mesh_query.get(descendant).is_ok() {
+            commands.entity(descendant).insert(outline.clone());
+        }
+    }
+}
+
+/// When `Selected` is removed (despawn or manual deselect), remove outlines and
+/// revert zoom target to boundary.
 /// Skips revert if `ZoomTarget` already points to a new entity (switch-selection case).
 fn on_selected_removed(
-    _removed: On<Remove, Selected>,
+    removed: On<Remove, Selected>,
     mut commands: Commands,
     mut zoom_target: ResMut<ZoomTarget>,
     camera_query: Query<Entity, With<PanOrbitCamera>>,
     boundary_query: Query<Entity, With<BoundaryVolume>>,
+    children_query: Query<&Children>,
+    mesh_query: Query<Entity, With<Mesh3d>>,
 ) {
+    let entity = removed.entity;
+
+    // Remove outlines from all descendant meshes
+    for descendant in children_query.iter_descendants(entity) {
+        if mesh_query.get(descendant).is_ok() {
+            commands.entity(descendant).remove::<MeshOutline>();
+        }
+    }
+
     // If `on_actor_clicked` already set a new target, don't revert to boundary
     if zoom_target.0.is_some() {
         return;
@@ -114,9 +167,32 @@ fn on_selected_removed(
 // Systems
 // ---------------------------------------------------------------------------
 
+/// Syncs `SelectionConfig` changes to all active `MeshOutline` components in real time
+fn sync_outline_config(
+    config: Res<SelectionOutlineConfig>,
+    selected_query: Query<Entity, With<Selected>>,
+    children_query: Query<&Children>,
+    mut outline_query: Query<&mut MeshOutline>,
+) {
+    if !config.is_changed() {
+        return;
+    }
+
+    for entity in selected_query.iter() {
+        for descendant in children_query.iter_descendants(entity) {
+            if let Ok(mut outline) = outline_query.get_mut(descendant) {
+                outline.width = config.width;
+                outline.color = config.color;
+                outline.intensity = config.intensity;
+            }
+        }
+    }
+}
+
 /// Clears selection when clicking on the window background (no mesh hit)
 fn clear_selection_on_background_click(
     mouse_input: Res<ButtonInput<MouseButton>>,
+    mut egui_contexts: EguiContexts,
     window_picking: Query<&PickingInteraction, With<Window>>,
     actor_picking: Query<&PickingInteraction, With<Selected>>,
     selected_query: Query<Entity, With<Selected>>,
@@ -124,6 +200,14 @@ fn clear_selection_on_background_click(
     mut commands: Commands,
 ) {
     if !mouse_input.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    // Don't clear selection when clicking on egui inspector windows
+    if egui_contexts
+        .ctx_mut()
+        .is_ok_and(|ctx| ctx.wants_pointer_input())
+    {
         return;
     }
 
@@ -143,34 +227,5 @@ fn clear_selection_on_background_click(
             commands.entity(entity).remove::<Selected>();
         }
         debug!("Background click — clearing selection");
-    }
-}
-
-/// Sets render layers on the `SelectionGizmo` group so it only renders on the game camera
-fn configure_selection_gizmo(mut config_store: ResMut<GizmoConfigStore>) {
-    let (config, _) = config_store.config_mut::<SelectionGizmo>();
-    config.render_layers = RenderLayer::Game.layers();
-}
-
-/// Draws a purple wireframe cube around the selected entity's `Aabb`.
-/// Suppressed when `FitTargetGizmo` debug visualization is active.
-fn draw_selected_aabb_gizmo(
-    mut gizmos: Gizmos<SelectionGizmo>,
-    selected: Query<(&Transform, &Aabb), With<Selected>>,
-    config_store: Res<GizmoConfigStore>,
-) {
-    let (fit_config, _) = config_store.config::<FitTargetGizmo>();
-    if fit_config.enabled {
-        return;
-    }
-
-    for (transform, aabb) in selected.iter() {
-        let center = transform.transform_point(Vec3::from(aabb.center));
-        gizmos.cube(
-            Transform::from_translation(center)
-                .with_rotation(transform.rotation)
-                .with_scale(aabb_size(aabb) * transform.scale),
-            Color::from(basic::PURPLE),
-        );
     }
 }

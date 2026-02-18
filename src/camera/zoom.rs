@@ -16,7 +16,10 @@ use super::constants::EDGE_MARKER_SPHERE_RADIUS;
 use super::constants::HOME_ANIMATION_DURATION_MS;
 use super::constants::ZOOM_MARGIN;
 use super::constants::ZOOM_TO_FIT_DURATION_MS;
-use super::selection::ZoomTarget;
+/// Resource tracking the currently selected entity for zoom-to-fit.
+/// When `None`, Z zooms to boundary.
+#[derive(Resource, Default)]
+pub struct ZoomTarget(pub Option<Entity>);
 use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
 use crate::game_input::just_pressed;
@@ -64,6 +67,7 @@ impl Plugin for ZoomPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(FitTargetVisualizationPlugin)
             .init_gizmo_group::<FocusGizmo>()
+            .init_resource::<ZoomTarget>()
             .init_resource::<FocusConfig>()
             .init_resource::<FocusGizmoState>()
             .add_plugins(
