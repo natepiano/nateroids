@@ -5,7 +5,6 @@ use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera_ext::AnimationEnd;
 use bevy_panorbit_camera_ext::CameraMove;
 use bevy_panorbit_camera_ext::CameraMoveList;
-use bevy_panorbit_camera_ext::PanOrbitCameraExt;
 use bevy_panorbit_camera_ext::PlayAnimation;
 use bevy_panorbit_camera_ext::ZoomEnd;
 use bevy_panorbit_camera_ext::ZoomToFit;
@@ -43,7 +42,7 @@ impl Plugin for SplashPlugin {
         .add_systems(
             OnEnter(GameState::Splash),
             (
-                reset_timer_and_camera,
+                reset_timer_and_boundary,
                 spawn_splash_text,
                 start_splash_camera_animation,
             ),
@@ -54,23 +53,12 @@ impl Plugin for SplashPlugin {
     }
 }
 
-fn reset_timer_and_camera(
+fn reset_timer_and_boundary(
     mut splash_timer: ResMut<SplashTextTimer>,
-    camera_config: ResMut<CameraConfig>,
-    mut panorbit: Single<&mut PanOrbitCamera>,
     mut boundary: ResMut<Boundary>,
 ) {
-    debug!("Resetting timer and camera");
+    debug!("Resetting timer and boundary");
     splash_timer.timer.reset();
-
-    panorbit.disable_interpolation();
-
-    // Set both target and actual values to ensure clean start (matching initial spawn)
-    panorbit.target_radius = camera_config.splash_start_radius;
-    panorbit.target_focus = camera_config.splash_start_focus;
-    panorbit.target_pitch = camera_config.splash_start_pitch;
-    panorbit.target_yaw = camera_config.splash_start_yaw;
-    panorbit.force_update = true;
 
     // Reset boundary alpha to 0 (transparent) for fade-in animation
     boundary.grid_color = boundary.grid_color.with_alpha(0.0);
@@ -260,7 +248,7 @@ fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
     moves
 }
 
-/// Phase 1: Start with a single hold animation at splash start radius.
+/// Snap camera to splash start position, then hold while text animates.
 fn start_splash_camera_animation(
     mut commands: Commands,
     camera_config: Res<CameraConfig>,
@@ -272,7 +260,15 @@ fn start_splash_camera_animation(
 
     commands.entity(entity).insert(SplashZoomActive);
 
-    // Single hold move — camera sits at splash start radius while text animates
+    // Instant snap to splash start position, then hold while text animates
+    let snap_move = CameraMove::ToOrbit {
+        focus:       camera_config.splash_start_focus,
+        yaw:         camera_config.splash_start_yaw,
+        pitch:       camera_config.splash_start_pitch,
+        radius:      camera_config.splash_start_radius,
+        duration_ms: 0.0,
+        easing:      EaseFunction::Linear,
+    };
     let hold_move = CameraMove::ToPosition {
         translation: Vec3::new(0.0, 0.0, camera_config.splash_start_radius),
         focus:       Vec3::ZERO,
@@ -280,5 +276,8 @@ fn start_splash_camera_animation(
         easing:      EaseFunction::BounceOut,
     };
 
-    commands.trigger(PlayAnimation::new(entity, vec![hold_move].into()));
+    commands.trigger(PlayAnimation::new(
+        entity,
+        vec![snap_move, hold_move].into(),
+    ));
 }
