@@ -2,19 +2,19 @@
 max_width = 100
 
 #comments
-comment_width = 100                # Default: 80
+comment_width               = 100  # Default: 80
 format_code_in_doc_comments = true # Default: false
-wrap_comments = true               # Default: false
+wrap_comments               = true # Default: false
 
 # imports
-group_imports = "StdExternalCrate"
+group_imports       = "StdExternalCrate"
 imports_granularity = "Item"
-reorder_imports = true
+reorder_imports     = true
 
 # vertical alighment thresholds
 enum_discrim_align_threshold = 50 # Default: 0
 struct_field_align_threshold = 50 # Default: 0
 
 # other formatting
-fn_single_line = true
+fn_single_line             = true
 match_block_trailing_comma = true

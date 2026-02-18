@@ -1,45 +1,44 @@
 [package]
-name = "nateroids"
-version = "0.18.0"
 edition = "2024"
 license = "Apache-2.0 OR MIT"
+name    = "nateroids"
+version = "0.18.0"
 
 [lints.clippy]
 # Our strict lints
 expect_used = "deny"
-panic = "deny"
+panic       = "deny"
 unwrap_used = "deny"
 
 # Enable lint groups as errors (with lower priority so allows can override)
-all = { level = "deny", priority = -1 }
-cargo = { level = "deny", priority = -1 }
-nursery = { level = "deny", priority = -1 }
+all      = { level = "deny", priority = -1 }
+cargo    = { level = "deny", priority = -1 }
+nursery  = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
 
 # Allow specific lints that conflict with Bevy patterns
-cargo_common_metadata = "allow"
+cargo_common_metadata   = "allow"
 multiple_crate_versions = "allow"
-needless_pass_by_value = "allow"
-option_if_let_else = "allow"
-wildcard_imports = "allow"
-too_many_arguments = "allow"
-type_complexity = "allow"
+needless_pass_by_value  = "allow"
+option_if_let_else      = "allow"
+too_many_arguments      = "allow"
+type_complexity         = "allow"
+wildcard_imports        = "allow"
 
 [lints.rust]
 missing_docs = "deny"
 
 [dependencies]
-avian3d = { version = "0.5.0", features = ["simd", "debug-plugin", "parallel"] }
-
+avian3d = { version = "0.5.0", features = ["debug-plugin", "parallel", "simd"] }
 bevy = { version = "0.18.0", features = [
-  "tonemapping_luts",
   "bevy_dev_tools",
   "bevy_remote",
 ] }
-bevy_brp_extras = "0.18.3"
-bevy_panorbit_camera_ext = { git = "https://github.com/natepiano/bevy_panorbit_camera_ext" }
 bevy-inspector-egui = "0.36.0"
+bevy_brp_extras = "0.18.3"
+bevy_mesh_outline = "0.3.0"
 bevy_panorbit_camera = { version = "0.34.0", features = ["bevy_egui"] }
+bevy_panorbit_camera_ext = { git = "https://github.com/natepiano/bevy_panorbit_camera_ext" }
 bevy_window_manager = "0.18.1"
 leafwing-input-manager = "0.20.0"
 rand = "0.10.0"
@@ -50,7 +49,7 @@ strum = { version = "0.27.2", features = ["derive"] }
 opt-level = 3
 
 [profile.release]
-opt-level = 3
-lto = false
 codegen-units = 12
-debug = false
+debug         = false
+lto           = false
+opt-level     = 3

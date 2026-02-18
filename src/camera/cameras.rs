@@ -1,5 +1,4 @@
 use bevy::camera::visibility::RenderLayers;
-use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::math::curve::easing::EaseFunction;
 use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::post_process::bloom::Bloom;
@@ -192,7 +191,6 @@ fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {
         StarCamera,
         get_bloom_settings(camera_config),
         RenderLayers::from_layers(RenderLayer::Stars.layers()),
-        Tonemapping::BlenderFilmic,
         Hdr,
     ));
 }
@@ -272,7 +270,6 @@ fn spawn_panorbit_camera(
                 intensity: light_config.environment_map_intensity,
                 ..default()
             },
-            Tonemapping::TonyMcMapface,
             Hdr,
         ))
         .add_child(*stars_camera_entity);

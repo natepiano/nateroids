@@ -1224,6 +1224,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_mesh_outline"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edf792b1a4540239971f322c40cc1f010aad1c1c4380ff9a0f6fd5f11c1d29bb"
+dependencies = [
+ "bevy",
+ "bevy_render",
+ "bytemuck",
+ "getrandom 0.3.4",
+ "nonmax",
+ "rand 0.9.2",
+ "tracing",
+ "wgpu-types",
+]
+
+[[package]]
 name = "bevy_mikktspace"
 version = "0.17.0-dev"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3936,6 +3952,7 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_brp_extras",
+ "bevy_mesh_outline",
  "bevy_panorbit_camera",
  "bevy_panorbit_camera_ext",
  "bevy_window_manager",
@@ -6186,6 +6203,7 @@ dependencies = [
  "smallvec",
  "static_assertions",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
  "wgpu-core",
  "wgpu-hal",

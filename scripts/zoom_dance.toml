@@ -24,13 +24,13 @@ no_donut_retry_delay = 1
 
 [camera]
 # Random distance range for zoom-out position (in units)
-min_distance = 300
 max_distance = 1000
+min_distance = 300
 
 # Pitch angle range for random camera positions (in radians)
 # Default: -0.5 to 0.5 (roughly -28° to +28°)
-pitch_min = -0.5
 pitch_max = 0.5
+pitch_min = -0.5
 
 # Focus offset settings (tests off-center convergence)
 # Percentage chance (0-100) to offset focus instead of centering at [0,0,0]
