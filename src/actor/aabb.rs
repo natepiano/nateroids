@@ -124,7 +124,9 @@ fn compute_actor_aabb(
             continue;
         }
 
-        let aabb = Aabb::enclosing(all_points).expect("non-empty points must produce an Aabb");
+        let Some(aabb) = Aabb::enclosing(all_points) else {
+            continue;
+        };
         let aabb_size = size(&aabb);
 
         let collider = match pending.collider_type {
