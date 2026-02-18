@@ -1,20 +1,29 @@
-mod cameras;
 mod config;
 mod constants;
+mod game_camera;
 mod lights;
 mod selection;
+mod star_camera;
 mod star_twinkling;
 mod stars;
 mod zoom;
 
 use bevy::camera::visibility::Layer;
+use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::prelude::*;
+use bevy_panorbit_camera::PanOrbitCameraPlugin;
 use bevy_panorbit_camera_ext::PanOrbitCameraExtPlugin;
-use cameras::CamerasPlugin;
 pub use config::CameraConfig;
 use config::CameraConfigPlugin;
 pub use constants::ZOOM_MARGIN;
+use game_camera::GameCameraPlugin;
+use game_camera::set_fit_target_debug;
+use game_camera::spawn_panorbit_camera;
+use game_camera::spawn_ui_camera;
 use lights::DirectionalLightsPlugin;
+use selection::SelectionPlugin;
+use star_camera::StarCameraPlugin;
+use star_camera::spawn_star_camera;
 use star_twinkling::StarTwinklingPlugin;
 use stars::StarsPlugin;
 
@@ -23,11 +32,25 @@ pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(CameraConfigPlugin)
-            .add_plugins(CamerasPlugin)
+            .add_plugins(PanOrbitCameraPlugin)
+            .add_plugins(MeshPickingPlugin)
+            .add_plugins(SelectionPlugin)
+            .add_plugins(StarCameraPlugin)
+            .add_plugins(GameCameraPlugin)
             .add_plugins(PanOrbitCameraExtPlugin)
             .add_plugins(DirectionalLightsPlugin)
             .add_plugins(StarTwinklingPlugin)
-            .add_plugins(StarsPlugin);
+            .add_plugins(StarsPlugin)
+            .add_systems(
+                Startup,
+                (
+                    spawn_ui_camera,
+                    spawn_star_camera,
+                    spawn_panorbit_camera,
+                    set_fit_target_debug,
+                )
+                    .chain(),
+            );
     }
 }
 

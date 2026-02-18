@@ -11,8 +11,8 @@ use rand::RngExt;
 use rand::prelude::ThreadRng;
 
 use super::RenderLayer;
-use super::cameras::StarCamera;
 use super::config::StarConfig;
+use super::star_camera::StarCamera;
 use crate::playfield::Boundary;
 use crate::state::GameState;
 use crate::traits::TransformExt;
