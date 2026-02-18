@@ -1,4 +1,3 @@
-use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::light::CascadeShadowConfigBuilder;
 use bevy::light::GlobalAmbientLight;
@@ -191,7 +190,7 @@ fn spawn_directional_light(
             light_rotation.axis,
             light_rotation.angle,
         )))
-        .insert(RenderLayers::from_layers(RenderLayer::Game.layers()))
+        .insert(RenderLayer::Game.layers())
         .insert(LightDirection(position));
 }
 

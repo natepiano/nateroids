@@ -1,4 +1,3 @@
-use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
@@ -69,11 +68,11 @@ impl Plugin for BoundaryPlugin {
 fn apply_boundary_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Res<Boundary>) {
     let (config, _) = config_store.config_mut::<GridGizmo>();
     config.line.width = boundary.grid_line_width;
-    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+    config.render_layers = RenderLayer::Game.layers();
 
     let (outer_config, _) = config_store.config_mut::<BoundaryGizmo>();
     outer_config.line.width = boundary.boundary_line_width;
-    outer_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+    outer_config.render_layers = RenderLayer::Game.layers();
 }
 
 /// Spawns the `BoundaryVolume` entity with a hidden unit-cube mesh.

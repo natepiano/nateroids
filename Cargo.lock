@@ -1258,7 +1258,7 @@ dependencies = [
 [[package]]
 name = "bevy_panorbit_camera_ext"
 version = "0.1.0"
-source = "git+https://github.com/natepiano/bevy_panorbit_camera_ext#793736078fc871804382510dd9643442e9e604e3"
+source = "git+https://github.com/natepiano/bevy_panorbit_camera_ext#e3449ffc8142577654856ab667cc4e68774be5a6"
 dependencies = [
  "bevy",
  "bevy_panorbit_camera",
@@ -1980,9 +1980,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.19.1"
+version = "3.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5dd9dc738b7a8311c7ade152424974d8115f2cdad61e8dab8dac9f2362298510"
+checksum = "c81d250916401487680ed13b8b675660281dcfc3ab0121fe44c94bcab9eae2fb"
 
 [[package]]
 name = "bytemuck"

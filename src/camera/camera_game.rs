@@ -1,7 +1,5 @@
-use bevy::camera::visibility::RenderLayers;
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
-use bevy::render::view::Hdr;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -13,6 +11,7 @@ use bevy_panorbit_camera_ext::FitTargetVisualizationPlugin;
 use bevy_panorbit_camera_ext::SetFitTarget;
 use leafwing_input_manager::prelude::ActionState;
 
+use super::camera_star::StarCamera;
 use super::config::CameraConfig;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
@@ -21,14 +20,14 @@ use super::constants::EDGE_MARKER_SPHERE_RADIUS;
 use super::constants::HOME_ANIMATION_DURATION_MS;
 use super::constants::ZOOM_MARGIN;
 use super::lights::LightConfig;
-use super::star_camera::StarCamera;
 use super::zoom::start_zoom_to_fit;
 use crate::asset_loader::SceneAssets;
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
-use crate::game_input::GameAction;
+use crate::camera::RequiredCameraComponents;
 use crate::game_input::just_pressed;
 use crate::game_input::toggle_active;
+use crate::game_input::GameAction;
 use crate::playfield::BoundaryVolume;
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -101,18 +100,7 @@ impl Plugin for GameCameraPlugin {
     }
 }
 
-pub fn spawn_ui_camera(mut commands: Commands) {
-    commands.spawn((
-        Camera2d,
-        Camera {
-            order: CameraOrder::Ui.order(),
-            ..default()
-        },
-        Hdr,
-    ));
-}
-
-pub fn spawn_panorbit_camera(
+pub fn spawn_game_camera(
     camera_config: Res<CameraConfig>,
     scene_assets: Res<SceneAssets>,
     light_config: Res<LightConfig>,
@@ -146,14 +134,14 @@ pub fn spawn_panorbit_camera(
                 ))),
                 ..default()
             },
-            RenderLayers::from_layers(RenderLayer::Game.layers()),
+            RenderLayer::Game.layers(),
             EnvironmentMapLight {
                 diffuse_map: scene_assets.env_diffuse_map.clone(),
                 specular_map: scene_assets.env_specular_map.clone(),
                 intensity: light_config.environment_map_intensity,
                 ..default()
             },
-            Hdr,
+            RequiredCameraComponents,
         ))
         .add_child(*stars_camera_entity);
 }
@@ -173,13 +161,12 @@ pub fn set_fit_target_debug(
     };
 
     commands.trigger(SetFitTarget::new(camera_entity, boundary_entity));
-    info!("Set boundary as fit target for debug visualization");
 }
 
 fn apply_focus_config(mut config_store: ResMut<GizmoConfigStore>, config: Res<FocusConfig>) {
     let (gizmo_config, _) = config_store.config_mut::<FocusGizmo>();
     gizmo_config.line.width = config.line_width;
-    gizmo_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+    gizmo_config.render_layers = RenderLayer::Game.layers();
 }
 
 fn update_focus_gizmo_state(
@@ -299,7 +286,7 @@ fn draw_camera_focus_gizmo(
                         top: Val::Px(label_screen_pos.y),
                         ..default()
                     },
-                    RenderLayers::from_layers(RenderLayer::Game.layers()),
+                    RenderLayer::UI.layers(),
                     FocusDistanceLabel,
                 ));
             }

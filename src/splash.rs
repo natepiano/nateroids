@@ -1,4 +1,3 @@
-use bevy::camera::visibility::RenderLayers;
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
@@ -79,7 +78,7 @@ fn spawn_splash_text(mut commands: Commands) {
             position_type: PositionType::Absolute,
             ..default()
         },
-        RenderLayers::from_layers(RenderLayer::Game.layers()),
+        RenderLayer::UI.layers(),
     ));
 }
 

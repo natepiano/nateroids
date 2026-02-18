@@ -170,7 +170,7 @@ pub fn insert_configured_components(
         Mass(config.mass),
         MaxAngularSpeed(config.max_angular_velocity),
         MaxLinearSpeed(config.max_linear_velocity),
-        RenderLayers::from_layers(config.render_layer.layers()),
+        config.render_layer.layers(),
         SceneRoot(config.scene.clone()),
     ));
 

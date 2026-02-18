@@ -2,7 +2,6 @@ use avian3d::prelude::*;
 use bevy::app::App;
 use bevy::app::Plugin;
 use bevy::camera::primitives::Aabb;
-use bevy::camera::visibility::RenderLayers;
 use bevy::color::Color;
 use bevy::color::palettes::tailwind;
 use bevy::math::Dir3;
@@ -73,7 +72,7 @@ fn apply_portal_config(
     let (config, _) = config_store.config_mut::<PortalGizmo>();
     config.line.width = portal_config.line_width;
     config.line.joints = GizmoLineJoint::Round(portal_config.line_joints);
-    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+    config.render_layers = RenderLayer::Game.layers();
 }
 
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]

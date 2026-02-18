@@ -1,11 +1,10 @@
-use bevy::camera::visibility::RenderLayers;
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
-use bevy::render::view::Hdr;
 
 use super::config::CameraConfig;
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
+use crate::camera::RequiredCameraComponents;
 
 #[derive(Component, Reflect)]
 pub struct StarCamera;
@@ -25,8 +24,8 @@ pub fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig
         },
         StarCamera,
         get_bloom_settings(camera_config),
-        RenderLayers::from_layers(RenderLayer::Stars.layers()),
-        Hdr,
+        RenderLayer::Stars.layers(),
+        RequiredCameraComponents,
     ));
 }
 

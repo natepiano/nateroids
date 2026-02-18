@@ -1,6 +1,5 @@
 use avian3d::prelude::Collider;
 use bevy::camera::primitives::Aabb;
-use bevy::camera::visibility::RenderLayers;
 use bevy::camera::visibility::VisibilitySystems;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
@@ -69,7 +68,7 @@ impl Default for AabbConfig {
 fn apply_aabb_config(mut config_store: ResMut<GizmoConfigStore>, config: Res<AabbConfig>) {
     let (gizmo_config, _) = config_store.config_mut::<AabbGizmo>();
     gizmo_config.line.width = config.line_width;
-    gizmo_config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+    gizmo_config.render_layers = RenderLayer::Game.layers();
 }
 
 /// Returns the full size of the `Aabb` as a `Vec3`.

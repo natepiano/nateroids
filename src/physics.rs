@@ -1,5 +1,4 @@
 use avian3d::prelude::*;
-use bevy::camera::visibility::RenderLayers;
 use bevy::diagnostic::Diagnostic;
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
@@ -36,7 +35,7 @@ struct PhysicsMonitorState {
 fn init_physics_debug_aabb(mut config_store: ResMut<GizmoConfigStore>) {
     let (config, _) = config_store.config_mut::<PhysicsGizmos>();
     config.enabled = false;
-    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+    config.render_layers = RenderLayer::Game.layers();
 }
 
 fn toggle_physics_debug(

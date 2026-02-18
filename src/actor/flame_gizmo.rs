@@ -1,5 +1,4 @@
 use bevy::camera::primitives::Aabb;
-use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::math::Isometry3d;
 use bevy::prelude::*;
@@ -60,7 +59,7 @@ struct FlameGizmo {}
 fn configure_flame_gizmo(mut config_store: ResMut<GizmoConfigStore>) {
     let (config, _) = config_store.config_mut::<FlameGizmo>();
     config.line.width = FLAME_GIZMO_LINE_WIDTH;
-    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+    config.render_layers = RenderLayer::Game.layers();
 }
 
 /// observer that adds a death effect to a `Deaderoid`

@@ -11,8 +11,8 @@ use rand::RngExt;
 use rand::prelude::ThreadRng;
 
 use super::RenderLayer;
+use super::camera_star::StarCamera;
 use super::config::StarConfig;
-use super::star_camera::StarCamera;
 use crate::playfield::Boundary;
 use crate::state::GameState;
 use crate::traits::TransformExt;
@@ -134,7 +134,7 @@ fn spawn_stars(
                 radius,
                 emissive,
             },
-            RenderLayers::from_layers(RenderLayer::Stars.layers()),
+            RenderLayer::Stars.layers(),
             Mesh3d(mesh.clone()),
             MeshMaterial3d(material),
             Transform::from_trs(position, Quat::IDENTITY, Vec3::splat(radius)),

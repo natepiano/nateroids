@@ -1,4 +1,3 @@
-use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
 use bevy::render::render_resource::Face;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
@@ -135,7 +134,7 @@ fn create_or_update_plane(
             .insert(Mesh3d(mesh))
             .insert(MeshMaterial3d(material_handle))
             .insert(transform)
-            .insert(RenderLayers::from_layers(RenderLayer::Game.layers()))
+            .insert(RenderLayer::Game.layers())
             .id()
     } else {
         commands
@@ -143,7 +142,7 @@ fn create_or_update_plane(
             .insert(Mesh3d(mesh))
             .insert(MeshMaterial3d(material_handle))
             .insert(transform)
-            .insert(RenderLayers::from_layers(RenderLayer::Game.layers()))
+            .insert(RenderLayer::Game.layers())
             .id()
     }
 }

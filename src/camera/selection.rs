@@ -1,5 +1,4 @@
 use bevy::camera::primitives::Aabb;
-use bevy::camera::visibility::RenderLayers;
 use bevy::color::palettes::basic;
 use bevy::picking::hover::PickingInteraction;
 use bevy::prelude::*;
@@ -150,7 +149,7 @@ fn clear_selection_on_background_click(
 /// Sets render layers on the `SelectionGizmo` group so it only renders on the game camera
 fn configure_selection_gizmo(mut config_store: ResMut<GizmoConfigStore>) {
     let (config, _) = config_store.config_mut::<SelectionGizmo>();
-    config.render_layers = RenderLayers::from_layers(RenderLayer::Game.layers());
+    config.render_layers = RenderLayer::Game.layers();
 }
 
 /// Draws a purple wireframe cube around the selected entity's `Aabb`.
