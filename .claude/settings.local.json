@@ -124,7 +124,9 @@
       "mcp__brp__rpc_discover",
       "Bash(git status:*)",
       "mcp__brp__brp_list_bevy_examples",
-      "Bash(cargo update:*)"
+      "Bash(cargo update:*)",
+      "Bash(printenv:*)",
+      "Bash(gh issue view:*)"
     ],
     "deny": [],
     "ask": []
