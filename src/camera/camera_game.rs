@@ -1,3 +1,4 @@
+use bevy::anti_alias::smaa::Smaa;
 use bevy::prelude::*;
 use bevy_mesh_outline::OutlineCamera;
 use bevy_panorbit_camera::PanOrbitCamera;
@@ -52,6 +53,7 @@ pub fn spawn_game_camera(
                 ..default()
             },
             RenderLayer::Game.layers(),
+            Smaa::default(),
             EnvironmentMapLight {
                 diffuse_map: scene_assets.env_diffuse_map.clone(),
                 specular_map: scene_assets.env_specular_map.clone(),
