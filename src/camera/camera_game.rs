@@ -1,4 +1,3 @@
-use bevy::core_pipeline::prepass::DepthPrepass;
 use bevy::prelude::*;
 use bevy_mesh_outline::OutlineCamera;
 use bevy_panorbit_camera::PanOrbitCamera;
@@ -30,7 +29,6 @@ pub fn spawn_game_camera(
     commands
         .spawn((
             RequiredCameraComponents,
-            DepthPrepass,
             OutlineCamera,
             PanOrbitCamera {
                 focus: Vec3::ZERO,
