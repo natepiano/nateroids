@@ -651,11 +651,12 @@ dependencies = [
 
 [[package]]
 name = "bevy_brp_extras"
-version = "0.18.3"
+version = "0.18.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ce1ce219f0991eb988f96bee5fd45ba25a35bbcfb29b00f8af8d9bd277147ea"
+checksum = "f5a5d0030e211b9634dbaff1f7905b935f4837e5ef68cfa759063fa31c9c099b"
 dependencies = [
  "bevy",
+ "bevy_remote",
  "serde",
  "serde_json",
  "smol_str",
@@ -1226,7 +1227,7 @@ dependencies = [
 [[package]]
 name = "bevy_mesh_outline"
 version = "0.3.0"
-source = "git+https://github.com/natepiano/bevy_mesh_outline?branch=feat-msaa-support#fe22fcf10181dfca2e0d654f3bbf83eebc4cfd2c"
+source = "git+https://github.com/natepiano/bevy_mesh_outline?branch=perf-storage-buffer#c5eec82b15ac1b951d49d9343df0c357ff00b282"
 dependencies = [
  "bevy",
  "bevy_render",
@@ -1819,9 +1820,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_window_manager"
-version = "0.18.1"
+version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fe8160b0319b21b1474fd78c598c39154a0260e1899dca4892c107671e82325"
+checksum = "3fc86e2c241d7d6c00f2b492d78c433bc31db142bfb15dd14e17a22e13cf512e"
 dependencies = [
  "bevy",
  "dirs",
@@ -2492,7 +2493,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2714,7 +2715,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4083,7 +4084,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5170,7 +5171,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.11.0",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -6364,7 +6365,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

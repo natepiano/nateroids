@@ -16,7 +16,6 @@ impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(avian3d::PhysicsPlugins::default())
             .add_plugins(PhysicsDebugPlugin)
-            .add_plugins(FrameTimeDiagnosticsPlugin::default())
             .insert_resource(SubstepCount(15))
             .init_resource::<PhysicsMonitorState>()
             .add_systems(Startup, init_physics_debug_aabb)
