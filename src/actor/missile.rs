@@ -1,15 +1,18 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use leafwing_input_manager::prelude::*;
+use bevy_enhanced_input::action::TriggerState;
+use bevy_enhanced_input::action::events as input_events;
+use bevy_enhanced_input::prelude::Action;
+use bevy_enhanced_input::prelude::ActionOf;
 
 use crate::actor::Teleporter;
-use crate::actor::actor_config::ActorConfig;
 use crate::actor::actor_config::LOCKED_AXES_2D;
 use crate::actor::actor_config::insert_configured_components;
 use crate::actor::actor_template::MissileConfig;
 use crate::actor::spaceship::ContinuousFire;
 use crate::actor::spaceship::Spaceship;
-use crate::actor::spaceship_control::SpaceshipControl;
+use crate::input::ShipControlsContext;
+use crate::input::ShipFire;
 use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
@@ -20,7 +23,11 @@ pub struct MissilePlugin;
 impl Plugin for MissilePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(initialize_missile)
-            .add_systems(FixedUpdate, fire_missile.in_set(InGameSet::UserInput))
+            .add_observer(on_fire_input)
+            .add_systems(
+                FixedUpdate,
+                fire_missile_continuous.in_set(InGameSet::UserInput),
+            )
             .add_systems(
                 FixedUpdate,
                 missile_movement.in_set(InGameSet::EntityUpdates),
@@ -63,33 +70,15 @@ impl MissilePosition {
     }
 }
 
-/// Logic to handle whether we're in continuous fire mode or just regular fire
-/// mode if continuous we want to make sure that enough time has passed and that
-/// we're holding down the fire button
-fn should_fire(
-    continuous_fire: Option<&ContinuousFire>,
-    missile_config: &mut ActorConfig,
-    time: Res<Time>,
-    fire_button: Single<&ActionState<SpaceshipControl>>,
-) -> bool {
-    if !missile_config.spawnable {
-        return false;
-    }
-
-    if continuous_fire.is_some() {
-        let Some(timer) = missile_config.spawn_timer.as_mut() else {
-            return false;
-        };
-        timer.tick(time.delta());
-        if !timer.just_finished() {
-            return false;
-        }
-
-        fire_button.pressed(&SpaceshipControl::Fire)
-    } else {
-        fire_button.just_pressed(&SpaceshipControl::Fire)
-    }
-}
+type ShipFireStateQuery<'w, 's> = Single<
+    'w,
+    's,
+    &'static TriggerState,
+    (
+        With<Action<ShipFire>>,
+        With<ActionOf<ShipControlsContext>>,
+    ),
+>;
 
 fn initialize_missile(
     missile: On<Add, Missile>,
@@ -141,23 +130,51 @@ fn initialize_transform(
     )
 }
 
-fn fire_missile(
+fn on_fire_input(
+    trigger: On<input_events::Start<ShipFire>>,
+    mut commands: Commands,
+    q_continuous_fire: Query<Option<&ContinuousFire>, With<Spaceship>>,
+    missile_config: Res<MissileConfig>,
+) {
+    if !missile_config.spawnable {
+        return;
+    }
+
+    let Ok(continuous_fire_enabled) = q_continuous_fire.get(trigger.context) else {
+        return;
+    };
+
+    if continuous_fire_enabled.is_some() {
+        return;
+    }
+
+    commands.spawn((Missile, Name::new("Missile")));
+}
+
+fn fire_missile_continuous(
     mut commands: Commands,
     q_continuous_fire: Query<Option<&ContinuousFire>, With<Spaceship>>,
     mut missile_config: ResMut<MissileConfig>,
-    fire_button: Single<&ActionState<SpaceshipControl>>,
+    fire_state: ShipFireStateQuery,
     time: Res<Time>,
 ) {
     let Ok(continuous_fire_enabled) = q_continuous_fire.single() else {
         return;
     };
 
-    if !should_fire(
-        continuous_fire_enabled,
-        &mut missile_config,
-        time,
-        fire_button,
-    ) {
+    if continuous_fire_enabled.is_none() || !missile_config.spawnable {
+        return;
+    }
+
+    let Some(timer) = missile_config.spawn_timer.as_mut() else {
+        return;
+    };
+    timer.tick(time.delta());
+    if !timer.just_finished() {
+        return;
+    }
+
+    if **fire_state == TriggerState::None {
         return;
     }
 

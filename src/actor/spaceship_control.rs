@@ -1,21 +1,25 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use bevy_enhanced_input::action::TriggerState;
+use bevy_enhanced_input::action::events as input_events;
+use bevy_enhanced_input::prelude::Action;
+use bevy_enhanced_input::prelude::ActionOf;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
-use leafwing_input_manager::Actionlike;
-use leafwing_input_manager::action_state::ActionState;
-use leafwing_input_manager::input_map::InputMap;
-use leafwing_input_manager::plugin::InputManagerPlugin;
-use strum::EnumIter;
-use strum::IntoEnumIterator;
+use leafwing_input_manager::action_state::ActionState as LeafwingActionState;
 
 use super::actor_template::SpaceshipConfig;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
 use crate::game_input::GameAction;
 use crate::game_input::toggle_active;
+use crate::input::ShipAccelerate;
+use crate::input::ShipContinuousFire;
+use crate::input::ShipControlsContext;
+use crate::input::ShipTurnLeft;
+use crate::input::ShipTurnRight;
 use crate::orientation::CameraOrientation;
 use crate::orientation::OrientationType;
 use crate::schedule::InGameSet;
@@ -29,15 +33,10 @@ impl Plugin for SpaceshipControlPlugin {
                 .run_if(toggle_active(false, GameAction::SpaceshipControlInspector)),
         )
         .init_resource::<SpaceshipControlConfig>()
-        // spaceship will have input attached to it when spawning a spaceship
-        .add_plugins(InputManagerPlugin::<SpaceshipControl>::default())
-        .init_resource::<ActionState<SpaceshipControl>>()
-        .insert_resource(SpaceshipControl::generate_input_map())
+        .add_observer(on_toggle_continuous_fire_input)
         .add_systems(
             Update,
-            (spaceship_movement_controls, toggle_continuous_fire)
-                .chain()
-                .in_set(InGameSet::UserInput),
+            spaceship_movement_controls.in_set(InGameSet::UserInput),
         );
     }
 }
@@ -63,35 +62,35 @@ impl Default for SpaceshipControlConfig {
     }
 }
 
-// This is the list of "things I want the spaceship to be able to do based on
-// input"
-#[derive(Actionlike, EnumIter, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
-pub enum SpaceshipControl {
-    Accelerate,
-    ContinuousFire,
-    Fire,
-    TurnLeft,
-    TurnRight,
-}
+type ShipAccelerateStateQuery<'w, 's> = Single<
+    'w,
+    's,
+    &'static TriggerState,
+    (
+        With<Action<ShipAccelerate>>,
+        With<ActionOf<ShipControlsContext>>,
+    ),
+>;
 
-// #todo handle clash-strategy across InstantMap instances https://github.com/Leafwing-Studios/leafwing-input-manager/issues/617
-impl SpaceshipControl {
-    pub fn generate_input_map() -> InputMap<Self> {
-        Self::iter().fold(InputMap::default(), |input_map, action| match action {
-            Self::Accelerate => input_map
-                .with(action, KeyCode::KeyW)
-                .with(action, KeyCode::ArrowUp),
-            Self::TurnLeft => input_map
-                .with(action, KeyCode::KeyA)
-                .with(action, KeyCode::ArrowLeft),
-            Self::TurnRight => input_map
-                .with(action, KeyCode::KeyD)
-                .with(action, KeyCode::ArrowRight),
-            Self::Fire => input_map.with(action, KeyCode::Space),
-            Self::ContinuousFire => input_map.with(action, KeyCode::KeyF),
-        })
-    }
-}
+type ShipTurnLeftStateQuery<'w, 's> = Single<
+    'w,
+    's,
+    &'static TriggerState,
+    (
+        With<Action<ShipTurnLeft>>,
+        With<ActionOf<ShipControlsContext>>,
+    ),
+>;
+
+type ShipTurnRightStateQuery<'w, 's> = Single<
+    'w,
+    's,
+    &'static TriggerState,
+    (
+        With<Action<ShipTurnRight>>,
+        With<ActionOf<ShipControlsContext>>,
+    ),
+>;
 
 fn spaceship_movement_controls(
     mut q_spaceship: Query<
@@ -99,12 +98,14 @@ fn spaceship_movement_controls(
         With<Spaceship>,
     >,
     camera_transform: Single<&Transform, (With<PanOrbitCamera>, Without<Spaceship>)>,
-    controls: Single<&ActionState<SpaceshipControl>>,
+    accelerate_state: ShipAccelerateStateQuery,
+    turn_left_state: ShipTurnLeftStateQuery,
+    turn_right_state: ShipTurnRightStateQuery,
     spaceship_config: Res<SpaceshipConfig>,
     movement_config: Res<SpaceshipControlConfig>,
     time: Res<Time>,
     orientation_mode: Res<CameraOrientation>,
-    game_input: Res<ActionState<GameAction>>,
+    game_input: Res<LeafwingActionState<GameAction>>,
     mut debug_state: Local<bool>,
 ) {
     // Toggle debug logging with F4
@@ -128,9 +129,9 @@ fn spaceship_movement_controls(
         let rotation_speed = movement_config.rotation_speed;
 
         // Set angular velocity based on input
-        let turn_right = controls.pressed(&SpaceshipControl::TurnRight);
-        let turn_left = controls.pressed(&SpaceshipControl::TurnLeft);
-        let accelerate = controls.pressed(&SpaceshipControl::Accelerate);
+        let turn_right = **turn_right_state != TriggerState::None;
+        let turn_left = **turn_left_state != TriggerState::None;
+        let accelerate = **accelerate_state != TriggerState::None;
 
         let mut target_angular_velocity = 0.0;
         if turn_right {
@@ -202,26 +203,20 @@ fn apply_acceleration(
     }
 }
 
-fn toggle_continuous_fire(
+fn on_toggle_continuous_fire_input(
+    trigger: On<input_events::Start<ShipContinuousFire>>,
     mut commands: Commands,
-    q_spaceship: Query<
-        (
-            Entity,
-            &ActionState<SpaceshipControl>,
-            Option<&ContinuousFire>,
-        ),
-        With<Spaceship>,
-    >,
+    q_spaceship: Query<Option<&ContinuousFire>, With<Spaceship>>,
 ) {
-    if let Ok((entity, control, continuous)) = q_spaceship.single()
-        && control.just_pressed(&SpaceshipControl::ContinuousFire)
-    {
-        if continuous.is_some() {
-            info!("removing continuous");
-            commands.entity(entity).remove::<ContinuousFire>();
-        } else {
-            info!("adding continuous");
-            commands.entity(entity).insert(ContinuousFire);
-        }
+    let Ok(continuous) = q_spaceship.get(trigger.context) else {
+        return;
+    };
+
+    if continuous.is_some() {
+        info!("removing continuous");
+        commands.entity(trigger.context).remove::<ContinuousFire>();
+    } else {
+        info!("adding continuous");
+        commands.entity(trigger.context).insert(ContinuousFire);
     }
 }

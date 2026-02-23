@@ -6,7 +6,7 @@ use super::actor_config::GLTF_ROTATION_X;
 use super::actor_config::LOCKED_AXES_SPACESHIP;
 use super::actor_config::insert_configured_components;
 use super::actor_template::SpaceshipConfig;
-use super::spaceship_control::SpaceshipControl;
+use crate::input::ship_controls_input_bundle;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
 use crate::splash::SplashText;
@@ -89,7 +89,8 @@ fn initialize_spaceship(
     commands
         .entity(spaceship.entity)
         .insert(spaceship_config.transform)
-        .insert(SpaceshipControl::generate_input_map());
+        // Ship controls now come from enhanced-input on the spaceship context entity.
+        .insert(ship_controls_input_bundle());
 
     insert_configured_components(
         &mut commands,

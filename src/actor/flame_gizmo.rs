@@ -2,7 +2,9 @@ use bevy::camera::primitives::Aabb;
 use bevy::color::palettes::tailwind;
 use bevy::math::Isometry3d;
 use bevy::prelude::*;
-use leafwing_input_manager::action_state::ActionState;
+use bevy_enhanced_input::action::TriggerState;
+use bevy_enhanced_input::prelude::Action;
+use bevy_enhanced_input::prelude::ActionOf;
 use rand::RngExt;
 
 use super::Deaderoid;
@@ -30,8 +32,9 @@ use super::constants::THRUSTER_LINE_OFFSET;
 use super::constants::THRUSTER_VIBRATION_VERTICAL_PHASE_MULT;
 use super::constants::THRUSTER_VIBRATION_VERTICAL_SPEED_MULT;
 use super::spaceship::Spaceship;
-use super::spaceship_control::SpaceshipControl;
 use crate::camera::RenderLayer;
+use crate::input::ShipAccelerate;
+use crate::input::ShipControlsContext;
 use crate::state::GameState;
 use crate::state::PauseState;
 
@@ -274,20 +277,24 @@ impl RingEffectConfig {
 
 fn update_thruster_effect(
     mut commands: Commands,
-    query: Query<
+    ship_query: Query<(Entity, Option<&ThrusterEffect>), With<Spaceship>>,
+    accelerate_query: Query<
+        &TriggerState,
         (
-            Entity,
-            &ActionState<SpaceshipControl>,
-            Option<&ThrusterEffect>,
+            With<Action<ShipAccelerate>>,
+            With<ActionOf<ShipControlsContext>>,
         ),
-        With<Spaceship>,
     >,
 ) {
-    let Ok((entity, controls, thruster_effect)) = query.single() else {
+    let Ok((entity, thruster_effect)) = ship_query.single() else {
         return;
     };
 
-    let is_accelerating = controls.pressed(&SpaceshipControl::Accelerate);
+    let Ok(accelerate_state) = accelerate_query.single() else {
+        return;
+    };
+
+    let is_accelerating = *accelerate_state != TriggerState::None;
 
     match (is_accelerating, thruster_effect) {
         (true, None) => {
