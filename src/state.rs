@@ -1,9 +1,11 @@
 use avian3d::prelude::*;
 use bevy::dev_tools::states::*;
 use bevy::prelude::*;
-use leafwing_input_manager::prelude::ActionState;
+use bevy_enhanced_input::action::events as input_events;
 
-use crate::game_input::GameAction;
+use crate::input::PauseToggle;
+use crate::input::RestartGameShortcut;
+use crate::input::RestartWithSplashShortcut;
 
 pub struct StatePlugin;
 
@@ -11,15 +13,10 @@ impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>()
             .add_sub_state::<PauseState>()
-            .add_systems(
-                Update,
-                (
-                    toggle_pause.run_if(in_state(GameState::InGame)),
-                    restart_game.run_if(in_state(GameState::InGame)),
-                    restart_with_splash.run_if(in_state(GameState::InGame)),
-                    transition_to_in_game.run_if(in_state(GameState::GameOver)),
-                ),
-            )
+            .add_observer(on_pause_input)
+            .add_observer(on_restart_game_input)
+            .add_observer(on_restart_with_splash_input)
+            .add_systems(Update, transition_to_in_game.run_if(in_state(GameState::GameOver)))
             .add_systems(OnEnter(PauseState::Paused), physics_paused)
             .add_systems(OnEnter(PauseState::Playing), physics_playing)
             .add_systems(PostStartup, transition_to_splash_on_startup)
@@ -58,45 +55,58 @@ pub enum PauseState {
     Paused,
 }
 
-fn toggle_pause(
-    user_input: Res<ActionState<GameAction>>,
+fn on_pause_input(
+    _trigger: On<input_events::Start<PauseToggle>>,
+    game_state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<PauseState>>,
-    state: Res<State<PauseState>>,
+    pause_state: Option<Res<State<PauseState>>>,
 ) {
-    if user_input.just_pressed(&GameAction::Pause) {
-        match state.get() {
-            PauseState::Playing => next_state.set(PauseState::Paused),
-            PauseState::Paused => next_state.set(PauseState::Playing),
-        }
+    if *game_state.get() != GameState::InGame {
+        return;
+    }
+
+    let Some(state) = pause_state else {
+        return;
+    };
+
+    match state.get() {
+        PauseState::Playing => next_state.set(PauseState::Paused),
+        PauseState::Paused => next_state.set(PauseState::Playing),
     }
 }
 
-fn restart_game(
-    user_input: Res<ActionState<GameAction>>,
+fn on_restart_game_input(
+    _trigger: On<input_events::Start<RestartGameShortcut>>,
+    game_state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    // Quick restart flow (Cmd+Shift+N):
+    if *game_state.get() != GameState::InGame {
+        return;
+    }
+
+    // Quick restart flow (Shift+R):
     // 1. InGame → GameOver: Stars regenerate, actors despawn
     // 2. GameOver → InGame: No star regeneration (stars from step 1 persist)
     // 3. Fresh game starts with stars already generated
-    if user_input.just_pressed(&GameAction::RestartGame) {
-        debug!("restart quick");
-        next_state.set(GameState::GameOver);
-    }
+    debug!("restart quick");
+    next_state.set(GameState::GameOver);
 }
 
-fn restart_with_splash(
-    user_input: Res<ActionState<GameAction>>,
+fn on_restart_with_splash_input(
+    _trigger: On<input_events::Start<RestartWithSplashShortcut>>,
+    game_state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    // Full restart with splash flow (Cmd+Shift+S):
+    if *game_state.get() != GameState::InGame {
+        return;
+    }
+
+    // Full restart with splash flow (Super+Shift+R):
     // 1. InGame → Splash: Stars regenerate, actors despawn, splash timer resets
     // 2. Splash → InGame: No star regeneration (stars from step 1 persist)
     // 3. Game starts with stars that were generated during splash
-    if user_input.just_pressed(&GameAction::RestartWithSplash) {
-        debug!("restart with splash");
-        next_state.set(GameState::Splash);
-    }
+    debug!("restart with splash");
+    next_state.set(GameState::Splash);
 }
 
 fn transition_to_in_game(mut next_state: ResMut<NextState<GameState>>) {

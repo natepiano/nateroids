@@ -6,6 +6,9 @@ use bevy_enhanced_input::prelude::*;
 pub use global_shortcuts::PhysicsAabbToggle;
 pub use global_shortcuts::BoundaryBoxToggle;
 pub use global_shortcuts::CameraHome;
+pub use global_shortcuts::PauseToggle;
+pub use global_shortcuts::RestartGameShortcut;
+pub use global_shortcuts::RestartWithSplashShortcut;
 pub use global_shortcuts::ZoomToFitShortcut;
 
 pub struct EnhancedInputAppPlugin;
