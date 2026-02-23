@@ -11,6 +11,7 @@ mod asset_loader;
 mod camera;
 mod despawn;
 mod game_input;
+mod input;
 mod orientation;
 mod physics;
 mod playfield;
@@ -31,6 +32,7 @@ use crate::asset_loader::AssetLoaderPlugin;
 use crate::camera::CameraPlugin;
 use crate::despawn::DespawnPlugin;
 use crate::game_input::InputPlugin;
+use crate::input::EnhancedInputAppPlugin;
 use crate::orientation::OrientationPlugin;
 use crate::physics::PhysicsPlugin;
 use crate::playfield::PlayfieldPlugin;
@@ -70,6 +72,7 @@ fn main() {
 
     app.add_plugins((
         EguiPlugin::default(),
+        EnhancedInputAppPlugin,
         ActorPlugin,
         AssetLoaderPlugin,
         brp_plugin,

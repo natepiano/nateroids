@@ -3,11 +3,11 @@ use bevy::diagnostic::Diagnostic;
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
-use leafwing_input_manager::action_state::ActionState;
+use bevy_enhanced_input::action::events as input_events;
 
 use crate::actor::Nateroid;
 use crate::camera::RenderLayer;
-use crate::game_input::GameAction;
+use crate::input::PhysicsAabbToggle;
 use crate::traits::UsizeExt;
 
 pub struct PhysicsPlugin;
@@ -18,8 +18,8 @@ impl Plugin for PhysicsPlugin {
             .add_plugins(PhysicsDebugPlugin)
             .insert_resource(SubstepCount(15))
             .init_resource::<PhysicsMonitorState>()
+            .add_observer(on_toggle_physics_debug_input)
             .add_systems(Startup, init_physics_debug_aabb)
-            .add_systems(Update, toggle_physics_debug)
             .add_systems(FixedUpdate, monitor_physics_health);
     }
 }
@@ -37,15 +37,13 @@ fn init_physics_debug_aabb(mut config_store: ResMut<GizmoConfigStore>) {
     config.render_layers = RenderLayer::Game.layers();
 }
 
-fn toggle_physics_debug(
-    user_input: Res<ActionState<GameAction>>,
+fn on_toggle_physics_debug_input(
+    _trigger: On<input_events::Start<PhysicsAabbToggle>>,
     mut config_store: ResMut<GizmoConfigStore>,
 ) {
-    if user_input.just_pressed(&GameAction::PhysicsAABB) {
-        let (config, _) = config_store.config_mut::<PhysicsGizmos>();
-        config.enabled = !config.enabled;
-        info!("Physics debug: {}", config.enabled);
-    }
+    let (config, _) = config_store.config_mut::<PhysicsGizmos>();
+    config.enabled = !config.enabled;
+    info!("Physics debug: {}", config.enabled);
 }
 
 fn monitor_physics_health(
