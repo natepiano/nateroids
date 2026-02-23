@@ -38,8 +38,6 @@ pub enum GameAction {
     SpaceshipInspector,
     SpaceshipControlInspector,
     StarConfigInspector,
-    SpawnTestaroid,
-    SpawnTestMissile,
     ZoomConfigInspector,
     ZoomToFit,
 }
@@ -105,8 +103,6 @@ impl GameAction {
             Self::SpaceshipControlInspector => {
                 insert_shift_input(input_map, action, KeyCode::Digit4)
             },
-            Self::SpawnTestaroid => insert_shift_input(input_map, action, KeyCode::KeyT),
-            Self::SpawnTestMissile => insert_shift_input(input_map, action, KeyCode::KeyM),
             Self::StarConfigInspector => insert_shift_input(input_map, action, KeyCode::KeyS),
             Self::ZoomConfigInspector => insert_shift_input(input_map, action, KeyCode::KeyZ),
             Self::ZoomToFit => input_map.with(action, KeyCode::KeyZ),
@@ -144,8 +140,4 @@ pub fn toggle_active(
 #[derive(Default)]
 pub struct ToggleState {
     pub state: bool,
-}
-
-pub fn just_pressed<A: Actionlike>(action: A) -> impl Fn(Res<ActionState<A>>) -> bool {
-    move |action_state: Res<ActionState<A>>| action_state.just_pressed(&action)
 }

@@ -9,16 +9,12 @@ use rand::RngExt;
 
 use super::Teleporter;
 use super::actor_config::ColliderType;
-use super::actor_config::Health;
 use super::actor_config::LOCKED_AXES_2D;
 use super::actor_config::insert_configured_components;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidConfig;
 use crate::asset_loader;
 use crate::asset_loader::SceneAssets;
-use crate::despawn::despawn;
-use crate::game_input::GameAction;
-use crate::game_input::just_pressed;
 use crate::playfield::ActorPortals;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
@@ -86,14 +82,6 @@ impl Plugin for NateroidPlugin {
                     apply_nateroid_materials_to_children,
                     debug_mesh_components.after(apply_nateroid_materials_to_children),
                     spawn_nateroid.in_set(InGameSet::EntityUpdates),
-                    despawn_testaroid_on_teleport.in_set(InGameSet::EntityUpdates),
-                    spawn_testaroid
-                        .in_set(InGameSet::EntityUpdates)
-                        .run_if(just_pressed(GameAction::SpawnTestaroid)),
-                    spawn_test_missile
-                        .in_set(InGameSet::EntityUpdates)
-                        .run_if(just_pressed(GameAction::SpawnTestMissile)),
-                    despawn_test_missiles.in_set(InGameSet::EntityUpdates),
                 ),
             );
     }
@@ -124,14 +112,6 @@ pub struct Deaderoid {
 #[derive(Resource)]
 pub struct NateroidDeathMaterials {
     pub materials: Vec<Vec<Handle<StandardMaterial>>>,
-}
-
-/// Test nateroid component with configurable spawn position and velocity
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-pub struct Testaroid {
-    pub position: Vec3,
-    pub velocity: Vec3,
 }
 
 fn spawn_nateroid(
@@ -198,94 +178,6 @@ fn spawn_nateroid(
     }
 
     commands.spawn((Nateroid, Name::new("Nateroid"), transform));
-}
-
-fn despawn_testaroid_on_teleport(
-    mut commands: Commands,
-    query: Query<(Entity, &Teleporter), With<Testaroid>>,
-) {
-    for (entity, teleporter) in query.iter() {
-        if teleporter.just_teleported {
-            commands.entity(entity).insert(Health(-1.0));
-        }
-    }
-}
-
-fn spawn_testaroid(mut commands: Commands) {
-    let testaroid = Testaroid {
-        position: Vec3::new(-159., -85., 0.),
-        velocity: Vec3::new(-20., 0., 0.),
-    };
-
-    commands.spawn((Nateroid, Name::new("Nateroid"), testaroid));
-}
-
-fn spawn_test_missile(
-    mut commands: Commands,
-    boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
-) {
-    use rand::RngExt;
-    let mut rng = rand::rng();
-
-    let Ok(boundary_transform) = boundary_volume_query.single() else {
-        return;
-    };
-
-    // Pick a random corner from the 4 front corners (positive z to ensure heading away from z=0)
-    let half_size = boundary_transform.scale / 2.0;
-    let corner_signs = Vec3::new(
-        if rng.random::<bool>() { 1.0 } else { -1.0 },
-        if rng.random::<bool>() { 1.0 } else { -1.0 },
-        1.0, // Always positive z (front wall) to avoid crossing z=0 before reaching corner
-    );
-    let corner = boundary_transform.translation + half_size * corner_signs;
-
-    // Target the corner directly (small offset for variety but guaranteed corner hit)
-    let target_offset_radius = 1.0; // Very small offset to add variety
-    let offset = Vec3::new(
-        rng.random_range(-target_offset_radius..target_offset_radius),
-        rng.random_range(-target_offset_radius..target_offset_radius),
-        rng.random_range(-target_offset_radius..target_offset_radius),
-    );
-    let target = corner + offset;
-
-    // Spawn near z=0 plane at random x,y position within boundary (z=5 to avoid immediate despawn)
-    let spawn_position = Vec3::new(
-        rng.random_range(-half_size.x..half_size.x)
-            .mul_add(0.8, boundary_transform.translation.x), /* 80% of boundary */
-        rng.random_range(-half_size.y..half_size.y)
-            .mul_add(0.8, boundary_transform.translation.y),
-        5.0, // Slightly offset from z=0 to avoid immediate despawn
-    );
-
-    // Calculate direction from spawn to target
-    let direction = (target - spawn_position).normalize_or_zero();
-
-    // Velocity aimed at target (moderate speed to see what's happening)
-    let velocity = direction * 80.0;
-
-    let test_missile = super::missile::TestMissile {
-        position: spawn_position,
-        velocity,
-    };
-
-    commands.spawn((
-        super::missile::Missile,
-        Name::new("TestMissile"),
-        test_missile,
-    ));
-}
-
-fn despawn_test_missiles(
-    mut commands: Commands,
-    query: Query<(Entity, &Transform, &super::missile::TestMissile)>,
-) {
-    for (entity, transform, _) in query.iter() {
-        // Despawn when z crosses 0 (returned from back to front)
-        if transform.translation.z.abs() < 0.5 {
-            despawn(&mut commands, entity);
-        }
-    }
 }
 
 /// System that applies custom materials to nateroid mesh children (donut and icing)
@@ -419,28 +311,7 @@ fn initialize_nateroid(
     nateroid: On<Add, Nateroid>,
     mut commands: Commands,
     mut config: ResMut<NateroidConfig>,
-    test_query: Query<&Testaroid>,
 ) {
-    // Check if this is a testaroid
-    if let Ok(testaroid) = test_query.get(nateroid.entity) {
-        // Testaroid: spawn with configured position and velocity
-        // Dies immediately, death velocity drags portal along wall toward corner
-        let scale = config.actor_config.transform.scale;
-        let transform = Transform::from_translation(testaroid.position).with_scale(scale);
-
-        commands.entity(nateroid.entity).insert((
-            transform,
-            LinearVelocity(testaroid.velocity),
-            AngularVelocity(Vec3::ZERO),
-        ));
-
-        insert_configured_components(&mut commands, &mut config.actor_config, nateroid.entity);
-
-        // Kill immediately so it has approaching portal when it becomes deaderoid
-        commands.entity(nateroid.entity).insert(Health(-1.0));
-        return;
-    }
-
     // Normal nateroid: transform already set by spawn_nateroid, just add velocities
     let (linear_velocity, angular_velocity) =
         calculate_nateroid_velocity(config.linear_velocity, config.angular_velocity);

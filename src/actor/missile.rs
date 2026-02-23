@@ -20,7 +20,6 @@ pub struct MissilePlugin;
 impl Plugin for MissilePlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(initialize_missile)
-            .add_observer(initialize_test_missile)
             .add_systems(FixedUpdate, fire_missile.in_set(InGameSet::UserInput))
             .add_systems(
                 FixedUpdate,
@@ -41,14 +40,6 @@ impl Plugin for MissilePlugin {
     LockedAxes = LOCKED_AXES_2D
 )]
 pub struct Missile;
-
-/// Test missile with custom position and velocity for testing corner portals
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-pub struct TestMissile {
-    pub position: Vec3,
-    pub velocity: Vec3,
-}
 
 #[derive(Component, Reflect, Copy, Clone, Debug, Default)]
 #[reflect(Component)]
@@ -128,34 +119,6 @@ fn initialize_missile(
         .insert(angular_velocity);
 
     insert_configured_components(&mut commands, &mut config.actor_config, missile.entity);
-}
-
-fn initialize_test_missile(
-    missile: On<Add, Missile>,
-    mut commands: Commands,
-    boundary: Res<Boundary>,
-    mut config: ResMut<MissileConfig>,
-    test_query: Query<&TestMissile>,
-) {
-    // Check if this is a test missile
-    if let Ok(test_missile) = test_query.get(missile.entity) {
-        let missile_position = MissilePosition::new(boundary.max_missile_distance());
-
-        let transform = Transform::from_translation(test_missile.position)
-            .with_scale(config.actor_config.transform.scale);
-
-        let linear_velocity = LinearVelocity(test_missile.velocity);
-        let angular_velocity = AngularVelocity(Vec3::ZERO);
-
-        commands
-            .entity(missile.entity)
-            .insert(missile_position)
-            .insert(transform)
-            .insert(linear_velocity)
-            .insert(angular_velocity);
-
-        insert_configured_components(&mut commands, &mut config.actor_config, missile.entity);
-    }
 }
 
 fn initialize_transform(
