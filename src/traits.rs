@@ -25,5 +25,7 @@ pub trait UsizeExt {
 impl UsizeExt for usize {
     #[inline]
     #[allow(clippy::cast_precision_loss)]
-    fn to_f32(self) -> f32 { self as f32 }
+    fn to_f32(self) -> f32 {
+        self as f32
+    }
 }

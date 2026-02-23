@@ -14,7 +14,9 @@ use crate::state::GameState;
 use crate::state::PauseState;
 
 /// Returns the default spaceship rotation: model correction (90° around X)
-fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X) }
+fn default_spaceship_rotation() -> Quat {
+    Quat::from_rotation_x(GLTF_ROTATION_X)
+}
 
 pub struct SpaceshipPlugin;
 

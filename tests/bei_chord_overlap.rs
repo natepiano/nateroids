@@ -1,7 +1,7 @@
 //! Integration test for BEI chord overlap behavior across contexts.
 
-use bevy::prelude::*;
 use bevy::input::InputPlugin;
+use bevy::prelude::*;
 use bevy_enhanced_input::action::events;
 use bevy_enhanced_input::prelude::*;
 
@@ -21,7 +21,7 @@ struct ContinuousFireToggle;
 
 #[derive(Resource, Default)]
 struct TriggerCounts {
-    show_focus:      u32,
+    show_focus: u32,
     continuous_fire: u32,
 }
 
@@ -183,7 +183,10 @@ fn releasing_shift_while_holding_f_triggers_plain_f_after_chord() {
     app.update();
 
     let counts = app.world().resource::<TriggerCounts>();
-    assert_eq!(counts.show_focus, 1, "Shift+F should trigger ShowFocus once");
+    assert_eq!(
+        counts.show_focus, 1,
+        "Shift+F should trigger ShowFocus once"
+    );
     assert_eq!(
         counts.continuous_fire, 1,
         "Releasing Shift while holding F should trigger plain F once"
@@ -259,31 +262,29 @@ fn press_plus_blockby_shift_prevents_toggle_on_shift_release() {
 
     app.world_mut().spawn((
         ShipContext,
-        Actions::<ShipContext>::spawn(SpawnWith(
-            |context: &mut ActionSpawner<ShipContext>| {
-                let shift = context
-                    .spawn((
-                        Action::<ShiftHeld>::new(),
-                        ActionSettings {
-                            consume_input: false,
-                            ..default()
-                        },
-                        bindings![KeyCode::ShiftLeft, KeyCode::ShiftRight],
-                    ))
-                    .id();
-
-                context.spawn((
-                    Action::<ContinuousFireBlocked>::new(),
+        Actions::<ShipContext>::spawn(SpawnWith(|context: &mut ActionSpawner<ShipContext>| {
+            let shift = context
+                .spawn((
+                    Action::<ShiftHeld>::new(),
                     ActionSettings {
-                        consume_input: true,
+                        consume_input: false,
                         ..default()
                     },
-                    bevy_enhanced_input::condition::press::Press::default(),
-                    BlockBy::single(shift),
-                    bindings![KeyCode::KeyF],
-                ));
-            },
-        )),
+                    bindings![KeyCode::ShiftLeft, KeyCode::ShiftRight],
+                ))
+                .id();
+
+            context.spawn((
+                Action::<ContinuousFireBlocked>::new(),
+                ActionSettings {
+                    consume_input: true,
+                    ..default()
+                },
+                bevy_enhanced_input::condition::press::Press::default(),
+                BlockBy::single(shift),
+                bindings![KeyCode::KeyF],
+            ));
+        })),
     ));
     app.update();
 
@@ -320,5 +321,8 @@ fn press_plus_blockby_shift_prevents_toggle_on_shift_release() {
     app.update();
 
     let counts = app.world().resource::<BlockedCounts>();
-    assert_eq!(counts.continuous_fire, 1, "plain F should still fire on a clean press");
+    assert_eq!(
+        counts.continuous_fire, 1,
+        "plain F should still fire on a clean press"
+    );
 }

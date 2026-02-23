@@ -174,9 +174,9 @@ fn create_spin_sequence(radius: f32, durations: &[f32]) -> Vec<CameraMove> {
         .zip(durations.iter().cycle())
         .map(|(pos, &duration)| CameraMove::ToPosition {
             translation: *pos,
-            focus:       Vec3::ZERO,
+            focus: Vec3::ZERO,
             duration_ms: duration,
-            easing:      EaseFunction::Linear,
+            easing: EaseFunction::Linear,
         })
         .collect()
 }
@@ -187,46 +187,46 @@ fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
         // start spin 1 (already at radius from zoom-to-fit, just orbit)
         CameraMove::ToPosition {
             translation: Vec3::new(radius, 0.0, 0.0),
-            focus:       Vec3::ZERO,
+            focus: Vec3::ZERO,
             duration_ms: 500.0,
-            easing:      EaseFunction::Linear,
+            easing: EaseFunction::Linear,
         },
         CameraMove::ToPosition {
             translation: Vec3::new(0.0, 0.0, -radius),
-            focus:       Vec3::ZERO,
+            focus: Vec3::ZERO,
             duration_ms: 400.0,
-            easing:      EaseFunction::Linear,
+            easing: EaseFunction::Linear,
         },
         CameraMove::ToPosition {
             translation: Vec3::new(-radius, 0.0, 0.0),
-            focus:       Vec3::ZERO,
+            focus: Vec3::ZERO,
             duration_ms: 300.0,
-            easing:      EaseFunction::Linear,
+            easing: EaseFunction::Linear,
         },
         // start spin 2
         CameraMove::ToPosition {
             translation: Vec3::new(0.0, 0.0, radius),
-            focus:       Vec3::ZERO,
+            focus: Vec3::ZERO,
             duration_ms: 200.0,
-            easing:      EaseFunction::Linear,
+            easing: EaseFunction::Linear,
         },
         CameraMove::ToPosition {
             translation: Vec3::new(radius, 0.0, 0.0),
-            focus:       Vec3::ZERO,
+            focus: Vec3::ZERO,
             duration_ms: 100.0,
-            easing:      EaseFunction::Linear,
+            easing: EaseFunction::Linear,
         },
         CameraMove::ToPosition {
             translation: Vec3::new(0.0, 0.0, -radius),
-            focus:       Vec3::ZERO,
+            focus: Vec3::ZERO,
             duration_ms: 50.0,
-            easing:      EaseFunction::Linear,
+            easing: EaseFunction::Linear,
         },
         CameraMove::ToPosition {
             translation: Vec3::new(-radius, 0.0, 0.0),
-            focus:       Vec3::ZERO,
+            focus: Vec3::ZERO,
             duration_ms: 25.0,
-            easing:      EaseFunction::Linear,
+            easing: EaseFunction::Linear,
         },
     ];
 
@@ -239,9 +239,9 @@ fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
     // Land at home with smooth easing
     moves.push(CameraMove::ToPosition {
         translation: Vec3::new(0.0, 0.0, radius),
-        focus:       Vec3::ZERO,
+        focus: Vec3::ZERO,
         duration_ms: 1200.0,
-        easing:      EaseFunction::QuadraticOut,
+        easing: EaseFunction::QuadraticOut,
     });
 
     moves
@@ -261,18 +261,18 @@ fn start_splash_camera_animation(
 
     // Instant snap to splash start position, then hold while text animates
     let snap_move = CameraMove::ToOrbit {
-        focus:       camera_config.splash_start_focus,
-        yaw:         camera_config.splash_start_yaw,
-        pitch:       camera_config.splash_start_pitch,
-        radius:      camera_config.splash_start_radius,
+        focus: camera_config.splash_start_focus,
+        yaw: camera_config.splash_start_yaw,
+        pitch: camera_config.splash_start_pitch,
+        radius: camera_config.splash_start_radius,
         duration_ms: 0.0,
-        easing:      EaseFunction::Linear,
+        easing: EaseFunction::Linear,
     };
     let hold_move = CameraMove::ToPosition {
         translation: Vec3::new(0.0, 0.0, camera_config.splash_start_radius),
-        focus:       Vec3::ZERO,
+        focus: Vec3::ZERO,
         duration_ms: 2500.0,
-        easing:      EaseFunction::BounceOut,
+        easing: EaseFunction::BounceOut,
     };
 
     commands.trigger(PlayAnimation::new(

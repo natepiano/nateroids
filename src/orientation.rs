@@ -3,7 +3,9 @@ use bevy::prelude::*;
 pub struct OrientationPlugin;
 
 impl Plugin for OrientationPlugin {
-    fn build(&self, app: &mut App) { app.init_resource::<CameraOrientation>(); }
+    fn build(&self, app: &mut App) {
+        app.init_resource::<CameraOrientation>();
+    }
 }
 
 // centralize orientation defaults for a quick change-up
@@ -36,12 +38,12 @@ pub enum OrientationType {
 
 #[derive(Debug, Clone, Reflect)]
 pub struct OrientationConfig {
-    pub allow_3d:         bool,
-    pub axis_mundi:       Vec3,
-    pub axis_orbis:       Vec3,
-    pub axis_profundus:   Vec3,
-    pub locus:            Transform,
-    pub nexus:            Vec3,
+    pub allow_3d: bool,
+    pub axis_mundi: Vec3,
+    pub axis_orbis: Vec3,
+    pub axis_profundus: Vec3,
+    pub locus: Transform,
+    pub nexus: Vec3,
     pub spaceship_offset: Vec3,
 }
 
@@ -49,17 +51,17 @@ pub struct OrientationConfig {
 #[reflect(Resource)]
 pub struct CameraOrientation {
     pub orientation: OrientationType,
-    pub config:      OrientationConfig,
+    pub config: OrientationConfig,
 }
 
 impl CameraOrientation {
     const DEFAULT_CONFIG: OrientationConfig = OrientationConfig {
-        allow_3d:         false,
-        axis_mundi:       Vec3::ZERO,
-        axis_orbis:       Vec3::ZERO,
-        axis_profundus:   Vec3::ZERO,
-        locus:            Transform::IDENTITY,
-        nexus:            Vec3::ZERO,
+        allow_3d: false,
+        axis_mundi: Vec3::ZERO,
+        axis_orbis: Vec3::ZERO,
+        axis_profundus: Vec3::ZERO,
+        locus: Transform::IDENTITY,
+        nexus: Vec3::ZERO,
         spaceship_offset: Vec3::new(0.0, 5.0, -10.0),
     };
 
@@ -93,7 +95,7 @@ impl Default for CameraOrientation {
     fn default() -> Self {
         let mut mode = Self {
             orientation: OrientationType::TopDown,
-            config:      Self::DEFAULT_CONFIG,
+            config: Self::DEFAULT_CONFIG,
         };
         mode.set_orientation(OrientationType::TopDown);
         mode

@@ -48,5 +48,7 @@ impl RenderLayer {
         }
     }
 
-    pub fn layers(self) -> RenderLayers { RenderLayers::from_layers(self.layer_ids()) }
+    pub fn layers(self) -> RenderLayers {
+        RenderLayers::from_layers(self.layer_ids())
+    }
 }

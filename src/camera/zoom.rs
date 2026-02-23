@@ -1,3 +1,8 @@
+use super::constants::EDGE_MARKER_FONT_SIZE;
+use super::constants::EDGE_MARKER_SPHERE_RADIUS;
+use super::constants::HOME_ANIMATION_DURATION_MS;
+use super::constants::ZOOM_MARGIN;
+use super::constants::ZOOM_TO_FIT_DURATION_MS;
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_enhanced_input::action::events as input_events;
@@ -10,11 +15,6 @@ use bevy_panorbit_camera_ext::FitTargetGizmo;
 use bevy_panorbit_camera_ext::FitTargetVisualizationPlugin;
 use bevy_panorbit_camera_ext::SetFitTarget;
 use bevy_panorbit_camera_ext::ZoomToFit as ZoomToFitEvent;
-use super::constants::EDGE_MARKER_FONT_SIZE;
-use super::constants::EDGE_MARKER_SPHERE_RADIUS;
-use super::constants::HOME_ANIMATION_DURATION_MS;
-use super::constants::ZOOM_MARGIN;
-use super::constants::ZOOM_TO_FIT_DURATION_MS;
 /// Resource tracking the currently selected entity for zoom-to-fit.
 /// When `None`, Z zooms to boundary.
 #[derive(Resource, Default)]
@@ -36,9 +36,9 @@ struct FocusGizmo {}
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 struct FocusConfig {
-    color:         Color,
+    color: Color,
     #[inspector(min = 0.1, max = 10.0, display = NumberDisplay::Slider)]
-    line_width:    f32,
+    line_width: f32,
     #[inspector(min = 0.1, max = 50.0, display = NumberDisplay::Slider)]
     sphere_radius: f32,
 }
@@ -46,8 +46,8 @@ struct FocusConfig {
 impl Default for FocusConfig {
     fn default() -> Self {
         Self {
-            color:         Color::srgb(1.0, 0.0, 0.0),
-            line_width:    2.0,
+            color: Color::srgb(1.0, 0.0, 0.0),
+            line_width: 2.0,
             sphere_radius: EDGE_MARKER_SPHERE_RADIUS,
         }
     }

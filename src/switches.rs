@@ -5,7 +5,9 @@ use bevy::prelude::*;
 pub struct SwitchesPlugin;
 
 impl Plugin for SwitchesPlugin {
-    fn build(&self, app: &mut App) { app.init_resource::<Switches>(); }
+    fn build(&self, app: &mut App) {
+        app.init_resource::<Switches>();
+    }
 }
 
 #[derive(Resource, Default, Debug, Reflect)]
@@ -22,7 +24,10 @@ pub enum ToggleState {
     Off,
 }
 
-#[allow(dead_code, reason = "Kept for parity with hana switch model; not all helpers are used yet")]
+#[allow(
+    dead_code,
+    reason = "Kept for parity with hana switch model; not all helpers are used yet"
+)]
 impl Switches {
     const INSPECTOR_SWITCHES: [Switch; 14] = [
         Switch::InspectAabbConfig,
@@ -73,9 +78,17 @@ impl Switches {
         true
     }
 
-    pub fn has_any_inspector_active(&self) -> bool { self.is_any_inspector_active() }
+    pub fn has_any_inspector_active(&self) -> bool {
+        self.is_any_inspector_active()
+    }
 
-    pub fn toggle_switch(&mut self, switch: Switch) { self.toggle(switch); }
+    pub fn toggle_switch(&mut self, switch: Switch) {
+        self.toggle(switch);
+    }
+
+    pub fn is_switch_on(&self, switch: Switch) -> bool {
+        self.is_on(switch)
+    }
 }
 
 #[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -99,7 +112,10 @@ pub enum Switch {
     InspectZoomConfig,
 }
 
-#[allow(dead_code, reason = "Kept for parity with hana switch model; not used yet in nateroids")]
+#[allow(
+    dead_code,
+    reason = "Kept for parity with hana switch model; not used yet in nateroids"
+)]
 pub fn any_inspector_active() -> impl Fn(Res<Switches>) -> bool + Clone {
     move |switches: Res<Switches>| switches.is_any_inspector_active()
 }

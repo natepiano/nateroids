@@ -48,7 +48,7 @@ impl Plugin for AabbPlugin {
 #[derive(Component)]
 pub struct PendingCollider {
     pub collider_type: ColliderType,
-    pub margin:        f32,
+    pub margin: f32,
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -57,7 +57,7 @@ struct AabbGizmo {}
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 struct AabbConfig {
-    color:      Color,
+    color: Color,
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
     line_width: f32,
 }
@@ -65,7 +65,7 @@ struct AabbConfig {
 impl Default for AabbConfig {
     fn default() -> Self {
         Self {
-            color:      Color::from(tailwind::GREEN_800),
+            color: Color::from(tailwind::GREEN_800),
             line_width: 1.0,
         }
     }
@@ -78,7 +78,9 @@ fn apply_aabb_config(mut config_store: ResMut<GizmoConfigStore>, config: Res<Aab
 }
 
 /// Returns the full size of the `Aabb` as a `Vec3`.
-pub fn size(aabb: &Aabb) -> Vec3 { Vec3::from(aabb.half_extents * 2.0) }
+pub fn size(aabb: &Aabb) -> Vec3 {
+    Vec3::from(aabb.half_extents * 2.0)
+}
 
 /// Returns the largest axis dimension of the `Aabb`.
 pub fn max_dimension(aabb: &Aabb) -> f32 {

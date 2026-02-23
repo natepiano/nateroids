@@ -56,36 +56,36 @@ impl Plugin for ActorConfigPlugin {
 #[derive(Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(InspectorOptions)]
 pub struct ActorConfig {
-    pub spawnable:                bool,
+    pub spawnable: bool,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub angular_damping:          Option<f32>,
+    pub angular_damping: Option<f32>,
     #[inspector(min = 0.1, max = 3.0, display = NumberDisplay::Slider)]
-    pub collider_margin:          f32,
-    pub collider_type:            ColliderType,
-    pub collision_damage:         f32,
-    pub collision_layers:         CollisionLayers,
-    pub gravity_scale:            f32,
-    pub health:                   f32,
+    pub collider_margin: f32,
+    pub collider_type: ColliderType,
+    pub collision_damage: f32,
+    pub collision_layers: CollisionLayers,
+    pub gravity_scale: f32,
+    pub health: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub linear_damping:           Option<f32>,
-    pub locked_axes:              LockedAxes,
+    pub linear_damping: Option<f32>,
+    pub locked_axes: LockedAxes,
     #[inspector(min = 0.0, max = 20.0, display = NumberDisplay::Slider)]
-    pub mass:                     f32,
+    pub mass: f32,
     #[inspector(min = 0.0, max = 500.0, display = NumberDisplay::Slider)]
-    pub max_angular_velocity:     f32,
+    pub max_angular_velocity: f32,
     #[inspector(min = 0.0, max = 500.0, display = NumberDisplay::Slider)]
-    pub max_linear_velocity:      f32,
-    pub render_layer:             RenderLayer,
+    pub max_linear_velocity: f32,
+    pub render_layer: RenderLayer,
     #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
-    pub restitution:              f32,
+    pub restitution: f32,
     pub restitution_combine_rule: CoefficientCombine,
-    pub rigid_body:               RigidBody,
+    pub rigid_body: RigidBody,
     #[reflect(ignore)]
-    pub scene:                    Handle<Scene>,
-    pub spawn_timer_seconds:      Option<f32>,
-    pub transform:                Transform,
+    pub scene: Handle<Scene>,
+    pub spawn_timer_seconds: Option<f32>,
+    pub transform: Transform,
     #[reflect(ignore)]
-    pub spawn_timer:              Option<Timer>,
+    pub spawn_timer: Option<Timer>,
 }
 
 #[derive(Reflect, Component, Clone, Debug)]
@@ -165,14 +165,14 @@ pub fn insert_configured_components(
     commands.entity(actor_entity).insert((
         aabb::PendingCollider {
             collider_type: config.collider_type.clone(),
-            margin:        config.collider_margin,
+            margin: config.collider_margin,
         },
         CollisionDamage(config.collision_damage),
         config.collision_layers,
         GravityScale(config.gravity_scale),
         Health(config.health),
         Restitution {
-            coefficient:  config.restitution,
+            coefficient: config.restitution,
             combine_rule: config.restitution_combine_rule,
         },
         Mass(config.mass),

@@ -74,8 +74,8 @@ fn debug_stars(
 
 #[derive(Reflect, Component, Default)]
 pub struct Star {
-    position:     Vec3,
-    radius:       f32,
+    position: Vec3,
+    radius: f32,
     pub emissive: Vec4,
 }
 

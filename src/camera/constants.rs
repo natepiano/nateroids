@@ -37,8 +37,8 @@ pub const SELECTION_OUTLINE_INTENSITY: f32 = 4.0;
 
 /// Outline color for selected entities
 pub const SELECTION_OUTLINE_COLOR: Color = Color::Srgba(bevy::color::Srgba {
-    red:   0.0,
+    red: 0.0,
     green: 0.24,
-    blue:  1.0,
+    blue: 1.0,
     alpha: 1.0,
 });

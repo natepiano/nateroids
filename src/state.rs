@@ -16,7 +16,10 @@ impl Plugin for StatePlugin {
             .add_observer(on_pause_input)
             .add_observer(on_restart_game_input)
             .add_observer(on_restart_with_splash_input)
-            .add_systems(Update, transition_to_in_game.run_if(in_state(GameState::GameOver)))
+            .add_systems(
+                Update,
+                transition_to_in_game.run_if(in_state(GameState::GameOver)),
+            )
             .add_systems(OnEnter(PauseState::Paused), physics_paused)
             .add_systems(OnEnter(PauseState::Playing), physics_playing)
             .add_systems(PostStartup, transition_to_splash_on_startup)

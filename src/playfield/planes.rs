@@ -41,58 +41,58 @@ impl Plugin for PlanesPlugin {
 #[reflect(Resource, InspectorOptions)]
 #[allow(clippy::struct_excessive_bools)] // 6 directional bools (front/back/top/bottom/left/right) are intentional
 pub struct PlaneConfig {
-    pub front:                 bool,
-    pub back:                  bool,
-    pub top:                   bool,
-    pub bottom:                bool,
-    pub left:                  bool,
-    pub right:                 bool,
-    pub alpha_mode:            Option<AlphaMode>,
-    pub base_color:            Color,
+    pub front: bool,
+    pub back: bool,
+    pub top: bool,
+    pub bottom: bool,
+    pub left: bool,
+    pub right: bool,
+    pub alpha_mode: Option<AlphaMode>,
+    pub base_color: Color,
     #[reflect(ignore)]
-    pub cull_mode:             Option<Face>,
-    pub double_sided:          bool,
-    pub emissive:              LinearRgba,
-    pub attenuation_distance:  f32,
+    pub cull_mode: Option<Face>,
+    pub double_sided: bool,
+    pub emissive: LinearRgba,
+    pub attenuation_distance: f32,
     #[inspector(min = 1.0, max = 3.0, display = NumberDisplay::Slider)]
-    pub ior:                   f32,
+    pub ior: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub diffuse_transmission:  f32,
+    pub diffuse_transmission: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub metallic:              f32,
+    pub metallic: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub perceptual_roughness:  f32,
+    pub perceptual_roughness: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub reflectance:           f32,
+    pub reflectance: f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub specular_transmission: f32,
     #[inspector(min = 0.001, max = 10.0, display = NumberDisplay::Slider)]
-    pub thickness:             f32,
+    pub thickness: f32,
 }
 
 impl Default for PlaneConfig {
     fn default() -> Self {
         Self {
-            front:                 false,
-            back:                  false,
-            left:                  false,
-            right:                 false,
-            top:                   false,
-            bottom:                false,
-            alpha_mode:            None, // Some(AlphaMode::Blend),
-            attenuation_distance:  f32::INFINITY,
-            base_color:            Color::WHITE, /* Color::from(tailwind::AMBER_100).
-                                                  * with_alpha(0.0), */
-            cull_mode:             Some(Face::Back),
-            diffuse_transmission:  0.,
-            double_sided:          false,
-            emissive:              LinearRgba::BLACK,
-            ior:                   PLANE_IOR,
-            metallic:              0.,
-            perceptual_roughness:  PLANE_PERCEPTUAL_ROUGHNESS,
-            reflectance:           PLANE_REFLECTANCE,
+            front: false,
+            back: false,
+            left: false,
+            right: false,
+            top: false,
+            bottom: false,
+            alpha_mode: None, // Some(AlphaMode::Blend),
+            attenuation_distance: f32::INFINITY,
+            base_color: Color::WHITE, /* Color::from(tailwind::AMBER_100).
+                                       * with_alpha(0.0), */
+            cull_mode: Some(Face::Back),
+            diffuse_transmission: 0.,
+            double_sided: false,
+            emissive: LinearRgba::BLACK,
+            ior: PLANE_IOR,
+            metallic: 0.,
+            perceptual_roughness: PLANE_PERCEPTUAL_ROUGHNESS,
+            reflectance: PLANE_REFLECTANCE,
             specular_transmission: 0.,
-            thickness:             PLANE_THICKNESS,
+            thickness: PLANE_THICKNESS,
         }
     }
 }

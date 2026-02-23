@@ -10,7 +10,6 @@ mod actor;
 mod asset_loader;
 mod camera;
 mod despawn;
-mod game_input;
 mod input;
 mod orientation;
 mod physics;
@@ -32,7 +31,6 @@ use crate::actor::ActorPlugin;
 use crate::asset_loader::AssetLoaderPlugin;
 use crate::camera::CameraPlugin;
 use crate::despawn::DespawnPlugin;
-use crate::game_input::InputPlugin;
 use crate::input::EnhancedInputAppPlugin;
 use crate::orientation::OrientationPlugin;
 use crate::physics::PhysicsPlugin;
@@ -59,7 +57,7 @@ fn main() {
             .set(GltfPlugin {
                 convert_coordinates: GltfConvertCoordinates {
                     rotate_scene_entity: true,
-                    rotate_meshes:       true,
+                    rotate_meshes: true,
                 },
                 ..default()
             })
@@ -82,7 +80,6 @@ fn main() {
             PlayfieldPlugin,
             CameraPlugin,
             DespawnPlugin,
-            InputPlugin,
             OrientationPlugin,
             PhysicsPlugin,
             SchedulePlugin,
@@ -90,5 +87,5 @@ fn main() {
             StatePlugin,
             WindowManagerPlugin,
         ))
-    .run();
+        .run();
 }

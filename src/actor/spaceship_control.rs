@@ -8,18 +8,16 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
-use leafwing_input_manager::action_state::ActionState as LeafwingActionState;
 
 use super::actor_template::SpaceshipConfig;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
-use crate::game_input::GameAction;
 use crate::input::ShipAccelerate;
 use crate::input::ShipContinuousFire;
 use crate::input::ShipControlsContext;
-use crate::input::SpaceshipControlInspectorToggle;
 use crate::input::ShipTurnLeft;
 use crate::input::ShipTurnRight;
+use crate::input::SpaceshipControlInspectorToggle;
 use crate::orientation::CameraOrientation;
 use crate::orientation::OrientationType;
 use crate::schedule::InGameSet;
@@ -49,9 +47,9 @@ impl Plugin for SpaceshipControlPlugin {
 #[reflect(Resource, InspectorOptions)]
 pub struct SpaceshipControlConfig {
     #[inspector(min = 30., max = 300.0, display = NumberDisplay::Slider)]
-    pub acceleration:   f32,
+    pub acceleration: f32,
     #[inspector(min = 50., max = 300.0, display = NumberDisplay::Slider)]
-    pub max_speed:      f32,
+    pub max_speed: f32,
     #[inspector(min = 1.0, max = 10.0, display = NumberDisplay::Slider)]
     pub rotation_speed: f32,
 }
@@ -59,9 +57,9 @@ pub struct SpaceshipControlConfig {
 impl Default for SpaceshipControlConfig {
     fn default() -> Self {
         Self {
-            acceleration:   60.,
+            acceleration: 60.,
             rotation_speed: 5.0,
-            max_speed:      80.,
+            max_speed: 80.,
         }
     }
 }
@@ -109,18 +107,7 @@ fn spaceship_movement_controls(
     movement_config: Res<SpaceshipControlConfig>,
     time: Res<Time>,
     orientation_mode: Res<CameraOrientation>,
-    game_input: Res<LeafwingActionState<GameAction>>,
-    mut debug_state: Local<bool>,
 ) {
-    // Toggle debug logging with F4
-    if game_input.just_pressed(&GameAction::DebugSpaceshipInput) {
-        *debug_state = !*debug_state;
-        info!(
-            "Spaceship input debug: {}",
-            if *debug_state { "ON" } else { "OFF" }
-        );
-    }
-
     // we can use this because there is only exactly one spaceship - so we're not
     // looping over the query
     if let Ok((mut spaceship_transform, mut linear_velocity, mut angular_velocity)) =
@@ -149,14 +136,6 @@ fn spaceship_movement_controls(
         let facing_opposite = camera_forward.dot(Vec3::new(0.0, 0.0, -1.0)) > 0.0;
         if facing_opposite {
             target_angular_velocity = -target_angular_velocity;
-        }
-
-        // Debug logging when enabled
-        if *debug_state {
-            let ang_vel_before = angular_velocity.z;
-            info!(
-                "INPUT: L={turn_left} R={turn_right} A={accelerate} | ang_vel: {ang_vel_before:.2} -> {target_angular_velocity:.2}"
-            );
         }
 
         // Apply angular velocity through physics engine

@@ -102,19 +102,19 @@ impl DeathStyle {
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 pub struct DeathEffect {
-    pub style:    DeathStyle,
-    pub radius:   f32,
+    pub style: DeathStyle,
+    pub radius: f32,
     pub duration: f32,
-    pub elapsed:  f32,
+    pub elapsed: f32,
 }
 
 impl DeathEffect {
     pub fn new(radius: f32) -> Self {
         Self {
-            style:    DeathStyle::random(),
-            radius:   radius + DEATH_EFFECT_RADIUS_MARGIN,
+            style: DeathStyle::random(),
+            radius: radius + DEATH_EFFECT_RADIUS_MARGIN,
             duration: DEATH_EFFECT_DURATION_SECS,
-            elapsed:  0.0,
+            elapsed: 0.0,
         }
     }
 }
@@ -125,7 +125,7 @@ pub struct ThrusterEffect;
 
 struct FlickerValues {
     length: f32,
-    color:  f32,
+    color: f32,
 }
 
 fn compute_flicker(elapsed: f32, line_index: f32, phase_offset: f32) -> FlickerValues {
@@ -138,7 +138,7 @@ fn compute_flicker(elapsed: f32, line_index: f32, phase_offset: f32) -> FlickerV
             )
             .sin()
             .mul_add(0.5, 0.5),
-        color:  elapsed
+        color: elapsed
             .mul_add(FLAME_COLOR_FLICKER_SPEED, phase)
             .sin()
             .mul_add(0.5, 0.5),
@@ -232,46 +232,46 @@ impl AlphaCurve {
 /// Configuration for ring-based death effects.
 #[derive(Clone, Copy)]
 struct RingEffectConfig {
-    ring_count:        usize,
-    expands:           bool,
-    radius_scale:      f32,
+    ring_count: usize,
+    expands: bool,
+    radius_scale: f32,
     line_length_scale: f32,
-    ring_delay_secs:   f32,
+    ring_delay_secs: f32,
     ring_phase_offset: f32,
-    alpha_curve:       AlphaCurve,
+    alpha_curve: AlphaCurve,
 }
 
 impl RingEffectConfig {
     const EXPANDING_RING: Self = Self {
-        ring_count:        1,
-        expands:           true,
-        radius_scale:      1.0,
+        ring_count: 1,
+        expands: true,
+        radius_scale: 1.0,
         line_length_scale: 0.5,
-        ring_delay_secs:   0.0,
+        ring_delay_secs: 0.0,
         ring_phase_offset: 0.0,
-        alpha_curve:       AlphaCurve::LinearFade,
+        alpha_curve: AlphaCurve::LinearFade,
     };
 
     const STATIC_FLASH: Self = Self {
-        ring_count:        1,
-        expands:           false,
-        radius_scale:      0.4,
+        ring_count: 1,
+        expands: false,
+        radius_scale: 0.4,
         line_length_scale: 0.5,
-        ring_delay_secs:   0.0,
+        ring_delay_secs: 0.0,
         ring_phase_offset: 0.0,
-        alpha_curve:       AlphaCurve::FlashInFadeOut {
+        alpha_curve: AlphaCurve::FlashInFadeOut {
             flash_in_fraction: 0.2,
         },
     };
 
     const MULTIPLE_RINGS: Self = Self {
-        ring_count:        3,
-        expands:           true,
-        radius_scale:      1.0,
+        ring_count: 3,
+        expands: true,
+        radius_scale: 1.0,
         line_length_scale: 1.0 / 3.0,
-        ring_delay_secs:   0.4,
+        ring_delay_secs: 0.4,
         ring_phase_offset: 2.0,
-        alpha_curve:       AlphaCurve::LinearFade,
+        alpha_curve: AlphaCurve::LinearFade,
     };
 }
 

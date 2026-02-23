@@ -27,14 +27,14 @@ const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
 #[derive(Resource)]
 pub struct NateroidSpawnStats {
     /// Ring buffer tracking last N spawn attempts (true = success, false = failure)
-    pub attempts:          VecDeque<bool>,
+    pub attempts: VecDeque<bool>,
     pub last_warning_time: f32,
 }
 
 impl Default for NateroidSpawnStats {
     fn default() -> Self {
         Self {
-            attempts:          VecDeque::with_capacity(50),
+            attempts: VecDeque::with_capacity(50),
             last_warning_time: 0.0,
         }
     }
@@ -59,7 +59,9 @@ impl NateroidSpawnStats {
         }
     }
 
-    pub fn attempts_count(&self) -> usize { self.attempts.len() }
+    pub fn attempts_count(&self) -> usize {
+        self.attempts.len()
+    }
 
     pub fn successes_count(&self) -> usize {
         self.attempts.iter().filter(|&&success| success).count()
@@ -100,11 +102,11 @@ pub struct Nateroid;
 
 #[derive(Component, Debug)]
 pub struct Deaderoid {
-    pub initial_scale:          Vec3,
-    pub target_shrink:          f32,
-    pub shrink_duration:        f32,
-    pub elapsed_time:           f32,
-    pub current_shrink:         f32,
+    pub initial_scale: Vec3,
+    pub target_shrink: f32,
+    pub shrink_duration: f32,
+    pub elapsed_time: f32,
+    pub current_shrink: f32,
     pub current_material_index: usize,
 }
 

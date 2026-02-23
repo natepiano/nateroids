@@ -30,18 +30,18 @@ pub struct Selected;
 #[reflect(Resource, InspectorOptions)]
 pub struct SelectionOutlineConfig {
     #[inspector(min = 0.0, max = 30.0, display = NumberDisplay::Slider)]
-    pub width:     f32,
+    pub width: f32,
     #[inspector(min = 0.0, max = 30.0, display = NumberDisplay::Slider)]
     pub intensity: f32,
-    pub color:     Color,
+    pub color: Color,
 }
 
 impl Default for SelectionOutlineConfig {
     fn default() -> Self {
         Self {
-            width:     SELECTION_OUTLINE_WIDTH,
+            width: SELECTION_OUTLINE_WIDTH,
             intensity: SELECTION_OUTLINE_INTENSITY,
-            color:     SELECTION_OUTLINE_COLOR,
+            color: SELECTION_OUTLINE_COLOR,
         }
     }
 }

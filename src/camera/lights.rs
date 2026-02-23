@@ -32,19 +32,19 @@ impl Plugin for DirectionalLightsPlugin {
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct LightSettings {
-    pub color:           Color,
-    pub enabled:         bool,
+    pub color: Color,
+    pub enabled: bool,
     #[inspector(min = 0.0, max = 10_000.0, display = NumberDisplay::Slider)]
-    pub illuminance:     f32,
+    pub illuminance: f32,
     pub shadows_enabled: bool,
 }
 
 impl Default for LightSettings {
     fn default() -> Self {
         Self {
-            color:           Color::from(tailwind::GRAY_50),
-            enabled:         false,
-            illuminance:     1700.0,
+            color: Color::from(tailwind::GRAY_50),
+            enabled: false,
+            illuminance: 1700.0,
             // CRITICAL: Must start disabled. Enabling shadows at startup before the scene
             // is fully initialized breaks rendering (causes stars to disappear). Shadows
             // can be safely enabled at runtime via inspector or code.
@@ -57,36 +57,36 @@ impl Default for LightSettings {
 #[reflect(Resource, InspectorOptions)]
 pub struct LightConfig {
     #[inspector(min = 0.0, max = 10_000.0, display = NumberDisplay::Slider)]
-    pub ambient_light_brightness:  f32,
-    pub ambient_light_color:       Color,
+    pub ambient_light_brightness: f32,
+    pub ambient_light_color: Color,
     #[inspector(min = 0.0, max = 100_000.0, display = NumberDisplay::Slider)]
     pub environment_map_intensity: f32,
-    pub front:                     LightSettings,
-    pub back:                      LightSettings,
-    pub top:                       LightSettings,
-    pub bottom:                    LightSettings,
-    pub left:                      LightSettings,
-    pub right:                     LightSettings,
+    pub front: LightSettings,
+    pub back: LightSettings,
+    pub top: LightSettings,
+    pub bottom: LightSettings,
+    pub left: LightSettings,
+    pub right: LightSettings,
 }
 
 impl Default for LightConfig {
     fn default() -> Self {
         Self {
-            ambient_light_brightness:  100.0,
-            ambient_light_color:       Color::WHITE,
+            ambient_light_brightness: 100.0,
+            ambient_light_color: Color::WHITE,
             environment_map_intensity: 25_000.0,
-            front:                     LightSettings {
+            front: LightSettings {
                 enabled: true,
                 ..Default::default()
             },
-            back:                      LightSettings {
+            back: LightSettings {
                 enabled: true,
                 ..Default::default()
             },
-            top:                       LightSettings::default(),
-            bottom:                    LightSettings::default(),
-            left:                      LightSettings::default(),
-            right:                     LightSettings::default(),
+            top: LightSettings::default(),
+            bottom: LightSettings::default(),
+            left: LightSettings::default(),
+            right: LightSettings::default(),
         }
     }
 }
@@ -120,27 +120,27 @@ impl LightPosition {
         use std::f32::consts::PI;
         match self {
             Self::Right => RotationInfo {
-                axis:  orientation.config.axis_mundi,
+                axis: orientation.config.axis_mundi,
                 angle: FRAC_PI_2,
             },
             Self::Left => RotationInfo {
-                axis:  orientation.config.axis_mundi,
+                axis: orientation.config.axis_mundi,
                 angle: -FRAC_PI_2,
             },
             Self::Front => RotationInfo {
-                axis:  orientation.config.axis_orbis,
+                axis: orientation.config.axis_orbis,
                 angle: 0.,
             },
             Self::Back => RotationInfo {
-                axis:  orientation.config.axis_orbis,
+                axis: orientation.config.axis_orbis,
                 angle: PI,
             },
             Self::Bottom => RotationInfo {
-                axis:  orientation.config.axis_orbis,
+                axis: orientation.config.axis_orbis,
                 angle: FRAC_PI_2,
             },
             Self::Top => RotationInfo {
-                axis:  orientation.config.axis_orbis,
+                axis: orientation.config.axis_orbis,
                 angle: -FRAC_PI_2,
             },
         }
@@ -149,7 +149,7 @@ impl LightPosition {
 
 #[derive(Debug, Clone, Copy)]
 pub struct RotationInfo {
-    pub axis:  Vec3,
+    pub axis: Vec3,
     pub angle: f32,
 }
 
