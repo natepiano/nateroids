@@ -1,5 +1,6 @@
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
+use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -9,8 +10,6 @@ use bevy_panorbit_camera_ext::FitTargetGizmo;
 use bevy_panorbit_camera_ext::FitTargetVisualizationPlugin;
 use bevy_panorbit_camera_ext::SetFitTarget;
 use bevy_panorbit_camera_ext::ZoomToFit as ZoomToFitEvent;
-use leafwing_input_manager::prelude::ActionState;
-
 use super::constants::EDGE_MARKER_FONT_SIZE;
 use super::constants::EDGE_MARKER_SPHERE_RADIUS;
 use super::constants::HOME_ANIMATION_DURATION_MS;
@@ -22,8 +21,10 @@ use super::constants::ZOOM_TO_FIT_DURATION_MS;
 pub struct ZoomTarget(pub Option<Entity>);
 use crate::camera::RenderLayer;
 use crate::game_input::GameAction;
-use crate::game_input::just_pressed;
 use crate::game_input::toggle_active;
+use crate::input::BoundaryBoxToggle;
+use crate::input::CameraHome;
+use crate::input::ZoomToFitShortcut;
 use crate::playfield::BoundaryVolume;
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -75,12 +76,9 @@ impl Plugin for ZoomPlugin {
                     .run_if(toggle_active(false, GameAction::FocusConfigInspector)),
             )
             .add_systems(Startup, set_fit_target_debug)
-            .add_systems(Update, home_camera.run_if(just_pressed(GameAction::Home)))
-            .add_systems(
-                Update,
-                start_zoom_to_fit.run_if(just_pressed(GameAction::ZoomToFit)),
-            )
-            .add_systems(Update, toggle_fit_target_debug)
+            .add_observer(on_camera_home_input)
+            .add_observer(on_zoom_to_fit_input)
+            .add_observer(on_toggle_fit_target_debug_input)
             .add_systems(
                 Update,
                 apply_focus_config.run_if(resource_changed::<FocusConfig>),
@@ -98,7 +96,8 @@ impl Plugin for ZoomPlugin {
 
 /// System that triggers zoom-to-fit when the user presses the zoom action.
 /// Zooms to the selected entity if one exists, otherwise to the `BoundaryVolume`.
-fn start_zoom_to_fit(
+fn on_zoom_to_fit_input(
+    _trigger: On<input_events::Start<ZoomToFitShortcut>>,
     mut commands: Commands,
     zoom_target: Res<ZoomTarget>,
     boundary_volume: Query<Entity, With<BoundaryVolume>>,
@@ -145,7 +144,8 @@ fn set_fit_target_debug(
     commands.trigger(SetFitTarget::new(camera_entity, boundary_entity));
 }
 
-fn home_camera(
+fn on_camera_home_input(
+    _trigger: On<input_events::Start<CameraHome>>,
     mut commands: Commands,
     boundary_volume_query: Query<Entity, With<BoundaryVolume>>,
     camera_query: Query<Entity, With<PanOrbitCamera>>,
@@ -170,15 +170,13 @@ fn home_camera(
     ));
 }
 
-fn toggle_fit_target_debug(
-    user_input: Res<ActionState<GameAction>>,
+fn on_toggle_fit_target_debug_input(
+    _trigger: On<input_events::Start<BoundaryBoxToggle>>,
     mut config_store: ResMut<GizmoConfigStore>,
 ) {
-    if user_input.just_pressed(&GameAction::BoundaryBox) {
-        let (config, _) = config_store.config_mut::<FitTargetGizmo>();
-        config.enabled = !config.enabled;
-        info!("Fit target visualization: {}", config.enabled);
-    }
+    let (config, _) = config_store.config_mut::<FitTargetGizmo>();
+    config.enabled = !config.enabled;
+    info!("Fit target visualization: {}", config.enabled);
 }
 
 fn apply_focus_config(mut config_store: ResMut<GizmoConfigStore>, config: Res<FocusConfig>) {
