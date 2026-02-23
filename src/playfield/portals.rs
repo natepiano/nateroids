@@ -7,6 +7,7 @@ use bevy::color::palettes::tailwind;
 use bevy::math::Dir3;
 use bevy::math::Vec3;
 use bevy::prelude::*;
+use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -28,14 +29,16 @@ use crate::actor::Deaderoid;
 use crate::actor::Teleporter;
 use crate::actor::aabb_max_dimension;
 use crate::camera::RenderLayer;
-use crate::game_input::GameAction;
-use crate::game_input::toggle_active;
+use crate::input::PortalInspectorToggle;
 use crate::orientation::CameraOrientation;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
 use crate::playfield::boundary_face::BoundaryFace;
 use crate::state::GameState;
 use crate::state::PauseState;
+use crate::switches;
+use crate::switches::Switch;
+use crate::switches::Switches;
 
 pub struct PortalPlugin;
 
@@ -45,8 +48,9 @@ impl Plugin for PortalPlugin {
             .init_resource::<PortalConfig>()
             .add_plugins(
                 ResourceInspectorPlugin::<PortalConfig>::default()
-                    .run_if(toggle_active(false, GameAction::PortalInspector)),
+                    .run_if(switches::is_switch_on(Switch::InspectPortals)),
             )
+            .add_observer(on_toggle_portal_inspector_input)
             .add_systems(
                 Update,
                 (
@@ -229,6 +233,13 @@ fn is_physics_burst(position: Vec3, boundary_transform: &Transform) -> bool {
     let max_distance_from_center = position.distance(boundary_transform.translation);
     let boundary_diagonal = boundary_half_size.length();
     max_distance_from_center > boundary_diagonal * PORTAL_PHYSICS_BURST_MULTIPLIER
+}
+
+fn on_toggle_portal_inspector_input(
+    _trigger: On<input_events::Start<PortalInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectPortals);
 }
 
 /// Snaps position to boundary and calculates the correct face for the snapped position.

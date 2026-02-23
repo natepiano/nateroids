@@ -2,14 +2,17 @@ use bevy::color::palettes::tailwind;
 use bevy::light::CascadeShadowConfigBuilder;
 use bevy::light::GlobalAmbientLight;
 use bevy::prelude::*;
+use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use crate::camera::RenderLayer;
-use crate::game_input::GameAction;
-use crate::game_input::toggle_active;
+use crate::input::LightsInspectorToggle;
 use crate::orientation::CameraOrientation;
+use crate::switches;
+use crate::switches::Switch;
+use crate::switches::Switches;
 
 pub struct DirectionalLightsPlugin;
 
@@ -18,9 +21,10 @@ impl Plugin for DirectionalLightsPlugin {
         app.init_resource::<GlobalAmbientLight>()
             .add_plugins(
                 ResourceInspectorPlugin::<LightConfig>::default()
-                    .run_if(toggle_active(false, GameAction::LightsInspector)),
+                    .run_if(switches::is_switch_on(Switch::InspectLights)),
             )
             .init_resource::<LightConfig>()
+            .add_observer(on_toggle_lights_inspector_input)
             .add_systems(Update, manage_lighting);
     }
 }
@@ -245,4 +249,11 @@ fn manage_lighting(
             (None, false) => {}, // Do nothing for disabled lights that don't exist
         }
     }
+}
+
+fn on_toggle_lights_inspector_input(
+    _trigger: On<input_events::Start<LightsInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectLights);
 }

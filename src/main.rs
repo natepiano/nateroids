@@ -18,6 +18,7 @@ mod playfield;
 mod schedule;
 mod splash;
 mod state;
+mod switches;
 mod traits;
 
 use bevy::gltf::GltfPlugin;
@@ -39,6 +40,7 @@ use crate::playfield::PlayfieldPlugin;
 use crate::schedule::SchedulePlugin;
 use crate::splash::SplashPlugin;
 use crate::state::StatePlugin;
+use crate::switches::SwitchesPlugin;
 
 fn main() {
     let mut app = App::new();
@@ -70,22 +72,23 @@ fn main() {
             }),
     );
 
-    app.add_plugins((
-        EguiPlugin::default(),
-        EnhancedInputAppPlugin,
-        ActorPlugin,
-        AssetLoaderPlugin,
-        brp_plugin,
-        PlayfieldPlugin,
-        CameraPlugin,
-        DespawnPlugin,
-        InputPlugin,
-        OrientationPlugin,
-        PhysicsPlugin,
-        SchedulePlugin,
-        SplashPlugin,
-        StatePlugin,
-        WindowManagerPlugin,
-    ))
+    app.add_plugins(SwitchesPlugin)
+        .add_plugins((
+            EguiPlugin::default(),
+            EnhancedInputAppPlugin,
+            ActorPlugin,
+            AssetLoaderPlugin,
+            brp_plugin,
+            PlayfieldPlugin,
+            CameraPlugin,
+            DespawnPlugin,
+            InputPlugin,
+            OrientationPlugin,
+            PhysicsPlugin,
+            SchedulePlugin,
+            SplashPlugin,
+            StatePlugin,
+            WindowManagerPlugin,
+        ))
     .run();
 }

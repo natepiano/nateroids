@@ -3,14 +3,18 @@ use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::VisibilitySystems;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
+use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use super::actor_config::ColliderType;
 use crate::camera::RenderLayer;
-use crate::game_input::GameAction;
-use crate::game_input::toggle_active;
+use crate::input::AabbConfigInspectorToggle;
+use crate::input::AabbsToggle;
+use crate::switches;
+use crate::switches::Switch;
+use crate::switches::Switches;
 use crate::traits::TransformExt;
 
 pub struct AabbPlugin;
@@ -20,15 +24,17 @@ impl Plugin for AabbPlugin {
             .init_resource::<AabbConfig>()
             .add_plugins(
                 ResourceInspectorPlugin::<AabbConfig>::default()
-                    .run_if(toggle_active(false, GameAction::AabbConfigInspector)),
+                    .run_if(switches::is_switch_on(Switch::InspectAabbConfig)),
             )
+            .add_observer(on_toggle_aabb_config_inspector_input)
+            .add_observer(on_toggle_aabbs_input)
             .add_systems(
                 Update,
                 apply_aabb_config.run_if(resource_changed::<AabbConfig>),
             )
             .add_systems(
                 Update,
-                draw_aabb_system.run_if(toggle_active(false, GameAction::AABBs)),
+                draw_aabb_system.run_if(switches::is_switch_on(Switch::ShowAabbs)),
             )
             .add_systems(
                 PostUpdate,
@@ -161,4 +167,18 @@ fn aabb_corners(aabb: &Aabb) -> [Vec3; 8] {
         Vec3::new(min.x, max.y, max.z),
         Vec3::new(max.x, max.y, max.z),
     ]
+}
+
+fn on_toggle_aabb_config_inspector_input(
+    _trigger: On<input_events::Start<AabbConfigInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectAabbConfig);
+}
+
+fn on_toggle_aabbs_input(
+    _trigger: On<input_events::Start<AabbsToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::ShowAabbs);
 }

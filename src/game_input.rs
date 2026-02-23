@@ -109,35 +109,3 @@ impl GameAction {
         })
     }
 }
-
-// #todo: #bevyquestion #rustquestion - how does bevy know how to do the
-// dependency injection with this impl?        because it makes using
-// toggle_active super intuitive and useful
-
-/// `ToggleActive` allows us to do something cool - we can use it like the bevy
-/// `input_toggle_active` but it works with `leafwing_input_manager` `input_map`
-/// entries so we can have simple syntax for toggling systems as a run condition
-/// as follows:
-///
-/// ```
-/// .add_systems(Update, my_system.run_if(toggle_active(false, GlobalAction::AABBs)))
-/// ```
-/// cool, huh? the fact that the closure works with Bevy's dependency injection
-/// is rocket science to me- i don't know how it knows to do this but it does
-pub fn toggle_active(
-    default: bool,
-    action: GameAction,
-) -> impl Fn(Res<ActionState<GameAction>>, Local<ToggleState>) -> bool {
-    move |action_state: Res<ActionState<GameAction>>, mut state: Local<ToggleState>| {
-        if action_state.just_pressed(&action) {
-            state.state = !state.state;
-        }
-
-        if state.state { !default } else { default }
-    }
-}
-
-#[derive(Default)]
-pub struct ToggleState {
-    pub state: bool,
-}

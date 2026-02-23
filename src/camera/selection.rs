@@ -1,5 +1,6 @@
 use bevy::picking::hover::PickingInteraction;
 use bevy::prelude::*;
+use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::bevy_egui::EguiContexts;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
@@ -14,9 +15,11 @@ use super::constants::SELECTION_OUTLINE_WIDTH;
 use super::zoom::ZoomTarget;
 use crate::actor::Nateroid;
 use crate::actor::Spaceship;
-use crate::game_input::GameAction;
-use crate::game_input::toggle_active;
+use crate::input::OutlineInspectorToggle;
 use crate::playfield::BoundaryVolume;
+use crate::switches;
+use crate::switches::Switch;
+use crate::switches::Switches;
 
 /// Marker component added to the selected actor entity
 #[derive(Component)]
@@ -50,8 +53,9 @@ impl Plugin for SelectionPlugin {
         app.init_resource::<SelectionOutlineConfig>()
             .add_plugins(
                 ResourceInspectorPlugin::<SelectionOutlineConfig>::default()
-                    .run_if(toggle_active(false, GameAction::OutlineInspector)),
+                    .run_if(switches::is_switch_on(Switch::InspectOutline)),
             )
+            .add_observer(on_toggle_outline_inspector_input)
             .add_observer(on_nateroid_added)
             .add_observer(on_spaceship_added)
             .add_observer(on_selected_added)
@@ -228,4 +232,11 @@ fn clear_selection_on_background_click(
         }
         debug!("Background click — clearing selection");
     }
+}
+
+fn on_toggle_outline_inspector_input(
+    _trigger: On<input_events::Start<OutlineInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectOutline);
 }

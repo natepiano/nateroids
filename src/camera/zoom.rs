@@ -20,12 +20,15 @@ use super::constants::ZOOM_TO_FIT_DURATION_MS;
 #[derive(Resource, Default)]
 pub struct ZoomTarget(pub Option<Entity>);
 use crate::camera::RenderLayer;
-use crate::game_input::GameAction;
-use crate::game_input::toggle_active;
 use crate::input::BoundaryBoxToggle;
 use crate::input::CameraHome;
+use crate::input::FocusConfigInspectorToggle;
+use crate::input::ShowFocusToggle;
 use crate::input::ZoomToFitShortcut;
 use crate::playfield::BoundaryVolume;
+use crate::switches;
+use crate::switches::Switch;
+use crate::switches::Switches;
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
 struct FocusGizmo {}
@@ -73,12 +76,14 @@ impl Plugin for ZoomPlugin {
             .init_resource::<FocusGizmoState>()
             .add_plugins(
                 ResourceInspectorPlugin::<FocusConfig>::default()
-                    .run_if(toggle_active(false, GameAction::FocusConfigInspector)),
+                    .run_if(switches::is_switch_on(Switch::InspectFocusConfig)),
             )
             .add_systems(Startup, set_fit_target_debug)
             .add_observer(on_camera_home_input)
             .add_observer(on_zoom_to_fit_input)
             .add_observer(on_toggle_fit_target_debug_input)
+            .add_observer(on_toggle_focus_config_inspector_input)
+            .add_observer(on_toggle_show_focus_input)
             .add_systems(
                 Update,
                 apply_focus_config.run_if(resource_changed::<FocusConfig>),
@@ -87,8 +92,8 @@ impl Plugin for ZoomPlugin {
             .add_systems(
                 Update,
                 (
-                    draw_camera_focus_gizmo.run_if(toggle_active(false, GameAction::ShowFocus)),
-                    cleanup_focus_labels.run_if(toggle_active(true, GameAction::ShowFocus)),
+                    draw_camera_focus_gizmo.run_if(switches::is_switch_on(Switch::ShowFocus)),
+                    cleanup_focus_labels.run_if(switches::is_switch_off(Switch::ShowFocus)),
                 ),
             );
     }
@@ -257,4 +262,18 @@ fn cleanup_focus_labels(
     for entity in &label_query {
         commands.entity(entity).despawn();
     }
+}
+
+fn on_toggle_focus_config_inspector_input(
+    _trigger: On<input_events::Start<FocusConfigInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectFocusConfig);
+}
+
+fn on_toggle_show_focus_input(
+    _trigger: On<input_events::Start<ShowFocusToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::ShowFocus);
 }

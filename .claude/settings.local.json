@@ -126,7 +126,8 @@
       "mcp__brp__brp_list_bevy_examples",
       "Bash(cargo update:*)",
       "Bash(printenv:*)",
-      "Bash(gh issue view:*)"
+      "Bash(gh issue view:*)",
+      "Bash(git diff:*)"
     ],
     "deny": [],
     "ask": []

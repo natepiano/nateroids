@@ -1,6 +1,7 @@
 use avian3d::prelude::*;
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
+use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -15,8 +16,12 @@ use super::spaceship::Spaceship;
 use crate::asset_loader::AssetsState;
 use crate::asset_loader::SceneAssets;
 use crate::camera::RenderLayer;
-use crate::game_input::GameAction;
-use crate::game_input::toggle_active;
+use crate::input::MissileInspectorToggle;
+use crate::input::NateroidInspectorToggle;
+use crate::input::SpaceshipInspectorToggle;
+use crate::switches;
+use crate::switches::Switch;
+use crate::switches::Switches;
 
 // Spaceship model orientation correction: rotates the model so nose points +Y
 // Shared between initial spawn and runtime 2D enforcement
@@ -32,16 +37,19 @@ impl Plugin for ActorConfigPlugin {
             .add_observer(propagate_render_layers_on_spawn)
             .add_plugins(
                 ResourceInspectorPlugin::<MissileConfig>::default()
-                    .run_if(toggle_active(false, GameAction::MissileInspector)),
+                    .run_if(switches::is_switch_on(Switch::InspectMissile)),
             )
             .add_plugins(
                 ResourceInspectorPlugin::<NateroidConfig>::default()
-                    .run_if(toggle_active(false, GameAction::NateroidInspector)),
+                    .run_if(switches::is_switch_on(Switch::InspectNateroid)),
             )
             .add_plugins(
                 ResourceInspectorPlugin::<SpaceshipConfig>::default()
-                    .run_if(toggle_active(false, GameAction::SpaceshipInspector)),
+                    .run_if(switches::is_switch_on(Switch::InspectSpaceship)),
             );
+        app.add_observer(on_toggle_missile_inspector_input)
+            .add_observer(on_toggle_nateroid_inspector_input)
+            .add_observer(on_toggle_spaceship_inspector_input);
     }
 }
 
@@ -186,4 +194,25 @@ pub fn insert_configured_components(
 
     // reset the timer if there is a configured spawn_timer_seconds
     config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);
+}
+
+fn on_toggle_missile_inspector_input(
+    _trigger: On<input_events::Start<MissileInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectMissile);
+}
+
+fn on_toggle_nateroid_inspector_input(
+    _trigger: On<input_events::Start<NateroidInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectNateroid);
+}
+
+fn on_toggle_spaceship_inspector_input(
+    _trigger: On<input_events::Start<SpaceshipInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectSpaceship);
 }

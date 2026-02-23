@@ -1,5 +1,6 @@
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
+use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -28,11 +29,13 @@ use super::types::Intersection;
 use super::types::MultiFaceGeometry;
 use super::types::PortalGeometry;
 use crate::camera::RenderLayer;
-use crate::game_input::GameAction;
-use crate::game_input::toggle_active;
+use crate::input::BoundaryInspectorToggle;
 use crate::orientation::CameraOrientation;
 use crate::splash::SplashText;
 use crate::state::GameState;
+use crate::switches;
+use crate::switches::Switch;
+use crate::switches::Switches;
 
 /// Marker component for the boundary volume entity.
 /// Holds a hidden unit-cube mesh so zoom-to-fit can extract vertices.
@@ -51,7 +54,7 @@ impl Plugin for BoundaryPlugin {
             .init_gizmo_group::<BoundaryGizmo>()
             .add_plugins(
                 ResourceInspectorPlugin::<Boundary>::default()
-                    .run_if(toggle_active(false, GameAction::BoundaryInspector)),
+                    .run_if(switches::is_switch_on(Switch::InspectBoundary)),
             )
             .add_systems(Startup, spawn_boundary_volume)
             .add_systems(Update, apply_boundary_config)
@@ -61,7 +64,8 @@ impl Plugin for BoundaryPlugin {
                 draw_boundary.run_if(in_state(GameState::Splash).or(in_state(GameState::InGame))),
             )
             .add_systems(Update, fade_boundary_in)
-            .add_observer(start_boundary_fade);
+            .add_observer(start_boundary_fade)
+            .add_observer(on_toggle_boundary_inspector_input);
     }
 }
 
@@ -92,6 +96,13 @@ fn spawn_boundary_volume(
     ));
 
     debug!("Spawned BoundaryVolume entity");
+}
+
+fn on_toggle_boundary_inspector_input(
+    _trigger: On<input_events::Start<BoundaryInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectBoundary);
 }
 
 /// Synchronizes the `BoundaryVolume` entity's `Transform` with the `Boundary` resource.

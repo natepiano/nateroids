@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 use bevy::prelude::*;
+use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -9,8 +10,12 @@ use super::constants::CAMERA_SPLASH_START_FOCUS;
 use super::constants::CAMERA_SPLASH_START_PITCH;
 use super::constants::CAMERA_SPLASH_START_RADIUS;
 use super::constants::CAMERA_SPLASH_START_YAW;
-use crate::game_input::GameAction;
-use crate::game_input::toggle_active;
+use crate::input::CameraConfigInspectorToggle;
+use crate::input::StarConfigInspectorToggle;
+use crate::input::ZoomConfigInspectorToggle;
+use crate::switches;
+use crate::switches::Switch;
+use crate::switches::Switches;
 
 pub struct CameraConfigPlugin;
 
@@ -18,16 +23,19 @@ impl Plugin for CameraConfigPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(
             ResourceInspectorPlugin::<CameraConfig>::default()
-                .run_if(toggle_active(false, GameAction::CameraConfigInspector)),
+                .run_if(switches::is_switch_on(Switch::InspectCameraConfig)),
         )
         .add_plugins(
             ResourceInspectorPlugin::<StarConfig>::default()
-                .run_if(toggle_active(false, GameAction::StarConfigInspector)),
+                .run_if(switches::is_switch_on(Switch::InspectStarConfig)),
         )
         .add_plugins(
             ResourceInspectorPlugin::<ZoomConfig>::default()
-                .run_if(toggle_active(false, GameAction::ZoomConfigInspector)),
+                .run_if(switches::is_switch_on(Switch::InspectZoomConfig)),
         )
+        .add_observer(on_toggle_camera_config_inspector_input)
+        .add_observer(on_toggle_star_config_inspector_input)
+        .add_observer(on_toggle_zoom_config_inspector_input)
         .init_resource::<CameraConfig>()
         .init_resource::<StarConfig>()
         .init_resource::<ZoomConfig>();
@@ -157,4 +165,25 @@ impl ZoomConfig {
     /// Returns the zoom margin multiplier (1.0 + margin)
     /// For example, a margin of 0.08 returns 1.08 (8% margin)
     pub const fn zoom_margin_multiplier(&self) -> f32 { 1.0 / (1.0 - self.margin) }
+}
+
+fn on_toggle_camera_config_inspector_input(
+    _trigger: On<input_events::Start<CameraConfigInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectCameraConfig);
+}
+
+fn on_toggle_star_config_inspector_input(
+    _trigger: On<input_events::Start<StarConfigInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectStarConfig);
+}
+
+fn on_toggle_zoom_config_inspector_input(
+    _trigger: On<input_events::Start<ZoomConfigInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectZoomConfig);
 }

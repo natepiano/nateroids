@@ -14,15 +14,18 @@ use super::actor_template::SpaceshipConfig;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
 use crate::game_input::GameAction;
-use crate::game_input::toggle_active;
 use crate::input::ShipAccelerate;
 use crate::input::ShipContinuousFire;
 use crate::input::ShipControlsContext;
+use crate::input::SpaceshipControlInspectorToggle;
 use crate::input::ShipTurnLeft;
 use crate::input::ShipTurnRight;
 use crate::orientation::CameraOrientation;
 use crate::orientation::OrientationType;
 use crate::schedule::InGameSet;
+use crate::switches;
+use crate::switches::Switch;
+use crate::switches::Switches;
 
 pub struct SpaceshipControlPlugin;
 
@@ -30,9 +33,10 @@ impl Plugin for SpaceshipControlPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(
             ResourceInspectorPlugin::<SpaceshipControlConfig>::default()
-                .run_if(toggle_active(false, GameAction::SpaceshipControlInspector)),
+                .run_if(switches::is_switch_on(Switch::InspectSpaceshipControl)),
         )
         .init_resource::<SpaceshipControlConfig>()
+        .add_observer(on_toggle_spaceship_control_inspector_input)
         .add_observer(on_toggle_continuous_fire_input)
         .add_systems(
             Update,
@@ -219,4 +223,11 @@ fn on_toggle_continuous_fire_input(
         info!("adding continuous");
         commands.entity(trigger.context).insert(ContinuousFire);
     }
+}
+
+fn on_toggle_spaceship_control_inspector_input(
+    _trigger: On<input_events::Start<SpaceshipControlInspectorToggle>>,
+    mut switches: ResMut<Switches>,
+) {
+    switches.toggle_switch(Switch::InspectSpaceshipControl);
 }
