@@ -123,27 +123,27 @@ fn sync_boundary_volume(
 #[reflect(Resource, InspectorOptions)]
 #[allow(clippy::struct_field_names)] // "boundary_" prefix distinguishes from grid_line_width
 pub struct Boundary {
-    pub cell_count: UVec3,
-    pub grid_color: Color,
-    pub outer_color: Color,
+    pub cell_count:          UVec3,
+    pub grid_color:          Color,
+    pub outer_color:         Color,
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
-    pub grid_line_width: f32,
+    pub grid_line_width:     f32,
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
     pub boundary_line_width: f32,
     #[inspector(min = 50., max = 300., display = NumberDisplay::Slider)]
-    pub boundary_scalar: f32,
+    pub boundary_scalar:     f32,
 }
 
 impl Default for Boundary {
     fn default() -> Self {
         Self {
-            cell_count: BOUNDARY_CELL_COUNT,
+            cell_count:          BOUNDARY_CELL_COUNT,
             // Start with alpha 0 - will be faded in during splash screen
-            grid_color: Color::from(tailwind::BLUE_500).with_alpha(0.0),
-            outer_color: Color::from(tailwind::BLUE_500).with_alpha(0.0),
-            grid_line_width: BOUNDARY_GRID_LINE_WIDTH,
+            grid_color:          Color::from(tailwind::BLUE_500).with_alpha(0.0),
+            outer_color:         Color::from(tailwind::BLUE_500).with_alpha(0.0),
+            grid_line_width:     BOUNDARY_GRID_LINE_WIDTH,
             boundary_line_width: BOUNDARY_OUTER_LINE_WIDTH,
-            boundary_scalar: BOUNDARY_SCALAR,
+            boundary_scalar:     BOUNDARY_SCALAR,
         }
     }
 }
@@ -719,9 +719,7 @@ impl Boundary {
         boundary_scale.x.max(boundary_scale.y).max(boundary_scale.z)
     }
 
-    pub fn scale(&self) -> Vec3 {
-        self.boundary_scalar * self.cell_count.as_vec3()
-    }
+    pub fn scale(&self) -> Vec3 { self.boundary_scalar * self.cell_count.as_vec3() }
 
     /// Returns the 8 corner points of the boundary as a fixed-size array
     pub fn corners(&self) -> [Vec3; 8] {

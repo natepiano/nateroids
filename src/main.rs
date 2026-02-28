@@ -57,7 +57,7 @@ fn main() {
             .set(GltfPlugin {
                 convert_coordinates: GltfConvertCoordinates {
                     rotate_scene_entity: true,
-                    rotate_meshes: true,
+                    rotate_meshes:       true,
                 },
                 ..default()
             })

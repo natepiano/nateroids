@@ -42,9 +42,7 @@ fn despawn_missiles(mut commands: Commands, query: Query<(Entity, &MissilePositi
 
 /// Uses `try_despawn` because entities can be queued for despawn multiple times in a frame
 /// (e.g., missile reaching max distance AND taking lethal damage simultaneously)
-pub fn despawn(commands: &mut Commands, entity: Entity) {
-    commands.entity(entity).try_despawn();
-}
+pub fn despawn(commands: &mut Commands, entity: Entity) { commands.entity(entity).try_despawn(); }
 
 /// Calculates velocity toward a boundary corner based on the death corner strategy.
 /// Velocity is calculated to reach the corner in exactly `death_duration` seconds.
@@ -211,11 +209,11 @@ fn despawn_dead_entities(
                     .entity(entity)
                     .insert((
                         Deaderoid {
-                            initial_scale: transform.scale,
-                            target_shrink: config.death_shrink_pct,
-                            shrink_duration: config.death_duration_secs,
-                            elapsed_time: 0.0,
-                            current_shrink: 1.0,
+                            initial_scale:          transform.scale,
+                            target_shrink:          config.death_shrink_pct,
+                            shrink_duration:        config.death_duration_secs,
+                            elapsed_time:           0.0,
+                            current_shrink:         1.0,
                             current_material_index: 0,
                         },
                         CollisionLayers::NONE,

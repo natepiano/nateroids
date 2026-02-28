@@ -12,9 +12,7 @@ pub struct StarCamera;
 pub struct StarCameraPlugin;
 
 impl Plugin for StarCameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, update_bloom_settings);
-    }
+    fn build(&self, app: &mut App) { app.add_systems(Update, update_bloom_settings); }
 }
 
 pub fn spawn_star_camera(mut commands: Commands, camera_config: Res<CameraConfig>) {

@@ -33,14 +33,14 @@ struct TeleportCollisionState {
 
 #[derive(Component, Reflect, Debug, Default, Clone)]
 pub struct Teleporter {
-    pub just_teleported: bool,
+    pub just_teleported:          bool,
     pub last_teleported_position: Option<Vec3>,
-    pub last_teleported_normal: Option<Dir3>,
+    pub last_teleported_normal:   Option<Dir3>,
 }
 
 #[derive(EntityEvent)]
 struct Teleported {
-    entity: Entity,
+    entity:   Entity,
     position: Vec3,
     rotation: Quat,
     collider: Collider,

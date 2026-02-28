@@ -21,7 +21,7 @@ struct ContinuousFireToggle;
 
 #[derive(Resource, Default)]
 struct TriggerCounts {
-    show_focus: u32,
+    show_focus:      u32,
     continuous_fire: u32,
 }
 

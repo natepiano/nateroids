@@ -5,9 +5,7 @@ use bevy::prelude::*;
 pub struct SwitchesPlugin;
 
 impl Plugin for SwitchesPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<Switches>();
-    }
+    fn build(&self, app: &mut App) { app.init_resource::<Switches>(); }
 }
 
 #[derive(Resource, Default, Debug, Reflect)]
@@ -78,17 +76,11 @@ impl Switches {
         true
     }
 
-    pub fn has_any_inspector_active(&self) -> bool {
-        self.is_any_inspector_active()
-    }
+    pub fn has_any_inspector_active(&self) -> bool { self.is_any_inspector_active() }
 
-    pub fn toggle_switch(&mut self, switch: Switch) {
-        self.toggle(switch);
-    }
+    pub fn toggle_switch(&mut self, switch: Switch) { self.toggle(switch); }
 
-    pub fn is_switch_on(&self, switch: Switch) -> bool {
-        self.is_on(switch)
-    }
+    pub fn is_switch_on(&self, switch: Switch) -> bool { self.is_on(switch) }
 }
 
 #[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash)]

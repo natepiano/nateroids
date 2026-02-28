@@ -39,8 +39,8 @@ pub fn ship_controls_input_bundle() -> impl Bundle {
     // - This action should observe Shift state, not steal it from other bindings.
     //
     // Why require_reset:
-    // - If a ship/context is spawned while Shift is already held, we avoid treating that as a
-    //   fresh modifier activation until Shift is released and pressed again.
+    // - If a ship/context is spawned while Shift is already held, we avoid treating that as a fresh
+    //   modifier activation until Shift is released and pressed again.
     let non_consuming_modifier = ActionSettings {
         consume_input: false,
         require_reset: true,
@@ -94,7 +94,8 @@ pub fn ship_controls_input_bundle() -> impl Bundle {
                     // - BlockBy(shift_modifier): never fire while Shift modifier action is active.
                     //
                     // See regression coverage:
-                    // tests/bei_chord_overlap.rs::press_plus_blockby_shift_prevents_toggle_on_shift_release
+                    // tests/bei_chord_overlap.
+                    // rs::press_plus_blockby_shift_prevents_toggle_on_shift_release
                     bevy_enhanced_input::condition::press::Press::default(),
                     BlockBy::single(shift_modifier),
                     bindings![KeyCode::KeyF],

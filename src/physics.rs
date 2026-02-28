@@ -26,8 +26,8 @@ impl Plugin for PhysicsPlugin {
 
 #[derive(Resource, Default)]
 struct PhysicsMonitorState {
-    is_stressed: bool,
-    last_stress_log: f64,
+    is_stressed:       bool,
+    last_stress_log:   f64,
     logged_unstressed: bool,
 }
 

@@ -70,43 +70,46 @@ pub enum GameLayer {
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
 pub struct MissileConfig {
-    pub actor_config: ActorConfig,
+    pub actor_config:            ActorConfig,
     pub forward_distance_scalar: f32,
-    pub base_velocity: f32,
+    pub base_velocity:           f32,
 }
 
 impl Default for MissileConfig {
     fn default() -> Self {
         Self {
-            actor_config: ActorConfig {
-                spawnable: true,
-                angular_damping: None,
-                collider_margin: MISSILE_COLLIDER_MARGIN,
-                collider_type: ColliderType::Cuboid,
-                collision_damage: MISSILE_COLLISION_DAMAGE,
-                collision_layers: CollisionLayers::new([GameLayer::Missile], [GameLayer::Asteroid]),
-                gravity_scale: 0.,
-                health: MISSILE_HEALTH,
-                linear_damping: None,
-                locked_axes: LockedAxes::new().lock_translation_z(),
-                mass: MISSILE_MASS,
-                max_angular_velocity: MAX_MISSILE_ANGULAR_VELOCITY,
-                max_linear_velocity: MAX_MISSILE_LINEAR_VELOCITY,
-                render_layer: RenderLayer::Game,
-                restitution: MISSILE_RESTITUTION,
+            actor_config:            ActorConfig {
+                spawnable:                true,
+                angular_damping:          None,
+                collider_margin:          MISSILE_COLLIDER_MARGIN,
+                collider_type:            ColliderType::Cuboid,
+                collision_damage:         MISSILE_COLLISION_DAMAGE,
+                collision_layers:         CollisionLayers::new(
+                    [GameLayer::Missile],
+                    [GameLayer::Asteroid],
+                ),
+                gravity_scale:            0.,
+                health:                   MISSILE_HEALTH,
+                linear_damping:           None,
+                locked_axes:              LockedAxes::new().lock_translation_z(),
+                mass:                     MISSILE_MASS,
+                max_angular_velocity:     MAX_MISSILE_ANGULAR_VELOCITY,
+                max_linear_velocity:      MAX_MISSILE_LINEAR_VELOCITY,
+                render_layer:             RenderLayer::Game,
+                restitution:              MISSILE_RESTITUTION,
                 restitution_combine_rule: CoefficientCombine::Max,
-                rigid_body: RigidBody::Dynamic,
-                scene: Handle::default(),
-                spawn_timer_seconds: Some(MISSILE_SPAWN_TIMER_SECONDS),
-                transform: Transform::from_rotation(
+                rigid_body:               RigidBody::Dynamic,
+                scene:                    Handle::default(),
+                spawn_timer_seconds:      Some(MISSILE_SPAWN_TIMER_SECONDS),
+                transform:                Transform::from_rotation(
                     Quat::from_rotation_x(GLTF_ROTATION_X)
                         * Quat::from_rotation_z(std::f32::consts::PI),
                 )
                 .with_scale(Vec3::splat(MISSILE_SCALE)),
-                spawn_timer: None,
+                spawn_timer:              None,
             },
             forward_distance_scalar: MISSILE_FORWARD_DISTANCE_SCALAR,
-            base_velocity: MISSILE_BASE_VELOCITY,
+            base_velocity:           MISSILE_BASE_VELOCITY,
         }
     }
 }
@@ -114,15 +117,11 @@ impl Default for MissileConfig {
 impl Deref for MissileConfig {
     type Target = ActorConfig;
 
-    fn deref(&self) -> &Self::Target {
-        &self.actor_config
-    }
+    fn deref(&self) -> &Self::Target { &self.actor_config }
 }
 
 impl DerefMut for MissileConfig {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.actor_config
-    }
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_config }
 }
 
 #[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq)]
@@ -135,27 +134,27 @@ pub enum DeathCorner {
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
 pub struct NateroidConfig {
-    pub actor_config: ActorConfig,
-    pub linear_velocity: f32,
-    pub angular_velocity: f32,
-    pub death_duration_secs: f32,
-    pub death_shrink_pct: f32,
-    pub death_corner: DeathCorner,
-    pub initial_alpha: f32,
-    pub target_alpha: f32,
+    pub actor_config:              ActorConfig,
+    pub linear_velocity:           f32,
+    pub angular_velocity:          f32,
+    pub death_duration_secs:       f32,
+    pub death_shrink_pct:          f32,
+    pub death_corner:              DeathCorner,
+    pub initial_alpha:             f32,
+    pub target_alpha:              f32,
     pub density_culling_threshold: f32,
 }
 
 impl Default for NateroidConfig {
     fn default() -> Self {
         Self {
-            actor_config: ActorConfig {
-                spawnable: true,
-                angular_damping: Some(NATEROID_ANGULAR_DAMPING),
-                collider_margin: NATEROID_COLLIDER_MARGIN,
-                collider_type: ColliderType::Ball,
-                collision_damage: NATEROID_COLLISION_DAMAGE,
-                collision_layers: CollisionLayers::new(
+            actor_config:              ActorConfig {
+                spawnable:                true,
+                angular_damping:          Some(NATEROID_ANGULAR_DAMPING),
+                collider_margin:          NATEROID_COLLIDER_MARGIN,
+                collider_type:            ColliderType::Ball,
+                collision_damage:         NATEROID_COLLISION_DAMAGE,
+                collision_layers:         CollisionLayers::new(
                     [GameLayer::Asteroid],
                     [
                         GameLayer::Asteroid,
@@ -163,29 +162,29 @@ impl Default for NateroidConfig {
                         GameLayer::Spaceship,
                     ],
                 ),
-                gravity_scale: 0.,
-                health: NATEROID_HEALTH,
-                linear_damping: Some(NATEROID_LINEAR_DAMPING),
-                locked_axes: LockedAxes::new().lock_translation_z(),
-                mass: NATEROID_MASS,
-                max_angular_velocity: MAX_NATEROID_ANGULAR_VELOCITY,
-                max_linear_velocity: MAX_NATEROID_LINEAR_VELOCITY,
-                render_layer: RenderLayer::Game,
-                restitution: NATEROID_RESTITUTION,
+                gravity_scale:            0.,
+                health:                   NATEROID_HEALTH,
+                linear_damping:           Some(NATEROID_LINEAR_DAMPING),
+                locked_axes:              LockedAxes::new().lock_translation_z(),
+                mass:                     NATEROID_MASS,
+                max_angular_velocity:     MAX_NATEROID_ANGULAR_VELOCITY,
+                max_linear_velocity:      MAX_NATEROID_LINEAR_VELOCITY,
+                render_layer:             RenderLayer::Game,
+                restitution:              NATEROID_RESTITUTION,
                 restitution_combine_rule: CoefficientCombine::Max,
-                rigid_body: RigidBody::Dynamic,
-                scene: Handle::default(),
-                spawn_timer_seconds: Some(NATEROID_SPAWN_TIMER_SECONDS),
-                transform: Transform::from_scale(Vec3::splat(NATEROID_SCALE_UP)),
-                spawn_timer: None,
+                rigid_body:               RigidBody::Dynamic,
+                scene:                    Handle::default(),
+                spawn_timer_seconds:      Some(NATEROID_SPAWN_TIMER_SECONDS),
+                transform:                Transform::from_scale(Vec3::splat(NATEROID_SCALE_UP)),
+                spawn_timer:              None,
             },
-            linear_velocity: NATEROID_LINEAR_VELOCITY,
-            angular_velocity: NATEROID_ANGULAR_VELOCITY,
-            death_duration_secs: NATEROID_DEATH_DURATION_SECS,
-            death_shrink_pct: NATEROID_DEATH_SHRINK_PCT,
-            death_corner: DeathCorner::Directional,
-            initial_alpha: NATEROID_INITIAL_ALPHA,
-            target_alpha: NATEROID_TARGET_ALPHA,
+            linear_velocity:           NATEROID_LINEAR_VELOCITY,
+            angular_velocity:          NATEROID_ANGULAR_VELOCITY,
+            death_duration_secs:       NATEROID_DEATH_DURATION_SECS,
+            death_shrink_pct:          NATEROID_DEATH_SHRINK_PCT,
+            death_corner:              DeathCorner::Directional,
+            initial_alpha:             NATEROID_INITIAL_ALPHA,
+            target_alpha:              NATEROID_TARGET_ALPHA,
             density_culling_threshold: NATEROID_DENSITY_CULLING_THRESHOLD,
         }
     }
@@ -194,15 +193,11 @@ impl Default for NateroidConfig {
 impl Deref for NateroidConfig {
     type Target = ActorConfig;
 
-    fn deref(&self) -> &Self::Target {
-        &self.actor_config
-    }
+    fn deref(&self) -> &Self::Target { &self.actor_config }
 }
 
 impl DerefMut for NateroidConfig {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.actor_config
-    }
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_config }
 }
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
@@ -215,37 +210,37 @@ impl Default for SpaceshipConfig {
     fn default() -> Self {
         Self {
             actor_config: ActorConfig {
-                spawnable: true,
-                angular_damping: Some(SPACESHIP_ANGULAR_DAMPING),
-                collider_margin: SPACESHIP_COLLIDER_MARGIN,
-                collider_type: ColliderType::Cuboid,
-                collision_damage: SPACESHIP_COLLISION_DAMAGE,
-                collision_layers: CollisionLayers::new(
+                spawnable:                true,
+                angular_damping:          Some(SPACESHIP_ANGULAR_DAMPING),
+                collider_margin:          SPACESHIP_COLLIDER_MARGIN,
+                collider_type:            ColliderType::Cuboid,
+                collision_damage:         SPACESHIP_COLLISION_DAMAGE,
+                collision_layers:         CollisionLayers::new(
                     [GameLayer::Spaceship],
                     [GameLayer::Asteroid, GameLayer::Boundary],
                 ),
-                gravity_scale: 0.,
-                health: SPACESHIP_HEALTH,
-                linear_damping: Some(SPACESHIP_LINEAR_DAMPING),
-                locked_axes: LockedAxes::new()
+                gravity_scale:            0.,
+                health:                   SPACESHIP_HEALTH,
+                linear_damping:           Some(SPACESHIP_LINEAR_DAMPING),
+                locked_axes:              LockedAxes::new()
                     .lock_rotation_x()
                     .lock_rotation_y()
                     .lock_translation_z(),
-                mass: SPACESHIP_MASS,
-                max_angular_velocity: MAX_SPACESHIP_ANGULAR_VELOCITY,
-                max_linear_velocity: MAX_SPACESHIP_LINEAR_VELOCITY,
-                render_layer: RenderLayer::Game,
-                restitution: SPACESHIP_RESTITUTION,
+                mass:                     SPACESHIP_MASS,
+                max_angular_velocity:     MAX_SPACESHIP_ANGULAR_VELOCITY,
+                max_linear_velocity:      MAX_SPACESHIP_LINEAR_VELOCITY,
+                render_layer:             RenderLayer::Game,
+                restitution:              SPACESHIP_RESTITUTION,
                 restitution_combine_rule: CoefficientCombine::Max,
-                rigid_body: RigidBody::Dynamic,
-                scene: Handle::default(),
-                spawn_timer_seconds: None,
-                transform: Transform::from_trs(
+                rigid_body:               RigidBody::Dynamic,
+                scene:                    Handle::default(),
+                spawn_timer_seconds:      None,
+                transform:                Transform::from_trs(
                     SPACESHIP_INITIAL_POSITION,
                     Quat::from_rotation_x(GLTF_ROTATION_X),
                     Vec3::splat(SPACESHIP_SCALE),
                 ),
-                spawn_timer: None,
+                spawn_timer:              None,
             },
         }
     }
@@ -254,13 +249,9 @@ impl Default for SpaceshipConfig {
 impl Deref for SpaceshipConfig {
     type Target = ActorConfig;
 
-    fn deref(&self) -> &Self::Target {
-        &self.actor_config
-    }
+    fn deref(&self) -> &Self::Target { &self.actor_config }
 }
 
 impl DerefMut for SpaceshipConfig {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.actor_config
-    }
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_config }
 }

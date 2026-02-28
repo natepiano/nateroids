@@ -51,10 +51,10 @@ pub struct Missile;
 #[derive(Component, Reflect, Copy, Clone, Debug, Default)]
 #[reflect(Component)]
 pub struct MissilePosition {
-    pub total_distance: f32,
-    pub traveled_distance: f32,
-    remaining_distance: f32,
-    pub last_position: Option<Vec3>,
+    pub total_distance:     f32,
+    pub traveled_distance:  f32,
+    remaining_distance:     f32,
+    pub last_position:      Option<Vec3>,
     last_teleport_position: Option<Vec3>, // Add this field
 }
 

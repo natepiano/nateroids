@@ -82,48 +82,48 @@ fn apply_portal_config(
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 struct PortalConfig {
-    color_approaching: Color,
-    color_emerging: Color,
+    color_approaching:             Color,
+    color_emerging:                Color,
     #[inspector(min = 0.0, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
-    pub direction_change_factor: f32,
+    pub direction_change_factor:   f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub distance_approach: f32,
+    pub distance_approach:         f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub distance_shrink: f32,
+    pub distance_shrink:           f32,
     #[inspector(min = 1.0, max = 30.0, display = NumberDisplay::Slider)]
-    pub fadeout_duration: f32,
+    pub fadeout_duration:          f32,
     #[inspector(min = 0, max = 40, display = NumberDisplay::Slider)]
-    line_joints: u32,
+    line_joints:                   u32,
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
-    line_width: f32,
+    line_width:                    f32,
     #[inspector(min = 0.001, max = 1.0, display = NumberDisplay::Slider)]
-    pub minimum_radius: f32,
+    pub minimum_radius:            f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub movement_smoothing_factor: f32,
     #[inspector(min = 1., max = 10., display = NumberDisplay::Slider)]
-    pub portal_scalar: f32,
+    pub portal_scalar:             f32,
     #[inspector(min = 1., max = 10., display = NumberDisplay::Slider)]
-    pub portal_smallest: f32,
+    pub portal_smallest:           f32,
     #[inspector(min = 3, max = 256, display = NumberDisplay::Slider)]
-    resolution: u32,
+    resolution:                    u32,
 }
 
 impl Default for PortalConfig {
     fn default() -> Self {
         Self {
-            color_approaching: Color::from(tailwind::BLUE_600),
-            color_emerging: Color::from(tailwind::YELLOW_800),
-            direction_change_factor: PORTAL_DIRECTION_CHANGE_FACTOR,
-            distance_approach: PORTAL_DISTANCE_APPROACH,
-            distance_shrink: PORTAL_DISTANCE_SHRINK,
-            fadeout_duration: PORTAL_FADEOUT_DURATION,
-            line_joints: PORTAL_LINE_JOINTS,
-            line_width: PORTAL_LINE_WIDTH,
-            minimum_radius: PORTAL_MINIMUM_RADIUS,
+            color_approaching:         Color::from(tailwind::BLUE_600),
+            color_emerging:            Color::from(tailwind::YELLOW_800),
+            direction_change_factor:   PORTAL_DIRECTION_CHANGE_FACTOR,
+            distance_approach:         PORTAL_DISTANCE_APPROACH,
+            distance_shrink:           PORTAL_DISTANCE_SHRINK,
+            fadeout_duration:          PORTAL_FADEOUT_DURATION,
+            line_joints:               PORTAL_LINE_JOINTS,
+            line_width:                PORTAL_LINE_WIDTH,
+            minimum_radius:            PORTAL_MINIMUM_RADIUS,
             movement_smoothing_factor: PORTAL_MOVEMENT_SMOOTHING_FACTOR,
-            portal_scalar: PORTAL_SCALAR,
-            portal_smallest: PORTAL_SMALLEST,
-            resolution: PORTAL_RESOLUTION,
+            portal_scalar:             PORTAL_SCALAR,
+            portal_smallest:           PORTAL_SMALLEST,
+            resolution:                PORTAL_RESOLUTION,
         }
     }
 }
@@ -131,41 +131,39 @@ impl Default for PortalConfig {
 #[derive(Component, Default)]
 pub struct ActorPortals {
     pub approaching: Option<Portal>,
-    pub emerging: Option<Portal>,
+    pub emerging:    Option<Portal>,
 }
 
 #[derive(Resource, Clone, Debug)]
 pub struct Portal {
-    pub actor_direction: Vec3,
-    pub actor_distance_to_wall: f32,
+    pub actor_direction:            Vec3,
+    pub actor_distance_to_wall:     f32,
     pub boundary_distance_approach: f32,
-    pub boundary_distance_shrink: f32,
-    pub face: BoundaryFace,
-    pub face_count: usize,
-    fade_out_started: Option<f32>,
-    pub position: Vec3,
-    pub radius: f32,
+    pub boundary_distance_shrink:   f32,
+    pub face:                       BoundaryFace,
+    pub face_count:                 usize,
+    fade_out_started:               Option<f32>,
+    pub position:                   Vec3,
+    pub radius:                     f32,
 }
 
 impl Portal {
     /// Returns the normal direction for this portal's face
-    pub const fn normal(&self) -> Dir3 {
-        self.face.to_dir3()
-    }
+    pub const fn normal(&self) -> Dir3 { self.face.to_dir3() }
 }
 
 impl Default for Portal {
     fn default() -> Self {
         Self {
-            actor_direction: Vec3::ZERO,
-            actor_distance_to_wall: 0.,
+            actor_direction:            Vec3::ZERO,
+            actor_distance_to_wall:     0.,
             boundary_distance_approach: 0.,
-            boundary_distance_shrink: 0.,
-            face: BoundaryFace::Right,
-            face_count: 1,
-            fade_out_started: None,
-            position: Vec3::ZERO,
-            radius: 0.,
+            boundary_distance_shrink:   0.,
+            face:                       BoundaryFace::Right,
+            face_count:                 1,
+            fade_out_started:           None,
+            position:                   Vec3::ZERO,
+            radius:                     0.,
         }
     }
 }

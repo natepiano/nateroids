@@ -3,7 +3,6 @@ mod ship_controls;
 
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::*;
-
 pub use global_shortcuts::AabbConfigInspectorToggle;
 pub use global_shortcuts::AabbsToggle;
 pub use global_shortcuts::BoundaryBoxToggle;

@@ -17,9 +17,7 @@ use crate::camera::RequiredCameraComponents;
 pub struct GameCameraPlugin;
 
 impl Plugin for GameCameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, update_environment_map_intensity);
-    }
+    fn build(&self, app: &mut App) { app.add_systems(Update, update_environment_map_intensity); }
 }
 
 pub fn spawn_game_camera(
@@ -42,7 +40,7 @@ pub fn spawn_game_camera(
                 zoom_sensitivity: CAMERA_ZOOM_SENSITIVITY,
                 zoom_lower_limit: CAMERA_ZOOM_LOWER_LIMIT,
                 trackpad_behavior: TrackpadBehavior::BlenderLike {
-                    modifier_pan: Some(KeyCode::ShiftLeft),
+                    modifier_pan:  Some(KeyCode::ShiftLeft),
                     modifier_zoom: Some(KeyCode::ControlLeft),
                 },
                 trackpad_pinch_to_zoom_enabled: true,
