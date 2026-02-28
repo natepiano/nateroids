@@ -8,8 +8,8 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera_ext::AnimateToFit;
+use bevy_panorbit_camera_ext::FitVisualization;
 use bevy_panorbit_camera_ext::SetFitTarget;
-use bevy_panorbit_camera_ext::ToggleFitVisualization;
 use bevy_panorbit_camera_ext::ZoomToFit as ZoomToFitEvent;
 
 use super::constants::EDGE_MARKER_FONT_SIZE;
@@ -178,11 +178,16 @@ fn on_toggle_fit_target_debug_input(
     _trigger: On<input_events::Start<BoundaryBoxToggle>>,
     mut commands: Commands,
     camera_query: Query<Entity, With<PanOrbitCamera>>,
+    viz_query: Query<(), With<FitVisualization>>,
 ) {
     let Ok(camera_entity) = camera_query.single() else {
         return;
     };
-    commands.trigger(ToggleFitVisualization::new(camera_entity));
+    if viz_query.get(camera_entity).is_ok() {
+        commands.entity(camera_entity).remove::<FitVisualization>();
+    } else {
+        commands.entity(camera_entity).insert(FitVisualization);
+    }
 }
 
 fn apply_focus_config(mut config_store: ResMut<GizmoConfigStore>, config: Res<FocusConfig>) {
