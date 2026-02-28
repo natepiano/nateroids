@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_panorbit_camera::PanOrbitCamera;
@@ -18,7 +20,7 @@ use crate::state::GameState;
 pub struct SplashPlugin;
 
 const SPLASH_TEXT_TIME: f32 = 2.;
-const SPLASH_ZOOM_DURATION_MS: f32 = 1000.0;
+const SPLASH_ZOOM_DURATION_MS: u64 = 1000;
 
 #[derive(Component)]
 pub struct SplashText;
@@ -134,13 +136,12 @@ fn on_animation_end(
         return;
     };
 
-    commands.trigger(ZoomToFit::new(
-        camera_entity,
-        boundary_entity,
-        ZOOM_MARGIN,
-        SPLASH_ZOOM_DURATION_MS,
-        EaseFunction::Linear,
-    ));
+    commands.trigger(
+        ZoomToFit::new(camera_entity, boundary_entity)
+            .margin(ZOOM_MARGIN)
+            .duration(Duration::from_millis(SPLASH_ZOOM_DURATION_MS))
+            .easing(EaseFunction::Linear),
+    );
 }
 
 /// When zoom-to-fit completes during splash, read the radius and launch spins.
@@ -158,10 +159,10 @@ fn on_zoom_end(
     commands.entity(camera_entity).remove::<SplashZoomActive>();
 
     let moves = create_spin_moves(orbit_radius);
-    commands.trigger(PlayAnimation::new(camera_entity, moves.into()));
+    commands.trigger(PlayAnimation::new(camera_entity, moves));
 }
 
-fn create_spin_sequence(radius: f32, durations: &[f32]) -> Vec<CameraMove> {
+fn create_spin_sequence(radius: f32, durations: &[u64]) -> Vec<CameraMove> {
     let positions = [
         Vec3::new(0.0, 0.0, radius),
         Vec3::new(radius, 0.0, 0.0),
@@ -174,9 +175,9 @@ fn create_spin_sequence(radius: f32, durations: &[f32]) -> Vec<CameraMove> {
         .zip(durations.iter().cycle())
         .map(|(pos, &duration)| CameraMove::ToPosition {
             translation: *pos,
-            focus: Vec3::ZERO,
-            duration_ms: duration,
-            easing: EaseFunction::Linear,
+            focus:       Vec3::ZERO,
+            duration:    Duration::from_millis(duration),
+            easing:      EaseFunction::Linear,
         })
         .collect()
 }
@@ -187,61 +188,61 @@ fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
         // start spin 1 (already at radius from zoom-to-fit, just orbit)
         CameraMove::ToPosition {
             translation: Vec3::new(radius, 0.0, 0.0),
-            focus: Vec3::ZERO,
-            duration_ms: 500.0,
-            easing: EaseFunction::Linear,
+            focus:       Vec3::ZERO,
+            duration:    Duration::from_millis(500),
+            easing:      EaseFunction::Linear,
         },
         CameraMove::ToPosition {
             translation: Vec3::new(0.0, 0.0, -radius),
-            focus: Vec3::ZERO,
-            duration_ms: 400.0,
-            easing: EaseFunction::Linear,
+            focus:       Vec3::ZERO,
+            duration:    Duration::from_millis(400),
+            easing:      EaseFunction::Linear,
         },
         CameraMove::ToPosition {
             translation: Vec3::new(-radius, 0.0, 0.0),
-            focus: Vec3::ZERO,
-            duration_ms: 300.0,
-            easing: EaseFunction::Linear,
+            focus:       Vec3::ZERO,
+            duration:    Duration::from_millis(300),
+            easing:      EaseFunction::Linear,
         },
         // start spin 2
         CameraMove::ToPosition {
             translation: Vec3::new(0.0, 0.0, radius),
-            focus: Vec3::ZERO,
-            duration_ms: 200.0,
-            easing: EaseFunction::Linear,
+            focus:       Vec3::ZERO,
+            duration:    Duration::from_millis(200),
+            easing:      EaseFunction::Linear,
         },
         CameraMove::ToPosition {
             translation: Vec3::new(radius, 0.0, 0.0),
-            focus: Vec3::ZERO,
-            duration_ms: 100.0,
-            easing: EaseFunction::Linear,
+            focus:       Vec3::ZERO,
+            duration:    Duration::from_millis(100),
+            easing:      EaseFunction::Linear,
         },
         CameraMove::ToPosition {
             translation: Vec3::new(0.0, 0.0, -radius),
-            focus: Vec3::ZERO,
-            duration_ms: 50.0,
-            easing: EaseFunction::Linear,
+            focus:       Vec3::ZERO,
+            duration:    Duration::from_millis(50),
+            easing:      EaseFunction::Linear,
         },
         CameraMove::ToPosition {
             translation: Vec3::new(-radius, 0.0, 0.0),
-            focus: Vec3::ZERO,
-            duration_ms: 25.0,
-            easing: EaseFunction::Linear,
+            focus:       Vec3::ZERO,
+            duration:    Duration::from_millis(25),
+            easing:      EaseFunction::Linear,
         },
     ];
 
     // Add fast spins 3, 4, 5 (all with 25ms duration)
-    (0..5).for_each(|_| moves.extend(create_spin_sequence(radius, &[25.0])));
+    (0..5).for_each(|_| moves.extend(create_spin_sequence(radius, &[25])));
 
     // Add spin 6 with increasing durations (slowdown effect)
-    moves.extend(create_spin_sequence(radius, &[50.0, 100.0, 150.0, 200.0]));
+    moves.extend(create_spin_sequence(radius, &[50, 100, 150, 200]));
 
     // Land at home with smooth easing
     moves.push(CameraMove::ToPosition {
         translation: Vec3::new(0.0, 0.0, radius),
-        focus: Vec3::ZERO,
-        duration_ms: 1200.0,
-        easing: EaseFunction::QuadraticOut,
+        focus:       Vec3::ZERO,
+        duration:    Duration::from_millis(1200),
+        easing:      EaseFunction::QuadraticOut,
     });
 
     moves
@@ -261,22 +262,19 @@ fn start_splash_camera_animation(
 
     // Instant snap to splash start position, then hold while text animates
     let snap_move = CameraMove::ToOrbit {
-        focus: camera_config.splash_start_focus,
-        yaw: camera_config.splash_start_yaw,
-        pitch: camera_config.splash_start_pitch,
-        radius: camera_config.splash_start_radius,
-        duration_ms: 0.0,
-        easing: EaseFunction::Linear,
+        focus:    camera_config.splash_start_focus,
+        yaw:      camera_config.splash_start_yaw,
+        pitch:    camera_config.splash_start_pitch,
+        radius:   camera_config.splash_start_radius,
+        duration: Duration::ZERO,
+        easing:   EaseFunction::Linear,
     };
     let hold_move = CameraMove::ToPosition {
         translation: Vec3::new(0.0, 0.0, camera_config.splash_start_radius),
-        focus: Vec3::ZERO,
-        duration_ms: 2500.0,
-        easing: EaseFunction::BounceOut,
+        focus:       Vec3::ZERO,
+        duration:    Duration::from_millis(2500),
+        easing:      EaseFunction::BounceOut,
     };
 
-    commands.trigger(PlayAnimation::new(
-        entity,
-        vec![snap_move, hold_move].into(),
-    ));
+    commands.trigger(PlayAnimation::new(entity, vec![snap_move, hold_move]));
 }

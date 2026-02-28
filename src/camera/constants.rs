@@ -12,10 +12,10 @@ pub const CAMERA_SPLASH_START_YAW: f32 = -std::f32::consts::PI;
 pub const ZOOM_MARGIN: f32 = 0.1;
 
 /// Duration in milliseconds for zoom-to-fit animation
-pub const ZOOM_TO_FIT_DURATION_MS: f32 = 500.0;
+pub const ZOOM_TO_FIT_DURATION_MS: u64 = 500;
 
 /// Duration in milliseconds for home camera animation
-pub const HOME_ANIMATION_DURATION_MS: f32 = 1200.0;
+pub const HOME_ANIMATION_DURATION_MS: u64 = 1200;
 
 /// Default zoom sensitivity for pan-orbit camera controls
 pub const CAMERA_ZOOM_SENSITIVITY: f32 = 0.2;
@@ -37,8 +37,8 @@ pub const SELECTION_OUTLINE_INTENSITY: f32 = 4.0;
 
 /// Outline color for selected entities
 pub const SELECTION_OUTLINE_COLOR: Color = Color::Srgba(bevy::color::Srgba {
-    red: 0.0,
+    red:   0.0,
     green: 0.24,
-    blue: 1.0,
+    blue:  1.0,
     alpha: 1.0,
 });

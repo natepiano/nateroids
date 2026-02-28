@@ -1,8 +1,5 @@
-use super::constants::EDGE_MARKER_FONT_SIZE;
-use super::constants::EDGE_MARKER_SPHERE_RADIUS;
-use super::constants::HOME_ANIMATION_DURATION_MS;
-use super::constants::ZOOM_MARGIN;
-use super::constants::ZOOM_TO_FIT_DURATION_MS;
+use std::time::Duration;
+
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_enhanced_input::action::events as input_events;
@@ -11,10 +8,15 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera_ext::AnimateToFit;
-use bevy_panorbit_camera_ext::FitTargetGizmo;
-use bevy_panorbit_camera_ext::FitTargetVisualizationPlugin;
 use bevy_panorbit_camera_ext::SetFitTarget;
+use bevy_panorbit_camera_ext::ToggleFitVisualization;
 use bevy_panorbit_camera_ext::ZoomToFit as ZoomToFitEvent;
+
+use super::constants::EDGE_MARKER_FONT_SIZE;
+use super::constants::EDGE_MARKER_SPHERE_RADIUS;
+use super::constants::HOME_ANIMATION_DURATION_MS;
+use super::constants::ZOOM_MARGIN;
+use super::constants::ZOOM_TO_FIT_DURATION_MS;
 /// Resource tracking the currently selected entity for zoom-to-fit.
 /// When `None`, Z zooms to boundary.
 #[derive(Resource, Default)]
@@ -36,9 +38,9 @@ struct FocusGizmo {}
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 struct FocusConfig {
-    color: Color,
+    color:         Color,
     #[inspector(min = 0.1, max = 10.0, display = NumberDisplay::Slider)]
-    line_width: f32,
+    line_width:    f32,
     #[inspector(min = 0.1, max = 50.0, display = NumberDisplay::Slider)]
     sphere_radius: f32,
 }
@@ -46,8 +48,8 @@ struct FocusConfig {
 impl Default for FocusConfig {
     fn default() -> Self {
         Self {
-            color: Color::srgb(1.0, 0.0, 0.0),
-            line_width: 2.0,
+            color:         Color::srgb(1.0, 0.0, 0.0),
+            line_width:    2.0,
             sphere_radius: EDGE_MARKER_SPHERE_RADIUS,
         }
     }
@@ -69,8 +71,7 @@ pub struct ZoomPlugin;
 
 impl Plugin for ZoomPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(FitTargetVisualizationPlugin)
-            .init_gizmo_group::<FocusGizmo>()
+        app.init_gizmo_group::<FocusGizmo>()
             .init_resource::<ZoomTarget>()
             .init_resource::<FocusConfig>()
             .init_resource::<FocusGizmoState>()
@@ -122,13 +123,12 @@ fn on_zoom_to_fit_input(
         boundary
     };
 
-    commands.trigger(ZoomToFitEvent::new(
-        camera_entity,
-        target,
-        ZOOM_MARGIN,
-        ZOOM_TO_FIT_DURATION_MS,
-        EaseFunction::Linear,
-    ));
+    commands.trigger(
+        ZoomToFitEvent::new(camera_entity, target)
+            .margin(ZOOM_MARGIN)
+            .duration(Duration::from_millis(ZOOM_TO_FIT_DURATION_MS))
+            .easing(EaseFunction::Linear),
+    );
     debug!("Triggered zoom-to-fit to {target:?}");
 }
 
@@ -164,24 +164,25 @@ fn on_camera_home_input(
         return;
     };
 
-    commands.trigger(AnimateToFit::new(
-        camera_entity,
-        boundary_entity,
-        0.0,
-        0.0,
-        ZOOM_MARGIN,
-        HOME_ANIMATION_DURATION_MS,
-        EaseFunction::QuadraticOut,
-    ));
+    commands.trigger(
+        AnimateToFit::new(camera_entity, boundary_entity)
+            .yaw(0.0)
+            .pitch(0.0)
+            .margin(ZOOM_MARGIN)
+            .duration(Duration::from_millis(HOME_ANIMATION_DURATION_MS))
+            .easing(EaseFunction::QuadraticOut),
+    );
 }
 
 fn on_toggle_fit_target_debug_input(
     _trigger: On<input_events::Start<BoundaryBoxToggle>>,
-    mut config_store: ResMut<GizmoConfigStore>,
+    mut commands: Commands,
+    camera_query: Query<Entity, With<PanOrbitCamera>>,
 ) {
-    let (config, _) = config_store.config_mut::<FitTargetGizmo>();
-    config.enabled = !config.enabled;
-    info!("Fit target visualization: {}", config.enabled);
+    let Ok(camera_entity) = camera_query.single() else {
+        return;
+    };
+    commands.trigger(ToggleFitVisualization::new(camera_entity));
 }
 
 fn apply_focus_config(mut config_store: ResMut<GizmoConfigStore>, config: Res<FocusConfig>) {
