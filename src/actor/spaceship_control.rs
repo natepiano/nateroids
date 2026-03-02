@@ -187,20 +187,24 @@ fn apply_acceleration(
 }
 
 fn on_toggle_continuous_fire_input(
-    trigger: On<input_events::Start<ShipContinuousFire>>,
+    _trigger: On<input_events::Start<ShipContinuousFire>>,
     mut commands: Commands,
-    q_spaceship: Query<Option<&ContinuousFire>, With<Spaceship>>,
 ) {
-    let Ok(continuous) = q_spaceship.get(trigger.context) else {
-        return;
-    };
+    commands.run_system_cached(toggle_continuous_fire_command);
+}
 
+/// Reusable on-demand command for toggling ship continuous fire mode.
+fn toggle_continuous_fire_command(
+    mut commands: Commands,
+    spaceship: Single<(Entity, Option<&ContinuousFire>), With<Spaceship>>,
+) {
+    let (entity, continuous) = *spaceship;
     if continuous.is_some() {
         info!("removing continuous");
-        commands.entity(trigger.context).remove::<ContinuousFire>();
+        commands.entity(entity).remove::<ContinuousFire>();
     } else {
         info!("adding continuous");
-        commands.entity(trigger.context).insert(ContinuousFire);
+        commands.entity(entity).insert(ContinuousFire);
     }
 }
 

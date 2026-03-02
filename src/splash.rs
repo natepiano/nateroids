@@ -11,6 +11,7 @@ use bevy_panorbit_camera_ext::ZoomEnd;
 use bevy_panorbit_camera_ext::ZoomToFit;
 
 use crate::camera::CameraConfig;
+use crate::camera::CameraHomeEvent;
 use crate::camera::RenderLayer;
 use crate::camera::ZOOM_MARGIN;
 use crate::playfield::Boundary;
@@ -25,6 +26,10 @@ const SPLASH_ZOOM_DURATION_MS: u64 = 1000;
 #[derive(Component)]
 pub struct SplashText;
 
+/// Bottom hint shown during splash to indicate that users can skip.
+#[derive(Component)]
+pub struct SplashSkipHint;
+
 /// Marker component indicating the splash zoom-to-fit sequence is active.
 /// Present during hold and zoom phases, removed before spins start.
 #[derive(Component)]
@@ -35,16 +40,23 @@ struct SplashTextTimer {
     pub timer: Timer,
 }
 
+#[derive(Resource, Debug, Default)]
+struct SplashSkipState {
+    armed: bool,
+}
+
 impl Plugin for SplashPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SplashTextTimer {
             timer: Timer::from_seconds(SPLASH_TEXT_TIME, TimerMode::Once),
         })
+        .init_resource::<SplashSkipState>()
         .add_systems(
             OnEnter(GameState::Splash),
             (
                 reset_timer_and_boundary,
                 spawn_splash_text,
+                spawn_splash_skip_hint,
                 start_splash_camera_animation,
             ),
         )
@@ -56,10 +68,12 @@ impl Plugin for SplashPlugin {
 
 fn reset_timer_and_boundary(
     mut splash_timer: ResMut<SplashTextTimer>,
+    mut skip_state: ResMut<SplashSkipState>,
     mut boundary: ResMut<Boundary>,
 ) {
     debug!("Resetting timer and boundary");
     splash_timer.timer.reset();
+    skip_state.armed = false;
 
     // Reset boundary alpha to 0 (transparent) for fade-in animation
     boundary.grid_color = boundary.grid_color.with_alpha(0.0);
@@ -84,12 +98,37 @@ fn spawn_splash_text(mut commands: Commands) {
     ));
 }
 
+fn spawn_splash_skip_hint(mut commands: Commands) {
+    commands.spawn((
+        SplashSkipHint,
+        Text::new("Press any key to skip"),
+        TextFont {
+            font_size: 20.0,
+            ..default()
+        },
+        TextLayout::new_with_justify(Justify::Center),
+        TextColor(Color::srgba(1.0, 1.0, 1.0, 0.8)),
+        Node {
+            position_type: PositionType::Absolute,
+            bottom: Val::Px(24.0),
+            left: Val::Px(0.0),
+            width: Val::Percent(100.0),
+            ..default()
+        },
+        RenderLayer::UI.layers(),
+    ));
+}
+
 fn run_splash(
     mut commands: Commands,
     mut next_state: ResMut<NextState<GameState>>,
     mut splash_text_timer: ResMut<SplashTextTimer>,
+    mut skip_state: ResMut<SplashSkipState>,
+    key_input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     mut q_text: Query<(Entity, &mut TextFont), With<SplashText>>,
+    splash_ui_query: Query<Entity, Or<(With<SplashText>, With<SplashSkipHint>)>>,
+    camera_entity: Single<Entity, With<PanOrbitCamera>>,
     camera_query: Query<
         (),
         (
@@ -98,6 +137,27 @@ fn run_splash(
         ),
     >,
 ) {
+    if !skip_state.armed {
+        // Avoid instant skip from keys held during the transition into Splash
+        // (e.g. Cmd+Shift+R restart shortcut).
+        if key_input.get_pressed().next().is_none() {
+            skip_state.armed = true;
+        }
+    } else if key_input.get_just_pressed().next().is_some() {
+        // Immediate splash skip: clear splash-only UI and stop in-flight splash camera sequence.
+        for entity in &splash_ui_query {
+            commands.entity(entity).despawn();
+        }
+
+        commands
+            .entity(*camera_entity)
+            .remove::<(CameraMoveList, SplashZoomActive)>();
+        // Reuse the camera home command path so skip lands at the same home framing.
+        commands.trigger(CameraHomeEvent);
+        next_state.set(GameState::InGame);
+        return;
+    }
+
     splash_text_timer.timer.tick(time.delta());
 
     // Animate text for 2 seconds, then despawn it (observer will spawn objects)
@@ -124,6 +184,13 @@ fn run_splash(
 fn on_animation_end(
     _trigger: On<AnimationEnd>,
     mut commands: Commands,
+) {
+    commands.run_system_cached(splash_zoom_to_boundary_command);
+}
+
+/// Reusable on-demand command that starts splash zoom-to-fit to boundary.
+fn splash_zoom_to_boundary_command(
+    mut commands: Commands,
     camera_query: Query<Entity, (With<PanOrbitCamera>, With<SplashZoomActive>)>,
     boundary_volume: Query<Entity, With<BoundaryVolume>>,
 ) {
@@ -147,6 +214,13 @@ fn on_animation_end(
 /// When zoom-to-fit completes during splash, read the radius and launch spins.
 fn on_zoom_end(
     _trigger: On<ZoomEnd>,
+    mut commands: Commands,
+) {
+    commands.run_system_cached(splash_start_spin_animation_command);
+}
+
+/// Reusable on-demand command that transitions splash zoom into spin animation.
+fn splash_start_spin_animation_command(
     mut commands: Commands,
     camera_query: Query<(Entity, &PanOrbitCamera), With<SplashZoomActive>>,
 ) {

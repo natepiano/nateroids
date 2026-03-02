@@ -1,3 +1,19 @@
+//! Input action definitions and context setup for keyboard/game controls.
+//!
+//! Command flow pattern used by the app:
+//! 1. Keyboard input fires enhanced-input action events (`Start<...>`).
+//! 2. Input observers adapt those events into app-level command events
+//!    (for example `RestartGameEvent`, `PauseEvent`, `ZoomToFitEvent`).
+//! 3. Command-event observers run reusable command systems via
+//!    `run_system_cached(...)`.
+//!
+//! Why this split:
+//! - User input stays ergonomic and keybinding-driven.
+//! - BRP can trigger the same behavior via `world.trigger_event` without
+//!   simulating key presses.
+//! - Tests can exercise either layer:
+//!   - behavior-level tests by triggering app command events;
+//!   - system-level tests by invoking command systems directly.
 mod global_shortcuts;
 mod ship_controls;
 

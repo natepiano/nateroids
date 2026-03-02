@@ -29,16 +29,18 @@ wildcard_imports        = "allow"
 missing_docs = "deny"
 
 [dependencies]
-avian3d                  = { version = "0.5.0", features = ["debug-plugin", "parallel", "simd"] }
-bevy                     = { version = "0.18.0", features = ["bevy_dev_tools", "bevy_remote"] }
-bevy-inspector-egui      = "0.36.0"
-bevy_brp_extras          = "0.18.6"
-bevy_enhanced_input      = "0.24.0"
-bevy_mesh_outline        = { git = "https://github.com/natepiano/bevy_mesh_outline", branch = "perf-storage-buffer" }
-bevy_panorbit_camera     = { version = "0.34.0", features = ["bevy_egui"] }
-bevy_panorbit_camera_ext = { git = "https://github.com/natepiano/bevy_panorbit_camera_ext", rev = "582652c", features = ["visualization"] }
-bevy_window_manager      = "0.18.2"
-rand                     = "0.10.0"
+avian3d = { version = "0.5.0", features = ["debug-plugin", "parallel", "simd"] }
+bevy = { version = "0.18.0", features = ["bevy_dev_tools", "bevy_remote"] }
+bevy-inspector-egui = "0.36.0"
+bevy_brp_extras = "0.18.6"
+bevy_enhanced_input = "0.24.1"
+bevy_mesh_outline = { git = "https://github.com/natepiano/bevy_mesh_outline", branch = "perf-storage-buffer" }
+bevy_panorbit_camera = { version = "0.34.0", features = ["bevy_egui"] }
+bevy_panorbit_camera_ext = { git = "https://github.com/natepiano/bevy_panorbit_camera_ext", rev = "f7cdfb4", features = [
+  "visualization",
+] }
+bevy_window_manager = "0.18.2"
+rand = "0.10.0"
 
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]

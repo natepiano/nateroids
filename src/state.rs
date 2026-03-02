@@ -13,9 +13,15 @@ impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>()
             .add_sub_state::<PauseState>()
+            .register_type::<PauseEvent>()
+            .register_type::<RestartGameEvent>()
+            .register_type::<RestartWithSplashEvent>()
             .add_observer(on_pause_input)
             .add_observer(on_restart_game_input)
             .add_observer(on_restart_with_splash_input)
+            .add_observer(on_pause_event)
+            .add_observer(on_restart_game_event)
+            .add_observer(on_restart_with_splash_event)
             .add_systems(
                 Update,
                 transition_to_in_game.run_if(in_state(GameState::GameOver)),
@@ -58,8 +64,36 @@ pub enum PauseState {
     Paused,
 }
 
+/// App command event for toggling pause state (input/UI/BRP).
+#[derive(Event, Reflect)]
+#[reflect(Event)]
+pub struct PauseEvent;
+
+/// App command event for quick restart flow (Shift+R behavior).
+#[derive(Event, Reflect)]
+#[reflect(Event)]
+pub struct RestartGameEvent;
+
+/// App command event for restart-with-splash flow (Super+Shift+R behavior).
+#[derive(Event, Reflect)]
+#[reflect(Event)]
+pub struct RestartWithSplashEvent;
+
 fn on_pause_input(
     _trigger: On<input_events::Start<PauseToggle>>,
+    mut commands: Commands,
+) {
+    // Input adapter only: command behavior is owned by the app command event observer,
+    // which is also triggerable through BRP `world.trigger_event`.
+    commands.trigger(PauseEvent);
+}
+
+fn on_pause_event(_trigger: On<PauseEvent>, mut commands: Commands) {
+    commands.run_system_cached(pause_command);
+}
+
+/// Reusable on-demand command for toggling pause state.
+fn pause_command(
     game_state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<PauseState>>,
     pause_state: Option<Res<State<PauseState>>>,
@@ -80,6 +114,17 @@ fn on_pause_input(
 
 fn on_restart_game_input(
     _trigger: On<input_events::Start<RestartGameShortcut>>,
+    mut commands: Commands,
+) {
+    commands.trigger(RestartGameEvent);
+}
+
+fn on_restart_game_event(_trigger: On<RestartGameEvent>, mut commands: Commands) {
+    commands.run_system_cached(restart_game_command);
+}
+
+/// Reusable on-demand command for quick restart flow.
+fn restart_game_command(
     game_state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
@@ -97,6 +142,17 @@ fn on_restart_game_input(
 
 fn on_restart_with_splash_input(
     _trigger: On<input_events::Start<RestartWithSplashShortcut>>,
+    mut commands: Commands,
+) {
+    commands.trigger(RestartWithSplashEvent);
+}
+
+fn on_restart_with_splash_event(_trigger: On<RestartWithSplashEvent>, mut commands: Commands) {
+    commands.run_system_cached(restart_with_splash_command);
+}
+
+/// Reusable on-demand command for full restart-with-splash flow.
+fn restart_with_splash_command(
     game_state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {

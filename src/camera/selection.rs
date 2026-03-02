@@ -84,12 +84,18 @@ fn on_spaceship_added(added: On<Add, Spaceship>, mut commands: Commands) {
 fn on_actor_clicked(
     click: On<Pointer<Click>>,
     mut commands: Commands,
+) {
+    commands.run_system_cached_with(select_actor_command, click.entity);
+}
+
+/// Reusable on-demand command that selects an actor and updates zoom target.
+fn select_actor_command(
+    In(actor): In<Entity>,
+    mut commands: Commands,
     mut zoom_target: ResMut<ZoomTarget>,
     previously_selected: Query<Entity, With<Selected>>,
-    camera_query: Query<Entity, With<PanOrbitCamera>>,
+    camera: Single<Entity, With<PanOrbitCamera>>,
 ) {
-    let actor = click.entity;
-
     // Deselect previous
     for prev in previously_selected.iter() {
         if prev != actor {
@@ -102,9 +108,7 @@ fn on_actor_clicked(
     zoom_target.0 = Some(actor);
 
     // Update the fit-target visualization to track this entity
-    if let Ok(camera) = camera_query.single() {
-        commands.trigger(SetFitTarget::new(camera, actor));
-    }
+    commands.trigger(SetFitTarget::new(*camera, actor));
 
     debug!("Selected actor {actor:?}");
 }
@@ -113,11 +117,18 @@ fn on_actor_clicked(
 fn on_selected_added(
     added: On<Add, Selected>,
     mut commands: Commands,
+) {
+    commands.run_system_cached_with(add_selection_outline_command, added.entity);
+}
+
+/// Reusable on-demand command that applies selection outlines to actor meshes.
+fn add_selection_outline_command(
+    In(entity): In<Entity>,
+    mut commands: Commands,
     children_query: Query<&Children>,
     mesh_query: Query<Entity, With<Mesh3d>>,
     config: Res<SelectionOutlineConfig>,
 ) {
-    let entity = added.entity;
     let outline = MeshOutline::new(config.width)
         .with_color(config.color)
         .with_intensity(config.intensity);
@@ -135,14 +146,20 @@ fn on_selected_added(
 fn on_selected_removed(
     removed: On<Remove, Selected>,
     mut commands: Commands,
+) {
+    commands.run_system_cached_with(remove_selection_outline_command, removed.entity);
+}
+
+/// Reusable on-demand command that clears selection outlines and reverts fit target.
+fn remove_selection_outline_command(
+    In(entity): In<Entity>,
+    mut commands: Commands,
     mut zoom_target: ResMut<ZoomTarget>,
-    camera_query: Query<Entity, With<PanOrbitCamera>>,
+    camera: Single<Entity, With<PanOrbitCamera>>,
     boundary_query: Query<Entity, With<BoundaryVolume>>,
     children_query: Query<&Children>,
     mesh_query: Query<Entity, With<Mesh3d>>,
 ) {
-    let entity = removed.entity;
-
     // Remove outlines from all descendant meshes
     for descendant in children_query.iter_descendants(entity) {
         if mesh_query.get(descendant).is_ok() {
@@ -158,10 +175,8 @@ fn on_selected_removed(
     zoom_target.0 = None;
 
     // Point fit-target visualization back at boundary
-    if let Ok(camera) = camera_query.single()
-        && let Ok(boundary) = boundary_query.single()
-    {
-        commands.trigger(SetFitTarget::new(camera, boundary));
+    if let Ok(boundary) = boundary_query.single() {
+        commands.trigger(SetFitTarget::new(*camera, boundary));
     }
 
     debug!("Selection cleared, reverted to boundary");

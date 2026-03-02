@@ -128,18 +128,21 @@ fn initialize_transform(
 }
 
 fn on_fire_input(
-    trigger: On<input_events::Start<ShipFire>>,
+    _trigger: On<input_events::Start<ShipFire>>,
     mut commands: Commands,
-    q_continuous_fire: Query<Option<&ContinuousFire>, With<Spaceship>>,
+) {
+    commands.run_system_cached(fire_missile_command);
+}
+
+/// Reusable on-demand command for firing a single missile.
+fn fire_missile_command(
+    mut commands: Commands,
+    continuous_fire_enabled: Single<Option<&ContinuousFire>, With<Spaceship>>,
     missile_config: Res<MissileConfig>,
 ) {
     if !missile_config.spawnable {
         return;
     }
-
-    let Ok(continuous_fire_enabled) = q_continuous_fire.get(trigger.context) else {
-        return;
-    };
 
     if continuous_fire_enabled.is_some() {
         return;
@@ -150,15 +153,11 @@ fn on_fire_input(
 
 fn fire_missile_continuous(
     mut commands: Commands,
-    q_continuous_fire: Query<Option<&ContinuousFire>, With<Spaceship>>,
+    continuous_fire_enabled: Single<Option<&ContinuousFire>, With<Spaceship>>,
     mut missile_config: ResMut<MissileConfig>,
     fire_state: ShipFireStateQuery,
     time: Res<Time>,
 ) {
-    let Ok(continuous_fire_enabled) = q_continuous_fire.single() else {
-        return;
-    };
-
     if continuous_fire_enabled.is_none() || !missile_config.spawnable {
         return;
     }

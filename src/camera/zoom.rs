@@ -10,7 +10,7 @@ use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera_ext::AnimateToFit;
 use bevy_panorbit_camera_ext::FitVisualization;
 use bevy_panorbit_camera_ext::SetFitTarget;
-use bevy_panorbit_camera_ext::ZoomToFit as ZoomToFitEvent;
+use bevy_panorbit_camera_ext::ZoomToFit as PanOrbitZoomToFit;
 
 use super::constants::EDGE_MARKER_FONT_SIZE;
 use super::constants::EDGE_MARKER_SPHERE_RADIUS;
@@ -23,7 +23,7 @@ use super::constants::ZOOM_TO_FIT_DURATION_MS;
 pub struct ZoomTarget(pub Option<Entity>);
 use crate::camera::RenderLayer;
 use crate::input::BoundaryBoxToggle;
-use crate::input::CameraHome;
+use crate::input::CameraHome as CameraHomeShortcut;
 use crate::input::FocusConfigInspectorToggle;
 use crate::input::ShowFocusToggle;
 use crate::input::ZoomToFitShortcut;
@@ -67,6 +67,21 @@ struct FocusGizmoState {
 #[derive(Component)]
 struct FocusDistanceLabel;
 
+/// App command event for zoom-to-fit using the current zoom target policy.
+#[derive(Event, Reflect)]
+#[reflect(Event)]
+pub struct ZoomToFitEvent;
+
+/// App command event for camera "home" animation.
+#[derive(Event, Reflect)]
+#[reflect(Event)]
+pub struct CameraHomeEvent;
+
+/// App command event for toggling fit-target visualization.
+#[derive(Event, Reflect)]
+#[reflect(Event)]
+pub struct ToggleFitTargetDebugEvent;
+
 pub struct ZoomPlugin;
 
 impl Plugin for ZoomPlugin {
@@ -75,6 +90,9 @@ impl Plugin for ZoomPlugin {
             .init_resource::<ZoomTarget>()
             .init_resource::<FocusConfig>()
             .init_resource::<FocusGizmoState>()
+            .register_type::<ZoomToFitEvent>()
+            .register_type::<CameraHomeEvent>()
+            .register_type::<ToggleFitTargetDebugEvent>()
             .add_plugins(
                 ResourceInspectorPlugin::<FocusConfig>::default()
                     .run_if(switches::is_switch_on(Switch::InspectFocusConfig)),
@@ -83,6 +101,9 @@ impl Plugin for ZoomPlugin {
             .add_observer(on_camera_home_input)
             .add_observer(on_zoom_to_fit_input)
             .add_observer(on_toggle_fit_target_debug_input)
+            .add_observer(on_zoom_to_fit_event)
+            .add_observer(on_camera_home_event)
+            .add_observer(on_toggle_fit_target_debug_event)
             .add_observer(on_toggle_focus_config_inspector_input)
             .add_observer(on_toggle_show_focus_input)
             .add_systems(
@@ -105,13 +126,26 @@ impl Plugin for ZoomPlugin {
 fn on_zoom_to_fit_input(
     _trigger: On<input_events::Start<ZoomToFitShortcut>>,
     mut commands: Commands,
+) {
+    // Input adapter only: command behavior is owned by the app command event observer,
+    // which is also triggerable through BRP `world.trigger_event`.
+    commands.trigger(ZoomToFitEvent);
+}
+
+fn on_zoom_to_fit_event(_trigger: On<ZoomToFitEvent>, mut commands: Commands) {
+    commands.run_system_cached(zoom_to_fit_command);
+}
+
+/// Reusable on-demand command for zoom-to-fit.
+///
+/// Uses the selected target when present; otherwise falls back to `BoundaryVolume`.
+fn zoom_to_fit_command(
+    mut commands: Commands,
     zoom_target: Res<ZoomTarget>,
     boundary_volume: Query<Entity, With<BoundaryVolume>>,
-    camera_query: Query<Entity, With<PanOrbitCamera>>,
+    camera_entity: Single<Entity, With<PanOrbitCamera>>,
 ) {
-    let Ok(camera_entity) = camera_query.single() else {
-        return;
-    };
+    let camera_entity = *camera_entity;
 
     let target = if let Some(selected) = zoom_target.0 {
         selected
@@ -124,7 +158,7 @@ fn on_zoom_to_fit_input(
     };
 
     commands.trigger(
-        ZoomToFitEvent::new(camera_entity, target)
+        PanOrbitZoomToFit::new(camera_entity, target)
             .margin(ZOOM_MARGIN)
             .duration(Duration::from_millis(ZOOM_TO_FIT_DURATION_MS))
             .easing(EaseFunction::Linear),
@@ -150,14 +184,23 @@ fn set_fit_target_debug(
 }
 
 fn on_camera_home_input(
-    _trigger: On<input_events::Start<CameraHome>>,
+    _trigger: On<input_events::Start<CameraHomeShortcut>>,
+    mut commands: Commands,
+) {
+    commands.trigger(CameraHomeEvent);
+}
+
+fn on_camera_home_event(_trigger: On<CameraHomeEvent>, mut commands: Commands) {
+    commands.run_system_cached(camera_home_command);
+}
+
+/// Reusable on-demand command for camera "home" animation.
+fn camera_home_command(
     mut commands: Commands,
     boundary_volume_query: Query<Entity, With<BoundaryVolume>>,
-    camera_query: Query<Entity, With<PanOrbitCamera>>,
+    camera_entity: Single<Entity, With<PanOrbitCamera>>,
 ) {
-    let Ok(camera_entity) = camera_query.single() else {
-        return;
-    };
+    let camera_entity = *camera_entity;
 
     let Ok(boundary_entity) = boundary_volume_query.single() else {
         warn!("No BoundaryVolume entity found");
@@ -177,12 +220,24 @@ fn on_camera_home_input(
 fn on_toggle_fit_target_debug_input(
     _trigger: On<input_events::Start<BoundaryBoxToggle>>,
     mut commands: Commands,
-    camera_query: Query<Entity, With<PanOrbitCamera>>,
+) {
+    commands.trigger(ToggleFitTargetDebugEvent);
+}
+
+fn on_toggle_fit_target_debug_event(
+    _trigger: On<ToggleFitTargetDebugEvent>,
+    mut commands: Commands,
+) {
+    commands.run_system_cached(toggle_fit_target_debug_command);
+}
+
+/// Reusable on-demand command for toggling fit-target visualization.
+fn toggle_fit_target_debug_command(
+    mut commands: Commands,
+    camera_entity: Single<Entity, With<PanOrbitCamera>>,
     viz_query: Query<(), With<FitVisualization>>,
 ) {
-    let Ok(camera_entity) = camera_query.single() else {
-        return;
-    };
+    let camera_entity = *camera_entity;
     if viz_query.get(camera_entity).is_ok() {
         commands.entity(camera_entity).remove::<FitVisualization>();
     } else {
