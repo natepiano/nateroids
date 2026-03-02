@@ -13,9 +13,6 @@ impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>()
             .add_sub_state::<PauseState>()
-            .register_type::<PauseEvent>()
-            .register_type::<RestartGameEvent>()
-            .register_type::<RestartWithSplashEvent>()
             .add_observer(on_pause_input)
             .add_observer(on_restart_game_input)
             .add_observer(on_restart_with_splash_input)
@@ -79,10 +76,7 @@ pub struct RestartGameEvent;
 #[reflect(Event)]
 pub struct RestartWithSplashEvent;
 
-fn on_pause_input(
-    _trigger: On<input_events::Start<PauseToggle>>,
-    mut commands: Commands,
-) {
+fn on_pause_input(_trigger: On<input_events::Start<PauseToggle>>, mut commands: Commands) {
     // Input adapter only: command behavior is owned by the app command event observer,
     // which is also triggerable through BRP `world.trigger_event`.
     commands.trigger(PauseEvent);

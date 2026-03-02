@@ -90,9 +90,6 @@ impl Plugin for ZoomPlugin {
             .init_resource::<ZoomTarget>()
             .init_resource::<FocusConfig>()
             .init_resource::<FocusGizmoState>()
-            .register_type::<ZoomToFitEvent>()
-            .register_type::<CameraHomeEvent>()
-            .register_type::<ToggleFitTargetDebugEvent>()
             .add_plugins(
                 ResourceInspectorPlugin::<FocusConfig>::default()
                     .run_if(switches::is_switch_on(Switch::InspectFocusConfig)),
