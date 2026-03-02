@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
 use bevy::prelude::*;
+use bevy_enhanced_input::action::events as input_events;
+use bevy_enhanced_input::prelude::InputAction;
 
 pub struct SwitchesPlugin;
 
@@ -81,12 +83,22 @@ impl Switches {
     pub fn toggle_switch(&mut self, switch: Switch) { self.toggle(switch); }
 
     pub fn is_switch_on(&self, switch: Switch) -> bool { self.is_on(switch) }
+
+    /// Registers an observer that toggles `switch` when `Start<A>` fires.
+    pub fn bind_switch<A: InputAction>(app: &mut App, switch: Switch) {
+        app.add_observer(
+            move |_: On<input_events::Start<A>>, mut switches: ResMut<Self>| {
+                switches.toggle_switch(switch);
+            },
+        );
+    }
 }
 
 #[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[reflect(Debug, PartialEq, Hash)]
 pub enum Switch {
     ShowAabbs,
+    ShowPhysicsDebug,
     InspectAabbConfig,
     InspectBoundary,
     InspectCameraConfig,

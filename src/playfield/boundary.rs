@@ -1,6 +1,5 @@
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
-use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -63,8 +62,8 @@ impl Plugin for BoundaryPlugin {
                 draw_boundary.run_if(in_state(GameState::Splash).or(in_state(GameState::InGame))),
             )
             .add_systems(Update, fade_boundary_in)
-            .add_observer(start_boundary_fade)
-            .add_observer(on_toggle_boundary_inspector_input);
+            .add_observer(start_boundary_fade);
+        Switches::bind_switch::<BoundaryInspectorToggle>(app, Switch::InspectBoundary);
     }
 }
 
@@ -95,13 +94,6 @@ fn spawn_boundary_volume(
     ));
 
     debug!("Spawned BoundaryVolume entity");
-}
-
-fn on_toggle_boundary_inspector_input(
-    _trigger: On<input_events::Start<BoundaryInspectorToggle>>,
-    mut switches: ResMut<Switches>,
-) {
-    switches.toggle_switch(Switch::InspectBoundary);
 }
 
 /// Synchronizes the `BoundaryVolume` entity's `Transform` with the `Boundary` resource.
@@ -526,49 +518,25 @@ impl Boundary {
         // otherwise the edge runs along that axis, so use position's coordinate.
 
         let x = if normal1.x != 0.0 {
-            if normal1.x > 0.0 {
-                max.x
-            } else {
-                min.x
-            }
+            if normal1.x > 0.0 { max.x } else { min.x }
         } else if normal2.x != 0.0 {
-            if normal2.x > 0.0 {
-                max.x
-            } else {
-                min.x
-            }
+            if normal2.x > 0.0 { max.x } else { min.x }
         } else {
             position.x // Edge runs along X axis
         };
 
         let y = if normal1.y != 0.0 {
-            if normal1.y > 0.0 {
-                max.y
-            } else {
-                min.y
-            }
+            if normal1.y > 0.0 { max.y } else { min.y }
         } else if normal2.y != 0.0 {
-            if normal2.y > 0.0 {
-                max.y
-            } else {
-                min.y
-            }
+            if normal2.y > 0.0 { max.y } else { min.y }
         } else {
             position.y // Edge runs along Y axis
         };
 
         let z = if normal1.z != 0.0 {
-            if normal1.z > 0.0 {
-                max.z
-            } else {
-                min.z
-            }
+            if normal1.z > 0.0 { max.z } else { min.z }
         } else if normal2.z != 0.0 {
-            if normal2.z > 0.0 {
-                max.z
-            } else {
-                min.z
-            }
+            if normal2.z > 0.0 { max.z } else { min.z }
         } else {
             position.z // Edge runs along Z axis
         };

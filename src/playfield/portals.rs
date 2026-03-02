@@ -7,7 +7,6 @@ use bevy::color::palettes::tailwind;
 use bevy::math::Dir3;
 use bevy::math::Vec3;
 use bevy::prelude::*;
-use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -29,7 +28,7 @@ use crate::actor::Deaderoid;
 use crate::actor::Teleporter;
 use crate::actor::aabb_max_dimension;
 use crate::camera::RenderLayer;
-use crate::input::PortalInspectorToggle;
+use crate::input::PortalInspectorSwitch;
 use crate::orientation::CameraOrientation;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
@@ -50,7 +49,6 @@ impl Plugin for PortalPlugin {
                 ResourceInspectorPlugin::<PortalConfig>::default()
                     .run_if(switches::is_switch_on(Switch::InspectPortals)),
             )
-            .add_observer(on_toggle_portal_inspector_input)
             .add_systems(
                 Update,
                 (
@@ -63,6 +61,7 @@ impl Plugin for PortalPlugin {
                 )
                     .chain(),
             );
+        Switches::bind_switch::<PortalInspectorSwitch>(app, Switch::InspectPortals);
     }
 }
 
@@ -233,13 +232,6 @@ fn is_physics_burst(position: Vec3, boundary_transform: &Transform) -> bool {
     let max_distance_from_center = position.distance(boundary_transform.translation);
     let boundary_diagonal = boundary_half_size.length();
     max_distance_from_center > boundary_diagonal * PORTAL_PHYSICS_BURST_MULTIPLIER
-}
-
-fn on_toggle_portal_inspector_input(
-    _trigger: On<input_events::Start<PortalInspectorToggle>>,
-    mut switches: ResMut<Switches>,
-) {
-    switches.toggle_switch(Switch::InspectPortals);
 }
 
 /// Snaps position to boundary and calculates the correct face for the snapped position.

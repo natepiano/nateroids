@@ -1,7 +1,6 @@
 use avian3d::prelude::*;
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
-use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -16,9 +15,9 @@ use super::spaceship::Spaceship;
 use crate::asset_loader::AssetsState;
 use crate::asset_loader::SceneAssets;
 use crate::camera::RenderLayer;
-use crate::input::MissileInspectorToggle;
-use crate::input::NateroidInspectorToggle;
-use crate::input::SpaceshipInspectorToggle;
+use crate::input::MissileInspectorSwitch;
+use crate::input::NateroidInspectorSwitch;
+use crate::input::SpaceshipInspectorSwitch;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
@@ -47,9 +46,9 @@ impl Plugin for ActorConfigPlugin {
                 ResourceInspectorPlugin::<SpaceshipConfig>::default()
                     .run_if(switches::is_switch_on(Switch::InspectSpaceship)),
             );
-        app.add_observer(on_toggle_missile_inspector_input)
-            .add_observer(on_toggle_nateroid_inspector_input)
-            .add_observer(on_toggle_spaceship_inspector_input);
+        Switches::bind_switch::<MissileInspectorSwitch>(app, Switch::InspectMissile);
+        Switches::bind_switch::<NateroidInspectorSwitch>(app, Switch::InspectNateroid);
+        Switches::bind_switch::<SpaceshipInspectorSwitch>(app, Switch::InspectSpaceship);
     }
 }
 
@@ -194,25 +193,4 @@ pub fn insert_configured_components(
 
     // reset the timer if there is a configured spawn_timer_seconds
     config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);
-}
-
-fn on_toggle_missile_inspector_input(
-    _trigger: On<input_events::Start<MissileInspectorToggle>>,
-    mut switches: ResMut<Switches>,
-) {
-    switches.toggle_switch(Switch::InspectMissile);
-}
-
-fn on_toggle_nateroid_inspector_input(
-    _trigger: On<input_events::Start<NateroidInspectorToggle>>,
-    mut switches: ResMut<Switches>,
-) {
-    switches.toggle_switch(Switch::InspectNateroid);
-}
-
-fn on_toggle_spaceship_inspector_input(
-    _trigger: On<input_events::Start<SpaceshipInspectorToggle>>,
-    mut switches: ResMut<Switches>,
-) {
-    switches.toggle_switch(Switch::InspectSpaceship);
 }

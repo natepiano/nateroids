@@ -11,9 +11,9 @@ use bevy_panorbit_camera_ext::ZoomEnd;
 use bevy_panorbit_camera_ext::ZoomToFit;
 
 use crate::camera::CameraConfig;
-use crate::camera::CameraHomeEvent;
 use crate::camera::RenderLayer;
 use crate::camera::ZOOM_MARGIN;
+use crate::input::CameraHomeEvent;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
 use crate::state::GameState;
@@ -181,10 +181,7 @@ fn run_splash(
 }
 
 /// When the hold animation completes, trigger `ZoomToFit` to the boundary.
-fn on_animation_end(
-    _trigger: On<AnimationEnd>,
-    mut commands: Commands,
-) {
+fn on_animation_end(_trigger: On<AnimationEnd>, mut commands: Commands) {
     commands.run_system_cached(splash_zoom_to_boundary_command);
 }
 
@@ -212,10 +209,7 @@ fn splash_zoom_to_boundary_command(
 }
 
 /// When zoom-to-fit completes during splash, read the radius and launch spins.
-fn on_zoom_end(
-    _trigger: On<ZoomEnd>,
-    mut commands: Commands,
-) {
+fn on_zoom_end(_trigger: On<ZoomEnd>, mut commands: Commands) {
     commands.run_system_cached(splash_start_spin_animation_command);
 }
 

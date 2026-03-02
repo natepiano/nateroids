@@ -3,14 +3,14 @@
 //! A 3D space shooter featuring:
 //! - Portal-based boundary wrapping mechanics
 //! - Physics-based asteroid destruction
-//! - Dynamic camera system//! - Bevy Remote Protocol (BRP) support for debugging
+//! - Dynamic camera system
 
-// exclude when targeting wasm - this breaks in the browser right now
+#[macro_use]
+mod input;
 mod actor;
 mod asset_loader;
 mod camera;
 mod despawn;
-mod input;
 mod orientation;
 mod physics;
 mod playfield;

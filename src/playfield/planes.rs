@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy::render::render_resource::Face;
-use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -11,7 +10,7 @@ use super::constants::PLANE_REFLECTANCE;
 use super::constants::PLANE_ROTATION_ANGLE;
 use super::constants::PLANE_THICKNESS;
 use crate::camera::RenderLayer;
-use crate::input::PlanesInspectorToggle;
+use crate::input::PlanesInspectorSwitch;
 use crate::orientation::CameraOrientation;
 use crate::orientation::OrientationConfig;
 use crate::playfield::BoundaryVolume;
@@ -30,7 +29,7 @@ impl Plugin for PlanesPlugin {
                 ResourceInspectorPlugin::<PlaneConfig>::default()
                     .run_if(switches::is_switch_on(Switch::InspectPlanes)),
             );
-        app.add_observer(on_toggle_planes_inspector_input);
+        Switches::bind_switch::<PlanesInspectorSwitch>(app, Switch::InspectPlanes);
     }
 }
 
@@ -195,13 +194,6 @@ fn manage_box_planes(
             commands.entity(entity).despawn();
         }
     }
-}
-
-fn on_toggle_planes_inspector_input(
-    _trigger: On<input_events::Start<PlanesInspectorToggle>>,
-    mut switches: ResMut<Switches>,
-) {
-    switches.toggle_switch(Switch::InspectPlanes);
 }
 
 fn get_plane_specifications(

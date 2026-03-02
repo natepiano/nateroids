@@ -1,32 +1,40 @@
 use avian3d::prelude::*;
 use bevy::dev_tools::states::*;
 use bevy::prelude::*;
-use bevy_enhanced_input::action::events as input_events;
 
+use crate::input::PauseEvent;
 use crate::input::PauseToggle;
+use crate::input::RestartGameEvent;
 use crate::input::RestartGameShortcut;
+use crate::input::RestartWithSplashEvent;
 use crate::input::RestartWithSplashShortcut;
 
 pub struct StatePlugin;
 
 impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
-        app.init_state::<GameState>()
-            .add_sub_state::<PauseState>()
-            .add_observer(on_pause_input)
-            .add_observer(on_restart_game_input)
-            .add_observer(on_restart_with_splash_input)
-            .add_observer(on_pause_event)
-            .add_observer(on_restart_game_event)
-            .add_observer(on_restart_with_splash_event)
-            .add_systems(
-                Update,
-                transition_to_in_game.run_if(in_state(GameState::GameOver)),
-            )
-            .add_systems(OnEnter(PauseState::Paused), physics_paused)
-            .add_systems(OnEnter(PauseState::Playing), physics_playing)
-            .add_systems(PostStartup, transition_to_splash_on_startup)
-            .add_systems(Update, log_transitions::<GameState>);
+        app.init_state::<GameState>().add_sub_state::<PauseState>();
+        bind_action_event_system!(app, PauseToggle, PauseEvent, pause_command);
+        bind_action_event_system!(
+            app,
+            RestartGameShortcut,
+            RestartGameEvent,
+            restart_game_command
+        );
+        bind_action_event_system!(
+            app,
+            RestartWithSplashShortcut,
+            RestartWithSplashEvent,
+            restart_with_splash_command
+        );
+        app.add_systems(
+            Update,
+            transition_to_in_game.run_if(in_state(GameState::GameOver)),
+        )
+        .add_systems(OnEnter(PauseState::Paused), physics_paused)
+        .add_systems(OnEnter(PauseState::Playing), physics_playing)
+        .add_systems(PostStartup, transition_to_splash_on_startup)
+        .add_systems(Update, log_transitions::<GameState>);
     }
 }
 
@@ -61,31 +69,6 @@ pub enum PauseState {
     Paused,
 }
 
-/// App command event for toggling pause state (input/UI/BRP).
-#[derive(Event, Reflect)]
-#[reflect(Event)]
-pub struct PauseEvent;
-
-/// App command event for quick restart flow (Shift+R behavior).
-#[derive(Event, Reflect)]
-#[reflect(Event)]
-pub struct RestartGameEvent;
-
-/// App command event for restart-with-splash flow (Super+Shift+R behavior).
-#[derive(Event, Reflect)]
-#[reflect(Event)]
-pub struct RestartWithSplashEvent;
-
-fn on_pause_input(_trigger: On<input_events::Start<PauseToggle>>, mut commands: Commands) {
-    // Input adapter only: command behavior is owned by the app command event observer,
-    // which is also triggerable through BRP `world.trigger_event`.
-    commands.trigger(PauseEvent);
-}
-
-fn on_pause_event(_trigger: On<PauseEvent>, mut commands: Commands) {
-    commands.run_system_cached(pause_command);
-}
-
 /// Reusable on-demand command for toggling pause state.
 fn pause_command(
     game_state: Res<State<GameState>>,
@@ -106,17 +89,6 @@ fn pause_command(
     }
 }
 
-fn on_restart_game_input(
-    _trigger: On<input_events::Start<RestartGameShortcut>>,
-    mut commands: Commands,
-) {
-    commands.trigger(RestartGameEvent);
-}
-
-fn on_restart_game_event(_trigger: On<RestartGameEvent>, mut commands: Commands) {
-    commands.run_system_cached(restart_game_command);
-}
-
 /// Reusable on-demand command for quick restart flow.
 fn restart_game_command(
     game_state: Res<State<GameState>>,
@@ -132,17 +104,6 @@ fn restart_game_command(
     // 3. Fresh game starts with stars already generated
     debug!("restart quick");
     next_state.set(GameState::GameOver);
-}
-
-fn on_restart_with_splash_input(
-    _trigger: On<input_events::Start<RestartWithSplashShortcut>>,
-    mut commands: Commands,
-) {
-    commands.trigger(RestartWithSplashEvent);
-}
-
-fn on_restart_with_splash_event(_trigger: On<RestartWithSplashEvent>, mut commands: Commands) {
-    commands.run_system_cached(restart_with_splash_command);
 }
 
 /// Reusable on-demand command for full restart-with-splash flow.

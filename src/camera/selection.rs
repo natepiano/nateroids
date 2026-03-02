@@ -1,6 +1,5 @@
 use bevy::picking::hover::PickingInteraction;
 use bevy::prelude::*;
-use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::bevy_egui::EguiContexts;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
@@ -15,7 +14,7 @@ use super::constants::SELECTION_OUTLINE_WIDTH;
 use super::zoom::ZoomTarget;
 use crate::actor::Nateroid;
 use crate::actor::Spaceship;
-use crate::input::OutlineInspectorToggle;
+use crate::input::OutlineInspectorSwitch;
 use crate::playfield::BoundaryVolume;
 use crate::switches;
 use crate::switches::Switch;
@@ -55,13 +54,13 @@ impl Plugin for SelectionPlugin {
                 ResourceInspectorPlugin::<SelectionOutlineConfig>::default()
                     .run_if(switches::is_switch_on(Switch::InspectOutline)),
             )
-            .add_observer(on_toggle_outline_inspector_input)
             .add_observer(on_nateroid_added)
             .add_observer(on_spaceship_added)
             .add_observer(on_selected_added)
             .add_observer(on_selected_removed)
             .add_systems(Update, clear_selection_on_background_click)
             .add_systems(Update, sync_outline_config);
+        Switches::bind_switch::<OutlineInspectorSwitch>(app, Switch::InspectOutline);
     }
 }
 
@@ -81,10 +80,7 @@ fn on_spaceship_added(added: On<Add, Spaceship>, mut commands: Commands) {
 
 /// Per-entity observer: fires when a `Pointer<Click>` bubbles up from a
 /// descendant `Mesh3d` to this actor entity.
-fn on_actor_clicked(
-    click: On<Pointer<Click>>,
-    mut commands: Commands,
-) {
+fn on_actor_clicked(click: On<Pointer<Click>>, mut commands: Commands) {
     commands.run_system_cached_with(select_actor_command, click.entity);
 }
 
@@ -114,10 +110,7 @@ fn select_actor_command(
 }
 
 /// When `Selected` is added, walk all descendants and add `MeshOutline` to mesh entities.
-fn on_selected_added(
-    added: On<Add, Selected>,
-    mut commands: Commands,
-) {
+fn on_selected_added(added: On<Add, Selected>, mut commands: Commands) {
     commands.run_system_cached_with(add_selection_outline_command, added.entity);
 }
 
@@ -143,10 +136,7 @@ fn add_selection_outline_command(
 /// When `Selected` is removed (despawn or manual deselect), remove outlines and
 /// revert zoom target to boundary.
 /// Skips revert if `ZoomTarget` already points to a new entity (switch-selection case).
-fn on_selected_removed(
-    removed: On<Remove, Selected>,
-    mut commands: Commands,
-) {
+fn on_selected_removed(removed: On<Remove, Selected>, mut commands: Commands) {
     commands.run_system_cached_with(remove_selection_outline_command, removed.entity);
 }
 
@@ -247,11 +237,4 @@ fn clear_selection_on_background_click(
         }
         debug!("Background click — clearing selection");
     }
-}
-
-fn on_toggle_outline_inspector_input(
-    _trigger: On<input_events::Start<OutlineInspectorToggle>>,
-    mut switches: ResMut<Switches>,
-) {
-    switches.toggle_switch(Switch::InspectOutline);
 }

@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
-use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -22,10 +21,13 @@ use super::constants::ZOOM_TO_FIT_DURATION_MS;
 #[derive(Resource, Default)]
 pub struct ZoomTarget(pub Option<Entity>);
 use crate::camera::RenderLayer;
-use crate::input::BoundaryBoxToggle;
+use crate::input::BoundaryBoxSwitch;
 use crate::input::CameraHome as CameraHomeShortcut;
-use crate::input::FocusConfigInspectorToggle;
-use crate::input::ShowFocusToggle;
+use crate::input::CameraHomeEvent;
+use crate::input::FocusConfigInspectorSwitch;
+use crate::input::ShowFocusSwitch;
+use crate::input::ToggleFitTargetDebugEvent;
+use crate::input::ZoomToFitEvent;
 use crate::input::ZoomToFitShortcut;
 use crate::playfield::BoundaryVolume;
 use crate::switches;
@@ -67,21 +69,6 @@ struct FocusGizmoState {
 #[derive(Component)]
 struct FocusDistanceLabel;
 
-/// App command event for zoom-to-fit using the current zoom target policy.
-#[derive(Event, Reflect)]
-#[reflect(Event)]
-pub struct ZoomToFitEvent;
-
-/// App command event for camera "home" animation.
-#[derive(Event, Reflect)]
-#[reflect(Event)]
-pub struct CameraHomeEvent;
-
-/// App command event for toggling fit-target visualization.
-#[derive(Event, Reflect)]
-#[reflect(Event)]
-pub struct ToggleFitTargetDebugEvent;
-
 pub struct ZoomPlugin;
 
 impl Plugin for ZoomPlugin {
@@ -94,43 +81,35 @@ impl Plugin for ZoomPlugin {
                 ResourceInspectorPlugin::<FocusConfig>::default()
                     .run_if(switches::is_switch_on(Switch::InspectFocusConfig)),
             )
-            .add_systems(Startup, set_fit_target_debug)
-            .add_observer(on_camera_home_input)
-            .add_observer(on_zoom_to_fit_input)
-            .add_observer(on_toggle_fit_target_debug_input)
-            .add_observer(on_zoom_to_fit_event)
-            .add_observer(on_camera_home_event)
-            .add_observer(on_toggle_fit_target_debug_event)
-            .add_observer(on_toggle_focus_config_inspector_input)
-            .add_observer(on_toggle_show_focus_input)
-            .add_systems(
-                Update,
-                apply_focus_config.run_if(resource_changed::<FocusConfig>),
-            )
-            .add_systems(Update, update_focus_gizmo_state)
-            .add_systems(
-                Update,
-                (
-                    draw_camera_focus_gizmo.run_if(switches::is_switch_on(Switch::ShowFocus)),
-                    cleanup_focus_labels.run_if(switches::is_switch_off(Switch::ShowFocus)),
-                ),
-            );
+            .add_systems(Startup, set_fit_target_debug);
+        bind_action_event_system!(app, ZoomToFitShortcut, ZoomToFitEvent, zoom_to_fit_command);
+        bind_action_event_system!(
+            app,
+            CameraHomeShortcut,
+            CameraHomeEvent,
+            camera_home_command
+        );
+        bind_action_event_system!(
+            app,
+            BoundaryBoxSwitch,
+            ToggleFitTargetDebugEvent,
+            toggle_fit_target_debug_command
+        );
+        Switches::bind_switch::<FocusConfigInspectorSwitch>(app, Switch::InspectFocusConfig);
+        Switches::bind_switch::<ShowFocusSwitch>(app, Switch::ShowFocus);
+        app.add_systems(
+            Update,
+            apply_focus_config.run_if(resource_changed::<FocusConfig>),
+        )
+        .add_systems(Update, update_focus_gizmo_state)
+        .add_systems(
+            Update,
+            (
+                draw_camera_focus_gizmo.run_if(switches::is_switch_on(Switch::ShowFocus)),
+                cleanup_focus_labels.run_if(switches::is_switch_off(Switch::ShowFocus)),
+            ),
+        );
     }
-}
-
-/// System that triggers zoom-to-fit when the user presses the zoom action.
-/// Zooms to the selected entity if one exists, otherwise to the `BoundaryVolume`.
-fn on_zoom_to_fit_input(
-    _trigger: On<input_events::Start<ZoomToFitShortcut>>,
-    mut commands: Commands,
-) {
-    // Input adapter only: command behavior is owned by the app command event observer,
-    // which is also triggerable through BRP `world.trigger_event`.
-    commands.trigger(ZoomToFitEvent);
-}
-
-fn on_zoom_to_fit_event(_trigger: On<ZoomToFitEvent>, mut commands: Commands) {
-    commands.run_system_cached(zoom_to_fit_command);
 }
 
 /// Reusable on-demand command for zoom-to-fit.
@@ -180,17 +159,6 @@ fn set_fit_target_debug(
     commands.trigger(SetFitTarget::new(camera_entity, boundary_entity));
 }
 
-fn on_camera_home_input(
-    _trigger: On<input_events::Start<CameraHomeShortcut>>,
-    mut commands: Commands,
-) {
-    commands.trigger(CameraHomeEvent);
-}
-
-fn on_camera_home_event(_trigger: On<CameraHomeEvent>, mut commands: Commands) {
-    commands.run_system_cached(camera_home_command);
-}
-
 /// Reusable on-demand command for camera "home" animation.
 fn camera_home_command(
     mut commands: Commands,
@@ -212,20 +180,6 @@ fn camera_home_command(
             .duration(Duration::from_millis(HOME_ANIMATION_DURATION_MS))
             .easing(EaseFunction::QuadraticOut),
     );
-}
-
-fn on_toggle_fit_target_debug_input(
-    _trigger: On<input_events::Start<BoundaryBoxToggle>>,
-    mut commands: Commands,
-) {
-    commands.trigger(ToggleFitTargetDebugEvent);
-}
-
-fn on_toggle_fit_target_debug_event(
-    _trigger: On<ToggleFitTargetDebugEvent>,
-    mut commands: Commands,
-) {
-    commands.run_system_cached(toggle_fit_target_debug_command);
 }
 
 /// Reusable on-demand command for toggling fit-target visualization.
@@ -320,18 +274,4 @@ fn cleanup_focus_labels(
     for entity in &label_query {
         commands.entity(entity).despawn();
     }
-}
-
-fn on_toggle_focus_config_inspector_input(
-    _trigger: On<input_events::Start<FocusConfigInspectorToggle>>,
-    mut switches: ResMut<Switches>,
-) {
-    switches.toggle_switch(Switch::InspectFocusConfig);
-}
-
-fn on_toggle_show_focus_input(
-    _trigger: On<input_events::Start<ShowFocusToggle>>,
-    mut switches: ResMut<Switches>,
-) {
-    switches.toggle_switch(Switch::ShowFocus);
 }

@@ -3,15 +3,14 @@ use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::VisibilitySystems;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
-use bevy_enhanced_input::action::events as input_events;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use super::actor_config::ColliderType;
 use crate::camera::RenderLayer;
-use crate::input::AabbConfigInspectorToggle;
-use crate::input::AabbsToggle;
+use crate::input::AabbConfigInspectorSwitch;
+use crate::input::AabbsSwitch;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
@@ -26,8 +25,6 @@ impl Plugin for AabbPlugin {
                 ResourceInspectorPlugin::<AabbConfig>::default()
                     .run_if(switches::is_switch_on(Switch::InspectAabbConfig)),
             )
-            .add_observer(on_toggle_aabb_config_inspector_input)
-            .add_observer(on_toggle_aabbs_input)
             .add_systems(
                 Update,
                 apply_aabb_config.run_if(resource_changed::<AabbConfig>),
@@ -40,6 +37,8 @@ impl Plugin for AabbPlugin {
                 PostUpdate,
                 compute_actor_aabb.after(VisibilitySystems::CalculateBounds),
             );
+        Switches::bind_switch::<AabbConfigInspectorSwitch>(app, Switch::InspectAabbConfig);
+        Switches::bind_switch::<AabbsSwitch>(app, Switch::ShowAabbs);
     }
 }
 
@@ -167,18 +166,4 @@ fn aabb_corners(aabb: &Aabb) -> [Vec3; 8] {
         Vec3::new(min.x, max.y, max.z),
         Vec3::new(max.x, max.y, max.z),
     ]
-}
-
-fn on_toggle_aabb_config_inspector_input(
-    _trigger: On<input_events::Start<AabbConfigInspectorToggle>>,
-    mut switches: ResMut<Switches>,
-) {
-    switches.toggle_switch(Switch::InspectAabbConfig);
-}
-
-fn on_toggle_aabbs_input(
-    _trigger: On<input_events::Start<AabbsToggle>>,
-    mut switches: ResMut<Switches>,
-) {
-    switches.toggle_switch(Switch::ShowAabbs);
 }

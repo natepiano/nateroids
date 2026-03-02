@@ -127,10 +127,7 @@ fn initialize_transform(
     )
 }
 
-fn on_fire_input(
-    _trigger: On<input_events::Start<ShipFire>>,
-    mut commands: Commands,
-) {
+fn on_fire_input(_trigger: On<input_events::Start<ShipFire>>, mut commands: Commands) {
     commands.run_system_cached(fire_missile_command);
 }
 
