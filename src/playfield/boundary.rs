@@ -28,7 +28,7 @@ use super::types::Intersection;
 use super::types::MultiFaceGeometry;
 use super::types::PortalGeometry;
 use crate::camera::RenderLayer;
-use crate::input::BoundaryInspectorSwitch;
+use crate::input::InspectBoundarySwitch;
 use crate::orientation::CameraOrientation;
 use crate::splash::SplashText;
 use crate::state::GameState;
@@ -67,7 +67,7 @@ impl Plugin for BoundaryPlugin {
             .add_observer(start_boundary_fade);
         bind_action_switch!(
             app,
-            BoundaryInspectorSwitch,
+            InspectBoundarySwitch,
             BoundaryInspectorEvent,
             Switch::InspectBoundary
         );
@@ -525,25 +525,49 @@ impl Boundary {
         // otherwise the edge runs along that axis, so use position's coordinate.
 
         let x = if normal1.x != 0.0 {
-            if normal1.x > 0.0 { max.x } else { min.x }
+            if normal1.x > 0.0 {
+                max.x
+            } else {
+                min.x
+            }
         } else if normal2.x != 0.0 {
-            if normal2.x > 0.0 { max.x } else { min.x }
+            if normal2.x > 0.0 {
+                max.x
+            } else {
+                min.x
+            }
         } else {
             position.x // Edge runs along X axis
         };
 
         let y = if normal1.y != 0.0 {
-            if normal1.y > 0.0 { max.y } else { min.y }
+            if normal1.y > 0.0 {
+                max.y
+            } else {
+                min.y
+            }
         } else if normal2.y != 0.0 {
-            if normal2.y > 0.0 { max.y } else { min.y }
+            if normal2.y > 0.0 {
+                max.y
+            } else {
+                min.y
+            }
         } else {
             position.y // Edge runs along Y axis
         };
 
         let z = if normal1.z != 0.0 {
-            if normal1.z > 0.0 { max.z } else { min.z }
+            if normal1.z > 0.0 {
+                max.z
+            } else {
+                min.z
+            }
         } else if normal2.z != 0.0 {
-            if normal2.z > 0.0 { max.z } else { min.z }
+            if normal2.z > 0.0 {
+                max.z
+            } else {
+                min.z
+            }
         } else {
             position.z // Edge runs along Z axis
         };

@@ -7,7 +7,7 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use crate::camera::RenderLayer;
-use crate::input::LightsInspectorSwitch;
+use crate::input::InspectLightsSwitch;
 use crate::orientation::CameraOrientation;
 use crate::switches;
 use crate::switches::Switch;
@@ -28,7 +28,7 @@ impl Plugin for DirectionalLightsPlugin {
             .add_systems(Update, manage_lighting);
         bind_action_switch!(
             app,
-            LightsInspectorSwitch,
+            InspectLightsSwitch,
             LightsInspectorEvent,
             Switch::InspectLights
         );

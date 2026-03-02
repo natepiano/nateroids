@@ -10,7 +10,7 @@ use super::constants::PLANE_REFLECTANCE;
 use super::constants::PLANE_ROTATION_ANGLE;
 use super::constants::PLANE_THICKNESS;
 use crate::camera::RenderLayer;
-use crate::input::PlanesInspectorSwitch;
+use crate::input::InspectPlanesSwitch;
 use crate::orientation::CameraOrientation;
 use crate::orientation::OrientationConfig;
 use crate::playfield::BoundaryVolume;
@@ -33,7 +33,7 @@ impl Plugin for PlanesPlugin {
             );
         bind_action_switch!(
             app,
-            PlanesInspectorSwitch,
+            InspectPlanesSwitch,
             PlanesInspectorEvent,
             Switch::InspectPlanes
         );

@@ -1,7 +1,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use bevy_enhanced_input::action::TriggerState;
 use bevy_enhanced_input::action::events as input_events;
+use bevy_enhanced_input::action::TriggerState;
 use bevy_enhanced_input::prelude::Action;
 use bevy_enhanced_input::prelude::ActionOf;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
@@ -12,12 +12,12 @@ use bevy_panorbit_camera::PanOrbitCamera;
 use super::actor_template::SpaceshipConfig;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
+use crate::input::InspectSpaceshipControlSwitch;
 use crate::input::ShipAccelerate;
 use crate::input::ShipContinuousFire;
 use crate::input::ShipControlsContext;
 use crate::input::ShipTurnLeft;
 use crate::input::ShipTurnRight;
-use crate::input::SpaceshipControlInspectorSwitch;
 use crate::orientation::CameraOrientation;
 use crate::orientation::OrientationType;
 use crate::schedule::InGameSet;
@@ -43,7 +43,7 @@ impl Plugin for SpaceshipControlPlugin {
         );
         bind_action_switch!(
             app,
-            SpaceshipControlInspectorSwitch,
+            InspectSpaceshipControlSwitch,
             SpaceshipControlInspectorEvent,
             Switch::InspectSpaceshipControl
         );

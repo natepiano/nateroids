@@ -14,7 +14,7 @@ use super::constants::SELECTION_OUTLINE_WIDTH;
 use super::zoom::ZoomTarget;
 use crate::actor::Nateroid;
 use crate::actor::Spaceship;
-use crate::input::OutlineInspectorSwitch;
+use crate::input::InspectOutlineSwitch;
 use crate::playfield::BoundaryVolume;
 use crate::switches;
 use crate::switches::Switch;
@@ -64,7 +64,7 @@ impl Plugin for SelectionPlugin {
             .add_systems(Update, sync_outline_config);
         bind_action_switch!(
             app,
-            OutlineInspectorSwitch,
+            InspectOutlineSwitch,
             OutlineInspectorEvent,
             Switch::InspectOutline
         );

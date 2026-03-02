@@ -15,9 +15,9 @@ use super::spaceship::Spaceship;
 use crate::asset_loader::AssetsState;
 use crate::asset_loader::SceneAssets;
 use crate::camera::RenderLayer;
-use crate::input::MissileInspectorSwitch;
-use crate::input::NateroidInspectorSwitch;
-use crate::input::SpaceshipInspectorSwitch;
+use crate::input::InspectMissileSwitch;
+use crate::input::InspectNateroidSwitch;
+use crate::input::InspectSpaceshipSwitch;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
@@ -52,19 +52,19 @@ impl Plugin for ActorConfigPlugin {
             );
         bind_action_switch!(
             app,
-            MissileInspectorSwitch,
+            InspectMissileSwitch,
             MissileInspectorEvent,
             Switch::InspectMissile
         );
         bind_action_switch!(
             app,
-            NateroidInspectorSwitch,
+            InspectNateroidSwitch,
             NateroidInspectorEvent,
             Switch::InspectNateroid
         );
         bind_action_switch!(
             app,
-            SpaceshipInspectorSwitch,
+            InspectSpaceshipSwitch,
             SpaceshipInspectorEvent,
             Switch::InspectSpaceship
         );

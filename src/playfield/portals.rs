@@ -28,7 +28,7 @@ use crate::actor::Deaderoid;
 use crate::actor::Teleporter;
 use crate::actor::aabb_max_dimension;
 use crate::camera::RenderLayer;
-use crate::input::PortalInspectorSwitch;
+use crate::input::InspectPortalSwitch;
 use crate::orientation::CameraOrientation;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
@@ -65,7 +65,7 @@ impl Plugin for PortalPlugin {
             );
         bind_action_switch!(
             app,
-            PortalInspectorSwitch,
+            InspectPortalSwitch,
             PortalInspectorEvent,
             Switch::InspectPortals
         );

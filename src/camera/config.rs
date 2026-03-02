@@ -9,16 +9,16 @@ use super::constants::CAMERA_SPLASH_START_FOCUS;
 use super::constants::CAMERA_SPLASH_START_PITCH;
 use super::constants::CAMERA_SPLASH_START_RADIUS;
 use super::constants::CAMERA_SPLASH_START_YAW;
-use crate::input::CameraConfigInspectorSwitch;
-use crate::input::StarConfigInspectorSwitch;
-use crate::input::ZoomConfigInspectorSwitch;
+use crate::input::InspectCameraConfigSwitch;
+use crate::input::InspectStarConfigSwitch;
+use crate::input::InspectZoomConfigSwitch;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
 
-event!(CameraConfigInspectorEvent);
-event!(StarConfigInspectorEvent);
-event!(ZoomConfigInspectorEvent);
+event!(InspectCameraConfigEvent);
+event!(InspectStarConfigEvent);
+event!(InspectZoomConfigEvent);
 
 pub struct CameraConfigPlugin;
 
@@ -41,20 +41,20 @@ impl Plugin for CameraConfigPlugin {
         .init_resource::<ZoomConfig>();
         bind_action_switch!(
             app,
-            CameraConfigInspectorSwitch,
-            CameraConfigInspectorEvent,
+            InspectCameraConfigSwitch,
+            InspectCameraConfigEvent,
             Switch::InspectCameraConfig
         );
         bind_action_switch!(
             app,
-            StarConfigInspectorSwitch,
-            StarConfigInspectorEvent,
+            InspectStarConfigSwitch,
+            InspectStarConfigEvent,
             Switch::InspectStarConfig
         );
         bind_action_switch!(
             app,
-            ZoomConfigInspectorSwitch,
-            ZoomConfigInspectorEvent,
+            InspectZoomConfigSwitch,
+            InspectZoomConfigEvent,
             Switch::InspectZoomConfig
         );
     }

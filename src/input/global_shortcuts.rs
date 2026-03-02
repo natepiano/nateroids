@@ -6,27 +6,27 @@ use super::bei_extras::ActionSpawnerExt;
 #[derive(Component)]
 pub struct GlobalShortcutsContext;
 
-action!(AabbConfigInspectorSwitch);
 action!(AabbsSwitch);
-action!(BoundaryInspectorSwitch);
-action!(CameraConfigInspectorSwitch);
-action!(FocusConfigInspectorSwitch);
-action!(LightsInspectorSwitch);
-action!(MissileInspectorSwitch);
-action!(NateroidInspectorSwitch);
-action!(OutlineInspectorSwitch);
-action!(PhysicsAabbSwitch);
-action!(PlanesInspectorSwitch);
-action!(PortalInspectorSwitch);
-action!(ShowFocusSwitch);
-action!(SpaceshipControlInspectorSwitch);
-action!(SpaceshipInspectorSwitch);
-action!(StarConfigInspectorSwitch);
-action!(ZoomConfigInspectorSwitch);
-
 action!(BoundaryBoxSwitch);
+action!(InspectAabbConfigSwitch);
+action!(InspectBoundarySwitch);
+action!(InspectCameraConfigSwitch);
+action!(InspectFocusConfigSwitch);
+action!(InspectLightsSwitch);
+action!(InspectMissileSwitch);
+action!(InspectNateroidSwitch);
+action!(InspectOutlineSwitch);
+action!(InspectPlanesSwitch);
+action!(InspectPortalSwitch);
+action!(InspectSpaceshipControlSwitch);
+action!(InspectSpaceshipSwitch);
+action!(InspectStarConfigSwitch);
+action!(InspectZoomConfigSwitch);
+action!(PauseSwitch);
+action!(PhysicsAabbSwitch);
+action!(ShowFocusSwitch);
+
 action!(CameraHome);
-action!(PauseToggle);
 action!(RestartGameShortcut);
 action!(RestartWithSplashShortcut);
 action!(ZoomToFitShortcut);
@@ -40,28 +40,28 @@ fn spawn_main_shortcuts(
     context.spawn_key::<BoundaryBoxSwitch>(settings, KeyCode::KeyB);
     context.spawn_key::<CameraHome>(settings, KeyCode::F12);
     context.spawn_key::<ZoomToFitShortcut>(settings, KeyCode::KeyZ);
-    context.spawn_key::<PauseToggle>(settings, KeyCode::Escape);
+    context.spawn_key::<PauseSwitch>(settings, KeyCode::Escape);
 }
 
 fn spawn_inspector_shortcuts(
     context: &mut ActionSpawner<GlobalShortcutsContext>,
     settings: ActionSettings,
 ) {
-    context.spawn_shift_key::<AabbConfigInspectorSwitch>(settings, KeyCode::KeyA);
-    context.spawn_shift_key::<BoundaryInspectorSwitch>(settings, KeyCode::KeyB);
-    context.spawn_shift_key::<CameraConfigInspectorSwitch>(settings, KeyCode::KeyC);
-    context.spawn_shift_key::<FocusConfigInspectorSwitch>(settings, KeyCode::Digit5);
-    context.spawn_shift_key::<LightsInspectorSwitch>(settings, KeyCode::KeyL);
-    context.spawn_shift_key::<MissileInspectorSwitch>(settings, KeyCode::Digit1);
-    context.spawn_shift_key::<NateroidInspectorSwitch>(settings, KeyCode::Digit2);
-    context.spawn_shift_key::<OutlineInspectorSwitch>(settings, KeyCode::KeyO);
-    context.spawn_shift_key::<PlanesInspectorSwitch>(settings, KeyCode::KeyP);
-    context.spawn_shift_key::<PortalInspectorSwitch>(settings, KeyCode::KeyG);
+    context.spawn_shift_key::<InspectAabbConfigSwitch>(settings, KeyCode::KeyA);
+    context.spawn_shift_key::<InspectBoundarySwitch>(settings, KeyCode::KeyB);
+    context.spawn_shift_key::<InspectCameraConfigSwitch>(settings, KeyCode::KeyC);
+    context.spawn_shift_key::<InspectFocusConfigSwitch>(settings, KeyCode::Digit5);
+    context.spawn_shift_key::<InspectLightsSwitch>(settings, KeyCode::KeyL);
+    context.spawn_shift_key::<InspectMissileSwitch>(settings, KeyCode::Digit1);
+    context.spawn_shift_key::<InspectNateroidSwitch>(settings, KeyCode::Digit2);
+    context.spawn_shift_key::<InspectOutlineSwitch>(settings, KeyCode::KeyO);
+    context.spawn_shift_key::<InspectPlanesSwitch>(settings, KeyCode::KeyP);
+    context.spawn_shift_key::<InspectPortalSwitch>(settings, KeyCode::KeyG);
     context.spawn_shift_key::<ShowFocusSwitch>(settings, KeyCode::KeyF);
-    context.spawn_shift_key::<SpaceshipInspectorSwitch>(settings, KeyCode::Digit3);
-    context.spawn_shift_key::<SpaceshipControlInspectorSwitch>(settings, KeyCode::Digit4);
-    context.spawn_shift_key::<StarConfigInspectorSwitch>(settings, KeyCode::KeyS);
-    context.spawn_shift_key::<ZoomConfigInspectorSwitch>(settings, KeyCode::KeyZ);
+    context.spawn_shift_key::<InspectSpaceshipSwitch>(settings, KeyCode::Digit3);
+    context.spawn_shift_key::<InspectSpaceshipControlSwitch>(settings, KeyCode::Digit4);
+    context.spawn_shift_key::<InspectStarConfigSwitch>(settings, KeyCode::KeyS);
+    context.spawn_shift_key::<InspectZoomConfigSwitch>(settings, KeyCode::KeyZ);
 }
 
 fn spawn_restart_shortcuts(
