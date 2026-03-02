@@ -19,6 +19,8 @@ use crate::switches::Switch;
 use crate::switches::Switches;
 use crate::traits::TransformExt;
 
+event!(PlanesInspectorEvent);
+
 pub struct PlanesPlugin;
 
 impl Plugin for PlanesPlugin {
@@ -29,7 +31,12 @@ impl Plugin for PlanesPlugin {
                 ResourceInspectorPlugin::<PlaneConfig>::default()
                     .run_if(switches::is_switch_on(Switch::InspectPlanes)),
             );
-        Switches::bind_switch::<PlanesInspectorSwitch>(app, Switch::InspectPlanes);
+        bind_action_switch!(
+            app,
+            PlanesInspectorSwitch,
+            PlanesInspectorEvent,
+            Switch::InspectPlanes
+        );
     }
 }
 

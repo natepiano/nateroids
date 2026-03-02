@@ -22,6 +22,10 @@ use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
 
+event!(MissileInspectorEvent);
+event!(NateroidInspectorEvent);
+event!(SpaceshipInspectorEvent);
+
 // Spaceship model orientation correction: rotates the model so nose points +Y
 // Shared between initial spawn and runtime 2D enforcement
 pub const GLTF_ROTATION_X: f32 = std::f32::consts::FRAC_PI_2; // +90°
@@ -46,9 +50,24 @@ impl Plugin for ActorConfigPlugin {
                 ResourceInspectorPlugin::<SpaceshipConfig>::default()
                     .run_if(switches::is_switch_on(Switch::InspectSpaceship)),
             );
-        Switches::bind_switch::<MissileInspectorSwitch>(app, Switch::InspectMissile);
-        Switches::bind_switch::<NateroidInspectorSwitch>(app, Switch::InspectNateroid);
-        Switches::bind_switch::<SpaceshipInspectorSwitch>(app, Switch::InspectSpaceship);
+        bind_action_switch!(
+            app,
+            MissileInspectorSwitch,
+            MissileInspectorEvent,
+            Switch::InspectMissile
+        );
+        bind_action_switch!(
+            app,
+            NateroidInspectorSwitch,
+            NateroidInspectorEvent,
+            Switch::InspectNateroid
+        );
+        bind_action_switch!(
+            app,
+            SpaceshipInspectorSwitch,
+            SpaceshipInspectorEvent,
+            Switch::InspectSpaceship
+        );
     }
 }
 

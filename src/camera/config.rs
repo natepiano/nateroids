@@ -16,6 +16,10 @@ use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
 
+event!(CameraConfigInspectorEvent);
+event!(StarConfigInspectorEvent);
+event!(ZoomConfigInspectorEvent);
+
 pub struct CameraConfigPlugin;
 
 impl Plugin for CameraConfigPlugin {
@@ -35,9 +39,24 @@ impl Plugin for CameraConfigPlugin {
         .init_resource::<CameraConfig>()
         .init_resource::<StarConfig>()
         .init_resource::<ZoomConfig>();
-        Switches::bind_switch::<CameraConfigInspectorSwitch>(app, Switch::InspectCameraConfig);
-        Switches::bind_switch::<StarConfigInspectorSwitch>(app, Switch::InspectStarConfig);
-        Switches::bind_switch::<ZoomConfigInspectorSwitch>(app, Switch::InspectZoomConfig);
+        bind_action_switch!(
+            app,
+            CameraConfigInspectorSwitch,
+            CameraConfigInspectorEvent,
+            Switch::InspectCameraConfig
+        );
+        bind_action_switch!(
+            app,
+            StarConfigInspectorSwitch,
+            StarConfigInspectorEvent,
+            Switch::InspectStarConfig
+        );
+        bind_action_switch!(
+            app,
+            ZoomConfigInspectorSwitch,
+            ZoomConfigInspectorEvent,
+            Switch::InspectZoomConfig
+        );
     }
 }
 

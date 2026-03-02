@@ -39,6 +39,8 @@ use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
 
+event!(PortalInspectorEvent);
+
 pub struct PortalPlugin;
 
 impl Plugin for PortalPlugin {
@@ -61,7 +63,12 @@ impl Plugin for PortalPlugin {
                 )
                     .chain(),
             );
-        Switches::bind_switch::<PortalInspectorSwitch>(app, Switch::InspectPortals);
+        bind_action_switch!(
+            app,
+            PortalInspectorSwitch,
+            PortalInspectorEvent,
+            Switch::InspectPortals
+        );
     }
 }
 

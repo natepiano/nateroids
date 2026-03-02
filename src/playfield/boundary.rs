@@ -28,13 +28,15 @@ use super::types::Intersection;
 use super::types::MultiFaceGeometry;
 use super::types::PortalGeometry;
 use crate::camera::RenderLayer;
-use crate::input::BoundaryInspectorToggle;
+use crate::input::BoundaryInspectorSwitch;
 use crate::orientation::CameraOrientation;
 use crate::splash::SplashText;
 use crate::state::GameState;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
+
+event!(BoundaryInspectorEvent);
 
 /// Marker component for the boundary volume entity.
 /// Holds a hidden unit-cube mesh so zoom-to-fit can extract vertices.
@@ -63,7 +65,12 @@ impl Plugin for BoundaryPlugin {
             )
             .add_systems(Update, fade_boundary_in)
             .add_observer(start_boundary_fade);
-        Switches::bind_switch::<BoundaryInspectorToggle>(app, Switch::InspectBoundary);
+        bind_action_switch!(
+            app,
+            BoundaryInspectorSwitch,
+            BoundaryInspectorEvent,
+            Switch::InspectBoundary
+        );
     }
 }
 

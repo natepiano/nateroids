@@ -2,26 +2,27 @@ use avian3d::prelude::*;
 use bevy::dev_tools::states::*;
 use bevy::prelude::*;
 
-use crate::input::PauseEvent;
 use crate::input::PauseToggle;
-use crate::input::RestartGameEvent;
 use crate::input::RestartGameShortcut;
-use crate::input::RestartWithSplashEvent;
 use crate::input::RestartWithSplashShortcut;
+
+event!(PauseEvent);
+event!(RestartGameEvent);
+event!(RestartWithSplashEvent);
 
 pub struct StatePlugin;
 
 impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>().add_sub_state::<PauseState>();
-        bind_action_event_system!(app, PauseToggle, PauseEvent, pause_command);
-        bind_action_event_system!(
+        bind_action_system!(app, PauseToggle, PauseEvent, pause_command);
+        bind_action_system!(
             app,
             RestartGameShortcut,
             RestartGameEvent,
             restart_game_command
         );
-        bind_action_event_system!(
+        bind_action_system!(
             app,
             RestartWithSplashShortcut,
             RestartWithSplashEvent,

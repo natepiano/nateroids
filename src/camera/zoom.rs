@@ -23,16 +23,19 @@ pub struct ZoomTarget(pub Option<Entity>);
 use crate::camera::RenderLayer;
 use crate::input::BoundaryBoxSwitch;
 use crate::input::CameraHome as CameraHomeShortcut;
-use crate::input::CameraHomeEvent;
 use crate::input::FocusConfigInspectorSwitch;
 use crate::input::ShowFocusSwitch;
-use crate::input::ToggleFitTargetDebugEvent;
-use crate::input::ZoomToFitEvent;
 use crate::input::ZoomToFitShortcut;
 use crate::playfield::BoundaryVolume;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
+
+event!(CameraHomeEvent);
+event!(FocusConfigInspectorEvent);
+event!(ShowFocusEvent);
+event!(ToggleFitTargetDebugEvent);
+event!(ZoomToFitEvent);
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
 struct FocusGizmo {}
@@ -82,21 +85,26 @@ impl Plugin for ZoomPlugin {
                     .run_if(switches::is_switch_on(Switch::InspectFocusConfig)),
             )
             .add_systems(Startup, set_fit_target_debug);
-        bind_action_event_system!(app, ZoomToFitShortcut, ZoomToFitEvent, zoom_to_fit_command);
-        bind_action_event_system!(
+        bind_action_system!(app, ZoomToFitShortcut, ZoomToFitEvent, zoom_to_fit_command);
+        bind_action_system!(
             app,
             CameraHomeShortcut,
             CameraHomeEvent,
             camera_home_command
         );
-        bind_action_event_system!(
+        bind_action_system!(
             app,
             BoundaryBoxSwitch,
             ToggleFitTargetDebugEvent,
             toggle_fit_target_debug_command
         );
-        Switches::bind_switch::<FocusConfigInspectorSwitch>(app, Switch::InspectFocusConfig);
-        Switches::bind_switch::<ShowFocusSwitch>(app, Switch::ShowFocus);
+        bind_action_switch!(
+            app,
+            FocusConfigInspectorSwitch,
+            FocusConfigInspectorEvent,
+            Switch::InspectFocusConfig
+        );
+        bind_action_switch!(app, ShowFocusSwitch, ShowFocusEvent, Switch::ShowFocus);
         app.add_systems(
             Update,
             apply_focus_config.run_if(resource_changed::<FocusConfig>),

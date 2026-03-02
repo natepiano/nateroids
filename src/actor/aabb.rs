@@ -16,6 +16,9 @@ use crate::switches::Switch;
 use crate::switches::Switches;
 use crate::traits::TransformExt;
 
+event!(AabbConfigInspectorEvent);
+event!(AabbsEvent);
+
 pub struct AabbPlugin;
 impl Plugin for AabbPlugin {
     fn build(&self, app: &mut App) {
@@ -37,8 +40,13 @@ impl Plugin for AabbPlugin {
                 PostUpdate,
                 compute_actor_aabb.after(VisibilitySystems::CalculateBounds),
             );
-        Switches::bind_switch::<AabbConfigInspectorSwitch>(app, Switch::InspectAabbConfig);
-        Switches::bind_switch::<AabbsSwitch>(app, Switch::ShowAabbs);
+        bind_action_switch!(
+            app,
+            AabbConfigInspectorSwitch,
+            AabbConfigInspectorEvent,
+            Switch::InspectAabbConfig
+        );
+        bind_action_switch!(app, AabbsSwitch, AabbsEvent, Switch::ShowAabbs);
     }
 }
 

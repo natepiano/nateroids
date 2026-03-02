@@ -13,6 +13,8 @@ use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
 
+event!(LightsInspectorEvent);
+
 pub struct DirectionalLightsPlugin;
 
 impl Plugin for DirectionalLightsPlugin {
@@ -24,7 +26,12 @@ impl Plugin for DirectionalLightsPlugin {
             )
             .init_resource::<LightConfig>()
             .add_systems(Update, manage_lighting);
-        Switches::bind_switch::<LightsInspectorSwitch>(app, Switch::InspectLights);
+        bind_action_switch!(
+            app,
+            LightsInspectorSwitch,
+            LightsInspectorEvent,
+            Switch::InspectLights
+        );
     }
 }
 

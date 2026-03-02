@@ -19,6 +19,7 @@ pub use config::CameraConfig;
 pub use constants::ZOOM_MARGIN;
 pub use support::CameraOrder;
 pub use support::RenderLayer;
+pub use zoom::CameraHomeEvent;
 
 pub struct CameraPlugin;
 

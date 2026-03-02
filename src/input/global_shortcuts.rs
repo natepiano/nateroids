@@ -8,7 +8,7 @@ pub struct GlobalShortcutsContext;
 
 action!(AabbConfigInspectorSwitch);
 action!(AabbsSwitch);
-action!(BoundaryInspectorToggle);
+action!(BoundaryInspectorSwitch);
 action!(CameraConfigInspectorSwitch);
 action!(FocusConfigInspectorSwitch);
 action!(LightsInspectorSwitch);
@@ -24,12 +24,12 @@ action!(SpaceshipInspectorSwitch);
 action!(StarConfigInspectorSwitch);
 action!(ZoomConfigInspectorSwitch);
 
-action_event!(BoundaryBoxSwitch, ToggleFitTargetDebugEvent);
-action_event!(CameraHome, CameraHomeEvent);
-action_event!(PauseToggle, PauseEvent);
-action_event!(RestartGameShortcut, RestartGameEvent);
-action_event!(RestartWithSplashShortcut, RestartWithSplashEvent);
-action_event!(ZoomToFitShortcut, ZoomToFitEvent);
+action!(BoundaryBoxSwitch);
+action!(CameraHome);
+action!(PauseToggle);
+action!(RestartGameShortcut);
+action!(RestartWithSplashShortcut);
+action!(ZoomToFitShortcut);
 
 fn spawn_main_shortcuts(
     context: &mut ActionSpawner<GlobalShortcutsContext>,
@@ -48,7 +48,7 @@ fn spawn_inspector_shortcuts(
     settings: ActionSettings,
 ) {
     context.spawn_shift_key::<AabbConfigInspectorSwitch>(settings, KeyCode::KeyA);
-    context.spawn_shift_key::<BoundaryInspectorToggle>(settings, KeyCode::KeyB);
+    context.spawn_shift_key::<BoundaryInspectorSwitch>(settings, KeyCode::KeyB);
     context.spawn_shift_key::<CameraConfigInspectorSwitch>(settings, KeyCode::KeyC);
     context.spawn_shift_key::<FocusConfigInspectorSwitch>(settings, KeyCode::Digit5);
     context.spawn_shift_key::<LightsInspectorSwitch>(settings, KeyCode::KeyL);

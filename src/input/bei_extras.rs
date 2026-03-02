@@ -21,26 +21,20 @@ macro_rules! action {
     };
 }
 
-/// Generates a BEI `InputAction` struct and a paired Bevy `Event` struct.
+/// Generates a Bevy `Event` struct for BRP-triggerable events.
 ///
 /// ```rust
-/// action_event!(PauseToggle, PauseEvent);
+/// event!(PauseEvent);
 /// ```
 ///
 /// Expands to:
 /// ```rust
-/// #[derive(InputAction)]
-/// #[action_output(bool)]
-/// pub struct PauseToggle;
-///
 /// #[derive(Event, Reflect, Default)]
 /// #[reflect(Event)]
 /// pub struct PauseEvent;
 /// ```
-macro_rules! action_event {
-    ($action:ident, $event:ident) => {
-        action!($action);
-
+macro_rules! event {
+    ($event:ident) => {
         #[derive(Event, Reflect, Default)]
         #[reflect(Event)]
         pub struct $event;
@@ -59,14 +53,14 @@ macro_rules! action_event {
 /// Protocol's `world.trigger_event`), with both paths calling the same
 /// `run_system_cached` command.
 ///
-/// Use with `action_event!` to generate the paired action and event structs.
+/// Use with `action!` and `event!` to generate the action and event structs.
 ///
 /// Requires `bevy::prelude::*` in scope at the call site.
 ///
 /// ```rust
-/// bind_action_event_system!(app, PauseToggle, PauseEvent, pause_command);
+/// bind_action_system!(app, PauseToggle, PauseEvent, pause_command);
 /// ```
-macro_rules! bind_action_event_system {
+macro_rules! bind_action_system {
     ($app:expr, $action:ty, $event:ty, $command:path) => {
         $app.add_observer(
             |_: On<bevy_enhanced_input::action::events::Start<$action>>, mut commands: Commands| {

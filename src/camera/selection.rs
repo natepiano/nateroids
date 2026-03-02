@@ -20,6 +20,8 @@ use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
 
+event!(OutlineInspectorEvent);
+
 /// Marker component added to the selected actor entity
 #[derive(Component)]
 pub struct Selected;
@@ -60,7 +62,12 @@ impl Plugin for SelectionPlugin {
             .add_observer(on_selected_removed)
             .add_systems(Update, clear_selection_on_background_click)
             .add_systems(Update, sync_outline_config);
-        Switches::bind_switch::<OutlineInspectorSwitch>(app, Switch::InspectOutline);
+        bind_action_switch!(
+            app,
+            OutlineInspectorSwitch,
+            OutlineInspectorEvent,
+            Switch::InspectOutline
+        );
     }
 }
 

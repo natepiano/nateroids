@@ -25,6 +25,8 @@ use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
 
+event!(SpaceshipControlInspectorEvent);
+
 pub struct SpaceshipControlPlugin;
 
 impl Plugin for SpaceshipControlPlugin {
@@ -39,9 +41,11 @@ impl Plugin for SpaceshipControlPlugin {
             Update,
             spaceship_movement_controls.in_set(InGameSet::UserInput),
         );
-        Switches::bind_switch::<SpaceshipControlInspectorSwitch>(
+        bind_action_switch!(
             app,
-            Switch::InspectSpaceshipControl,
+            SpaceshipControlInspectorSwitch,
+            SpaceshipControlInspectorEvent,
+            Switch::InspectSpaceshipControl
         );
     }
 }

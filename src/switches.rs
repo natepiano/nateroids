@@ -1,8 +1,34 @@
 use std::collections::HashMap;
 
 use bevy::prelude::*;
-use bevy_enhanced_input::action::events as input_events;
-use bevy_enhanced_input::prelude::InputAction;
+
+/// Wires an input action to a switch toggle through an intermediate event.
+///
+/// Registers two observers:
+/// 1. `On<Start<Action>>` → triggers `Event`
+/// 2. `On<Event>` → toggles the switch
+///
+/// The intermediate event decouples the keyboard input from the switch toggle,
+/// making switches BRP-triggerable via `world.trigger_event`.
+///
+/// Use with `action!` and `event!` to generate the action and event structs.
+///
+/// ```rust
+/// bind_action_switch!(app, MySwitch, MySwitchEvent, Switch::MySwitch);
+/// ```
+macro_rules! bind_action_switch {
+    ($app:expr, $action:ty, $event:ty, $switch:expr) => {
+        $app.add_observer(
+            |_: On<bevy_enhanced_input::action::events::Start<$action>>, mut commands: Commands| {
+                commands.trigger(<$event>::default());
+            },
+        );
+        let switch = $switch;
+        $app.add_observer(move |_: On<$event>, mut switches: ResMut<Switches>| {
+            switches.toggle_switch(switch);
+        });
+    };
+}
 
 pub struct SwitchesPlugin;
 
@@ -83,15 +109,6 @@ impl Switches {
     pub fn toggle_switch(&mut self, switch: Switch) { self.toggle(switch); }
 
     pub fn is_switch_on(&self, switch: Switch) -> bool { self.is_on(switch) }
-
-    /// Registers an observer that toggles `switch` when `Start<A>` fires.
-    pub fn bind_switch<A: InputAction>(app: &mut App, switch: Switch) {
-        app.add_observer(
-            move |_: On<input_events::Start<A>>, mut switches: ResMut<Self>| {
-                switches.toggle_switch(switch);
-            },
-        );
-    }
 }
 
 #[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash)]

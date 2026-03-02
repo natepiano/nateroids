@@ -11,6 +11,8 @@ use crate::switches::Switch;
 use crate::switches::Switches;
 use crate::traits::UsizeExt;
 
+event!(PhysicsAabbEvent);
+
 pub struct PhysicsPlugin;
 
 impl Plugin for PhysicsPlugin {
@@ -25,7 +27,12 @@ impl Plugin for PhysicsPlugin {
                 sync_physics_debug_gizmos.run_if(resource_changed::<Switches>),
             )
             .add_systems(FixedUpdate, monitor_physics_health);
-        Switches::bind_switch::<PhysicsAabbSwitch>(app, Switch::ShowPhysicsDebug);
+        bind_action_switch!(
+            app,
+            PhysicsAabbSwitch,
+            PhysicsAabbEvent,
+            Switch::ShowPhysicsDebug
+        );
     }
 }
 

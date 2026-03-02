@@ -7,6 +7,8 @@
 
 #[macro_use]
 mod input;
+#[macro_use]
+mod switches;
 mod actor;
 mod asset_loader;
 mod camera;
@@ -17,7 +19,6 @@ mod playfield;
 mod schedule;
 mod splash;
 mod state;
-mod switches;
 mod traits;
 
 use bevy::gltf::GltfPlugin;

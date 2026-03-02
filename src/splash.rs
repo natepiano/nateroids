@@ -11,9 +11,9 @@ use bevy_panorbit_camera_ext::ZoomEnd;
 use bevy_panorbit_camera_ext::ZoomToFit;
 
 use crate::camera::CameraConfig;
+use crate::camera::CameraHomeEvent;
 use crate::camera::RenderLayer;
 use crate::camera::ZOOM_MARGIN;
-use crate::input::CameraHomeEvent;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
 use crate::state::GameState;
