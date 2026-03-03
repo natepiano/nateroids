@@ -34,6 +34,7 @@ bevy = { version = "0.18.0", features = ["bevy_dev_tools", "bevy_remote"] }
 bevy-inspector-egui = "0.36.0"
 bevy_brp_extras = "0.18.6"
 bevy_enhanced_input = "0.24.1"
+bevy_enhanced_input_extras = { git = "https://github.com/natepiano/bevy_enhanced_input_extras", rev = "273f2be" }
 bevy_mesh_outline = { git = "https://github.com/natepiano/bevy_mesh_outline", branch = "perf-storage-buffer" }
 bevy_panorbit_camera = { version = "0.34.0", features = ["bevy_egui"] }
 bevy_panorbit_camera_ext = { git = "https://github.com/natepiano/bevy_panorbit_camera_ext", rev = "f7cdfb4", features = [

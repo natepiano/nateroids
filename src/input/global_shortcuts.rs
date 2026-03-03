@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::*;
-
-use super::bei_extras::ActionSpawnerExt;
+use bevy_enhanced_input_extras::Keybindings;
 
 #[derive(Component)]
 pub struct GlobalShortcutsContext;
@@ -31,50 +30,53 @@ action!(RestartGameShortcut);
 action!(RestartWithSplashShortcut);
 action!(ZoomToFitShortcut);
 
+// used by `Keybindings` for the shift modifier entity
+action!(ModifySelection);
+
 fn spawn_main_shortcuts(
-    context: &mut ActionSpawner<GlobalShortcutsContext>,
-    settings: ActionSettings,
+    kb: &Keybindings<GlobalShortcutsContext>,
+    ctx: &mut ActionSpawner<GlobalShortcutsContext>,
 ) {
-    context.spawn_key::<AabbsSwitch>(settings, KeyCode::F1);
-    context.spawn_key::<PhysicsAabbSwitch>(settings, KeyCode::F2);
-    context.spawn_key::<BoundaryBoxSwitch>(settings, KeyCode::KeyB);
-    context.spawn_key::<CameraHome>(settings, KeyCode::F12);
-    context.spawn_key::<ZoomToFitShortcut>(settings, KeyCode::KeyZ);
-    context.spawn_key::<PauseSwitch>(settings, KeyCode::Escape);
+    kb.spawn_key::<AabbsSwitch>(ctx, KeyCode::F1);
+    kb.spawn_key::<PhysicsAabbSwitch>(ctx, KeyCode::F2);
+    kb.spawn_key::<BoundaryBoxSwitch>(ctx, KeyCode::KeyB);
+    kb.spawn_key::<CameraHome>(ctx, KeyCode::F12);
+    kb.spawn_key::<ZoomToFitShortcut>(ctx, KeyCode::KeyZ);
+    kb.spawn_key::<PauseSwitch>(ctx, KeyCode::Escape);
 }
 
 fn spawn_inspector_shortcuts(
-    context: &mut ActionSpawner<GlobalShortcutsContext>,
-    settings: ActionSettings,
+    kb: &Keybindings<GlobalShortcutsContext>,
+    ctx: &mut ActionSpawner<GlobalShortcutsContext>,
 ) {
-    context.spawn_shift_key::<InspectAabbConfigSwitch>(settings, KeyCode::KeyA);
-    context.spawn_shift_key::<InspectBoundarySwitch>(settings, KeyCode::KeyB);
-    context.spawn_shift_key::<InspectCameraConfigSwitch>(settings, KeyCode::KeyC);
-    context.spawn_shift_key::<InspectFocusConfigSwitch>(settings, KeyCode::Digit5);
-    context.spawn_shift_key::<InspectLightsSwitch>(settings, KeyCode::KeyL);
-    context.spawn_shift_key::<InspectMissileSwitch>(settings, KeyCode::Digit1);
-    context.spawn_shift_key::<InspectNateroidSwitch>(settings, KeyCode::Digit2);
-    context.spawn_shift_key::<InspectOutlineSwitch>(settings, KeyCode::KeyO);
-    context.spawn_shift_key::<InspectPlanesSwitch>(settings, KeyCode::KeyP);
-    context.spawn_shift_key::<InspectPortalSwitch>(settings, KeyCode::KeyG);
-    context.spawn_shift_key::<ShowFocusSwitch>(settings, KeyCode::KeyF);
-    context.spawn_shift_key::<InspectSpaceshipSwitch>(settings, KeyCode::Digit3);
-    context.spawn_shift_key::<InspectSpaceshipControlSwitch>(settings, KeyCode::Digit4);
-    context.spawn_shift_key::<InspectStarConfigSwitch>(settings, KeyCode::KeyS);
-    context.spawn_shift_key::<InspectZoomConfigSwitch>(settings, KeyCode::KeyZ);
+    kb.spawn_shift_key::<InspectAabbConfigSwitch>(ctx, KeyCode::KeyA);
+    kb.spawn_shift_key::<InspectBoundarySwitch>(ctx, KeyCode::KeyB);
+    kb.spawn_shift_key::<InspectCameraConfigSwitch>(ctx, KeyCode::KeyC);
+    kb.spawn_shift_key::<InspectFocusConfigSwitch>(ctx, KeyCode::Digit5);
+    kb.spawn_shift_key::<InspectLightsSwitch>(ctx, KeyCode::KeyL);
+    kb.spawn_shift_key::<InspectMissileSwitch>(ctx, KeyCode::Digit1);
+    kb.spawn_shift_key::<InspectNateroidSwitch>(ctx, KeyCode::Digit2);
+    kb.spawn_shift_key::<InspectOutlineSwitch>(ctx, KeyCode::KeyO);
+    kb.spawn_shift_key::<InspectPlanesSwitch>(ctx, KeyCode::KeyP);
+    kb.spawn_shift_key::<InspectPortalSwitch>(ctx, KeyCode::KeyG);
+    kb.spawn_shift_key::<ShowFocusSwitch>(ctx, KeyCode::KeyF);
+    kb.spawn_shift_key::<InspectSpaceshipSwitch>(ctx, KeyCode::Digit3);
+    kb.spawn_shift_key::<InspectSpaceshipControlSwitch>(ctx, KeyCode::Digit4);
+    kb.spawn_shift_key::<InspectStarConfigSwitch>(ctx, KeyCode::KeyS);
+    kb.spawn_shift_key::<InspectZoomConfigSwitch>(ctx, KeyCode::KeyZ);
 }
 
 fn spawn_restart_shortcuts(
-    context: &mut ActionSpawner<GlobalShortcutsContext>,
-    settings: ActionSettings,
+    kb: &Keybindings<GlobalShortcutsContext>,
+    ctx: &mut ActionSpawner<GlobalShortcutsContext>,
 ) {
     // The more specific shortcut evaluates first (more ModKeys) and consumes input,
     // preventing Shift+R from also firing on Super+Shift+R.
-    context.spawn_binding::<RestartWithSplashShortcut, _>(
-        settings,
+    kb.spawn_binding::<RestartWithSplashShortcut, _>(
+        ctx,
         bindings![KeyCode::KeyR.with_mod_keys(ModKeys::SUPER | ModKeys::SHIFT)],
     );
-    context.spawn_shift_key::<RestartGameShortcut>(settings, KeyCode::KeyR);
+    kb.spawn_shift_key::<RestartGameShortcut>(ctx, KeyCode::KeyR);
 }
 
 pub fn setup_global_shortcuts(mut commands: Commands) {
@@ -89,10 +91,11 @@ pub fn setup_global_shortcuts(mut commands: Commands) {
         // chords can win over ship controls bound to the base key.
         ContextPriority::<GlobalShortcutsContext>::new(100),
         Actions::<GlobalShortcutsContext>::spawn(SpawnWith(
-            move |context: &mut ActionSpawner<GlobalShortcutsContext>| {
-                spawn_main_shortcuts(context, consume_input);
-                spawn_inspector_shortcuts(context, consume_input);
-                spawn_restart_shortcuts(context, consume_input);
+            move |ctx: &mut ActionSpawner<GlobalShortcutsContext>| {
+                let kb = Keybindings::new::<ModifySelection>(ctx, consume_input);
+                spawn_main_shortcuts(&kb, ctx);
+                spawn_inspector_shortcuts(&kb, ctx);
+                spawn_restart_shortcuts(&kb, ctx);
             },
         )),
     ));
