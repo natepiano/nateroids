@@ -127,7 +127,8 @@
       "Bash(cargo update:*)",
       "Bash(printenv:*)",
       "Bash(gh issue view:*)",
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "Bash(kill:*)"
     ],
     "deny": [],
     "ask": []
