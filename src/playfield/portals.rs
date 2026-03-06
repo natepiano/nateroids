@@ -46,9 +46,9 @@ pub struct PortalPlugin;
 impl Plugin for PortalPlugin {
     fn build(&self, app: &mut App) {
         app.init_gizmo_group::<PortalGizmo>()
-            .init_resource::<PortalConfig>()
+            .init_resource::<PortalSettings>()
             .add_plugins(
-                ResourceInspectorPlugin::<PortalConfig>::default()
+                ResourceInspectorPlugin::<PortalSettings>::default()
                     .run_if(switches::is_switch_on(Switch::InspectPortals)),
             )
             .add_systems(
@@ -77,7 +77,7 @@ pub struct PortalGizmo {}
 
 fn apply_portal_settings(
     mut config_store: ResMut<GizmoConfigStore>,
-    portal_config: Res<PortalConfig>,
+    portal_config: Res<PortalSettings>,
 ) {
     let (config, _) = config_store.config_mut::<PortalGizmo>();
     config.line.width = portal_config.line_width;
@@ -87,7 +87,7 @@ fn apply_portal_settings(
 
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
-struct PortalConfig {
+struct PortalSettings {
     color_approaching:             Color,
     color_emerging:                Color,
     #[inspector(min = 0.0, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
@@ -114,7 +114,7 @@ struct PortalConfig {
     resolution:                    u32,
 }
 
-impl Default for PortalConfig {
+impl Default for PortalSettings {
     fn default() -> Self {
         Self {
             color_approaching:         Color::from(tailwind::BLUE_600),
@@ -183,7 +183,7 @@ fn init_portals(
         &mut ActorPortals,
     )>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
-    portal_config: Res<PortalConfig>,
+    portal_config: Res<PortalSettings>,
     time: Res<Time>,
 ) {
     let Ok(boundary_transform) = boundary_volume_query.single() else {
@@ -258,7 +258,7 @@ fn snap_and_get_face(
 
 fn handle_emerging_visual(
     portal: Portal,
-    portal_config: &Res<PortalConfig>,
+    portal_config: &Res<PortalSettings>,
     teleporter: &Teleporter,
     time: &Res<Time>,
     visual: &mut Mut<ActorPortals>,
@@ -302,7 +302,7 @@ fn handle_emerging_visual(
 fn handle_approaching_visual(
     boundary_transform: &Transform,
     portal: Portal,
-    portal_config: &Res<PortalConfig>,
+    portal_config: &Res<PortalSettings>,
     time: &Res<Time>,
     visual: &mut Mut<ActorPortals>,
 ) {
@@ -378,7 +378,7 @@ fn smooth_circle_position(
     visual: &Mut<ActorPortals>,
     collision_point: Vec3,
     current_boundary_wall_normal: Dir3,
-    portal_config: &Res<PortalConfig>,
+    portal_config: &Res<PortalSettings>,
 ) -> Vec3 {
     if let Some(approaching) = &visual.approaching {
         // Adjust this value to control smoothing (0.0 to 1.0)
@@ -404,7 +404,7 @@ fn smooth_circle_position(
 
 fn update_approaching_portals(
     time: Res<Time>,
-    config: Res<PortalConfig>,
+    config: Res<PortalSettings>,
     mut q_portals: Query<&mut ActorPortals>,
 ) {
     for mut portal in &mut q_portals {
@@ -440,7 +440,7 @@ fn update_approaching_portals(
 
 fn draw_approaching_portals(
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
-    config: Res<PortalConfig>,
+    config: Res<PortalSettings>,
     orientation: Res<CameraOrientation>,
     q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
@@ -487,7 +487,7 @@ fn get_approaching_radius(approaching: &Portal) -> f32 {
 
 fn update_emerging_portals(
     time: Res<Time>,
-    config: Res<PortalConfig>,
+    config: Res<PortalSettings>,
     mut q_portals: Query<&mut ActorPortals>,
 ) {
     for mut portal in &mut q_portals {
@@ -521,7 +521,7 @@ fn update_emerging_portals(
 
 fn draw_emerging_portals(
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
-    config: Res<PortalConfig>,
+    config: Res<PortalSettings>,
     orientation: Res<CameraOrientation>,
     q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,

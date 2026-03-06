@@ -29,7 +29,7 @@ pub struct Selected;
 /// Inspector-tunable configuration for selection outlines
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource, InspectorOptions)]
-pub struct SelectionOutlineConfig {
+pub struct SelectionOutlineSettings {
     #[inspector(min = 0.0, max = 30.0, display = NumberDisplay::Slider)]
     pub width:     f32,
     #[inspector(min = 0.0, max = 30.0, display = NumberDisplay::Slider)]
@@ -37,7 +37,7 @@ pub struct SelectionOutlineConfig {
     pub color:     Color,
 }
 
-impl Default for SelectionOutlineConfig {
+impl Default for SelectionOutlineSettings {
     fn default() -> Self {
         Self {
             width:     SELECTION_OUTLINE_WIDTH,
@@ -51,9 +51,9 @@ pub struct SelectionPlugin;
 
 impl Plugin for SelectionPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<SelectionOutlineConfig>()
+        app.init_resource::<SelectionOutlineSettings>()
             .add_plugins(
-                ResourceInspectorPlugin::<SelectionOutlineConfig>::default()
+                ResourceInspectorPlugin::<SelectionOutlineSettings>::default()
                     .run_if(switches::is_switch_on(Switch::InspectOutline)),
             )
             .add_observer(on_nateroid_added)
@@ -127,7 +127,7 @@ fn add_selection_outline_command(
     mut commands: Commands,
     children_query: Query<&Children>,
     mesh_query: Query<Entity, With<Mesh3d>>,
-    config: Res<SelectionOutlineConfig>,
+    config: Res<SelectionOutlineSettings>,
 ) {
     let outline = MeshOutline::new(config.width)
         .with_color(config.color)
@@ -185,7 +185,7 @@ fn remove_selection_outline_command(
 
 /// Syncs `SelectionConfig` changes to all active `MeshOutline` components in real time
 fn sync_outline_config(
-    config: Res<SelectionOutlineConfig>,
+    config: Res<SelectionOutlineSettings>,
     selected_query: Query<Entity, With<Selected>>,
     children_query: Query<&Children>,
     mut outline_query: Query<&mut MeshOutline>,

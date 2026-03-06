@@ -32,10 +32,10 @@ pub struct SpaceshipControlPlugin;
 impl Plugin for SpaceshipControlPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(
-            ResourceInspectorPlugin::<SpaceshipControlConfig>::default()
+            ResourceInspectorPlugin::<SpaceshipControlSettings>::default()
                 .run_if(switches::is_switch_on(Switch::InspectSpaceshipControl)),
         )
-        .init_resource::<SpaceshipControlConfig>()
+        .init_resource::<SpaceshipControlSettings>()
         .add_observer(on_toggle_continuous_fire_input)
         .add_systems(
             Update,
@@ -52,7 +52,7 @@ impl Plugin for SpaceshipControlPlugin {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
-pub struct SpaceshipControlConfig {
+pub struct SpaceshipControlSettings {
     #[inspector(min = 30., max = 300.0, display = NumberDisplay::Slider)]
     pub acceleration:   f32,
     #[inspector(min = 50., max = 300.0, display = NumberDisplay::Slider)]
@@ -61,7 +61,7 @@ pub struct SpaceshipControlConfig {
     pub rotation_speed: f32,
 }
 
-impl Default for SpaceshipControlConfig {
+impl Default for SpaceshipControlSettings {
     fn default() -> Self {
         Self {
             acceleration:   60.,
@@ -111,7 +111,7 @@ fn spaceship_movement_controls(
     turn_left_state: ShipTurnLeftStateQuery,
     turn_right_state: ShipTurnRightStateQuery,
     spaceship_config: Res<SpaceshipSettings>,
-    movement_config: Res<SpaceshipControlConfig>,
+    movement_config: Res<SpaceshipControlSettings>,
     time: Res<Time>,
     orientation_mode: Res<CameraOrientation>,
 ) {

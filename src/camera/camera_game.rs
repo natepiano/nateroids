@@ -8,7 +8,7 @@ use super::camera_star::StarCamera;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::lights::LightConfig;
-use super::settings::CameraConfig;
+use super::settings::CameraSettings;
 use crate::asset_loader::SceneAssets;
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
@@ -21,7 +21,7 @@ impl Plugin for GameCameraPlugin {
 }
 
 pub fn spawn_game_camera(
-    camera_config: Res<CameraConfig>,
+    camera_config: Res<CameraSettings>,
     scene_assets: Res<SceneAssets>,
     light_config: Res<LightConfig>,
     mut commands: Commands,

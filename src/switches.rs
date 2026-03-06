@@ -56,10 +56,10 @@ pub enum ToggleState {
 )]
 impl Switches {
     const INSPECTOR_SWITCHES: [Switch; 14] = [
-        Switch::InspectAabbConfig,
+        Switch::InspectAabb,
         Switch::InspectBoundary,
-        Switch::InspectCameraConfig,
-        Switch::InspectFocusConfig,
+        Switch::InspectCamera,
+        Switch::InspectFocus,
         Switch::InspectLights,
         Switch::InspectMissile,
         Switch::InspectNateroid,
@@ -68,8 +68,8 @@ impl Switches {
         Switch::InspectPortals,
         Switch::InspectSpaceship,
         Switch::InspectSpaceshipControl,
-        Switch::InspectStarConfig,
-        Switch::InspectZoomConfig,
+        Switch::InspectStar,
+        Switch::InspectZoom,
     ];
 
     fn is_on(&self, switch: Switch) -> bool {
@@ -116,10 +116,10 @@ impl Switches {
 pub enum Switch {
     ShowAabbs,
     ShowPhysicsDebug,
-    InspectAabbConfig,
+    InspectAabb,
     InspectBoundary,
-    InspectCameraConfig,
-    InspectFocusConfig,
+    InspectCamera,
+    InspectFocus,
     ShowFocus,
     InspectLights,
     InspectMissile,
@@ -129,8 +129,8 @@ pub enum Switch {
     InspectPortals,
     InspectSpaceship,
     InspectSpaceshipControl,
-    InspectStarConfig,
-    InspectZoomConfig,
+    InspectStar,
+    InspectZoom,
 }
 
 #[allow(

@@ -10,8 +10,8 @@ use bevy_panorbit_camera_ext::PlayAnimation;
 use bevy_panorbit_camera_ext::ZoomEnd;
 use bevy_panorbit_camera_ext::ZoomToFit;
 
-use crate::camera::CameraConfig;
 use crate::camera::CameraHomeEvent;
+use crate::camera::CameraSettings;
 use crate::camera::RenderLayer;
 use crate::camera::ZOOM_MARGIN;
 use crate::playfield::Boundary;
@@ -319,7 +319,7 @@ fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
 /// Snap camera to splash start position, then hold while text animates.
 fn start_splash_camera_animation(
     mut commands: Commands,
-    camera_config: Res<CameraConfig>,
+    camera_config: Res<CameraSettings>,
     camera_query: Query<Entity, With<PanOrbitCamera>>,
 ) {
     let Ok(entity) = camera_query.single() else {

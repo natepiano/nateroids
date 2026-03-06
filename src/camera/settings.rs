@@ -20,49 +20,49 @@ event!(InspectCameraConfigEvent);
 event!(InspectStarConfigEvent);
 event!(InspectZoomConfigEvent);
 
-pub struct CameraConfigPlugin;
+pub struct CameraSettingsPlugin;
 
-impl Plugin for CameraConfigPlugin {
+impl Plugin for CameraSettingsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(
-            ResourceInspectorPlugin::<CameraConfig>::default()
-                .run_if(switches::is_switch_on(Switch::InspectCameraConfig)),
+            ResourceInspectorPlugin::<CameraSettings>::default()
+                .run_if(switches::is_switch_on(Switch::InspectCamera)),
         )
         .add_plugins(
-            ResourceInspectorPlugin::<StarConfig>::default()
-                .run_if(switches::is_switch_on(Switch::InspectStarConfig)),
+            ResourceInspectorPlugin::<StarSettings>::default()
+                .run_if(switches::is_switch_on(Switch::InspectStar)),
         )
         .add_plugins(
-            ResourceInspectorPlugin::<ZoomConfig>::default()
-                .run_if(switches::is_switch_on(Switch::InspectZoomConfig)),
+            ResourceInspectorPlugin::<ZoomSettings>::default()
+                .run_if(switches::is_switch_on(Switch::InspectZoom)),
         )
-        .init_resource::<CameraConfig>()
-        .init_resource::<StarConfig>()
-        .init_resource::<ZoomConfig>();
+        .init_resource::<CameraSettings>()
+        .init_resource::<StarSettings>()
+        .init_resource::<ZoomSettings>();
         bind_action_switch!(
             app,
             InspectCameraSwitch,
             InspectCameraConfigEvent,
-            Switch::InspectCameraConfig
+            Switch::InspectCamera
         );
         bind_action_switch!(
             app,
             InspectStarSwitch,
             InspectStarConfigEvent,
-            Switch::InspectStarConfig
+            Switch::InspectStar
         );
         bind_action_switch!(
             app,
             InspectZoomSwitch,
             InspectZoomConfigEvent,
-            Switch::InspectZoomConfig
+            Switch::InspectZoom
         );
     }
 }
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
-pub struct CameraConfig {
+pub struct CameraSettings {
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub bloom_intensity:           f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
@@ -88,7 +88,7 @@ pub struct CameraConfig {
     pub splash_start_yaw:          f32,
 }
 
-impl Default for CameraConfig {
+impl Default for CameraSettings {
     fn default() -> Self {
         Self {
             bloom_intensity:           0.5,
@@ -107,7 +107,7 @@ impl Default for CameraConfig {
 
 #[derive(Debug, Clone, Reflect, Resource, InspectorOptions)]
 #[reflect(Resource, InspectorOptions)]
-pub struct StarConfig {
+pub struct StarSettings {
     pub batch_size_replace:            usize,
     pub duration_replace_timer:        f32,
     pub star_color:                    Range<f32>,
@@ -127,7 +127,7 @@ pub struct StarConfig {
     pub rotation_axis:                 Vec3,
 }
 
-impl Default for StarConfig {
+impl Default for StarSettings {
     fn default() -> Self {
         Self {
             batch_size_replace:            10,
@@ -152,7 +152,7 @@ impl Default for StarConfig {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
-pub struct ZoomConfig {
+pub struct ZoomSettings {
     /// Maximum iterations before giving up
     #[inspector(min = 50, max = 500)]
     pub max_iterations:   usize,
@@ -168,7 +168,7 @@ pub struct ZoomConfig {
     pub convergence_rate: f32,
 }
 
-impl Default for ZoomConfig {
+impl Default for ZoomSettings {
     fn default() -> Self {
         Self {
             max_iterations:   200,
@@ -179,7 +179,7 @@ impl Default for ZoomConfig {
     }
 }
 
-impl ZoomConfig {
+impl ZoomSettings {
     /// Returns the zoom margin multiplier (1.0 + margin)
     /// For example, a margin of 0.08 returns 1.08 (8% margin)
     pub const fn zoom_margin_multiplier(&self) -> f32 { 1.0 / (1.0 - self.margin) }

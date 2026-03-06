@@ -35,7 +35,7 @@ pub enum OrientationType {
 }
 
 #[derive(Debug, Clone, Reflect)]
-pub struct OrientationConfig {
+pub struct OrientationSettings {
     pub allow_3d:         bool,
     pub axis_mundi:       Vec3,
     pub axis_orbis:       Vec3,
@@ -49,11 +49,11 @@ pub struct OrientationConfig {
 #[reflect(Resource)]
 pub struct CameraOrientation {
     pub orientation: OrientationType,
-    pub config:      OrientationConfig,
+    pub config:      OrientationSettings,
 }
 
 impl CameraOrientation {
-    const DEFAULT_CONFIG: OrientationConfig = OrientationConfig {
+    const DEFAULT_CONFIG: OrientationSettings = OrientationSettings {
         allow_3d:         false,
         axis_mundi:       Vec3::ZERO,
         axis_orbis:       Vec3::ZERO,
@@ -66,19 +66,19 @@ impl CameraOrientation {
     pub fn set_orientation(&mut self, new_orientation: OrientationType) {
         self.orientation = new_orientation;
         self.config = match new_orientation {
-            OrientationType::TopDown => OrientationConfig {
+            OrientationType::TopDown => OrientationSettings {
                 axis_mundi: Vec3::Y,
                 axis_orbis: Vec3::X,
                 axis_profundus: Vec3::Z,
                 ..Self::DEFAULT_CONFIG
             },
-            OrientationType::BehindSpaceship => OrientationConfig {
+            OrientationType::BehindSpaceship => OrientationSettings {
                 axis_mundi: Vec3::Z,
                 axis_orbis: Vec3::X,
                 axis_profundus: -Vec3::Y,
                 ..Self::DEFAULT_CONFIG
             },
-            OrientationType::BehindSpaceship3D => OrientationConfig {
+            OrientationType::BehindSpaceship3D => OrientationSettings {
                 allow_3d: true,
                 axis_mundi: Vec3::Z,
                 axis_orbis: Vec3::X,

@@ -3,14 +3,14 @@ use std::collections::HashSet;
 use bevy::prelude::*;
 use rand::RngExt;
 
-use super::settings::StarConfig;
+use super::settings::StarSettings;
 use crate::camera::stars::Star;
 
 pub struct StarTwinklingPlugin;
 
 impl Plugin for StarTwinklingPlugin {
     fn build(&self, app: &mut App) {
-        let start_twinkling_timer_duration = StarConfig::default().start_twinkling_delay;
+        let start_twinkling_timer_duration = StarSettings::default().start_twinkling_delay;
         app.insert_resource(StartTwinklingTimer {
             timer: Timer::from_seconds(start_twinkling_timer_duration, TimerMode::Repeating),
         })
@@ -57,7 +57,7 @@ fn extract_elements_at_indices<T: Clone>(vec: &[T], indices: &[usize]) -> Vec<T>
 // yeah - but how can the query below be much simpler?
 fn start_twinkling(
     mut commands: Commands,
-    config: Res<StarConfig>,
+    config: Res<StarSettings>,
     stars: Query<(Entity, &MeshMaterial3d<StandardMaterial>), (With<Star>, Without<Twinkling>)>,
     materials: Res<Assets<StandardMaterial>>,
     mut start_timer: ResMut<StartTwinklingTimer>,

@@ -11,7 +11,7 @@ use rand::Rng;
 use rand::RngExt;
 
 use super::camera_star::StarCamera;
-use super::settings::StarConfig;
+use super::settings::StarSettings;
 use super::RenderLayer;
 use crate::playfield::Boundary;
 use crate::state::GameState;
@@ -105,7 +105,7 @@ fn despawn_stars(
 /// Spawn stars with all components at once to avoid archetype changes after spawn
 fn spawn_stars(
     mut commands: Commands,
-    config: Res<StarConfig>,
+    config: Res<StarSettings>,
     boundary_config: Res<Boundary>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -164,7 +164,7 @@ fn get_star_position(
     Vec3::new(x, y, z)
 }
 
-fn get_star_color(config: &StarConfig, rng: &mut impl Rng) -> Vec4 {
+fn get_star_color(config: &StarSettings, rng: &mut impl Rng) -> Vec4 {
     let end = config.star_color.end;
     let color_start = config.star_color.start;
     let white_start = end * config.star_color_white_start_ratio;
@@ -200,7 +200,7 @@ fn get_star_color(config: &StarConfig, rng: &mut impl Rng) -> Vec4 {
 
 fn rotate_stars(
     time: Res<Time>,
-    config: Res<StarConfig>,
+    config: Res<StarSettings>,
     mut rotation_state: ResMut<StarRotationState>,
     mut stars: Query<(&Star, &mut Transform)>,
 ) {

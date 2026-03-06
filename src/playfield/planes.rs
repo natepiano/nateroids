@@ -12,7 +12,7 @@ use super::constants::PLANE_THICKNESS;
 use crate::camera::RenderLayer;
 use crate::input::InspectPlanesSwitch;
 use crate::orientation::CameraOrientation;
-use crate::orientation::OrientationConfig;
+use crate::orientation::OrientationSettings;
 use crate::playfield::BoundaryVolume;
 use crate::switches;
 use crate::switches::Switch;
@@ -26,9 +26,9 @@ pub struct PlanesPlugin;
 impl Plugin for PlanesPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, manage_box_planes)
-            .init_resource::<PlaneConfig>()
+            .init_resource::<PlaneSettings>()
             .add_plugins(
-                ResourceInspectorPlugin::<PlaneConfig>::default()
+                ResourceInspectorPlugin::<PlaneSettings>::default()
                     .run_if(switches::is_switch_on(Switch::InspectPlanes)),
             );
         bind_action_switch!(
@@ -46,7 +46,7 @@ impl Plugin for PlanesPlugin {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 #[allow(clippy::struct_excessive_bools)] // 6 directional bools (front/back/top/bottom/left/right) are intentional
-pub struct PlaneConfig {
+pub struct PlaneSettings {
     pub front:                 bool,
     pub back:                  bool,
     pub top:                   bool,
@@ -76,7 +76,7 @@ pub struct PlaneConfig {
     pub thickness:             f32,
 }
 
-impl Default for PlaneConfig {
+impl Default for PlaneSettings {
     fn default() -> Self {
         Self {
             front:                 false,
@@ -123,7 +123,7 @@ fn create_or_update_plane(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    planes_config: &PlaneConfig,
+    planes_config: &PlaneSettings,
     size: Vec3,
     position: Vec3,
     axis: Vec3,
@@ -163,7 +163,7 @@ fn manage_box_planes(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     orientation: Res<CameraOrientation>,
-    planes_config: Res<PlaneConfig>,
+    planes_config: Res<PlaneSettings>,
     planes: Query<(Entity, &BoxPlane)>,
 ) {
     if !planes_config.is_changed() {
@@ -204,9 +204,9 @@ fn manage_box_planes(
 }
 
 fn get_plane_specifications(
-    config: &Res<PlaneConfig>,
+    config: &Res<PlaneSettings>,
     box_size: Vec3,
-    orientation: &OrientationConfig,
+    orientation: &OrientationSettings,
 ) -> [(PlaneType, bool, Vec3, Vec3, Vec3); 6] {
     [
         (
@@ -256,7 +256,7 @@ fn get_plane_specifications(
 
 fn get_plane_material(
     materials: &mut Assets<StandardMaterial>,
-    config: &PlaneConfig,
+    config: &PlaneSettings,
 ) -> Handle<StandardMaterial> {
     let mut material = StandardMaterial {
         attenuation_distance: config.attenuation_distance,

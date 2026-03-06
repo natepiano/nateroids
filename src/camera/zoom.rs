@@ -32,7 +32,7 @@ use crate::switches::Switch;
 use crate::switches::Switches;
 
 event!(CameraHomeEvent);
-event!(FocusConfigInspectorEvent);
+event!(FocusInspectorEvent);
 event!(ShowFocusEvent);
 event!(ToggleFitTargetDebugEvent);
 event!(ZoomToFitEvent);
@@ -42,7 +42,7 @@ struct FocusGizmo {}
 
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
-struct FocusConfig {
+struct FocusSettings {
     color:         Color,
     #[inspector(min = 0.1, max = 10.0, display = NumberDisplay::Slider)]
     line_width:    f32,
@@ -50,7 +50,7 @@ struct FocusConfig {
     sphere_radius: f32,
 }
 
-impl Default for FocusConfig {
+impl Default for FocusSettings {
     fn default() -> Self {
         Self {
             color:         Color::srgb(1.0, 0.0, 0.0),
@@ -78,11 +78,11 @@ impl Plugin for ZoomPlugin {
     fn build(&self, app: &mut App) {
         app.init_gizmo_group::<FocusGizmo>()
             .init_resource::<ZoomTarget>()
-            .init_resource::<FocusConfig>()
+            .init_resource::<FocusSettings>()
             .init_resource::<FocusGizmoState>()
             .add_plugins(
-                ResourceInspectorPlugin::<FocusConfig>::default()
-                    .run_if(switches::is_switch_on(Switch::InspectFocusConfig)),
+                ResourceInspectorPlugin::<FocusSettings>::default()
+                    .run_if(switches::is_switch_on(Switch::InspectFocus)),
             )
             .add_systems(Startup, set_fit_target_debug);
         bind_action_system!(app, ZoomToFitShortcut, ZoomToFitEvent, zoom_to_fit_command);
@@ -101,13 +101,13 @@ impl Plugin for ZoomPlugin {
         bind_action_switch!(
             app,
             InspectFocusSwitch,
-            FocusConfigInspectorEvent,
-            Switch::InspectFocusConfig
+            FocusInspectorEvent,
+            Switch::InspectFocus
         );
         bind_action_switch!(app, ShowFocusSwitch, ShowFocusEvent, Switch::ShowFocus);
         app.add_systems(
             Update,
-            apply_focus_settings.run_if(resource_changed::<FocusConfig>),
+            apply_focus_settings.run_if(resource_changed::<FocusSettings>),
         )
         .add_systems(Update, update_focus_gizmo_state)
         .add_systems(
@@ -204,7 +204,7 @@ fn toggle_fit_target_debug_command(
     }
 }
 
-fn apply_focus_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<FocusConfig>) {
+fn apply_focus_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<FocusSettings>) {
     let (gizmo_config, _) = config_store.config_mut::<FocusGizmo>();
     gizmo_config.line.width = config.line_width;
     gizmo_config.render_layers = RenderLayer::Game.layers();
@@ -213,7 +213,7 @@ fn apply_focus_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<
 fn update_focus_gizmo_state(
     camera_query: Query<&PanOrbitCamera, With<Camera>>,
     camera_changed: Query<(), (With<Camera>, Changed<PanOrbitCamera>)>,
-    config: Res<FocusConfig>,
+    config: Res<FocusSettings>,
     mut state: ResMut<FocusGizmoState>,
 ) {
     if camera_changed.is_empty() && !config.is_changed() {
@@ -230,7 +230,7 @@ fn draw_camera_focus_gizmo(
     mut commands: Commands,
     mut gizmos: Gizmos<FocusGizmo>,
     camera_query: Query<(&Camera, &GlobalTransform, &PanOrbitCamera)>,
-    config: Res<FocusConfig>,
+    config: Res<FocusSettings>,
     state: Res<FocusGizmoState>,
     mut label_query: Query<(&mut Text, &mut Node, &mut TextColor), With<FocusDistanceLabel>>,
 ) {

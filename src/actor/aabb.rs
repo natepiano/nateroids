@@ -16,7 +16,7 @@ use crate::switches::Switch;
 use crate::switches::Switches;
 use crate::traits::TransformExt;
 
-event!(AabbConfigInspectorEvent);
+event!(AabbInspectorEvent);
 event!(AabbsEvent);
 
 pub struct AabbPlugin;
@@ -26,7 +26,7 @@ impl Plugin for AabbPlugin {
             .init_resource::<AabbConfig>()
             .add_plugins(
                 ResourceInspectorPlugin::<AabbConfig>::default()
-                    .run_if(switches::is_switch_on(Switch::InspectAabbConfig)),
+                    .run_if(switches::is_switch_on(Switch::InspectAabb)),
             )
             .add_systems(
                 Update,
@@ -43,8 +43,8 @@ impl Plugin for AabbPlugin {
         bind_action_switch!(
             app,
             InspectAabbSwitch,
-            AabbConfigInspectorEvent,
-            Switch::InspectAabbConfig
+            AabbInspectorEvent,
+            Switch::InspectAabb
         );
         bind_action_switch!(app, AabbsSwitch, AabbsEvent, Switch::ShowAabbs);
     }
