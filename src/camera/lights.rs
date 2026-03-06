@@ -21,10 +21,10 @@ impl Plugin for DirectionalLightsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GlobalAmbientLight>()
             .add_plugins(
-                ResourceInspectorPlugin::<LightConfig>::default()
+                ResourceInspectorPlugin::<LightSettings>::default()
                     .run_if(switches::is_switch_on(Switch::InspectLights)),
             )
-            .init_resource::<LightConfig>()
+            .init_resource::<LightSettings>()
             .add_systems(Update, manage_lighting);
         bind_action_switch!(
             app,
@@ -37,7 +37,7 @@ impl Plugin for DirectionalLightsPlugin {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
-pub struct LightSettings {
+pub struct DirectionalLightSettings {
     pub color:           Color,
     pub enabled:         bool,
     #[inspector(min = 0.0, max = 10_000.0, display = NumberDisplay::Slider)]
@@ -45,7 +45,7 @@ pub struct LightSettings {
     pub shadows_enabled: bool,
 }
 
-impl Default for LightSettings {
+impl Default for DirectionalLightSettings {
     fn default() -> Self {
         Self {
             color:           Color::from(tailwind::GRAY_50),
@@ -61,44 +61,44 @@ impl Default for LightSettings {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone)]
 #[reflect(Resource, InspectorOptions)]
-pub struct LightConfig {
+pub struct LightSettings {
     #[inspector(min = 0.0, max = 10_000.0, display = NumberDisplay::Slider)]
     pub ambient_light_brightness:  f32,
     pub ambient_light_color:       Color,
     #[inspector(min = 0.0, max = 100_000.0, display = NumberDisplay::Slider)]
     pub environment_map_intensity: f32,
-    pub front:                     LightSettings,
-    pub back:                      LightSettings,
-    pub top:                       LightSettings,
-    pub bottom:                    LightSettings,
-    pub left:                      LightSettings,
-    pub right:                     LightSettings,
+    pub front:                     DirectionalLightSettings,
+    pub back:                      DirectionalLightSettings,
+    pub top:                       DirectionalLightSettings,
+    pub bottom:                    DirectionalLightSettings,
+    pub left:                      DirectionalLightSettings,
+    pub right:                     DirectionalLightSettings,
 }
 
-impl Default for LightConfig {
+impl Default for LightSettings {
     fn default() -> Self {
         Self {
             ambient_light_brightness:  100.0,
             ambient_light_color:       Color::WHITE,
             environment_map_intensity: 25_000.0,
-            front:                     LightSettings {
+            front:                     DirectionalLightSettings {
                 enabled: true,
                 ..Default::default()
             },
-            back:                      LightSettings {
+            back:                      DirectionalLightSettings {
                 enabled: true,
                 ..Default::default()
             },
-            top:                       LightSettings::default(),
-            bottom:                    LightSettings::default(),
-            left:                      LightSettings::default(),
-            right:                     LightSettings::default(),
+            top:                       DirectionalLightSettings::default(),
+            bottom:                    DirectionalLightSettings::default(),
+            left:                      DirectionalLightSettings::default(),
+            right:                     DirectionalLightSettings::default(),
         }
     }
 }
 
-impl LightConfig {
-    pub const fn get_light_settings(&self, position: LightPosition) -> &LightSettings {
+impl LightSettings {
+    pub const fn get_light_settings(&self, position: LightPosition) -> &DirectionalLightSettings {
         match position {
             LightPosition::Front => &self.front,
             LightPosition::Back => &self.back,
@@ -173,7 +173,7 @@ struct LightDirection(LightPosition);
 
 fn spawn_directional_light(
     commands: &mut Commands,
-    settings: &LightSettings,
+    settings: &DirectionalLightSettings,
     position: LightPosition,
     light_rotation: &RotationInfo,
 ) {
@@ -207,7 +207,7 @@ fn spawn_directional_light(
 fn manage_lighting(
     mut commands: Commands,
     mut ambient_light: ResMut<GlobalAmbientLight>,
-    light_config: Res<LightConfig>,
+    light_config: Res<LightSettings>,
     camera_orientation: Res<CameraOrientation>,
     mut query: Query<(Entity, &mut DirectionalLight, &LightDirection)>,
 ) {

@@ -7,7 +7,7 @@ use bevy_panorbit_camera::TrackpadBehavior;
 use super::camera_star::StarCamera;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
-use super::lights::LightConfig;
+use super::lights::LightSettings;
 use super::settings::CameraSettings;
 use crate::asset_loader::SceneAssets;
 use crate::camera::CameraOrder;
@@ -23,7 +23,7 @@ impl Plugin for GameCameraPlugin {
 pub fn spawn_game_camera(
     camera_config: Res<CameraSettings>,
     scene_assets: Res<SceneAssets>,
-    light_config: Res<LightConfig>,
+    light_config: Res<LightSettings>,
     mut commands: Commands,
     stars_camera_entity: Single<Entity, With<StarCamera>>,
 ) {
@@ -65,7 +65,7 @@ pub fn spawn_game_camera(
 }
 
 fn update_environment_map_intensity(
-    light_config: Res<LightConfig>,
+    light_config: Res<LightSettings>,
     mut query: Query<&mut EnvironmentMapLight, With<Camera3d>>,
 ) {
     if !light_config.is_changed() {
