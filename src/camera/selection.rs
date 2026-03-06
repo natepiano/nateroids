@@ -61,7 +61,7 @@ impl Plugin for SelectionPlugin {
             .add_observer(on_selected_added)
             .add_observer(on_selected_removed)
             .add_systems(Update, clear_selection_on_background_click)
-            .add_systems(Update, sync_outline_config);
+            .add_systems(Update, sync_outline_settings);
         bind_action_switch!(
             app,
             InspectOutlineSwitch,
@@ -184,7 +184,7 @@ fn remove_selection_outline_command(
 // ---------------------------------------------------------------------------
 
 /// Syncs `SelectionConfig` changes to all active `MeshOutline` components in real time
-fn sync_outline_config(
+fn sync_outline_settings(
     config: Res<SelectionOutlineSettings>,
     selected_query: Query<Entity, With<Selected>>,
     children_query: Query<&Children>,

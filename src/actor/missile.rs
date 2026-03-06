@@ -81,20 +81,20 @@ fn initialize_missile(
     missile: On<Add, Missile>,
     mut commands: Commands,
     boundary: Res<Boundary>,
-    mut config: ResMut<MissileSettings>,
+    mut settings: ResMut<MissileSettings>,
     transform_and_linvel: Single<(&Transform, &LinearVelocity), With<Spaceship>>,
 ) {
     let missile_position = MissilePosition::new(boundary.max_missile_distance());
 
     let (spaceship_transform, spaceship_velocity) = *transform_and_linvel;
 
-    let transform = initialize_transform(spaceship_transform, &config);
+    let transform = initialize_transform(spaceship_transform, &settings);
 
     // Calculate velocity: forward direction * base_velocity + spaceship velocity
     let (linear_velocity, angular_velocity) = calculate_missile_velocity(
         spaceship_transform,
         spaceship_velocity,
-        config.base_velocity,
+        settings.base_velocity,
     );
 
     commands
@@ -104,26 +104,26 @@ fn initialize_missile(
         .insert(linear_velocity)
         .insert(angular_velocity);
 
-    insert_configured_components(&mut commands, &mut config.actor_settings, missile.entity);
+    insert_configured_components(&mut commands, &mut settings.actor_settings, missile.entity);
 }
 
 fn initialize_transform(
     spaceship_transform: &Transform,
-    missile_config: &MissileSettings,
+    missile_settings: &MissileSettings,
 ) -> Transform {
     // Calculate transform and velocity from spaceship position
     let forward = spaceship_transform.forward();
     let spawn_position =
-        spaceship_transform.translation + forward * missile_config.forward_distance_scalar;
+        spaceship_transform.translation + forward * missile_settings.forward_distance_scalar;
 
-    // Combine rotations: spaceship rotation * missile config rotation
+    // Combine rotations: spaceship rotation * missile settings rotation
     let combined_rotation =
-        spaceship_transform.rotation * missile_config.actor_settings.transform.rotation;
+        spaceship_transform.rotation * missile_settings.actor_settings.transform.rotation;
 
     Transform::from_trs(
         spawn_position,
         combined_rotation,
-        missile_config.actor_settings.transform.scale,
+        missile_settings.actor_settings.transform.scale,
     )
 }
 
@@ -135,9 +135,9 @@ fn on_fire_input(_trigger: On<input_events::Start<ShipFire>>, mut commands: Comm
 fn fire_missile_command(
     mut commands: Commands,
     continuous_fire_enabled: Single<Option<&ContinuousFire>, With<Spaceship>>,
-    missile_config: Res<MissileSettings>,
+    missile_settings: Res<MissileSettings>,
 ) {
-    if !missile_config.spawnable {
+    if !missile_settings.spawnable {
         return;
     }
 
@@ -151,15 +151,15 @@ fn fire_missile_command(
 fn fire_missile_continuous(
     mut commands: Commands,
     continuous_fire_enabled: Single<Option<&ContinuousFire>, With<Spaceship>>,
-    mut missile_config: ResMut<MissileSettings>,
+    mut missile_settings: ResMut<MissileSettings>,
     fire_state: ShipFireStateQuery,
     time: Res<Time>,
 ) {
-    if continuous_fire_enabled.is_none() || !missile_config.spawnable {
+    if continuous_fire_enabled.is_none() || !missile_settings.spawnable {
         return;
     }
 
-    let Some(timer) = missile_config.spawn_timer.as_mut() else {
+    let Some(timer) = missile_settings.spawn_timer.as_mut() else {
         return;
     };
     timer.tick(time.delta());

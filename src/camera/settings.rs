@@ -16,9 +16,9 @@ use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
 
-event!(InspectCameraConfigEvent);
-event!(InspectStarConfigEvent);
-event!(InspectZoomConfigEvent);
+event!(InspectCameraEvent);
+event!(InspectStarEvent);
+event!(InspectZoomEvent);
 
 pub struct CameraSettingsPlugin;
 
@@ -42,19 +42,19 @@ impl Plugin for CameraSettingsPlugin {
         bind_action_switch!(
             app,
             InspectCameraSwitch,
-            InspectCameraConfigEvent,
+            InspectCameraEvent,
             Switch::InspectCamera
         );
         bind_action_switch!(
             app,
             InspectStarSwitch,
-            InspectStarConfigEvent,
+            InspectStarEvent,
             Switch::InspectStar
         );
         bind_action_switch!(
             app,
             InspectZoomSwitch,
-            InspectZoomConfigEvent,
+            InspectZoomEvent,
             Switch::InspectZoom
         );
     }

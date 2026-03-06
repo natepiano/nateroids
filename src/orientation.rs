@@ -49,7 +49,7 @@ pub struct OrientationSettings {
 #[reflect(Resource)]
 pub struct CameraOrientation {
     pub orientation: OrientationType,
-    pub config:      OrientationSettings,
+    pub settings:    OrientationSettings,
 }
 
 impl CameraOrientation {
@@ -65,7 +65,7 @@ impl CameraOrientation {
 
     pub fn set_orientation(&mut self, new_orientation: OrientationType) {
         self.orientation = new_orientation;
-        self.config = match new_orientation {
+        self.settings = match new_orientation {
             OrientationType::TopDown => OrientationSettings {
                 axis_mundi: Vec3::Y,
                 axis_orbis: Vec3::X,
@@ -93,7 +93,7 @@ impl Default for CameraOrientation {
     fn default() -> Self {
         let mut mode = Self {
             orientation: OrientationType::TopDown,
-            config:      Self::DEFAULT_CONFIG,
+            settings:    Self::DEFAULT_CONFIG,
         };
         mode.set_orientation(OrientationType::TopDown);
         mode

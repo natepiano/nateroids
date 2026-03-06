@@ -126,27 +126,27 @@ impl LightPosition {
         use std::f32::consts::PI;
         match self {
             Self::Right => RotationInfo {
-                axis:  orientation.config.axis_mundi,
+                axis:  orientation.settings.axis_mundi,
                 angle: FRAC_PI_2,
             },
             Self::Left => RotationInfo {
-                axis:  orientation.config.axis_mundi,
+                axis:  orientation.settings.axis_mundi,
                 angle: -FRAC_PI_2,
             },
             Self::Front => RotationInfo {
-                axis:  orientation.config.axis_orbis,
+                axis:  orientation.settings.axis_orbis,
                 angle: 0.,
             },
             Self::Back => RotationInfo {
-                axis:  orientation.config.axis_orbis,
+                axis:  orientation.settings.axis_orbis,
                 angle: PI,
             },
             Self::Bottom => RotationInfo {
-                axis:  orientation.config.axis_orbis,
+                axis:  orientation.settings.axis_orbis,
                 angle: FRAC_PI_2,
             },
             Self::Top => RotationInfo {
-                axis:  orientation.config.axis_orbis,
+                axis:  orientation.settings.axis_orbis,
                 angle: -FRAC_PI_2,
             },
         }

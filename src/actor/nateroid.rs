@@ -73,7 +73,7 @@ impl Plugin for NateroidPlugin {
         app.init_resource::<NateroidSpawnStats>()
             .add_systems(
                 OnEnter(asset_loader::AssetsState::Loaded),
-                precompute_death_materials.after(super::actor_settings::initialize_actor_settings),
+                precompute_death_materials.after(super::actor_settings::initialize_actors),
             )
             .add_observer(initialize_nateroid)
             .add_systems(
@@ -116,17 +116,17 @@ pub struct NateroidDeathMaterials {
 
 fn spawn_nateroid(
     mut commands: Commands,
-    mut config: ResMut<NateroidSettings>,
+    mut settings: ResMut<NateroidSettings>,
     time: Res<Time>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     spatial_query: SpatialQuery,
     mut spawn_stats: ResMut<NateroidSpawnStats>,
 ) {
-    if !config.spawnable {
+    if !settings.spawnable {
         return;
     }
 
-    let Some(spawn_timer) = config.spawn_timer.as_mut() else {
+    let Some(spawn_timer) = settings.spawn_timer.as_mut() else {
         return;
     };
     spawn_timer.tick(time.delta());
@@ -141,7 +141,8 @@ fn spawn_nateroid(
 
     // Pre-validate: only spawn if we can find a valid position
     let current_time = time.elapsed_secs();
-    let Some(transform) = initialize_transform(boundary_transform, &config, &spatial_query) else {
+    let Some(transform) = initialize_transform(boundary_transform, &settings, &spatial_query)
+    else {
         spawn_stats.record_attempt(false);
 
         // Check if we should output warning (once per second)
@@ -310,23 +311,23 @@ fn debug_mesh_components(
 fn initialize_nateroid(
     nateroid: On<Add, Nateroid>,
     mut commands: Commands,
-    mut config: ResMut<NateroidSettings>,
+    mut settings: ResMut<NateroidSettings>,
 ) {
     // Normal nateroid: transform already set by spawn_nateroid, just add velocities
     let (linear_velocity, angular_velocity) =
-        calculate_nateroid_velocity(config.linear_velocity, config.angular_velocity);
+        calculate_nateroid_velocity(settings.linear_velocity, settings.angular_velocity);
 
     commands
         .entity(nateroid.entity)
         .insert(linear_velocity)
         .insert(angular_velocity);
 
-    insert_configured_components(&mut commands, &mut config.actor_settings, nateroid.entity);
+    insert_configured_components(&mut commands, &mut settings.actor_settings, nateroid.entity);
 }
 
 fn initialize_transform(
     boundary_transform: &Transform,
-    nateroid_config: &NateroidSettings,
+    nateroid_settings: &NateroidSettings,
     spatial_query: &SpatialQuery,
 ) -> Option<Transform> {
     const MAX_ATTEMPTS: u32 = 20;
@@ -337,7 +338,7 @@ fn initialize_transform(
         ..default()
     };
 
-    let scale = nateroid_config.actor_settings.transform.scale;
+    let scale = nateroid_settings.actor_settings.transform.scale;
     let filter =
         SpatialQueryFilter::from_mask(LayerMask::from([GameLayer::Spaceship, GameLayer::Asteroid]));
 
@@ -347,10 +348,12 @@ fn initialize_transform(
 
         // Approximate collider for spawn overlap check — the real collider is
         // computed from child AABBs after the entity spawns.
-        let spawn_collider = match nateroid_config.actor_settings.collider_type {
-            ColliderType::Ball => Collider::sphere(nateroid_config.actor_settings.collider_margin),
+        let spawn_collider = match nateroid_settings.actor_settings.collider_type {
+            ColliderType::Ball => {
+                Collider::sphere(nateroid_settings.actor_settings.collider_margin)
+            },
             ColliderType::Cuboid => {
-                let m = nateroid_config.actor_settings.collider_margin;
+                let m = nateroid_settings.actor_settings.collider_margin;
                 Collider::cuboid(m, m, m)
             },
         };
@@ -371,7 +374,7 @@ fn precompute_death_materials(
     scene_assets: Res<SceneAssets>,
     scenes: Res<Assets<Scene>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    nateroid_config: Res<NateroidSettings>,
+    nateroid_settings: Res<NateroidSettings>,
 ) {
     // Get the nateroid scene
     let Some(nateroid_scene) = scenes.get(&scene_assets.nateroid) else {
@@ -379,8 +382,8 @@ fn precompute_death_materials(
         return;
     };
 
-    let initial_alpha = nateroid_config.initial_alpha;
-    let target_alpha = nateroid_config.target_alpha;
+    let initial_alpha = nateroid_settings.initial_alpha;
+    let target_alpha = nateroid_settings.target_alpha;
     // Safe: alpha values are 0.0-1.0, result is small positive integer (~30-40)
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let num_levels = ((initial_alpha - target_alpha) * 100.0) as usize + 1;

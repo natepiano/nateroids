@@ -56,25 +56,25 @@ pub struct Spaceship;
 fn spawn_after_splash_text_removed(
     _trigger: On<Remove, SplashText>,
     commands: Commands,
-    spaceship_config: Res<SpaceshipSettings>,
+    spaceship_settings: Res<SpaceshipSettings>,
 ) {
-    spawn_spaceship(commands, spaceship_config);
+    spawn_spaceship(commands, spaceship_settings);
 }
 
 /// Spawns a spaceship only if one doesn't already exist
 fn spawn_spaceship_if_needed(
     commands: Commands,
-    spaceship_config: Res<SpaceshipSettings>,
+    spaceship_settings: Res<SpaceshipSettings>,
     query: Query<(), With<Spaceship>>,
 ) {
     // Only spawn if no spaceship exists (e.g., coming from GameOver)
     if query.is_empty() {
-        spawn_spaceship(commands, spaceship_config);
+        spawn_spaceship(commands, spaceship_settings);
     }
 }
 
-fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipSettings>) {
-    if !spaceship_config.spawnable {
+fn spawn_spaceship(mut commands: Commands, spaceship_settings: Res<SpaceshipSettings>) {
+    if !spaceship_settings.spawnable {
         return;
     }
 
@@ -84,17 +84,17 @@ fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipSettin
 fn initialize_spaceship(
     spaceship: On<Add, Spaceship>,
     mut commands: Commands,
-    mut spaceship_config: ResMut<SpaceshipSettings>,
+    mut spaceship_settings: ResMut<SpaceshipSettings>,
 ) {
     commands
         .entity(spaceship.entity)
-        .insert(spaceship_config.transform)
+        .insert(spaceship_settings.transform)
         // Ship controls now come from enhanced-input on the spaceship context entity.
         .insert(ship_controls_input_bundle());
 
     insert_configured_components(
         &mut commands,
-        &mut spaceship_config.actor_settings,
+        &mut spaceship_settings.actor_settings,
         spaceship.entity,
     );
 }

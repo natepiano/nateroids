@@ -23,14 +23,14 @@ pub struct AabbPlugin;
 impl Plugin for AabbPlugin {
     fn build(&self, app: &mut App) {
         app.init_gizmo_group::<AabbGizmo>()
-            .init_resource::<AabbConfig>()
+            .init_resource::<AabbSettings>()
             .add_plugins(
-                ResourceInspectorPlugin::<AabbConfig>::default()
+                ResourceInspectorPlugin::<AabbSettings>::default()
                     .run_if(switches::is_switch_on(Switch::InspectAabb)),
             )
             .add_systems(
                 Update,
-                apply_aabb_settings.run_if(resource_changed::<AabbConfig>),
+                apply_aabb_settings.run_if(resource_changed::<AabbSettings>),
             )
             .add_systems(
                 Update,
@@ -63,13 +63,13 @@ struct AabbGizmo {}
 
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
-struct AabbConfig {
+struct AabbSettings {
     color:      Color,
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
     line_width: f32,
 }
 
-impl Default for AabbConfig {
+impl Default for AabbSettings {
     fn default() -> Self {
         Self {
             color:      Color::from(tailwind::GREEN_800),
@@ -78,7 +78,7 @@ impl Default for AabbConfig {
     }
 }
 
-fn apply_aabb_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<AabbConfig>) {
+fn apply_aabb_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<AabbSettings>) {
     let (gizmo_config, _) = config_store.config_mut::<AabbGizmo>();
     gizmo_config.line.width = config.line_width;
     gizmo_config.render_layers = RenderLayer::Game.layers();
@@ -98,14 +98,14 @@ pub fn max_dimension(aabb: &Aabb) -> f32 {
 fn draw_aabb_system(
     mut gizmos: Gizmos<AabbGizmo>,
     aabbs: Query<(&Transform, &Aabb), Without<ChildOf>>,
-    config: Res<AabbConfig>,
+    settings: Res<AabbSettings>,
 ) {
     for (transform, aabb) in aabbs.iter() {
         let center = transform.transform_point(Vec3::from(aabb.center));
 
         gizmos.cube(
             Transform::from_trs(center, transform.rotation, size(aabb) * transform.scale),
-            config.color,
+            settings.color,
         );
     }
 }

@@ -110,8 +110,8 @@ fn spaceship_movement_controls(
     accelerate_state: ShipAccelerateStateQuery,
     turn_left_state: ShipTurnLeftStateQuery,
     turn_right_state: ShipTurnRightStateQuery,
-    spaceship_config: Res<SpaceshipSettings>,
-    movement_config: Res<SpaceshipControlSettings>,
+    spaceship_settings: Res<SpaceshipSettings>,
+    movement_settings: Res<SpaceshipControlSettings>,
     time: Res<Time>,
     orientation_mode: Res<CameraOrientation>,
 ) {
@@ -121,10 +121,10 @@ fn spaceship_movement_controls(
         q_spaceship.single_mut()
     {
         // dynamically update from inspector while game is running to change size
-        spaceship_transform.scale = spaceship_config.transform.scale;
+        spaceship_transform.scale = spaceship_settings.transform.scale;
 
         let delta_seconds = time.delta_secs();
-        let rotation_speed = movement_config.rotation_speed;
+        let rotation_speed = movement_settings.rotation_speed;
 
         // Set angular velocity based on input
         let turn_right = **turn_right_state != TriggerState::None;
@@ -151,8 +151,8 @@ fn spaceship_movement_controls(
         angular_velocity.y = 0.0;
         angular_velocity.z = target_angular_velocity;
 
-        let max_speed = movement_config.max_speed;
-        let accel = movement_config.acceleration;
+        let max_speed = movement_settings.max_speed;
+        let accel = movement_settings.acceleration;
 
         if accelerate {
             apply_acceleration(

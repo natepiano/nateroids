@@ -361,7 +361,7 @@ impl Boundary {
             PortalGeometry::SingleFace => {
                 // Draw full circle
                 let rotation = Quat::from_rotation_arc(
-                    orientation.config.axis_profundus,
+                    orientation.settings.axis_profundus,
                     portal.normal().as_vec3(),
                 );
                 let isometry = Isometry3d::new(portal.position, rotation);

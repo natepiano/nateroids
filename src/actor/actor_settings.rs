@@ -36,7 +36,7 @@ pub struct ActorSettingsPlugin;
 
 impl Plugin for ActorSettingsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AssetsState::Loaded), initialize_actor_settings)
+        app.add_systems(OnEnter(AssetsState::Loaded), initialize_actors)
             .add_observer(propagate_render_layers_on_spawn)
             .add_plugins(
                 ResourceInspectorPlugin::<MissileSettings>::default()
@@ -147,20 +147,20 @@ pub const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
     .lock_rotation_y()
     .lock_translation_z();
 
-pub fn initialize_actor_settings(mut commands: Commands, scene_assets: Res<SceneAssets>) {
+pub fn initialize_actors(mut commands: Commands, scene_assets: Res<SceneAssets>) {
     let mut nateroid_defaults = NateroidSettings::default();
-    initialize_actor_config(
+    initialize_actor_settings(
         &mut nateroid_defaults.actor_settings,
         &scene_assets.nateroid,
     );
     commands.insert_resource(nateroid_defaults);
 
     let mut missile_defaults = MissileSettings::default();
-    initialize_actor_config(&mut missile_defaults.actor_settings, &scene_assets.missile);
+    initialize_actor_settings(&mut missile_defaults.actor_settings, &scene_assets.missile);
     commands.insert_resource(missile_defaults);
 
     let mut spaceship_defaults = SpaceshipSettings::default();
-    initialize_actor_config(
+    initialize_actor_settings(
         &mut spaceship_defaults.actor_settings,
         &scene_assets.spaceship,
     );
@@ -171,7 +171,7 @@ pub fn create_spawn_timer(spawn_timer_seconds: Option<f32>) -> Option<Timer> {
     spawn_timer_seconds.map(|seconds| Timer::from_seconds(seconds, TimerMode::Repeating))
 }
 
-fn initialize_actor_config(config: &mut ActorSettings, scene_handle: &Handle<Scene>) {
+fn initialize_actor_settings(config: &mut ActorSettings, scene_handle: &Handle<Scene>) {
     config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);
     config.scene = scene_handle.clone();
 }
