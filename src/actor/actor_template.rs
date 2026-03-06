@@ -3,7 +3,7 @@
 //! we want to use an inspector to change defaults so
 //! a new bundle is constructed on each spawn and if the inspector changed
 //! anything, it will be reflected in the newly created entity. each of these
-//! can be thought of as an `ActorConfig`
+//! can be thought of as an `ActorSettings`
 use std::ops::Deref;
 use std::ops::DerefMut;
 

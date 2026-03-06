@@ -6,13 +6,13 @@ use bevy::camera::visibility::VisibleEntities;
 use bevy::diagnostic::FrameCount;
 use bevy::mesh::Mesh3d;
 use bevy::prelude::*;
-use rand::prelude::ThreadRng;
 use rand::Rng;
 use rand::RngExt;
+use rand::prelude::ThreadRng;
 
+use super::RenderLayer;
 use super::camera_star::StarCamera;
 use super::settings::StarSettings;
-use super::RenderLayer;
 use crate::playfield::Boundary;
 use crate::state::GameState;
 use crate::traits::TransformExt;
@@ -105,23 +105,23 @@ fn despawn_stars(
 /// Spawn stars with all components at once to avoid archetype changes after spawn
 fn spawn_stars(
     mut commands: Commands,
-    config: Res<StarSettings>,
-    boundary_config: Res<Boundary>,
+    star_settings: Res<StarSettings>,
+    boundary_settings: Res<Boundary>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     debug!("spawning stars");
-    let longest_diagonal = boundary_config.longest_diagonal();
-    let inner_sphere_radius = longest_diagonal + config.star_field_inner_diameter;
-    let outer_sphere_radius = inner_sphere_radius + config.star_field_outer_diameter;
+    let longest_diagonal = boundary_settings.longest_diagonal();
+    let inner_sphere_radius = longest_diagonal + star_settings.star_field_inner_diameter;
+    let outer_sphere_radius = inner_sphere_radius + star_settings.star_field_outer_diameter;
 
     let mesh = meshes.add(Sphere::new(1.));
     let mut rng = rand::rng();
 
-    for _ in 0..config.star_count {
+    for _ in 0..star_settings.star_count {
         let position = get_star_position(inner_sphere_radius, outer_sphere_radius, &mut rng);
-        let radius = rng.random_range(config.star_radius_min..config.star_radius_max);
-        let emissive = get_star_color(&config, &mut rng);
+        let radius = rng.random_range(star_settings.star_radius_min..star_settings.star_radius_max);
+        let emissive = get_star_color(&star_settings, &mut rng);
 
         let material = materials.add(StandardMaterial {
             emissive: LinearRgba::new(emissive.x, emissive.y, emissive.z, emissive.w),
@@ -152,7 +152,7 @@ fn get_star_position(
     let polar_norm: f32 = rng.random_range(0.0..1.0); // normalized polar angle
 
     let theta = azimuth_norm * std::f32::consts::PI * 2.0; // azimuthal: 0 to 2π
-                                                           // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
+    // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
     let phi = 2.0f32.mul_add(polar_norm, -1.0).acos(); // polar angle
     let radius = rng.random_range(inner_sphere_radius..outer_sphere_radius);
 
@@ -164,12 +164,12 @@ fn get_star_position(
     Vec3::new(x, y, z)
 }
 
-fn get_star_color(config: &StarSettings, rng: &mut impl Rng) -> Vec4 {
-    let end = config.star_color.end;
-    let color_start = config.star_color.start;
-    let white_start = end * config.star_color_white_start_ratio;
+fn get_star_color(settings: &StarSettings, rng: &mut impl Rng) -> Vec4 {
+    let end = settings.star_color.end;
+    let color_start = settings.star_color.start;
+    let white_start = end * settings.star_color_white_start_ratio;
 
-    let start = if rng.random::<f32>() < config.star_color_white_probability {
+    let start = if rng.random::<f32>() < settings.star_color_white_probability {
         white_start
     } else {
         color_start
@@ -200,23 +200,23 @@ fn get_star_color(config: &StarSettings, rng: &mut impl Rng) -> Vec4 {
 
 fn rotate_stars(
     time: Res<Time>,
-    config: Res<StarSettings>,
+    settings: Res<StarSettings>,
     mut rotation_state: ResMut<StarRotationState>,
     mut stars: Query<(&Star, &mut Transform)>,
 ) {
     // Guard against invalid rotation cycle values (min: 1 second = 0.01667 minutes)
-    if config.rotation_cycle_minutes < 0.01667 {
+    if settings.rotation_cycle_minutes < 0.01667 {
         return;
     }
 
     // Calculate rotation speed (radians per second)
-    let rotation_speed = (2.0 * PI) / (config.rotation_cycle_minutes * 60.0);
+    let rotation_speed = (2.0 * PI) / (settings.rotation_cycle_minutes * 60.0);
 
     // Update current angle (negative for clockwise rotation when viewed from above)
     rotation_state.current_angle -= rotation_speed * time.delta_secs();
 
     // Apply rotation to each star around the configured axis
-    let rotation = Quat::from_axis_angle(config.rotation_axis, rotation_state.current_angle);
+    let rotation = Quat::from_axis_angle(settings.rotation_axis, rotation_state.current_angle);
 
     for (star, mut transform) in &mut stars {
         transform.translation = rotation * star.position;

@@ -7,12 +7,12 @@ use bevy::prelude::*;
 use rand::Rng;
 use rand::RngExt;
 
-use super::actor_settings::insert_configured_components;
+use super::Teleporter;
 use super::actor_settings::ColliderType;
 use super::actor_settings::LOCKED_AXES_2D;
+use super::actor_settings::insert_configured_components;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
-use super::Teleporter;
 use crate::asset_loader;
 use crate::asset_loader::SceneAssets;
 use crate::playfield::ActorPortals;

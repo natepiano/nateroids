@@ -127,11 +127,11 @@ fn add_selection_outline_command(
     mut commands: Commands,
     children_query: Query<&Children>,
     mesh_query: Query<Entity, With<Mesh3d>>,
-    config: Res<SelectionOutlineSettings>,
+    settings: Res<SelectionOutlineSettings>,
 ) {
-    let outline = MeshOutline::new(config.width)
-        .with_color(config.color)
-        .with_intensity(config.intensity);
+    let outline = MeshOutline::new(settings.width)
+        .with_color(settings.color)
+        .with_intensity(settings.intensity);
 
     for descendant in children_query.iter_descendants(entity) {
         if mesh_query.get(descendant).is_ok() {
@@ -183,23 +183,23 @@ fn remove_selection_outline_command(
 // Systems
 // ---------------------------------------------------------------------------
 
-/// Syncs `SelectionConfig` changes to all active `MeshOutline` components in real time
+/// Syncs `SelectionOutlineSettings` changes to all active `MeshOutline` components in real time
 fn sync_outline_settings(
-    config: Res<SelectionOutlineSettings>,
+    settings: Res<SelectionOutlineSettings>,
     selected_query: Query<Entity, With<Selected>>,
     children_query: Query<&Children>,
     mut outline_query: Query<&mut MeshOutline>,
 ) {
-    if !config.is_changed() {
+    if !settings.is_changed() {
         return;
     }
 
     for entity in selected_query.iter() {
         for descendant in children_query.iter_descendants(entity) {
             if let Ok(mut outline) = outline_query.get_mut(descendant) {
-                outline.width = config.width;
-                outline.color = config.color;
-                outline.intensity = config.intensity;
+                outline.width = settings.width;
+                outline.color = settings.color;
+                outline.intensity = settings.intensity;
             }
         }
     }

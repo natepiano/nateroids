@@ -7,8 +7,8 @@ use crate::actor::DeathCorner;
 use crate::actor::Health;
 use crate::actor::MissilePosition;
 use crate::actor::Nateroid;
-use crate::actor::NateroidSettings;
 use crate::actor::NateroidDeathMaterials;
+use crate::actor::NateroidSettings;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
@@ -176,7 +176,7 @@ fn despawn_dead_entities(
         ),
         Without<Deaderoid>,
     >,
-    config: Res<NateroidSettings>,
+    nateroid_settings: Res<NateroidSettings>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     death_materials: Option<Res<NateroidDeathMaterials>>,
     children_query: Query<&Children>,
@@ -200,8 +200,8 @@ fn despawn_dead_entities(
                     transform.translation,
                     linear_velocity.0,
                     boundary_transform,
-                    config.death_duration_secs,
-                    config.death_corner,
+                    nateroid_settings.death_duration_secs,
+                    nateroid_settings.death_corner,
                 );
 
                 // Nateroid - start death animation
@@ -210,8 +210,8 @@ fn despawn_dead_entities(
                     .insert((
                         Deaderoid {
                             initial_scale:          transform.scale,
-                            target_shrink:          config.death_shrink_pct,
-                            shrink_duration:        config.death_duration_secs,
+                            target_shrink:          nateroid_settings.death_shrink_pct,
+                            shrink_duration:        nateroid_settings.death_duration_secs,
                             elapsed_time:           0.0,
                             current_shrink:         1.0,
                             current_material_index: 0,
@@ -241,7 +241,7 @@ fn despawn_dead_entities(
 
                     debug!(
                         "💀 {entity_name}: Applied initial materials (index 0, alpha {:.2}) to {material_index} descendants",
-                        config.initial_alpha
+                        nateroid_settings.initial_alpha
                     );
                 }
             } else {
@@ -280,7 +280,7 @@ fn animate_dying_nateroids(
     death_materials: Option<Res<NateroidDeathMaterials>>,
     children_query: Query<&Children>,
     material_query: Query<&MeshMaterial3d<StandardMaterial>>,
-    nateroid_config: Res<NateroidSettings>,
+    nateroid_settings: Res<NateroidSettings>,
     mut commands: Commands,
 ) {
     // Early return if materials haven't been precomputed yet
@@ -321,7 +321,7 @@ fn animate_dying_nateroids(
             // FMA optimization (faster + more precise): initial_alpha - (new_index as f32 * 0.01)
             let alpha = new_index
                 .to_f32()
-                .mul_add(-0.01, nateroid_config.initial_alpha);
+                .mul_add(-0.01, nateroid_settings.initial_alpha);
 
             debug!(
                 "💀 {entity_name}: Material swap {old_index} → {new_index} | progress: {:.3} → {:.3} | alpha: {:.2}",

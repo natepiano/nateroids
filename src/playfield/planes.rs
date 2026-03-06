@@ -123,7 +123,7 @@ fn create_or_update_plane(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    planes_config: &PlaneSettings,
+    plane_settings: &PlaneSettings,
     size: Vec3,
     position: Vec3,
     axis: Vec3,
@@ -134,7 +134,7 @@ fn create_or_update_plane(
         half_size: size / 2.0,
     };
     let mesh = meshes.add(Mesh::from(cuboid));
-    let material_handle = get_plane_material(materials, planes_config);
+    let material_handle = get_plane_material(materials, plane_settings);
     let rotation = Quat::from_axis_angle(axis, PLANE_ROTATION_ANGLE);
     let transform = Transform::from_trs(position, rotation, Vec3::ONE);
 
@@ -163,10 +163,10 @@ fn manage_box_planes(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     orientation: Res<CameraOrientation>,
-    planes_config: Res<PlaneSettings>,
+    plane_settings: Res<PlaneSettings>,
     planes: Query<(Entity, &BoxPlane)>,
 ) {
-    if !planes_config.is_changed() {
+    if !plane_settings.is_changed() {
         return;
     }
 
@@ -175,7 +175,7 @@ fn manage_box_planes(
     };
 
     let plane_specifications = get_plane_specifications(
-        &planes_config,
+        &plane_settings,
         boundary_transform.scale,
         &orientation.settings,
     );
@@ -190,7 +190,7 @@ fn manage_box_planes(
                 &mut commands,
                 &mut meshes,
                 &mut materials,
-                &planes_config,
+                &plane_settings,
                 size,
                 position,
                 axis,
@@ -204,50 +204,50 @@ fn manage_box_planes(
 }
 
 fn get_plane_specifications(
-    config: &Res<PlaneSettings>,
+    plane_settings: &Res<PlaneSettings>,
     box_size: Vec3,
     orientation: &OrientationSettings,
 ) -> [(PlaneType, bool, Vec3, Vec3, Vec3); 6] {
     [
         (
             PlaneType::Back,
-            config.back,
-            Vec3::new(box_size.x, box_size.y, config.thickness),
+            plane_settings.back,
+            Vec3::new(box_size.x, box_size.y, plane_settings.thickness),
             Vec3::new(0., 0., -box_size.z / 2.),
             orientation.axis_profundus,
         ),
         (
             PlaneType::Front,
-            config.front,
-            Vec3::new(box_size.x, box_size.y, config.thickness),
+            plane_settings.front,
+            Vec3::new(box_size.x, box_size.y, plane_settings.thickness),
             Vec3::new(0., 0., box_size.z / 2.),
             orientation.axis_profundus,
         ),
         (
             PlaneType::Bottom,
-            config.bottom,
-            Vec3::new(box_size.x, config.thickness, box_size.z),
+            plane_settings.bottom,
+            Vec3::new(box_size.x, plane_settings.thickness, box_size.z),
             Vec3::new(0., -box_size.y / 2., 0.0),
             orientation.axis_mundi,
         ),
         (
             PlaneType::Top,
-            config.top,
-            Vec3::new(box_size.x, config.thickness, box_size.z),
+            plane_settings.top,
+            Vec3::new(box_size.x, plane_settings.thickness, box_size.z),
             Vec3::new(0., box_size.y / 2., 0.0),
             orientation.axis_mundi,
         ),
         (
             PlaneType::Left,
-            config.left,
-            Vec3::new(config.thickness, box_size.y, box_size.z),
+            plane_settings.left,
+            Vec3::new(plane_settings.thickness, box_size.y, box_size.z),
             Vec3::new(-box_size.x / 2., 0., 0.0),
             orientation.axis_orbis,
         ),
         (
             PlaneType::Right,
-            config.right,
-            Vec3::new(config.thickness, box_size.y, box_size.z),
+            plane_settings.right,
+            Vec3::new(plane_settings.thickness, box_size.y, box_size.z),
             Vec3::new(box_size.x / 2., 0., 0.0),
             orientation.axis_orbis,
         ),
@@ -256,26 +256,26 @@ fn get_plane_specifications(
 
 fn get_plane_material(
     materials: &mut Assets<StandardMaterial>,
-    config: &PlaneSettings,
+    settings: &PlaneSettings,
 ) -> Handle<StandardMaterial> {
     let mut material = StandardMaterial {
-        attenuation_distance: config.attenuation_distance,
-        base_color: config.base_color,
-        cull_mode: config.cull_mode,
-        diffuse_transmission: config.diffuse_transmission,
-        double_sided: config.double_sided,
-        emissive: config.emissive,
-        ior: config.ior,
-        metallic: config.metallic,
-        perceptual_roughness: config.perceptual_roughness,
-        reflectance: config.reflectance,
-        specular_transmission: config.specular_transmission,
-        thickness: config.thickness,
+        attenuation_distance: settings.attenuation_distance,
+        base_color: settings.base_color,
+        cull_mode: settings.cull_mode,
+        diffuse_transmission: settings.diffuse_transmission,
+        double_sided: settings.double_sided,
+        emissive: settings.emissive,
+        ior: settings.ior,
+        metallic: settings.metallic,
+        perceptual_roughness: settings.perceptual_roughness,
+        reflectance: settings.reflectance,
+        specular_transmission: settings.specular_transmission,
+        thickness: settings.thickness,
         ..default()
     };
 
     // Only set alpha_mode if it's Some
-    if let Some(alpha_mode) = config.alpha_mode {
+    if let Some(alpha_mode) = settings.alpha_mode {
         material.alpha_mode = alpha_mode;
     }
 

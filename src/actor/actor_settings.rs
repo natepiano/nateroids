@@ -176,7 +176,7 @@ fn initialize_actor_settings(config: &mut ActorSettings, scene_handle: &Handle<S
     config.scene = scene_handle.clone();
 }
 
-/// use config values so inspectors can provide new defaults
+/// use settings values so inspectors can provide new defaults
 pub fn insert_configured_components(
     commands: &mut Commands,
     settings: &mut ActorSettings,

@@ -10,8 +10,8 @@ mod spaceship;
 mod spaceship_control;
 mod teleport;
 
-pub use aabb::max_dimension as aabb_max_dimension;
 use aabb::AabbPlugin;
+pub use aabb::max_dimension as aabb_max_dimension;
 use actor_settings::ActorSettingsPlugin;
 pub use actor_settings::Health;
 pub use actor_template::DeathCorner;

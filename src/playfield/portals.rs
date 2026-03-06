@@ -183,7 +183,7 @@ fn init_portals(
         &mut ActorPortals,
     )>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
-    portal_config: Res<PortalSettings>,
+    portal_settings: Res<PortalSettings>,
     time: Res<Time>,
 ) {
     let Ok(boundary_transform) = boundary_volume_query.single() else {
@@ -195,12 +195,12 @@ fn init_portals(
         .x
         .min(boundary_transform.scale.y)
         .min(boundary_transform.scale.z);
-    let boundary_distance_approach = boundary_size * portal_config.distance_approach;
-    let boundary_distance_shrink = boundary_size * portal_config.distance_shrink;
+    let boundary_distance_approach = boundary_size * portal_settings.distance_approach;
+    let boundary_distance_shrink = boundary_size * portal_settings.distance_shrink;
 
     for (aabb, transform, velocity, teleporter, mut visual) in &mut q_actor {
-        let radius = aabb_max_dimension(aabb).max(portal_config.portal_smallest)
-            * portal_config.portal_scalar;
+        let radius = aabb_max_dimension(aabb).max(portal_settings.portal_smallest)
+            * portal_settings.portal_scalar;
 
         let portal_position = transform.translation;
         let actor_direction = velocity.normalize_or_zero();
@@ -217,13 +217,13 @@ fn init_portals(
         handle_approaching_visual(
             boundary_transform,
             portal.clone(),
-            &portal_config,
+            &portal_settings,
             &time,
             &mut visual,
         );
         handle_emerging_visual(
             portal.clone(),
-            &portal_config,
+            &portal_settings,
             teleporter,
             &time,
             &mut visual,
@@ -258,7 +258,7 @@ fn snap_and_get_face(
 
 fn handle_emerging_visual(
     portal: Portal,
-    portal_config: &Res<PortalSettings>,
+    portal_settings: &Res<PortalSettings>,
     teleporter: &Teleporter,
     time: &Res<Time>,
     visual: &mut Mut<ActorPortals>,
@@ -293,7 +293,7 @@ fn handle_emerging_visual(
     // once the radius gets small enough we can eliminate it
     else if let Some(ref mut emerging) = visual.emerging {
         // Check if the radius has shrunk to a small value (near zero)
-        if emerging.radius <= portal_config.minimum_radius {
+        if emerging.radius <= portal_settings.minimum_radius {
             visual.emerging = None; // Remove the visual
         }
     }
@@ -302,7 +302,7 @@ fn handle_emerging_visual(
 fn handle_approaching_visual(
     boundary_transform: &Transform,
     portal: Portal,
-    portal_config: &Res<PortalSettings>,
+    portal_settings: &Res<PortalSettings>,
     time: &Res<Time>,
     visual: &mut Mut<ActorPortals>,
 ) {
@@ -330,7 +330,7 @@ fn handle_approaching_visual(
 
             // Disable smoothing on any topology change to prevent off-plane artifacts
             let smoothed_position = if current_face_count == previous_face_count {
-                smooth_circle_position(visual, collision_point, normal, portal_config)
+                smooth_circle_position(visual, collision_point, normal, portal_settings)
             } else {
                 collision_point
             };
@@ -378,11 +378,11 @@ fn smooth_circle_position(
     visual: &Mut<ActorPortals>,
     collision_point: Vec3,
     current_boundary_wall_normal: Dir3,
-    portal_config: &Res<PortalSettings>,
+    portal_settings: &Res<PortalSettings>,
 ) -> Vec3 {
     if let Some(approaching) = &visual.approaching {
         // Adjust this value to control smoothing (0.0 to 1.0)
-        let smoothing_factor = portal_config.movement_smoothing_factor;
+        let smoothing_factor = portal_settings.movement_smoothing_factor;
 
         // Only smooth the position if the normal hasn't changed significantly
         // circle_direction_change_factor = threshold for considering normals "similar"
@@ -390,7 +390,7 @@ fn smooth_circle_position(
         if approaching
             .normal()
             .dot(current_boundary_wall_normal.as_vec3())
-            > portal_config.direction_change_factor
+            > portal_settings.direction_change_factor
         {
             approaching.position.lerp(collision_point, smoothing_factor)
         } else {
@@ -404,7 +404,7 @@ fn smooth_circle_position(
 
 fn update_approaching_portals(
     time: Res<Time>,
-    config: Res<PortalSettings>,
+    portal_settings: Res<PortalSettings>,
     mut q_portals: Query<&mut ActorPortals>,
 ) {
     for mut portal in &mut q_portals {
@@ -418,10 +418,12 @@ fn update_approaching_portals(
                 let elapsed_time = time.elapsed_secs() - fade_out_start;
 
                 // Fade out over n seconds
-                let fade_out_duration = config.fadeout_duration;
+                let fade_out_duration = portal_settings.fadeout_duration;
                 #[allow(clippy::suspicious_operation_groupings)]
                 // minimum_radius is correct here, not radius
-                if elapsed_time >= fade_out_duration || approaching.radius < config.minimum_radius {
+                if elapsed_time >= fade_out_duration
+                    || approaching.radius < portal_settings.minimum_radius
+                {
                     // Remove visual after fade-out is complete
                     portal.approaching = None;
                     continue;
@@ -440,7 +442,7 @@ fn update_approaching_portals(
 
 fn draw_approaching_portals(
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
-    config: Res<PortalSettings>,
+    portal_settings: Res<PortalSettings>,
     orientation: Res<CameraOrientation>,
     q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
@@ -454,8 +456,8 @@ fn draw_approaching_portals(
             Boundary::draw_portal(
                 &mut gizmos,
                 approaching,
-                config.color_approaching,
-                config.resolution,
+                portal_settings.color_approaching,
+                portal_settings.resolution,
                 &orientation,
                 deaderoid.is_some(),
                 boundary_transform,
@@ -487,7 +489,7 @@ fn get_approaching_radius(approaching: &Portal) -> f32 {
 
 fn update_emerging_portals(
     time: Res<Time>,
-    config: Res<PortalSettings>,
+    portal_settings: Res<PortalSettings>,
     mut q_portals: Query<&mut ActorPortals>,
 ) {
     for mut portal in &mut q_portals {
@@ -498,7 +500,7 @@ fn update_emerging_portals(
             let elapsed_time = time.elapsed_secs() - emerging_start;
 
             // Define the total duration for the emerging process
-            let emerging_duration = config.fadeout_duration;
+            let emerging_duration = portal_settings.fadeout_duration;
 
             // Calculate the progress based on elapsed time
             let progress = (elapsed_time / emerging_duration).clamp(0.0, 1.0);
@@ -521,7 +523,7 @@ fn update_emerging_portals(
 
 fn draw_emerging_portals(
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
-    config: Res<PortalSettings>,
+    portal_settings: Res<PortalSettings>,
     orientation: Res<CameraOrientation>,
     q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
@@ -535,8 +537,8 @@ fn draw_emerging_portals(
             Boundary::draw_portal(
                 &mut gizmos,
                 emerging,
-                config.color_emerging,
-                config.resolution,
+                portal_settings.color_emerging,
+                portal_settings.resolution,
                 &orientation,
                 deaderoid.is_some(),
                 boundary_transform,

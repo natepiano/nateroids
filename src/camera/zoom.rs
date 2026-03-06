@@ -213,16 +213,16 @@ fn apply_focus_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<
 fn update_focus_gizmo_state(
     camera_query: Query<&PanOrbitCamera, With<Camera>>,
     camera_changed: Query<(), (With<Camera>, Changed<PanOrbitCamera>)>,
-    config: Res<FocusSettings>,
+    settings: Res<FocusSettings>,
     mut state: ResMut<FocusGizmoState>,
 ) {
-    if camera_changed.is_empty() && !config.is_changed() {
+    if camera_changed.is_empty() && !settings.is_changed() {
         return;
     }
 
     if let Ok(pan_orbit) = camera_query.single() {
         let camera_radius = pan_orbit.radius.unwrap_or(100.0);
-        state.sphere_radius = config.sphere_radius * (camera_radius / 100.0);
+        state.sphere_radius = settings.sphere_radius * (camera_radius / 100.0);
     }
 }
 
@@ -230,15 +230,15 @@ fn draw_camera_focus_gizmo(
     mut commands: Commands,
     mut gizmos: Gizmos<FocusGizmo>,
     camera_query: Query<(&Camera, &GlobalTransform, &PanOrbitCamera)>,
-    config: Res<FocusSettings>,
+    focus_settings: Res<FocusSettings>,
     state: Res<FocusGizmoState>,
     mut label_query: Query<(&mut Text, &mut Node, &mut TextColor), With<FocusDistanceLabel>>,
 ) {
     if let Ok((cam, cam_transform, pan_orbit)) = camera_query.single() {
         let focus = pan_orbit.target_focus;
 
-        gizmos.sphere(focus, state.sphere_radius, config.color);
-        gizmos.arrow(Vec3::ZERO, focus, config.color);
+        gizmos.sphere(focus, state.sphere_radius, focus_settings.color);
+        gizmos.arrow(Vec3::ZERO, focus, focus_settings.color);
 
         let distance = focus.length();
         let text = format!("{distance:.1}");
@@ -250,7 +250,7 @@ fn draw_camera_focus_gizmo(
         if let Ok(label_screen_pos) = cam.world_to_viewport(cam_transform, label_world_pos) {
             if let Ok((mut label_text, mut node, mut text_color)) = label_query.single_mut() {
                 label_text.0.clone_from(&text);
-                text_color.0 = config.color;
+                text_color.0 = focus_settings.color;
                 node.left = Val::Px(label_screen_pos.x);
                 node.top = Val::Px(label_screen_pos.y);
             } else {
@@ -260,7 +260,7 @@ fn draw_camera_focus_gizmo(
                         font_size: EDGE_MARKER_FONT_SIZE,
                         ..default()
                     },
-                    TextColor(config.color),
+                    TextColor(focus_settings.color),
                     Node {
                         position_type: PositionType::Absolute,
                         left: Val::Px(label_screen_pos.x),

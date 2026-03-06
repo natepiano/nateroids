@@ -319,7 +319,7 @@ fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
 /// Snap camera to splash start position, then hold while text animates.
 fn start_splash_camera_animation(
     mut commands: Commands,
-    camera_config: Res<CameraSettings>,
+    camera_settings: Res<CameraSettings>,
     camera_query: Query<Entity, With<PanOrbitCamera>>,
 ) {
     let Ok(entity) = camera_query.single() else {
@@ -330,15 +330,15 @@ fn start_splash_camera_animation(
 
     // Instant snap to splash start position, then hold while text animates
     let snap_move = CameraMove::ToOrbit {
-        focus:    camera_config.splash_start_focus,
-        yaw:      camera_config.splash_start_yaw,
-        pitch:    camera_config.splash_start_pitch,
-        radius:   camera_config.splash_start_radius,
+        focus:    camera_settings.splash_start_focus,
+        yaw:      camera_settings.splash_start_yaw,
+        pitch:    camera_settings.splash_start_pitch,
+        radius:   camera_settings.splash_start_radius,
         duration: Duration::ZERO,
         easing:   EaseFunction::Linear,
     };
     let hold_move = CameraMove::ToPosition {
-        translation: Vec3::new(0.0, 0.0, camera_config.splash_start_radius),
+        translation: Vec3::new(0.0, 0.0, camera_settings.splash_start_radius),
         focus:       Vec3::ZERO,
         duration:    Duration::from_millis(2500),
         easing:      EaseFunction::BounceOut,

@@ -525,49 +525,25 @@ impl Boundary {
         // otherwise the edge runs along that axis, so use position's coordinate.
 
         let x = if normal1.x != 0.0 {
-            if normal1.x > 0.0 {
-                max.x
-            } else {
-                min.x
-            }
+            if normal1.x > 0.0 { max.x } else { min.x }
         } else if normal2.x != 0.0 {
-            if normal2.x > 0.0 {
-                max.x
-            } else {
-                min.x
-            }
+            if normal2.x > 0.0 { max.x } else { min.x }
         } else {
             position.x // Edge runs along X axis
         };
 
         let y = if normal1.y != 0.0 {
-            if normal1.y > 0.0 {
-                max.y
-            } else {
-                min.y
-            }
+            if normal1.y > 0.0 { max.y } else { min.y }
         } else if normal2.y != 0.0 {
-            if normal2.y > 0.0 {
-                max.y
-            } else {
-                min.y
-            }
+            if normal2.y > 0.0 { max.y } else { min.y }
         } else {
             position.y // Edge runs along Y axis
         };
 
         let z = if normal1.z != 0.0 {
-            if normal1.z > 0.0 {
-                max.z
-            } else {
-                min.z
-            }
+            if normal1.z > 0.0 { max.z } else { min.z }
         } else if normal2.z != 0.0 {
-            if normal2.z > 0.0 {
-                max.z
-            } else {
-                min.z
-            }
+            if normal2.z > 0.0 { max.z } else { min.z }
         } else {
             position.z // Edge runs along Z axis
         };

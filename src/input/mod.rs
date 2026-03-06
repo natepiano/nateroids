@@ -40,13 +40,13 @@ pub use global_shortcuts::RestartGameShortcut;
 pub use global_shortcuts::RestartWithSplashShortcut;
 pub use global_shortcuts::ShowFocusSwitch;
 pub use global_shortcuts::ZoomToFitShortcut;
-pub use ship_controls::ship_controls_input_bundle;
 pub use ship_controls::ShipAccelerate;
 pub use ship_controls::ShipContinuousFire;
 pub use ship_controls::ShipControlsContext;
 pub use ship_controls::ShipFire;
 pub use ship_controls::ShipTurnLeft;
 pub use ship_controls::ShipTurnRight;
+pub use ship_controls::ship_controls_input_bundle;
 
 pub struct EnhancedInputAppPlugin;
 

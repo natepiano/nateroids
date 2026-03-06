@@ -21,9 +21,9 @@ impl Plugin for GameCameraPlugin {
 }
 
 pub fn spawn_game_camera(
-    camera_config: Res<CameraSettings>,
+    camera_settings: Res<CameraSettings>,
     scene_assets: Res<SceneAssets>,
-    light_config: Res<LightSettings>,
+    light_settings: Res<LightSettings>,
     mut commands: Commands,
     stars_camera_entity: Single<Entity, With<StarCamera>>,
 ) {
@@ -33,7 +33,7 @@ pub fn spawn_game_camera(
             OutlineCamera,
             PanOrbitCamera {
                 focus: Vec3::ZERO,
-                target_radius: camera_config.splash_start_radius,
+                target_radius: camera_settings.splash_start_radius,
                 button_orbit: MouseButton::Middle,
                 button_pan: MouseButton::Middle,
                 modifier_pan: Some(KeyCode::ShiftLeft),
@@ -57,7 +57,7 @@ pub fn spawn_game_camera(
             EnvironmentMapLight {
                 diffuse_map: scene_assets.env_diffuse_map.clone(),
                 specular_map: scene_assets.env_specular_map.clone(),
-                intensity: light_config.environment_map_intensity,
+                intensity: light_settings.environment_map_intensity,
                 ..default()
             },
         ))
@@ -65,14 +65,14 @@ pub fn spawn_game_camera(
 }
 
 fn update_environment_map_intensity(
-    light_config: Res<LightSettings>,
+    light_settings: Res<LightSettings>,
     mut query: Query<&mut EnvironmentMapLight, With<Camera3d>>,
 ) {
-    if !light_config.is_changed() {
+    if !light_settings.is_changed() {
         return;
     }
 
     for mut env_light in &mut query {
-        env_light.intensity = light_config.environment_map_intensity;
+        env_light.intensity = light_settings.environment_map_intensity;
     }
 }

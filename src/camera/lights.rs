@@ -207,16 +207,16 @@ fn spawn_directional_light(
 fn manage_lighting(
     mut commands: Commands,
     mut ambient_light: ResMut<GlobalAmbientLight>,
-    light_config: Res<LightSettings>,
+    light_settings: Res<LightSettings>,
     camera_orientation: Res<CameraOrientation>,
     mut query: Query<(Entity, &mut DirectionalLight, &LightDirection)>,
 ) {
-    if !light_config.is_changed() && !light_config.is_added() {
+    if !light_settings.is_changed() && !light_settings.is_added() {
         return;
     }
 
-    ambient_light.brightness = light_config.ambient_light_brightness;
-    ambient_light.color = light_config.ambient_light_color;
+    ambient_light.brightness = light_settings.ambient_light_brightness;
+    ambient_light.color = light_settings.ambient_light_color;
 
     // iterate through all possible positions to see if any of them exist...
     // if it's been enabled and it doesn't exist then spawn it
@@ -229,7 +229,7 @@ fn manage_lighting(
         LightPosition::Bottom,
         LightPosition::Top,
     ] {
-        let settings = light_config.get_light_settings(*position);
+        let settings = light_settings.get_light_settings(*position);
 
         // we always spawn a light with its current LightDirection - see
         // if we have the current loop's position in an already spawned entity

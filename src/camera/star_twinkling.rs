@@ -57,7 +57,7 @@ fn extract_elements_at_indices<T: Clone>(vec: &[T], indices: &[usize]) -> Vec<T>
 // yeah - but how can the query below be much simpler?
 fn start_twinkling(
     mut commands: Commands,
-    config: Res<StarSettings>,
+    star_settings: Res<StarSettings>,
     stars: Query<(Entity, &MeshMaterial3d<StandardMaterial>), (With<Star>, Without<Twinkling>)>,
     materials: Res<Assets<StandardMaterial>>,
     mut start_timer: ResMut<StartTwinklingTimer>,
@@ -67,7 +67,10 @@ fn start_twinkling(
         return;
     }
 
-    let indices = get_random_indices(config.twinkle_choose_multiple_count, config.star_count);
+    let indices = get_random_indices(
+        star_settings.twinkle_choose_multiple_count,
+        star_settings.star_count,
+    );
 
     //todo: #bevy_question - I've tried a bunch of different implementations
     //                      but it all comes down to calling iter() when there are
@@ -97,12 +100,14 @@ fn start_twinkling(
                 material.emissive.blue,
                 material.emissive.alpha,
             );
-            let intensity =
-                rng.random_range(config.twinkle_intensity.start..config.twinkle_intensity.end);
+            let intensity = rng.random_range(
+                star_settings.twinkle_intensity.start..star_settings.twinkle_intensity.end,
+            );
             let target_emissive = original_emissive * intensity;
 
-            let duration =
-                rng.random_range(config.twinkle_duration.start..config.twinkle_duration.end);
+            let duration = rng.random_range(
+                star_settings.twinkle_duration.start..star_settings.twinkle_duration.end,
+            );
 
             commands.entity(entity).insert(Twinkling {
                 original_emissive,

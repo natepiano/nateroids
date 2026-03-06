@@ -1,7 +1,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use bevy_enhanced_input::action::events as input_events;
 use bevy_enhanced_input::action::TriggerState;
+use bevy_enhanced_input::action::events as input_events;
 use bevy_enhanced_input::prelude::Action;
 use bevy_enhanced_input::prelude::ActionOf;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
