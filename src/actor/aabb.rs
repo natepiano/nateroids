@@ -30,7 +30,7 @@ impl Plugin for AabbPlugin {
             )
             .add_systems(
                 Update,
-                apply_aabb_config.run_if(resource_changed::<AabbConfig>),
+                apply_aabb_settings.run_if(resource_changed::<AabbConfig>),
             )
             .add_systems(
                 Update,
@@ -78,7 +78,7 @@ impl Default for AabbConfig {
     }
 }
 
-fn apply_aabb_config(mut config_store: ResMut<GizmoConfigStore>, config: Res<AabbConfig>) {
+fn apply_aabb_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<AabbConfig>) {
     let (gizmo_config, _) = config_store.config_mut::<AabbGizmo>();
     gizmo_config.line.width = config.line_width;
     gizmo_config.render_layers = RenderLayer::Game.layers();

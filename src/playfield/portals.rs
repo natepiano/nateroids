@@ -54,7 +54,7 @@ impl Plugin for PortalPlugin {
             .add_systems(
                 Update,
                 (
-                    apply_portal_config.run_if(in_state(GameState::InGame)),
+                    apply_portal_settings.run_if(in_state(GameState::InGame)),
                     init_portals.run_if(in_state(PauseState::Playing)),
                     update_approaching_portals.run_if(in_state(PauseState::Playing)),
                     update_emerging_portals.run_if(in_state(PauseState::Playing)),
@@ -75,7 +75,7 @@ impl Plugin for PortalPlugin {
 #[derive(Debug, Default, Reflect, GizmoConfigGroup)]
 pub struct PortalGizmo {}
 
-fn apply_portal_config(
+fn apply_portal_settings(
     mut config_store: ResMut<GizmoConfigStore>,
     portal_config: Res<PortalConfig>,
 ) {

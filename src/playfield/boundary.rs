@@ -57,7 +57,7 @@ impl Plugin for BoundaryPlugin {
                     .run_if(switches::is_switch_on(Switch::InspectBoundary)),
             )
             .add_systems(Startup, spawn_boundary_volume)
-            .add_systems(Update, apply_boundary_config)
+            .add_systems(Update, apply_boundary_settings)
             .add_systems(Update, sync_boundary_volume)
             .add_systems(
                 Update,
@@ -74,7 +74,7 @@ impl Plugin for BoundaryPlugin {
     }
 }
 
-fn apply_boundary_config(mut config_store: ResMut<GizmoConfigStore>, boundary: Res<Boundary>) {
+fn apply_boundary_settings(mut config_store: ResMut<GizmoConfigStore>, boundary: Res<Boundary>) {
     let (config, _) = config_store.config_mut::<GridGizmo>();
     config.line.width = boundary.grid_line_width;
     config.render_layers = RenderLayer::Game.layers();
@@ -525,25 +525,49 @@ impl Boundary {
         // otherwise the edge runs along that axis, so use position's coordinate.
 
         let x = if normal1.x != 0.0 {
-            if normal1.x > 0.0 { max.x } else { min.x }
+            if normal1.x > 0.0 {
+                max.x
+            } else {
+                min.x
+            }
         } else if normal2.x != 0.0 {
-            if normal2.x > 0.0 { max.x } else { min.x }
+            if normal2.x > 0.0 {
+                max.x
+            } else {
+                min.x
+            }
         } else {
             position.x // Edge runs along X axis
         };
 
         let y = if normal1.y != 0.0 {
-            if normal1.y > 0.0 { max.y } else { min.y }
+            if normal1.y > 0.0 {
+                max.y
+            } else {
+                min.y
+            }
         } else if normal2.y != 0.0 {
-            if normal2.y > 0.0 { max.y } else { min.y }
+            if normal2.y > 0.0 {
+                max.y
+            } else {
+                min.y
+            }
         } else {
             position.y // Edge runs along Y axis
         };
 
         let z = if normal1.z != 0.0 {
-            if normal1.z > 0.0 { max.z } else { min.z }
+            if normal1.z > 0.0 {
+                max.z
+            } else {
+                min.z
+            }
         } else if normal2.z != 0.0 {
-            if normal2.z > 0.0 { max.z } else { min.z }
+            if normal2.z > 0.0 {
+                max.z
+            } else {
+                min.z
+            }
         } else {
             position.z // Edge runs along Z axis
         };

@@ -107,7 +107,7 @@ impl Plugin for ZoomPlugin {
         bind_action_switch!(app, ShowFocusSwitch, ShowFocusEvent, Switch::ShowFocus);
         app.add_systems(
             Update,
-            apply_focus_config.run_if(resource_changed::<FocusConfig>),
+            apply_focus_settings.run_if(resource_changed::<FocusConfig>),
         )
         .add_systems(Update, update_focus_gizmo_state)
         .add_systems(
@@ -204,7 +204,7 @@ fn toggle_fit_target_debug_command(
     }
 }
 
-fn apply_focus_config(mut config_store: ResMut<GizmoConfigStore>, config: Res<FocusConfig>) {
+fn apply_focus_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<FocusConfig>) {
     let (gizmo_config, _) = config_store.config_mut::<FocusGizmo>();
     gizmo_config.line.width = config.line_width;
     gizmo_config.render_layers = RenderLayer::Game.layers();
