@@ -1,11 +1,11 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use super::Teleporter;
+use super::actor_config::insert_configured_components;
 use super::actor_config::GLTF_ROTATION_X;
 use super::actor_config::LOCKED_AXES_SPACESHIP;
-use super::actor_config::insert_configured_components;
-use super::actor_template::SpaceshipConfig;
+use super::actor_template::SpaceshipSettings;
+use super::Teleporter;
 use crate::input::ship_controls_input_bundle;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
@@ -56,7 +56,7 @@ pub struct Spaceship;
 fn spawn_after_splash_text_removed(
     _trigger: On<Remove, SplashText>,
     commands: Commands,
-    spaceship_config: Res<SpaceshipConfig>,
+    spaceship_config: Res<SpaceshipSettings>,
 ) {
     spawn_spaceship(commands, spaceship_config);
 }
@@ -64,7 +64,7 @@ fn spawn_after_splash_text_removed(
 /// Spawns a spaceship only if one doesn't already exist
 fn spawn_spaceship_if_needed(
     commands: Commands,
-    spaceship_config: Res<SpaceshipConfig>,
+    spaceship_config: Res<SpaceshipSettings>,
     query: Query<(), With<Spaceship>>,
 ) {
     // Only spawn if no spaceship exists (e.g., coming from GameOver)
@@ -73,7 +73,7 @@ fn spawn_spaceship_if_needed(
     }
 }
 
-fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipConfig>) {
+fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipSettings>) {
     if !spaceship_config.spawnable {
         return;
     }
@@ -84,7 +84,7 @@ fn spawn_spaceship(mut commands: Commands, spaceship_config: Res<SpaceshipConfig
 fn initialize_spaceship(
     spaceship: On<Add, Spaceship>,
     mut commands: Commands,
-    mut spaceship_config: ResMut<SpaceshipConfig>,
+    mut spaceship_config: ResMut<SpaceshipSettings>,
 ) {
     commands
         .entity(spaceship.entity)
@@ -94,7 +94,7 @@ fn initialize_spaceship(
 
     insert_configured_components(
         &mut commands,
-        &mut spaceship_config.actor_config,
+        &mut spaceship_config.actor_settings,
         spaceship.entity,
     );
 }

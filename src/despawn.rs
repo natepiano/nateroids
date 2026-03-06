@@ -7,7 +7,7 @@ use crate::actor::DeathCorner;
 use crate::actor::Health;
 use crate::actor::MissilePosition;
 use crate::actor::Nateroid;
-use crate::actor::NateroidConfig;
+use crate::actor::NateroidSettings;
 use crate::actor::NateroidDeathMaterials;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
@@ -176,7 +176,7 @@ fn despawn_dead_entities(
         ),
         Without<Deaderoid>,
     >,
-    config: Res<NateroidConfig>,
+    config: Res<NateroidSettings>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     death_materials: Option<Res<NateroidDeathMaterials>>,
     children_query: Query<&Children>,
@@ -280,7 +280,7 @@ fn animate_dying_nateroids(
     death_materials: Option<Res<NateroidDeathMaterials>>,
     children_query: Query<&Children>,
     material_query: Query<&MeshMaterial3d<StandardMaterial>>,
-    nateroid_config: Res<NateroidConfig>,
+    nateroid_config: Res<NateroidSettings>,
     mut commands: Commands,
 ) {
     // Early return if materials haven't been precomputed yet

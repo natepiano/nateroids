@@ -6,7 +6,7 @@ use super::Health;
 use super::Nateroid;
 use super::NateroidSpawnStats;
 use super::actor_template::GameLayer;
-use super::actor_template::NateroidConfig;
+use super::actor_template::NateroidSettings;
 use super::spaceship::Spaceship;
 use crate::despawn::despawn;
 use crate::playfield::Boundary;
@@ -53,7 +53,7 @@ fn on_teleported(
         Query<(&mut CollisionLayers, &mut Health), With<Nateroid>>,
     )>,
     spawn_stats: Res<NateroidSpawnStats>,
-    config: Res<NateroidConfig>,
+    config: Res<NateroidSettings>,
     mut collision_state: ResMut<TeleportCollisionState>,
 ) {
     // First, do all spatial queries (collect results before mutating)

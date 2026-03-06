@@ -10,12 +10,12 @@ mod spaceship;
 mod spaceship_control;
 mod teleport;
 
-use aabb::AabbPlugin;
 pub use aabb::max_dimension as aabb_max_dimension;
+use aabb::AabbPlugin;
 use actor_config::ActorConfigPlugin;
 pub use actor_config::Health;
 pub use actor_template::DeathCorner;
-pub use actor_template::NateroidConfig;
+pub use actor_template::NateroidSettings;
 use bevy::prelude::*;
 use collision_detection::CollisionDetectionPlugin;
 use flame_gizmo::FlameGizmoPlugin;

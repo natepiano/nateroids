@@ -6,9 +6,9 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use super::aabb;
-use super::actor_template::MissileConfig;
-use super::actor_template::NateroidConfig;
-use super::actor_template::SpaceshipConfig;
+use super::actor_template::MissileSettings;
+use super::actor_template::NateroidSettings;
+use super::actor_template::SpaceshipSettings;
 use super::missile::Missile;
 use super::nateroid::Nateroid;
 use super::spaceship::Spaceship;
@@ -36,18 +36,18 @@ pub struct ActorConfigPlugin;
 
 impl Plugin for ActorConfigPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AssetsState::Loaded), initialize_actor_configs)
+        app.add_systems(OnEnter(AssetsState::Loaded), initialize_actor_settings)
             .add_observer(propagate_render_layers_on_spawn)
             .add_plugins(
-                ResourceInspectorPlugin::<MissileConfig>::default()
+                ResourceInspectorPlugin::<MissileSettings>::default()
                     .run_if(switches::is_switch_on(Switch::InspectMissile)),
             )
             .add_plugins(
-                ResourceInspectorPlugin::<NateroidConfig>::default()
+                ResourceInspectorPlugin::<NateroidSettings>::default()
                     .run_if(switches::is_switch_on(Switch::InspectNateroid)),
             )
             .add_plugins(
-                ResourceInspectorPlugin::<SpaceshipConfig>::default()
+                ResourceInspectorPlugin::<SpaceshipSettings>::default()
                     .run_if(switches::is_switch_on(Switch::InspectSpaceship)),
             );
         bind_action_switch!(
@@ -73,7 +73,7 @@ impl Plugin for ActorConfigPlugin {
 
 #[derive(Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(InspectorOptions)]
-pub struct ActorConfig {
+pub struct ActorSettings {
     pub spawnable:                bool,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub angular_damping:          Option<f32>,
@@ -147,18 +147,21 @@ pub const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
     .lock_rotation_y()
     .lock_translation_z();
 
-pub fn initialize_actor_configs(mut commands: Commands, scene_assets: Res<SceneAssets>) {
-    let mut nateroid_defaults = NateroidConfig::default();
-    initialize_actor_config(&mut nateroid_defaults.actor_config, &scene_assets.nateroid);
+pub fn initialize_actor_settings(mut commands: Commands, scene_assets: Res<SceneAssets>) {
+    let mut nateroid_defaults = NateroidSettings::default();
+    initialize_actor_config(
+        &mut nateroid_defaults.actor_settings,
+        &scene_assets.nateroid,
+    );
     commands.insert_resource(nateroid_defaults);
 
-    let mut missile_defaults = MissileConfig::default();
-    initialize_actor_config(&mut missile_defaults.actor_config, &scene_assets.missile);
+    let mut missile_defaults = MissileSettings::default();
+    initialize_actor_config(&mut missile_defaults.actor_settings, &scene_assets.missile);
     commands.insert_resource(missile_defaults);
 
-    let mut spaceship_defaults = SpaceshipConfig::default();
+    let mut spaceship_defaults = SpaceshipSettings::default();
     initialize_actor_config(
-        &mut spaceship_defaults.actor_config,
+        &mut spaceship_defaults.actor_settings,
         &scene_assets.spaceship,
     );
     commands.insert_resource(spaceship_defaults);
@@ -168,7 +171,7 @@ pub fn create_spawn_timer(spawn_timer_seconds: Option<f32>) -> Option<Timer> {
     spawn_timer_seconds.map(|seconds| Timer::from_seconds(seconds, TimerMode::Repeating))
 }
 
-fn initialize_actor_config(config: &mut ActorConfig, scene_handle: &Handle<Scene>) {
+fn initialize_actor_config(config: &mut ActorSettings, scene_handle: &Handle<Scene>) {
     config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);
     config.scene = scene_handle.clone();
 }
@@ -176,7 +179,7 @@ fn initialize_actor_config(config: &mut ActorConfig, scene_handle: &Handle<Scene
 /// use config values so inspectors can provide new defaults
 pub fn insert_configured_components(
     commands: &mut Commands,
-    config: &mut ActorConfig,
+    config: &mut ActorSettings,
     actor_entity: Entity,
 ) {
     // Insert all components on the actor entity

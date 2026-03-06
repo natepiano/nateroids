@@ -11,7 +11,7 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
 
-use super::actor_config::ActorConfig;
+use super::actor_config::ActorSettings;
 use super::actor_config::ColliderType;
 use super::actor_config::GLTF_ROTATION_X;
 use super::constants::MAX_MISSILE_ANGULAR_VELOCITY;
@@ -69,16 +69,16 @@ pub enum GameLayer {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
-pub struct MissileConfig {
-    pub actor_config:            ActorConfig,
+pub struct MissileSettings {
+    pub actor_settings:          ActorSettings,
     pub forward_distance_scalar: f32,
     pub base_velocity:           f32,
 }
 
-impl Default for MissileConfig {
+impl Default for MissileSettings {
     fn default() -> Self {
         Self {
-            actor_config:            ActorConfig {
+            actor_settings:          ActorSettings {
                 spawnable:                true,
                 angular_damping:          None,
                 collider_margin:          MISSILE_COLLIDER_MARGIN,
@@ -114,14 +114,14 @@ impl Default for MissileConfig {
     }
 }
 
-impl Deref for MissileConfig {
-    type Target = ActorConfig;
+impl Deref for MissileSettings {
+    type Target = ActorSettings;
 
-    fn deref(&self) -> &Self::Target { &self.actor_config }
+    fn deref(&self) -> &Self::Target { &self.actor_settings }
 }
 
-impl DerefMut for MissileConfig {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_config }
+impl DerefMut for MissileSettings {
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_settings }
 }
 
 #[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq)]
@@ -133,8 +133,8 @@ pub enum DeathCorner {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
-pub struct NateroidConfig {
-    pub actor_config:              ActorConfig,
+pub struct NateroidSettings {
+    pub actor_settings:            ActorSettings,
     pub linear_velocity:           f32,
     pub angular_velocity:          f32,
     pub death_duration_secs:       f32,
@@ -145,10 +145,10 @@ pub struct NateroidConfig {
     pub density_culling_threshold: f32,
 }
 
-impl Default for NateroidConfig {
+impl Default for NateroidSettings {
     fn default() -> Self {
         Self {
-            actor_config:              ActorConfig {
+            actor_settings:            ActorSettings {
                 spawnable:                true,
                 angular_damping:          Some(NATEROID_ANGULAR_DAMPING),
                 collider_margin:          NATEROID_COLLIDER_MARGIN,
@@ -190,26 +190,26 @@ impl Default for NateroidConfig {
     }
 }
 
-impl Deref for NateroidConfig {
-    type Target = ActorConfig;
+impl Deref for NateroidSettings {
+    type Target = ActorSettings;
 
-    fn deref(&self) -> &Self::Target { &self.actor_config }
+    fn deref(&self) -> &Self::Target { &self.actor_settings }
 }
 
-impl DerefMut for NateroidConfig {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_config }
+impl DerefMut for NateroidSettings {
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_settings }
 }
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
-pub struct SpaceshipConfig {
-    pub actor_config: ActorConfig,
+pub struct SpaceshipSettings {
+    pub actor_settings: ActorSettings,
 }
 
-impl Default for SpaceshipConfig {
+impl Default for SpaceshipSettings {
     fn default() -> Self {
         Self {
-            actor_config: ActorConfig {
+            actor_settings: ActorSettings {
                 spawnable:                true,
                 angular_damping:          Some(SPACESHIP_ANGULAR_DAMPING),
                 collider_margin:          SPACESHIP_COLLIDER_MARGIN,
@@ -246,12 +246,12 @@ impl Default for SpaceshipConfig {
     }
 }
 
-impl Deref for SpaceshipConfig {
-    type Target = ActorConfig;
+impl Deref for SpaceshipSettings {
+    type Target = ActorSettings;
 
-    fn deref(&self) -> &Self::Target { &self.actor_config }
+    fn deref(&self) -> &Self::Target { &self.actor_settings }
 }
 
-impl DerefMut for SpaceshipConfig {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_config }
+impl DerefMut for SpaceshipSettings {
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_settings }
 }

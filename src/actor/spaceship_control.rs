@@ -1,7 +1,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use bevy_enhanced_input::action::TriggerState;
 use bevy_enhanced_input::action::events as input_events;
+use bevy_enhanced_input::action::TriggerState;
 use bevy_enhanced_input::prelude::Action;
 use bevy_enhanced_input::prelude::ActionOf;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
@@ -9,7 +9,7 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_panorbit_camera::PanOrbitCamera;
 
-use super::actor_template::SpaceshipConfig;
+use super::actor_template::SpaceshipSettings;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
 use crate::input::InspectSpaceshipControlSwitch;
@@ -110,7 +110,7 @@ fn spaceship_movement_controls(
     accelerate_state: ShipAccelerateStateQuery,
     turn_left_state: ShipTurnLeftStateQuery,
     turn_right_state: ShipTurnRightStateQuery,
-    spaceship_config: Res<SpaceshipConfig>,
+    spaceship_config: Res<SpaceshipSettings>,
     movement_config: Res<SpaceshipControlConfig>,
     time: Res<Time>,
     orientation_mode: Res<CameraOrientation>,
