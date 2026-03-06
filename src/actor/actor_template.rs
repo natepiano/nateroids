@@ -11,9 +11,9 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
 
-use super::actor_config::ActorSettings;
-use super::actor_config::ColliderType;
-use super::actor_config::GLTF_ROTATION_X;
+use super::actor_settings::ActorSettings;
+use super::actor_settings::ColliderType;
+use super::actor_settings::GLTF_ROTATION_X;
 use super::constants::MAX_MISSILE_ANGULAR_VELOCITY;
 use super::constants::MAX_MISSILE_LINEAR_VELOCITY;
 use super::constants::MAX_NATEROID_ANGULAR_VELOCITY;

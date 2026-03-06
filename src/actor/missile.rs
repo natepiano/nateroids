@@ -5,8 +5,8 @@ use bevy_enhanced_input::action::TriggerState;
 use bevy_enhanced_input::prelude::Action;
 use bevy_enhanced_input::prelude::ActionOf;
 
-use crate::actor::actor_config::insert_configured_components;
-use crate::actor::actor_config::LOCKED_AXES_2D;
+use crate::actor::actor_settings::insert_configured_components;
+use crate::actor::actor_settings::LOCKED_AXES_2D;
 use crate::actor::actor_template::MissileSettings;
 use crate::actor::spaceship::ContinuousFire;
 use crate::actor::spaceship::Spaceship;

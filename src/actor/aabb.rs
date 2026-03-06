@@ -7,7 +7,7 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
-use super::actor_config::ColliderType;
+use super::actor_settings::ColliderType;
 use crate::camera::RenderLayer;
 use crate::input::AabbsSwitch;
 use crate::input::InspectAabbConfigSwitch;

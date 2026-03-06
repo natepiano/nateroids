@@ -1,5 +1,5 @@
 mod aabb;
-mod actor_config;
+mod actor_settings;
 mod actor_template;
 mod collision_detection;
 mod constants;
@@ -12,8 +12,8 @@ mod teleport;
 
 pub use aabb::max_dimension as aabb_max_dimension;
 use aabb::AabbPlugin;
-use actor_config::ActorConfigPlugin;
-pub use actor_config::Health;
+use actor_settings::ActorConfigPlugin;
+pub use actor_settings::Health;
 pub use actor_template::DeathCorner;
 pub use actor_template::NateroidSettings;
 use bevy::prelude::*;

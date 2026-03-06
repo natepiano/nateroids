@@ -7,9 +7,9 @@ use bevy::prelude::*;
 use rand::Rng;
 use rand::RngExt;
 
-use super::actor_config::insert_configured_components;
-use super::actor_config::ColliderType;
-use super::actor_config::LOCKED_AXES_2D;
+use super::actor_settings::insert_configured_components;
+use super::actor_settings::ColliderType;
+use super::actor_settings::LOCKED_AXES_2D;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
 use super::Teleporter;
@@ -73,7 +73,7 @@ impl Plugin for NateroidPlugin {
         app.init_resource::<NateroidSpawnStats>()
             .add_systems(
                 OnEnter(asset_loader::AssetsState::Loaded),
-                precompute_death_materials.after(super::actor_config::initialize_actor_settings),
+                precompute_death_materials.after(super::actor_settings::initialize_actor_settings),
             )
             .add_observer(initialize_nateroid)
             .add_systems(

@@ -3,7 +3,7 @@ use bevy::prelude::*;
 
 use super::Health;
 use super::Teleporter;
-use super::actor_config::CollisionDamage;
+use super::actor_settings::CollisionDamage;
 use super::spaceship::Spaceship;
 use crate::schedule::InGameSet;
 

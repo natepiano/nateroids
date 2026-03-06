@@ -1,9 +1,9 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use super::actor_config::insert_configured_components;
-use super::actor_config::GLTF_ROTATION_X;
-use super::actor_config::LOCKED_AXES_SPACESHIP;
+use super::actor_settings::insert_configured_components;
+use super::actor_settings::GLTF_ROTATION_X;
+use super::actor_settings::LOCKED_AXES_SPACESHIP;
 use super::actor_template::SpaceshipSettings;
 use super::Teleporter;
 use crate::input::ship_controls_input_bundle;
