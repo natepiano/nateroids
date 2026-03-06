@@ -5,10 +5,10 @@ use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera::TrackpadBehavior;
 
 use super::camera_star::StarCamera;
-use super::config::CameraConfig;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::lights::LightConfig;
+use super::settings::CameraConfig;
 use crate::asset_loader::SceneAssets;
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;

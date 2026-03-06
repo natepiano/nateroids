@@ -23,7 +23,7 @@ pub struct ZoomTarget(pub Option<Entity>);
 use crate::camera::RenderLayer;
 use crate::input::BoundaryBoxSwitch;
 use crate::input::CameraHome as CameraHomeShortcut;
-use crate::input::InspectFocusConfigSwitch;
+use crate::input::InspectFocusSwitch;
 use crate::input::ShowFocusSwitch;
 use crate::input::ZoomToFitShortcut;
 use crate::playfield::BoundaryVolume;
@@ -100,7 +100,7 @@ impl Plugin for ZoomPlugin {
         );
         bind_action_switch!(
             app,
-            InspectFocusConfigSwitch,
+            InspectFocusSwitch,
             FocusConfigInspectorEvent,
             Switch::InspectFocusConfig
         );

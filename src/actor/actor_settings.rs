@@ -30,11 +30,11 @@ event!(SpaceshipInspectorEvent);
 // Shared between initial spawn and runtime 2D enforcement
 pub const GLTF_ROTATION_X: f32 = std::f32::consts::FRAC_PI_2; // +90°
 
-// call flow is to initialize the ensemble config which has the defaults
-// for an actor - configure defaults in initial_actor_config.rs
-pub struct ActorConfigPlugin;
+// call flow is to initialize the ensemble settings which has the defaults
+// for an actor
+pub struct ActorSettingsPlugin;
 
-impl Plugin for ActorConfigPlugin {
+impl Plugin for ActorSettingsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AssetsState::Loaded), initialize_actor_settings)
             .add_observer(propagate_render_layers_on_spawn)
@@ -179,40 +179,40 @@ fn initialize_actor_config(config: &mut ActorSettings, scene_handle: &Handle<Sce
 /// use config values so inspectors can provide new defaults
 pub fn insert_configured_components(
     commands: &mut Commands,
-    config: &mut ActorSettings,
+    settings: &mut ActorSettings,
     actor_entity: Entity,
 ) {
     // Insert all components on the actor entity
     commands.entity(actor_entity).insert((
         aabb::PendingCollider {
-            collider_type: config.collider_type.clone(),
-            margin:        config.collider_margin,
+            collider_type: settings.collider_type.clone(),
+            margin:        settings.collider_margin,
         },
-        CollisionDamage(config.collision_damage),
-        config.collision_layers,
-        GravityScale(config.gravity_scale),
-        Health(config.health),
+        CollisionDamage(settings.collision_damage),
+        settings.collision_layers,
+        GravityScale(settings.gravity_scale),
+        Health(settings.health),
         Restitution {
-            coefficient:  config.restitution,
-            combine_rule: config.restitution_combine_rule,
+            coefficient:  settings.restitution,
+            combine_rule: settings.restitution_combine_rule,
         },
-        Mass(config.mass),
-        MaxAngularSpeed(config.max_angular_velocity),
-        MaxLinearSpeed(config.max_linear_velocity),
-        config.render_layer.layers(),
-        SceneRoot(config.scene.clone()),
+        Mass(settings.mass),
+        MaxAngularSpeed(settings.max_angular_velocity),
+        MaxLinearSpeed(settings.max_linear_velocity),
+        settings.render_layer.layers(),
+        SceneRoot(settings.scene.clone()),
     ));
 
     // Apply damping if configured
-    if let Some(linear) = config.linear_damping {
+    if let Some(linear) = settings.linear_damping {
         commands.entity(actor_entity).insert(LinearDamping(linear));
     }
-    if let Some(angular) = config.angular_damping {
+    if let Some(angular) = settings.angular_damping {
         commands
             .entity(actor_entity)
             .insert(AngularDamping(angular));
     }
 
     // reset the timer if there is a configured spawn_timer_seconds
-    config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);
+    settings.spawn_timer = create_spawn_timer(settings.spawn_timer_seconds);
 }

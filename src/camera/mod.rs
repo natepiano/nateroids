@@ -2,10 +2,10 @@ mod camera_game;
 mod camera_star;
 mod camera_ui;
 mod components;
-mod config;
 mod constants;
 mod lights;
 mod selection;
+mod settings;
 mod star_twinkling;
 mod stars;
 mod support;
@@ -15,8 +15,8 @@ use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::prelude::*;
 use bevy_mesh_outline::MeshOutlinePlugin;
 pub use components::RequiredCameraComponents;
-pub use config::CameraConfig;
 pub use constants::ZOOM_MARGIN;
+pub use settings::CameraConfig;
 pub use support::CameraOrder;
 pub use support::RenderLayer;
 pub use zoom::CameraHomeEvent;
@@ -32,7 +32,7 @@ impl Plugin for CameraPlugin {
             .add_plugins(camera_game::GameCameraPlugin)
             .add_plugins(camera_star::StarCameraPlugin)
             .add_plugins(zoom::ZoomPlugin)
-            .add_plugins(config::CameraConfigPlugin)
+            .add_plugins(settings::CameraConfigPlugin)
             .add_plugins(lights::DirectionalLightsPlugin)
             .add_plugins(selection::SelectionPlugin)
             .add_plugins(star_twinkling::StarTwinklingPlugin)

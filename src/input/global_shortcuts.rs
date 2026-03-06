@@ -7,10 +7,10 @@ pub struct GlobalShortcutsContext;
 
 action!(AabbsSwitch);
 action!(BoundaryBoxSwitch);
-action!(InspectAabbConfigSwitch);
+action!(InspectAabbSwitch);
 action!(InspectBoundarySwitch);
-action!(InspectCameraConfigSwitch);
-action!(InspectFocusConfigSwitch);
+action!(InspectCameraSwitch);
+action!(InspectFocusSwitch);
 action!(InspectLightsSwitch);
 action!(InspectMissileSwitch);
 action!(InspectNateroidSwitch);
@@ -19,8 +19,8 @@ action!(InspectPlanesSwitch);
 action!(InspectPortalSwitch);
 action!(InspectSpaceshipControlSwitch);
 action!(InspectSpaceshipSwitch);
-action!(InspectStarConfigSwitch);
-action!(InspectZoomConfigSwitch);
+action!(InspectStarSwitch);
+action!(InspectZoomSwitch);
 action!(PauseSwitch);
 action!(PhysicsAabbSwitch);
 action!(ShowFocusSwitch);
@@ -49,10 +49,10 @@ fn spawn_inspector_shortcuts(
     kb: &Keybindings<GlobalShortcutsContext>,
     ctx: &mut ActionSpawner<GlobalShortcutsContext>,
 ) {
-    kb.spawn_shift_key::<InspectAabbConfigSwitch>(ctx, KeyCode::KeyA);
+    kb.spawn_shift_key::<InspectAabbSwitch>(ctx, KeyCode::KeyA);
     kb.spawn_shift_key::<InspectBoundarySwitch>(ctx, KeyCode::KeyB);
-    kb.spawn_shift_key::<InspectCameraConfigSwitch>(ctx, KeyCode::KeyC);
-    kb.spawn_shift_key::<InspectFocusConfigSwitch>(ctx, KeyCode::Digit5);
+    kb.spawn_shift_key::<InspectCameraSwitch>(ctx, KeyCode::KeyC);
+    kb.spawn_shift_key::<InspectFocusSwitch>(ctx, KeyCode::Digit5);
     kb.spawn_shift_key::<InspectLightsSwitch>(ctx, KeyCode::KeyL);
     kb.spawn_shift_key::<InspectMissileSwitch>(ctx, KeyCode::Digit1);
     kb.spawn_shift_key::<InspectNateroidSwitch>(ctx, KeyCode::Digit2);
@@ -62,8 +62,8 @@ fn spawn_inspector_shortcuts(
     kb.spawn_shift_key::<ShowFocusSwitch>(ctx, KeyCode::KeyF);
     kb.spawn_shift_key::<InspectSpaceshipSwitch>(ctx, KeyCode::Digit3);
     kb.spawn_shift_key::<InspectSpaceshipControlSwitch>(ctx, KeyCode::Digit4);
-    kb.spawn_shift_key::<InspectStarConfigSwitch>(ctx, KeyCode::KeyS);
-    kb.spawn_shift_key::<InspectZoomConfigSwitch>(ctx, KeyCode::KeyZ);
+    kb.spawn_shift_key::<InspectStarSwitch>(ctx, KeyCode::KeyS);
+    kb.spawn_shift_key::<InspectZoomSwitch>(ctx, KeyCode::KeyZ);
 }
 
 fn spawn_restart_shortcuts(

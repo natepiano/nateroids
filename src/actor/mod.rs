@@ -12,7 +12,7 @@ mod teleport;
 
 pub use aabb::max_dimension as aabb_max_dimension;
 use aabb::AabbPlugin;
-use actor_settings::ActorConfigPlugin;
+use actor_settings::ActorSettingsPlugin;
 pub use actor_settings::Health;
 pub use actor_template::DeathCorner;
 pub use actor_template::NateroidSettings;
@@ -37,7 +37,7 @@ pub struct ActorPlugin;
 impl Plugin for ActorPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(AabbPlugin)
-            .add_plugins(ActorConfigPlugin)
+            .add_plugins(ActorSettingsPlugin)
             .add_plugins(CollisionDetectionPlugin)
             .add_plugins(FlameGizmoPlugin)
             .add_plugins(MissilePlugin)

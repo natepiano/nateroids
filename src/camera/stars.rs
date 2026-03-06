@@ -6,13 +6,13 @@ use bevy::camera::visibility::VisibleEntities;
 use bevy::diagnostic::FrameCount;
 use bevy::mesh::Mesh3d;
 use bevy::prelude::*;
+use rand::prelude::ThreadRng;
 use rand::Rng;
 use rand::RngExt;
-use rand::prelude::ThreadRng;
 
-use super::RenderLayer;
 use super::camera_star::StarCamera;
-use super::config::StarConfig;
+use super::settings::StarConfig;
+use super::RenderLayer;
 use crate::playfield::Boundary;
 use crate::state::GameState;
 use crate::traits::TransformExt;
@@ -152,7 +152,7 @@ fn get_star_position(
     let polar_norm: f32 = rng.random_range(0.0..1.0); // normalized polar angle
 
     let theta = azimuth_norm * std::f32::consts::PI * 2.0; // azimuthal: 0 to 2π
-    // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
+                                                           // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
     let phi = 2.0f32.mul_add(polar_norm, -1.0).acos(); // polar angle
     let radius = rng.random_range(inner_sphere_radius..outer_sphere_radius);
 

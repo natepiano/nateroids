@@ -1,7 +1,7 @@
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
 
-use super::config::CameraConfig;
+use super::settings::CameraConfig;
 use crate::camera::CameraOrder;
 use crate::camera::RenderLayer;
 use crate::camera::RequiredCameraComponents;

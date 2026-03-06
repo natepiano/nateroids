@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use bevy::prelude::*;
 use rand::RngExt;
 
-use super::config::StarConfig;
+use super::settings::StarConfig;
 use crate::camera::stars::Star;
 
 pub struct StarTwinklingPlugin;

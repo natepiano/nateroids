@@ -10,7 +10,7 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use super::actor_settings::ColliderType;
 use crate::camera::RenderLayer;
 use crate::input::AabbsSwitch;
-use crate::input::InspectAabbConfigSwitch;
+use crate::input::InspectAabbSwitch;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
@@ -42,7 +42,7 @@ impl Plugin for AabbPlugin {
             );
         bind_action_switch!(
             app,
-            InspectAabbConfigSwitch,
+            InspectAabbSwitch,
             AabbConfigInspectorEvent,
             Switch::InspectAabbConfig
         );
