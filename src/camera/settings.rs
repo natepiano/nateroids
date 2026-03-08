@@ -20,7 +20,7 @@ event!(InspectCameraEvent);
 event!(InspectStarEvent);
 event!(InspectZoomEvent);
 
-pub struct CameraSettingsPlugin;
+pub(super) struct CameraSettingsPlugin;
 
 impl Plugin for CameraSettingsPlugin {
     fn build(&self, app: &mut App) {

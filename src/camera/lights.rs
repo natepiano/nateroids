@@ -15,7 +15,7 @@ use crate::switches::Switches;
 
 event!(LightsInspectorEvent);
 
-pub struct DirectionalLightsPlugin;
+pub(super) struct DirectionalLightsPlugin;
 
 impl Plugin for DirectionalLightsPlugin {
     fn build(&self, app: &mut App) {

@@ -19,7 +19,7 @@ use super::constants::ZOOM_TO_FIT_DURATION_MS;
 /// Resource tracking the currently selected entity for zoom-to-fit.
 /// When `None`, Z zooms to boundary.
 #[derive(Resource, Default)]
-pub struct ZoomTarget(pub Option<Entity>);
+pub(super) struct ZoomTarget(pub Option<Entity>);
 use super::RenderLayer;
 use crate::input::BoundaryBoxSwitch;
 use crate::input::CameraHome as CameraHomeShortcut;
@@ -72,7 +72,7 @@ struct FocusGizmoState {
 #[derive(Component)]
 struct FocusDistanceLabel;
 
-pub struct ZoomPlugin;
+pub(super) struct ZoomPlugin;
 
 impl Plugin for ZoomPlugin {
     fn build(&self, app: &mut App) {

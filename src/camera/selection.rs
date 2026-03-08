@@ -24,7 +24,7 @@ event!(OutlineInspectorEvent);
 
 /// Marker component added to the selected actor entity
 #[derive(Component)]
-pub struct Selected;
+pub(super) struct Selected;
 
 /// Inspector-tunable configuration for selection outlines
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
@@ -47,7 +47,7 @@ impl Default for SelectionOutlineSettings {
     }
 }
 
-pub struct SelectionPlugin;
+pub(super) struct SelectionPlugin;
 
 impl Plugin for SelectionPlugin {
     fn build(&self, app: &mut App) {

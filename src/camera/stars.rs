@@ -17,7 +17,7 @@ use crate::playfield::Boundary;
 use crate::state::GameState;
 use crate::traits::TransformExt;
 
-pub struct StarsPlugin;
+pub(super) struct StarsPlugin;
 
 impl Plugin for StarsPlugin {
     fn build(&self, app: &mut App) {
@@ -73,7 +73,7 @@ fn debug_stars(
 }
 
 #[derive(Reflect, Component, Default)]
-pub struct Star {
+pub(super) struct Star {
     position:     Vec3,
     radius:       f32,
     pub emissive: Vec4,

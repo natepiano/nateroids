@@ -14,13 +14,13 @@ use super::lights::LightSettings;
 use super::settings::CameraSettings;
 use crate::asset_loader::SceneAssets;
 
-pub struct GameCameraPlugin;
+pub(super) struct GameCameraPlugin;
 
 impl Plugin for GameCameraPlugin {
     fn build(&self, app: &mut App) { app.add_systems(Update, update_environment_map_intensity); }
 }
 
-pub fn spawn_game_camera(
+pub(super) fn spawn_game_camera(
     camera_settings: Res<CameraSettings>,
     scene_assets: Res<SceneAssets>,
     light_settings: Res<LightSettings>,

@@ -7,15 +7,15 @@ use super::RequiredCameraComponents;
 use super::settings::CameraSettings;
 
 #[derive(Component, Reflect)]
-pub struct StarCamera;
+pub(super) struct StarCamera;
 
-pub struct StarCameraPlugin;
+pub(super) struct StarCameraPlugin;
 
 impl Plugin for StarCameraPlugin {
     fn build(&self, app: &mut App) { app.add_systems(Update, update_bloom_settings); }
 }
 
-pub fn spawn_star_camera(mut commands: Commands, camera_settings: Res<CameraSettings>) {
+pub(super) fn spawn_star_camera(mut commands: Commands, camera_settings: Res<CameraSettings>) {
     commands.spawn((
         RequiredCameraComponents,
         Camera3d::default(),

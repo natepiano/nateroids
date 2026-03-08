@@ -4,7 +4,7 @@ use super::CameraOrder;
 use super::RenderLayer;
 use super::RequiredCameraComponents;
 
-pub fn spawn_ui_camera(mut commands: Commands) {
+pub(super) fn spawn_ui_camera(mut commands: Commands) {
     commands.spawn((
         RequiredCameraComponents,
         Camera2d,

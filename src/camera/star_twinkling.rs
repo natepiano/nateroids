@@ -6,7 +6,7 @@ use rand::RngExt;
 use super::settings::StarSettings;
 use super::stars::Star;
 
-pub struct StarTwinklingPlugin;
+pub(super) struct StarTwinklingPlugin;
 
 impl Plugin for StarTwinklingPlugin {
     fn build(&self, app: &mut App) {
