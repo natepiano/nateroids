@@ -10,9 +10,9 @@ use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::lights::LightSettings;
 use super::settings::CameraSettings;
 use crate::asset_loader::SceneAssets;
-use crate::camera::CameraOrder;
-use crate::camera::RenderLayer;
-use crate::camera::RequiredCameraComponents;
+use super::CameraOrder;
+use super::RenderLayer;
+use super::RequiredCameraComponents;
 
 pub struct GameCameraPlugin;
 

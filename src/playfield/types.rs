@@ -1,7 +1,7 @@
 use bevy::math::Vec3;
 use bevy::prelude::*;
 
-use crate::playfield::boundary_face::BoundaryFace;
+use super::boundary_face::BoundaryFace;
 
 /// Describes the geometric configuration of a portal relative to boundary faces
 #[derive(Debug, Clone, PartialEq, Eq)]

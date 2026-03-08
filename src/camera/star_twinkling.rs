@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use rand::RngExt;
 
 use super::settings::StarSettings;
-use crate::camera::stars::Star;
+use super::stars::Star;
 
 pub struct StarTwinklingPlugin;
 

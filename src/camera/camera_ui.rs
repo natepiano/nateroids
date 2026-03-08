@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-use crate::camera::CameraOrder;
-use crate::camera::RenderLayer;
-use crate::camera::RequiredCameraComponents;
+use super::CameraOrder;
+use super::RenderLayer;
+use super::RequiredCameraComponents;
 
 pub fn spawn_ui_camera(mut commands: Commands) {
     commands.spawn((

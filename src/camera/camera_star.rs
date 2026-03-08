@@ -2,9 +2,9 @@ use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
 
 use super::settings::CameraSettings;
-use crate::camera::CameraOrder;
-use crate::camera::RenderLayer;
-use crate::camera::RequiredCameraComponents;
+use super::CameraOrder;
+use super::RenderLayer;
+use super::RequiredCameraComponents;
 
 #[derive(Component, Reflect)]
 pub struct StarCamera;

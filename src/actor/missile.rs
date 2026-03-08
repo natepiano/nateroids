@@ -5,12 +5,12 @@ use bevy_enhanced_input::action::events as input_events;
 use bevy_enhanced_input::prelude::Action;
 use bevy_enhanced_input::prelude::ActionOf;
 
-use crate::actor::Teleporter;
-use crate::actor::actor_settings::LOCKED_AXES_2D;
-use crate::actor::actor_settings::insert_configured_components;
-use crate::actor::actor_template::MissileSettings;
-use crate::actor::spaceship::ContinuousFire;
-use crate::actor::spaceship::Spaceship;
+use super::Teleporter;
+use super::actor_settings::LOCKED_AXES_2D;
+use super::actor_settings::insert_configured_components;
+use super::actor_template::MissileSettings;
+use super::spaceship::ContinuousFire;
+use super::spaceship::Spaceship;
 use crate::input::ShipControlsContext;
 use crate::input::ShipFire;
 use crate::playfield::ActorPortals;

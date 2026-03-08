@@ -20,7 +20,7 @@ use super::constants::ZOOM_TO_FIT_DURATION_MS;
 /// When `None`, Z zooms to boundary.
 #[derive(Resource, Default)]
 pub struct ZoomTarget(pub Option<Entity>);
-use crate::camera::RenderLayer;
+use super::RenderLayer;
 use crate::input::BoundaryBoxSwitch;
 use crate::input::CameraHome as CameraHomeShortcut;
 use crate::input::InspectFocusSwitch;

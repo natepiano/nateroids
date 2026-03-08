@@ -13,7 +13,7 @@ use crate::camera::RenderLayer;
 use crate::input::InspectPlanesSwitch;
 use crate::orientation::CameraOrientation;
 use crate::orientation::OrientationSettings;
-use crate::playfield::BoundaryVolume;
+use super::BoundaryVolume;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
