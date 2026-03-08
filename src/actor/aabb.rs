@@ -1,4 +1,5 @@
 use avian3d::prelude::Collider;
+use avian3d::prelude::RigidBody;
 use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::VisibilitySystems;
 use bevy::color::palettes::tailwind;
@@ -50,12 +51,14 @@ impl Plugin for AabbPlugin {
     }
 }
 
-/// Inserted at spawn time to defer `Aabb` + `Collider` creation until Bevy
-/// has computed `Aabb` on child mesh entities via `calculate_bounds`.
+/// Inserted at spawn time to defer `Aabb`, `Collider`, and `RigidBody`
+/// creation until Bevy has computed `Aabb` on child mesh entities via
+/// `calculate_bounds`.
 #[derive(Component)]
 pub struct PendingCollider {
     pub collider_type: ColliderType,
     pub margin:        f32,
+    pub rigid_body:    RigidBody,
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -111,7 +114,8 @@ fn draw_aabb_system(
 }
 
 /// Runs after `CalculateBounds` to combine Bevy's per-mesh `Aabb` components
-/// into a single root-local `Aabb` on actor entities, then creates the `Collider`.
+/// into a single root-local `Aabb` on actor entities, then creates the
+/// `Collider` and `RigidBody` together.
 fn compute_actor_aabb(
     mut commands: Commands,
     actors: Query<(Entity, &PendingCollider, &GlobalTransform), Without<Aabb>>,
@@ -155,7 +159,7 @@ fn compute_actor_aabb(
 
         commands
             .entity(entity)
-            .insert((aabb, collider))
+            .insert((aabb, collider, pending.rigid_body.clone()))
             .remove::<PendingCollider>();
     }
 }

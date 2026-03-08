@@ -45,7 +45,6 @@ pub struct ContinuousFire;
     Teleporter,
     ActorPortals,
     CollisionEventsEnabled,
-    RigidBody::Dynamic,
     LockedAxes = LOCKED_AXES_SPACESHIP,
     LinearVelocity::ZERO,
     AngularVelocity::ZERO,

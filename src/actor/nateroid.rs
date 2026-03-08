@@ -93,7 +93,6 @@ impl Plugin for NateroidPlugin {
     Teleporter,
     ActorPortals,
     CollisionEventsEnabled,
-    RigidBody::Dynamic,
     LockedAxes = LOCKED_AXES_2D
 )]
 pub struct Nateroid;

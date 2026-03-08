@@ -4,6 +4,7 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
+use super::BoundaryVolume;
 use super::constants::PLANE_IOR;
 use super::constants::PLANE_PERCEPTUAL_ROUGHNESS;
 use super::constants::PLANE_REFLECTANCE;
@@ -13,7 +14,6 @@ use crate::camera::RenderLayer;
 use crate::input::InspectPlanesSwitch;
 use crate::orientation::CameraOrientation;
 use crate::orientation::OrientationSettings;
-use super::BoundaryVolume;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;

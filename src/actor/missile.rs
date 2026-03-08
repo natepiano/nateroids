@@ -43,7 +43,6 @@ impl Plugin for MissilePlugin {
     Teleporter,
     ActorPortals,
     CollisionEventsEnabled,
-    RigidBody::Dynamic,
     LockedAxes = LOCKED_AXES_2D
 )]
 pub struct Missile;

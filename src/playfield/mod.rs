@@ -6,7 +6,6 @@ mod portals;
 mod types;
 
 use bevy::prelude::*;
-
 pub use boundary::Boundary;
 use boundary::BoundaryPlugin;
 pub use boundary::BoundaryVolume;

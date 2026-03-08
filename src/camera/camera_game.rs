@@ -4,15 +4,15 @@ use bevy_mesh_outline::OutlineCamera;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera::TrackpadBehavior;
 
+use super::CameraOrder;
+use super::RenderLayer;
+use super::RequiredCameraComponents;
 use super::camera_star::StarCamera;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::lights::LightSettings;
 use super::settings::CameraSettings;
 use crate::asset_loader::SceneAssets;
-use super::CameraOrder;
-use super::RenderLayer;
-use super::RequiredCameraComponents;
 
 pub struct GameCameraPlugin;
 
