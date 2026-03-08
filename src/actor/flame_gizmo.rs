@@ -38,7 +38,7 @@ use crate::input::ShipControlsContext;
 use crate::state::GameState;
 use crate::state::PauseState;
 
-pub struct FlameGizmoPlugin;
+pub(super) struct FlameGizmoPlugin;
 
 impl Plugin for FlameGizmoPlugin {
     fn build(&self, app: &mut App) {
@@ -74,7 +74,7 @@ fn on_deaderoid_added(deaderoid: On<Add, Deaderoid>, mut commands: Commands, que
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
-pub enum DeathStyle {
+enum DeathStyle {
     ExpandingRing,
     StaticFlash,
     MultipleRings,
@@ -83,7 +83,7 @@ pub enum DeathStyle {
 impl DeathStyle {
     const ALL: [Self; 3] = [Self::ExpandingRing, Self::StaticFlash, Self::MultipleRings];
 
-    pub fn random() -> Self {
+    fn random() -> Self {
         let mut rng = rand::rng();
         Self::ALL[rng.random_range(0..Self::ALL.len())]
     }
@@ -101,15 +101,15 @@ impl DeathStyle {
 /// Duration is independent of entity lifetime.
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct DeathEffect {
-    pub style:    DeathStyle,
-    pub radius:   f32,
-    pub duration: f32,
-    pub elapsed:  f32,
+struct DeathEffect {
+    style:    DeathStyle,
+    radius:   f32,
+    duration: f32,
+    elapsed:  f32,
 }
 
 impl DeathEffect {
-    pub fn new(radius: f32) -> Self {
+    fn new(radius: f32) -> Self {
         Self {
             style:    DeathStyle::random(),
             radius:   radius + DEATH_EFFECT_RADIUS_MARGIN,
@@ -121,7 +121,7 @@ impl DeathEffect {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct ThrusterEffect;
+struct ThrusterEffect;
 
 struct FlickerValues {
     length: f32,

@@ -28,11 +28,11 @@ event!(SpaceshipInspectorEvent);
 
 // Spaceship model orientation correction: rotates the model so nose points +Y
 // Shared between initial spawn and runtime 2D enforcement
-pub const GLTF_ROTATION_X: f32 = std::f32::consts::FRAC_PI_2; // +90°
+pub(super) const GLTF_ROTATION_X: f32 = std::f32::consts::FRAC_PI_2; // +90°
 
 // call flow is to initialize the ensemble settings which has the defaults
 // for an actor
-pub struct ActorSettingsPlugin;
+pub(super) struct ActorSettingsPlugin;
 
 impl Plugin for ActorSettingsPlugin {
     fn build(&self, app: &mut App) {
@@ -112,7 +112,7 @@ pub struct Health(pub f32);
 
 #[derive(Reflect, Component, Clone, Debug)]
 #[reflect(Component)]
-pub struct CollisionDamage(pub f32);
+pub(super) struct CollisionDamage(pub f32);
 
 #[derive(Reflect, Debug, Clone, PartialEq, Eq)]
 pub enum ColliderType {
@@ -141,13 +141,13 @@ fn propagate_render_layers_on_spawn(
 }
 
 // Public constants for physics configuration (used by missile.rs, spaceship.rs, nateroid.rs)
-pub const LOCKED_AXES_2D: LockedAxes = LockedAxes::new().lock_translation_z();
-pub const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
+pub(super) const LOCKED_AXES_2D: LockedAxes = LockedAxes::new().lock_translation_z();
+pub(super) const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
     .lock_rotation_x()
     .lock_rotation_y()
     .lock_translation_z();
 
-pub fn initialize_actors(mut commands: Commands, scene_assets: Res<SceneAssets>) {
+pub(super) fn initialize_actors(mut commands: Commands, scene_assets: Res<SceneAssets>) {
     let mut nateroid_defaults = NateroidSettings::default();
     initialize_actor_settings(
         &mut nateroid_defaults.actor_settings,
@@ -167,7 +167,7 @@ pub fn initialize_actors(mut commands: Commands, scene_assets: Res<SceneAssets>)
     commands.insert_resource(spaceship_defaults);
 }
 
-pub fn create_spawn_timer(spawn_timer_seconds: Option<f32>) -> Option<Timer> {
+fn create_spawn_timer(spawn_timer_seconds: Option<f32>) -> Option<Timer> {
     spawn_timer_seconds.map(|seconds| Timer::from_seconds(seconds, TimerMode::Repeating))
 }
 
@@ -177,7 +177,7 @@ fn initialize_actor_settings(config: &mut ActorSettings, scene_handle: &Handle<S
 }
 
 /// use settings values so inspectors can provide new defaults
-pub fn insert_configured_components(
+pub(super) fn insert_configured_components(
     commands: &mut Commands,
     settings: &mut ActorSettings,
     actor_entity: Entity,

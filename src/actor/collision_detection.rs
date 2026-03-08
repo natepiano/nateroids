@@ -7,7 +7,7 @@ use super::actor_settings::CollisionDamage;
 use super::spaceship::Spaceship;
 use crate::schedule::InGameSet;
 
-pub struct CollisionDetectionPlugin;
+pub(super) struct CollisionDetectionPlugin;
 
 impl Plugin for CollisionDetectionPlugin {
     fn build(&self, app: &mut App) {

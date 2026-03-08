@@ -41,7 +41,7 @@ use crate::switches::Switches;
 
 event!(PortalInspectorEvent);
 
-pub struct PortalPlugin;
+pub(super) struct PortalPlugin;
 
 impl Plugin for PortalPlugin {
     fn build(&self, app: &mut App) {
@@ -73,7 +73,7 @@ impl Plugin for PortalPlugin {
 }
 
 #[derive(Debug, Default, Reflect, GizmoConfigGroup)]
-pub struct PortalGizmo {}
+pub(super) struct PortalGizmo {}
 
 fn apply_portal_settings(
     mut config_store: ResMut<GizmoConfigStore>,
@@ -136,12 +136,12 @@ impl Default for PortalSettings {
 
 #[derive(Component, Default)]
 pub struct ActorPortals {
-    pub approaching: Option<Portal>,
-    pub emerging:    Option<Portal>,
+    approaching: Option<Portal>,
+    emerging:    Option<Portal>,
 }
 
 #[derive(Resource, Clone, Debug)]
-pub struct Portal {
+pub(super) struct Portal {
     pub actor_direction:            Vec3,
     pub actor_distance_to_wall:     f32,
     pub boundary_distance_approach: f32,
@@ -155,7 +155,7 @@ pub struct Portal {
 
 impl Portal {
     /// Returns the normal direction for this portal's face
-    pub const fn normal(&self) -> Dir3 { self.face.to_dir3() }
+    pub(super) const fn normal(&self) -> Dir3 { self.face.to_dir3() }
 }
 
 impl Default for Portal {

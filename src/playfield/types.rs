@@ -5,7 +5,7 @@ use super::boundary_face::BoundaryFace;
 
 /// Describes the geometric configuration of a portal relative to boundary faces
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PortalGeometry {
+pub(super) enum PortalGeometry {
     /// Portal completely within a single boundary face
     SingleFace,
     /// Portal extends across multiple faces (edge or corner)
@@ -14,7 +14,7 @@ pub enum PortalGeometry {
 
 /// Describes portals that span multiple boundary faces
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum MultiFaceGeometry {
+pub(super) enum MultiFaceGeometry {
     /// Portal extends across an edge between two faces
     Edge { overextended: BoundaryFace },
     /// Portal extends into a corner (3+ faces)
@@ -22,12 +22,12 @@ pub enum MultiFaceGeometry {
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
-pub struct GridGizmo {}
+pub(super) struct GridGizmo {}
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
-pub struct BoundaryGizmo {}
+pub(super) struct BoundaryGizmo {}
 
-pub enum Intersection {
+pub(super) enum Intersection {
     NoneFound,
     One(Vec3),
     Two(Vec3, Vec3),
@@ -42,7 +42,7 @@ pub enum Intersection {
 /// so we added the `debug_assert` to make sure that if we ever change the invariant and
 /// allow portals to be larger than faces, that this will catch it and remind us that
 /// we need to update our portal drawing logic accordingly.
-pub trait FlattenIntersections {
+pub(super) trait FlattenIntersections {
     fn to_vec(self) -> Vec<Vec3>;
 }
 

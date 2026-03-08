@@ -27,7 +27,7 @@ use crate::switches::Switches;
 
 event!(SpaceshipControlInspectorEvent);
 
-pub struct SpaceshipControlPlugin;
+pub(super) struct SpaceshipControlPlugin;
 
 impl Plugin for SpaceshipControlPlugin {
     fn build(&self, app: &mut App) {

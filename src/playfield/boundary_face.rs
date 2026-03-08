@@ -3,7 +3,7 @@ use bevy::math::Vec3;
 use bevy::prelude::Reflect;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Reflect)]
-pub enum BoundaryFace {
+pub(super) enum BoundaryFace {
     #[default]
     Left,
     Right,
@@ -14,7 +14,7 @@ pub enum BoundaryFace {
 }
 
 impl BoundaryFace {
-    pub const fn get_normal(self) -> Vec3 {
+    pub(super) const fn get_normal(self) -> Vec3 {
         match self {
             Self::Left => Vec3::NEG_X,
             Self::Right => Vec3::X,
@@ -26,7 +26,7 @@ impl BoundaryFace {
     }
 
     /// Infallible conversion to `Dir3` - all boundary faces are axis-aligned
-    pub const fn to_dir3(self) -> Dir3 {
+    pub(super) const fn to_dir3(self) -> Dir3 {
         match self {
             Self::Right => Dir3::X,
             Self::Left => Dir3::NEG_X,
@@ -37,7 +37,7 @@ impl BoundaryFace {
         }
     }
 
-    pub fn from_normal(normal: Dir3) -> Option<Self> {
+    pub(super) fn from_normal(normal: Dir3) -> Option<Self> {
         match normal {
             Dir3::X => Some(Self::Right),
             Dir3::NEG_X => Some(Self::Left),
@@ -49,7 +49,7 @@ impl BoundaryFace {
         }
     }
 
-    pub const fn get_face_points(self, min: &Vec3, max: &Vec3) -> [Vec3; 4] {
+    pub(super) const fn get_face_points(self, min: &Vec3, max: &Vec3) -> [Vec3; 4] {
         match self {
             Self::Left => [
                 Vec3::new(min.x, min.y, min.z),

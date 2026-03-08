@@ -45,7 +45,7 @@ event!(BoundaryInspectorEvent);
 #[reflect(Component)]
 pub struct BoundaryVolume;
 
-pub struct BoundaryPlugin;
+pub(super) struct BoundaryPlugin;
 
 impl Plugin for BoundaryPlugin {
     fn build(&self, app: &mut App) {
@@ -277,7 +277,7 @@ impl Boundary {
     }
 
     /// Calculates how many faces a portal spans at a given position
-    pub fn calculate_portal_face_count(portal: &Portal, transform: &Transform) -> usize {
+    pub(super) fn calculate_portal_face_count(portal: &Portal, transform: &Transform) -> usize {
         let geometry = Self::classify_portal_geometry(portal, transform);
 
         match geometry {
@@ -325,7 +325,7 @@ impl Boundary {
         face_count
     }
 
-    pub fn draw_portal(
+    pub(super) fn draw_portal(
         gizmos: &mut Gizmos<PortalGizmo>,
         portal: &Portal,
         color: Color,

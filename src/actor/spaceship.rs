@@ -16,7 +16,7 @@ use crate::state::PauseState;
 /// Returns the default spaceship rotation: model correction (90° around X)
 fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X) }
 
-pub struct SpaceshipPlugin;
+pub(super) struct SpaceshipPlugin;
 
 impl Plugin for SpaceshipPlugin {
     // make sure this is done after asset_loader has run
@@ -37,7 +37,7 @@ impl Plugin for SpaceshipPlugin {
 }
 
 #[derive(Component, Default)]
-pub struct ContinuousFire;
+pub(super) struct ContinuousFire;
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]

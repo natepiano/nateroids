@@ -27,8 +27,8 @@ const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
 #[derive(Resource)]
 pub struct NateroidSpawnStats {
     /// Ring buffer tracking last N spawn attempts (true = success, false = failure)
-    pub attempts:          VecDeque<bool>,
-    pub last_warning_time: f32,
+    attempts:          VecDeque<bool>,
+    last_warning_time: f32,
 }
 
 impl Default for NateroidSpawnStats {
@@ -43,14 +43,14 @@ impl Default for NateroidSpawnStats {
 impl NateroidSpawnStats {
     const MAX_ATTEMPTS: usize = 50;
 
-    pub fn record_attempt(&mut self, success: bool) {
+    pub(super) fn record_attempt(&mut self, success: bool) {
         self.attempts.push_back(success);
         if self.attempts.len() > Self::MAX_ATTEMPTS {
             self.attempts.pop_front();
         }
     }
 
-    pub fn success_rate(&self) -> f32 {
+    pub(super) fn success_rate(&self) -> f32 {
         if self.attempts.is_empty() {
             1.0 // No data - assume field is not crowded
         } else {
@@ -59,14 +59,14 @@ impl NateroidSpawnStats {
         }
     }
 
-    pub fn attempts_count(&self) -> usize { self.attempts.len() }
+    pub(super) fn attempts_count(&self) -> usize { self.attempts.len() }
 
-    pub fn successes_count(&self) -> usize {
+    pub(super) fn successes_count(&self) -> usize {
         self.attempts.iter().filter(|&&success| success).count()
     }
 }
 
-pub struct NateroidPlugin;
+pub(super) struct NateroidPlugin;
 
 impl Plugin for NateroidPlugin {
     fn build(&self, app: &mut App) {

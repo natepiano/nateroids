@@ -18,7 +18,7 @@ use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 use crate::traits::TransformExt;
 
-pub struct MissilePlugin;
+pub(super) struct MissilePlugin;
 
 impl Plugin for MissilePlugin {
     fn build(&self, app: &mut App) {
@@ -45,7 +45,7 @@ impl Plugin for MissilePlugin {
     CollisionEventsEnabled,
     LockedAxes = LOCKED_AXES_2D
 )]
-pub struct Missile;
+pub(super) struct Missile;
 
 #[derive(Component, Reflect, Copy, Clone, Debug, Default)]
 #[reflect(Component)]
@@ -58,7 +58,7 @@ pub struct MissilePosition {
 }
 
 impl MissilePosition {
-    pub const fn new(total_distance: f32) -> Self {
+    pub(super) const fn new(total_distance: f32) -> Self {
         Self {
             total_distance,
             traveled_distance: 0.,

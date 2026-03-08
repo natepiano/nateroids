@@ -13,7 +13,7 @@ use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
 
-pub struct TeleportPlugin;
+pub(super) struct TeleportPlugin;
 
 impl Plugin for TeleportPlugin {
     fn build(&self, app: &mut App) {
@@ -131,7 +131,7 @@ fn on_teleported(
     }
 }
 
-pub fn teleport_at_boundary(
+fn teleport_at_boundary(
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     mut commands: Commands,
     mut teleporting_entities: Query<

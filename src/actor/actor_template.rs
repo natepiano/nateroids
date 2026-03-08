@@ -58,7 +58,7 @@ use crate::camera::RenderLayer;
 use crate::traits::TransformExt;
 
 #[derive(PhysicsLayer, Clone, Copy, Debug, Default)]
-pub enum GameLayer {
+pub(super) enum GameLayer {
     #[default]
     Default,
     Spaceship,

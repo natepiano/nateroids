@@ -20,7 +20,7 @@ use crate::traits::TransformExt;
 event!(AabbInspectorEvent);
 event!(AabbsEvent);
 
-pub struct AabbPlugin;
+pub(super) struct AabbPlugin;
 impl Plugin for AabbPlugin {
     fn build(&self, app: &mut App) {
         app.init_gizmo_group::<AabbGizmo>()
@@ -55,7 +55,7 @@ impl Plugin for AabbPlugin {
 /// creation until Bevy has computed `Aabb` on child mesh entities via
 /// `calculate_bounds`.
 #[derive(Component)]
-pub struct PendingCollider {
+pub(super) struct PendingCollider {
     pub collider_type: ColliderType,
     pub margin:        f32,
     pub rigid_body:    RigidBody,
@@ -88,7 +88,7 @@ fn apply_aabb_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<A
 }
 
 /// Returns the full size of the `Aabb` as a `Vec3`.
-pub fn size(aabb: &Aabb) -> Vec3 { Vec3::from(aabb.half_extents * 2.0) }
+fn size(aabb: &Aabb) -> Vec3 { Vec3::from(aabb.half_extents * 2.0) }
 
 /// Returns the largest axis dimension of the `Aabb`.
 pub fn max_dimension(aabb: &Aabb) -> f32 {

@@ -21,7 +21,7 @@ use crate::traits::TransformExt;
 
 event!(PlanesInspectorEvent);
 
-pub struct PlanesPlugin;
+pub(super) struct PlanesPlugin;
 
 impl Plugin for PlanesPlugin {
     fn build(&self, app: &mut App) {
@@ -46,7 +46,7 @@ impl Plugin for PlanesPlugin {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 #[allow(clippy::struct_excessive_bools)] // 6 directional bools (front/back/top/bottom/left/right) are intentional
-pub struct PlaneSettings {
+struct PlaneSettings {
     pub front:                 bool,
     pub back:                  bool,
     pub top:                   bool,
