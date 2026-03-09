@@ -159,7 +159,7 @@ fn compute_actor_aabb(
 
         commands
             .entity(entity)
-            .insert((aabb, collider, pending.rigid_body.clone()))
+            .insert((aabb, collider, pending.rigid_body))
             .remove::<PendingCollider>();
     }
 }

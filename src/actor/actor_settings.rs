@@ -187,7 +187,7 @@ pub(super) fn insert_configured_components(
         aabb::PendingCollider {
             collider_type: settings.collider_type.clone(),
             margin:        settings.collider_margin,
-            rigid_body:    settings.rigid_body.clone(),
+            rigid_body:    settings.rigid_body,
         },
         CollisionDamage(settings.collision_damage),
         settings.collision_layers,
