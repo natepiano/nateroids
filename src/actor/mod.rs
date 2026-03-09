@@ -10,8 +10,8 @@ mod spaceship;
 mod spaceship_control;
 mod teleport;
 
-use aabb::AabbPlugin;
 pub use aabb::max_dimension as aabb_max_dimension;
+use aabb::AabbPlugin;
 use actor_settings::ActorSettingsPlugin;
 pub use actor_settings::Health;
 pub use actor_template::DeathCorner;
@@ -25,7 +25,6 @@ pub use nateroid::Deaderoid;
 pub use nateroid::Nateroid;
 pub use nateroid::NateroidDeathMaterials;
 use nateroid::NateroidPlugin;
-pub use nateroid::NateroidSpawnStats;
 pub use spaceship::Spaceship;
 use spaceship::SpaceshipPlugin;
 use spaceship_control::SpaceshipControlPlugin;

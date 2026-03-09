@@ -7,12 +7,12 @@ use bevy::prelude::*;
 use rand::Rng;
 use rand::RngExt;
 
-use super::Teleporter;
+use super::actor_settings::insert_configured_components;
 use super::actor_settings::ColliderType;
 use super::actor_settings::LOCKED_AXES_2D;
-use super::actor_settings::insert_configured_components;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
+use super::Teleporter;
 use crate::asset_loader;
 use crate::asset_loader::SceneAssets;
 use crate::playfield::ActorPortals;
@@ -25,7 +25,7 @@ use crate::traits::UsizeExt;
 const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
 
 #[derive(Resource)]
-pub struct NateroidSpawnStats {
+pub(super) struct NateroidSpawnStats {
     /// Ring buffer tracking last N spawn attempts (true = success, false = failure)
     attempts:          VecDeque<bool>,
     last_warning_time: f32,

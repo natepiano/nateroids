@@ -8,4 +8,4 @@ use bevy::render::view::Hdr;
 /// See <https://github.com/bevyengine/bevy/issues/15467>.
 #[derive(Component, Default)]
 #[require(Hdr)]
-pub struct RequiredCameraComponents;
+pub(super) struct RequiredCameraComponents;

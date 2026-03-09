@@ -3,7 +3,7 @@ use bevy_enhanced_input::prelude::*;
 use bevy_enhanced_input_extras::Keybindings;
 
 #[derive(Component)]
-pub struct GlobalShortcutsContext;
+pub(super) struct GlobalShortcutsContext;
 
 action!(AabbsSwitch);
 action!(BoundaryBoxSwitch);
@@ -79,7 +79,7 @@ fn spawn_restart_shortcuts(
     kb.spawn_shift_key::<RestartGameShortcut>(ctx, KeyCode::KeyR);
 }
 
-pub fn setup_global_shortcuts(mut commands: Commands) {
+pub(super) fn setup_global_shortcuts(mut commands: Commands) {
     let consume_input = ActionSettings {
         consume_input: true,
         ..default()

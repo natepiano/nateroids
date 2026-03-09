@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use super::Deaderoid;
 use super::Health;
 use super::Nateroid;
-use super::NateroidSpawnStats;
+use super::nateroid::NateroidSpawnStats;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
 use super::spaceship::Spaceship;

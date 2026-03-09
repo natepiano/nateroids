@@ -1,9 +1,9 @@
 use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
 
-use super::CameraOrder;
+use super::support::CameraOrder;
 use super::RenderLayer;
-use super::RequiredCameraComponents;
+use super::components::RequiredCameraComponents;
 use super::settings::CameraSettings;
 
 #[derive(Component, Reflect)]
