@@ -907,7 +907,7 @@ dependencies = [
 [[package]]
 name = "bevy_enhanced_input_extras"
 version = "0.1.0"
-source = "git+https://github.com/natepiano/bevy_enhanced_input_extras?rev=273f2be#273f2be92db11fb0a148309a1c185498d1af6740"
+source = "git+https://github.com/natepiano/bevy_enhanced_input_extras?rev=d0873d9c9594831fbbc2542f35957ccba3fc8ee5#d0873d9c9594831fbbc2542f35957ccba3fc8ee5"
 dependencies = [
  "bevy",
  "bevy_enhanced_input",
@@ -1215,6 +1215,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_liminal"
+version = "0.3.0"
+dependencies = [
+ "bevy",
+ "bevy_render",
+ "bytemuck",
+ "getrandom 0.4.2",
+ "nonmax",
+ "rand 0.10.0",
+ "tracing",
+ "wgpu-types",
+]
+
+[[package]]
 name = "bevy_log"
 version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1286,21 +1300,6 @@ dependencies = [
  "hexasphere",
  "serde",
  "thiserror 2.0.18",
- "tracing",
- "wgpu-types",
-]
-
-[[package]]
-name = "bevy_mesh_outline"
-version = "0.3.0"
-source = "git+https://github.com/natepiano/bevy_mesh_outline?branch=perf-storage-buffer#83bb6149989e121d9458b6ceb297488d1b8b47a1"
-dependencies = [
- "bevy",
- "bevy_render",
- "bytemuck",
- "getrandom 0.3.4",
- "nonmax",
- "rand 0.9.2",
  "tracing",
  "wgpu-types",
 ]
@@ -3071,11 +3070,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0de51e6874e94e7bf76d726fc5d13ba782deca734ff60d5bb2fb2607c7406555"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "r-efi 6.0.0",
  "rand_core 0.10.0",
  "wasip2",
  "wasip3",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -3995,7 +3996,7 @@ dependencies = [
  "bevy_brp_extras",
  "bevy_enhanced_input",
  "bevy_enhanced_input_extras",
- "bevy_mesh_outline",
+ "bevy_liminal",
  "bevy_panorbit_camera",
  "bevy_panorbit_camera_ext",
  "bevy_window_manager",
@@ -6240,7 +6241,6 @@ dependencies = [
  "smallvec",
  "static_assertions",
  "wasm-bindgen",
- "wasm-bindgen-futures",
  "web-sys",
  "wgpu-core",
  "wgpu-hal",

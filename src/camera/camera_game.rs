@@ -1,6 +1,6 @@
 use bevy::anti_alias::smaa::Smaa;
 use bevy::prelude::*;
-use bevy_mesh_outline::OutlineCamera;
+use bevy_liminal::OutlineCamera;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera::TrackpadBehavior;
 

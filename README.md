@@ -1,5 +1,7 @@
 ## nateroids
 
+[![CI](https://github.com/natepiano/nateroids/actions/workflows/ci.yml/badge.svg)](https://github.com/natepiano/nateroids/actions/workflows/ci.yml)
+
 created to teach [natepiano](https://youtube.com/natepiano) how to code games, visualizations and
 simulations in [bevy](https://bevyengine.org) using rust. i started
 with [this tutorial](https://www.youtube.com/@ZymartuGames),

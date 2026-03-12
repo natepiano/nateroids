@@ -4,7 +4,7 @@ use bevy_inspector_egui::bevy_egui::EguiContexts;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
-use bevy_mesh_outline::MeshOutline;
+use bevy_liminal::MeshOutline;
 use bevy_panorbit_camera::PanOrbitCamera;
 use bevy_panorbit_camera_ext::SetFitTarget;
 

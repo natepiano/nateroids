@@ -13,7 +13,7 @@ mod zoom;
 
 use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::prelude::*;
-use bevy_mesh_outline::MeshOutlinePlugin;
+use bevy_liminal::MeshOutlinePlugin;
 pub use constants::ZOOM_MARGIN;
 pub use settings::CameraSettings;
 pub use support::RenderLayer;
