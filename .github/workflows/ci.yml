@@ -1,6 +1,5 @@
 name: CI
 
-# Combined CI workflow for all testing
 on:
   pull_request:
     branches: [main]
@@ -11,19 +10,21 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_TERM_PROGRESS_WHEN: always
+  CARGO_TERM_PROGRESS_WIDTH: 80
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  TAPLO_VERSION: 0.10.0
 
-# Cancel duplicate runs
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # Fast format check on one OS
   format:
     name: Format Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Rust nightly
         uses: dtolnay/rust-toolchain@master
@@ -34,13 +35,53 @@ jobs:
       - name: Check formatting
         run: cargo +nightly fmt -- --check
 
-  # Clippy
+  taplo:
+    name: Taplo Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Taplo
+        uses: taiki-e/install-action@v2
+        with:
+          tool: taplo@${{ env.TAPLO_VERSION }}
+
+      - name: Check TOML formatting
+        run: taplo fmt --check
+
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: clippy
+
+      - name: Install mold linker
+        uses: rui314/setup-mold@v1
+
+      - name: Install and cache Linux dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libudev-dev libasound2-dev pkg-config clang libwayland-dev libxkbcommon-dev
+          version: 1.0
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@master
@@ -58,26 +99,16 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: "clippy"
 
-      - name: Run clippy
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: Build release examples
+        run: cargo build --release --all-features --workspace --examples
 
-  # Test suite
   test:
     name: Test Suite
     runs-on: ubuntu-latest
 
-    env:
-      # Reduce memory usage during compilation and linking (from Bevy CI)
-      CARGO_PROFILE_TEST_DEBUG: 0
-      CARGO_PROFILE_DEV_DEBUG: 0
-      CARGO_INCREMENTAL: 0
-      RUSTFLAGS: "-C debuginfo=0"
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@master
@@ -98,12 +129,51 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: "test"
 
-      - name: Run all tests
-        run: cargo nextest run --all-features --workspace
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          df -h
+
+      - name: Run test targets
+        run: cargo nextest run --all-features --workspace --tests
         env:
-          # Disable GPU/windowing for headless testing
           WGPU_BACKEND: "gl"
           WINIT_UNIX_BACKEND: "x11"
+          RUSTFLAGS: "-C link-arg=-fuse-ld=mold"
+
+  mend:
+    name: Mend Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: rust-src, rustc-dev, llvm-tools-preview
+
+      - name: Install mold linker
+        uses: rui314/setup-mold@v1
+
+      - name: Install and cache Linux dependencies
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libudev-dev libasound2-dev pkg-config clang libwayland-dev libxkbcommon-dev
+          version: 1.0
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-mend
+        run: cargo install cargo-mend
+        env:
+          RUSTC_BOOTSTRAP: 1
+
+      - name: Run cargo mend
+        run: cargo mend --fail-on-warn
+        env:
+          CARGO_TERM_COLOR: never

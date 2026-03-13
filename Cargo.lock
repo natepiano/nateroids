@@ -1217,6 +1217,7 @@ dependencies = [
 [[package]]
 name = "bevy_liminal"
 version = "0.3.0"
+source = "git+https://github.com/natepiano/bevy_liminal?rev=572cd0fc44879cf62223cfc91a5a08ee57bf7d32#572cd0fc44879cf62223cfc91a5a08ee57bf7d32"
 dependencies = [
  "bevy",
  "bevy_render",
