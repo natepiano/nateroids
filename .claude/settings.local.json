@@ -133,7 +133,8 @@
       "Bash(~/.claude/scripts/ci_timings.sh main:*)",
       "Bash(~/.claude/scripts/ci_timings.sh 10)",
       "Bash(~/.claude/scripts/ci_timings.sh 2)",
-      "Bash(~/.claude/scripts/ci_timings.sh 3)"
+      "Bash(~/.claude/scripts/ci_timings.sh 3)",
+      "Bash(~/.claude/scripts/ci_timings.sh)"
     ],
     "deny": [],
     "ask": []
