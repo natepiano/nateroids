@@ -129,7 +129,8 @@
       "Bash(gh issue view:*)",
       "Bash(git diff:*)",
       "Bash(kill:*)",
-      "Bash(~/.claude/scripts/ci_timings.sh *)"
+      "Bash(~/.claude/scripts/ci_timings.sh *)",
+      "Bash(~/.claude/scripts/validate_ci.sh)"
     ],
     "deny": [],
     "ask": []
