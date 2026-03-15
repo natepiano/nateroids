@@ -16,6 +16,7 @@ use crate::camera::RenderLayer;
 use crate::camera::ZOOM_MARGIN;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
+use crate::playfield::GridFlash;
 use crate::state::GameState;
 
 pub struct SplashPlugin;
@@ -154,6 +155,7 @@ fn run_splash(
             .remove::<(CameraMoveList, SplashZoomActive)>();
         // Reuse the camera home command path so skip lands at the same home framing.
         commands.trigger(CameraHomeEvent);
+        commands.trigger(GridFlash);
         next_state.set(GameState::InGame);
         return;
     }
@@ -176,6 +178,7 @@ fn run_splash(
     let camera_animation_done = camera_query.is_empty();
 
     if timer_finished && camera_animation_done {
+        commands.trigger(GridFlash);
         next_state.set(GameState::InGame);
     }
 }

@@ -24,6 +24,16 @@ pub(super) enum MultiFaceGeometry {
 #[derive(Default, Reflect, GizmoConfigGroup)]
 pub(super) struct GridGizmo {}
 
+/// Trigger event to start a grid flash animation
+#[derive(Event)]
+pub struct GridFlash;
+
+/// Active grid flash animation timer
+#[derive(Resource)]
+pub(super) struct GridFlashAnimation {
+    pub timer: Timer,
+}
+
 #[derive(Default, Reflect, GizmoConfigGroup)]
 pub(super) struct BoundaryGizmo {}
 

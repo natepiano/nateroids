@@ -12,6 +12,7 @@ pub use boundary::BoundaryVolume;
 use planes::PlanesPlugin;
 pub use portals::ActorPortals;
 use portals::PortalPlugin;
+pub use types::GridFlash;
 
 pub struct PlayfieldPlugin;
 

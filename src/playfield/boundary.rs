@@ -19,10 +19,13 @@ use super::constants::CORNER_COLOR_FRONT_BACK_XY;
 use super::constants::CORNER_COLOR_LEFT_RIGHT_YZ;
 use super::constants::CORNER_COLOR_TOP_BOTTOM_XZ;
 use super::constants::DEADEROID_APPROACHING_COLOR;
+use super::constants::GRID_FLASH_DURATION;
 use super::portals::Portal;
 use super::portals::PortalGizmo;
 use super::types::BoundaryGizmo;
 use super::types::FlattenIntersections;
+use super::types::GridFlash;
+use super::types::GridFlashAnimation;
 use super::types::GridGizmo;
 use super::types::Intersection;
 use super::types::MultiFaceGeometry;
@@ -64,7 +67,18 @@ impl Plugin for BoundaryPlugin {
                 draw_boundary.run_if(in_state(GameState::Splash).or(in_state(GameState::InGame))),
             )
             .add_systems(Update, fade_boundary_in)
-            .add_observer(start_boundary_fade);
+            .add_systems(
+                Update,
+                detect_cell_count_change.run_if(in_state(GameState::InGame)),
+            )
+            .add_systems(
+                Update,
+                animate_grid_flash
+                    .run_if(resource_exists::<GridFlashAnimation>)
+                    .after(fade_boundary_in),
+            )
+            .add_observer(start_boundary_fade)
+            .add_observer(on_grid_flash);
         bind_action_switch!(
             app,
             InspectBoundarySwitch,
@@ -915,6 +929,57 @@ fn fade_boundary_in(
             debug!("✅ Boundary fade complete!");
             commands.entity(entity).despawn();
         }
+    }
+}
+
+/// Observer that starts or resets the grid flash animation
+fn on_grid_flash(_trigger: On<GridFlash>, mut commands: Commands) {
+    commands.insert_resource(GridFlashAnimation {
+        timer: Timer::from_seconds(GRID_FLASH_DURATION, TimerMode::Once),
+    });
+}
+
+/// Detects when `Boundary.cell_count` changes and triggers a `GridFlash`
+fn detect_cell_count_change(
+    mut commands: Commands,
+    boundary: Res<Boundary>,
+    mut previous_cells: Local<Option<UVec3>>,
+) {
+    if !boundary.is_changed() {
+        return;
+    }
+
+    let current = boundary.cell_count;
+
+    match *previous_cells {
+        Some(prev) if prev == current => {},
+        _ => {
+            // Skip the very first change (resource initialization)
+            if previous_cells.is_some() {
+                commands.trigger(GridFlash);
+            }
+            *previous_cells = Some(current);
+        },
+    }
+}
+
+/// Drives the grid flash alpha using a triangle curve: 0 → 1 → 0 over the duration
+fn animate_grid_flash(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut flash: ResMut<GridFlashAnimation>,
+    mut boundary: ResMut<Boundary>,
+) {
+    flash.timer.tick(time.delta());
+
+    let t = flash.timer.fraction();
+    let alpha = 1.0 - (2.0 * t - 1.0).abs();
+
+    boundary.grid_color = Color::from(tailwind::BLUE_500).with_alpha(alpha);
+
+    if flash.timer.is_finished() {
+        boundary.grid_color = Color::from(tailwind::BLUE_500).with_alpha(BOUNDARY_GRID_ALPHA);
+        commands.remove_resource::<GridFlashAnimation>();
     }
 }
 

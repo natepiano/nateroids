@@ -70,12 +70,15 @@ fn spawn_restart_shortcuts(
     kb: &Keybindings<GlobalShortcutsContext>,
     ctx: &mut ActionSpawner<GlobalShortcutsContext>,
 ) {
-    // The more specific shortcut evaluates first (more ModKeys) and consumes input,
-    // preventing Shift+R from also firing on Super+Shift+R.
-    kb.spawn_binding::<RestartWithSplashShortcut, _>(
-        ctx,
+    // No `BlockBy` — the Cmd+Shift chord is its own disambiguator.
+    ctx.spawn((
+        Action::<RestartWithSplashShortcut>::new(),
+        ActionSettings {
+            consume_input: true,
+            ..default()
+        },
         bindings![KeyCode::KeyR.with_mod_keys(ModKeys::SUPER | ModKeys::SHIFT)],
-    );
+    ));
     kb.spawn_shift_key::<RestartGameShortcut>(ctx, KeyCode::KeyR);
 }
 

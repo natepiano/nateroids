@@ -21,10 +21,13 @@ pub(super) const BOUNDARY_GRID_LINE_WIDTH: f32 = 1.5;
 pub(super) const BOUNDARY_OUTER_LINE_WIDTH: f32 = 4.0;
 
 /// Target alpha value for grid color
-pub(super) const BOUNDARY_GRID_ALPHA: f32 = 0.25;
+pub(super) const BOUNDARY_GRID_ALPHA: f32 = 0.0;
 
 /// Target alpha value for outer boundary color
 pub(super) const BOUNDARY_OUTER_ALPHA: f32 = 1.0;
+
+/// Duration in seconds for the grid flash animation when cell count changes
+pub(super) const GRID_FLASH_DURATION: f32 = 2.0;
 
 // =============================================================================
 // Boundary Position Snapping
