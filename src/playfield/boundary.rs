@@ -973,7 +973,7 @@ fn animate_grid_flash(
     flash.timer.tick(time.delta());
 
     let t = flash.timer.fraction();
-    let alpha = 1.0 - (2.0 * t - 1.0).abs();
+    let alpha = 1.0 - 2.0f32.mul_add(t, -1.0).abs();
 
     boundary.grid_color = Color::from(tailwind::BLUE_500).with_alpha(alpha);
 
