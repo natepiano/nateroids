@@ -48,10 +48,8 @@ struct Teleported {
 
 fn on_teleported(
     event: On<Teleported>,
-    mut params: ParamSet<(
-        SpatialQuery,
-        Query<(&mut CollisionLayers, &mut Health), With<Nateroid>>,
-    )>,
+    mut params: ParamSet<(SpatialQuery, Query<&mut Health, With<Nateroid>>)>,
+    mut commands: Commands,
     spawn_stats: Res<NateroidSpawnStats>,
     nateroid_settings: Res<NateroidSettings>,
     mut collision_state: ResMut<TeleportCollisionState>,
@@ -107,14 +105,14 @@ fn on_teleported(
             continue;
         }
 
-        if let Ok((mut collision_layers, mut health)) = nateroid_query.get_mut(entity) {
+        if let Ok(mut health) = nateroid_query.get_mut(entity) {
             // Always kill if spaceship teleported, or if field is crowded
             if !is_teleporting_nateroid || field_is_crowded {
                 info!(
                     "💀 Killing overlapping nateroid - spaceship_teleported: {}, field_crowded: {}",
                     !is_teleporting_nateroid, field_is_crowded
                 );
-                *collision_layers = CollisionLayers::NONE;
+                commands.entity(entity).insert(CollisionLayers::NONE);
                 health.0 = -1.0;
             }
         }
@@ -123,10 +121,10 @@ fn on_teleported(
     // If a nateroid teleported onto the spaceship, always kill the nateroid
     if is_teleporting_nateroid
         && !overlapping_spaceship.is_empty()
-        && let Ok((mut collision_layers, mut health)) = nateroid_query.get_mut(event.entity)
+        && let Ok(mut health) = nateroid_query.get_mut(event.entity)
     {
         info!("💀 Nateroid teleported onto spaceship - killing nateroid");
-        *collision_layers = CollisionLayers::NONE;
+        commands.entity(event.entity).insert(CollisionLayers::NONE);
         health.0 = -1.0;
     }
 }
