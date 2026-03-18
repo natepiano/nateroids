@@ -6,7 +6,7 @@
 //! - Dynamic camera system
 
 #[macro_use]
-extern crate bevy_enhanced_input_extras;
+extern crate bevy_kana;
 mod input;
 #[macro_use]
 mod switches;

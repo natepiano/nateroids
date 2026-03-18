@@ -922,15 +922,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_enhanced_input_extras"
-version = "0.1.0"
-source = "git+https://github.com/natepiano/bevy_enhanced_input_extras?rev=d0873d9c9594831fbbc2542f35957ccba3fc8ee5#d0873d9c9594831fbbc2542f35957ccba3fc8ee5"
-dependencies = [
- "bevy",
- "bevy_enhanced_input",
-]
-
-[[package]]
 name = "bevy_enhanced_input_macros"
 version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1208,6 +1199,15 @@ dependencies = [
  "bevy_utils",
  "bevy_window",
  "bevy_winit",
+]
+
+[[package]]
+name = "bevy_kana"
+version = "0.0.1"
+source = "git+https://github.com/natepiano/bevy_kana?rev=e561dc8#e561dc8777ed6289bfb76f31098077e571cd8a0c"
+dependencies = [
+ "bevy",
+ "bevy_enhanced_input",
 ]
 
 [[package]]
@@ -4024,7 +4024,7 @@ dependencies = [
  "bevy-inspector-egui",
  "bevy_brp_extras",
  "bevy_enhanced_input",
- "bevy_enhanced_input_extras",
+ "bevy_kana",
  "bevy_liminal",
  "bevy_panorbit_camera",
  "bevy_panorbit_camera_ext",

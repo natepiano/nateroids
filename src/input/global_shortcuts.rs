@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::*;
-use bevy_enhanced_input_extras::Keybindings;
+use bevy_kana::Keybindings;
 
 #[derive(Component)]
 pub(super) struct GlobalShortcutsContext;
