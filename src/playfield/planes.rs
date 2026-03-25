@@ -3,6 +3,7 @@ use bevy::render::render_resource::Face;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+use bevy_kana::Position;
 
 use super::BoundaryVolume;
 use super::constants::PLANE_IOR;
@@ -125,7 +126,7 @@ fn create_or_update_plane(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     plane_settings: &PlaneSettings,
     size: Vec3,
-    position: Vec3,
+    position: Position,
     axis: Vec3,
     plane_type: PlaneType,
     existing_entity: Option<Entity>,
@@ -136,7 +137,7 @@ fn create_or_update_plane(
     let mesh = meshes.add(Mesh::from(cuboid));
     let material_handle = get_plane_material(materials, plane_settings);
     let rotation = Quat::from_axis_angle(axis, PLANE_ROTATION_ANGLE);
-    let transform = Transform::from_trs(position, rotation, Vec3::ONE);
+    let transform = Transform::from_trs(*position, rotation, Vec3::ONE);
 
     if let Some(entity) = existing_entity {
         commands
@@ -207,48 +208,48 @@ fn get_plane_specifications(
     plane_settings: &Res<PlaneSettings>,
     box_size: Vec3,
     orientation: &OrientationSettings,
-) -> [(PlaneType, bool, Vec3, Vec3, Vec3); 6] {
+) -> [(PlaneType, bool, Vec3, Position, Vec3); 6] {
     [
         (
             PlaneType::Back,
             plane_settings.back,
             Vec3::new(box_size.x, box_size.y, plane_settings.thickness),
-            Vec3::new(0., 0., -box_size.z / 2.),
+            Position::new(0., 0., -box_size.z / 2.),
             orientation.axis_profundus,
         ),
         (
             PlaneType::Front,
             plane_settings.front,
             Vec3::new(box_size.x, box_size.y, plane_settings.thickness),
-            Vec3::new(0., 0., box_size.z / 2.),
+            Position::new(0., 0., box_size.z / 2.),
             orientation.axis_profundus,
         ),
         (
             PlaneType::Bottom,
             plane_settings.bottom,
             Vec3::new(box_size.x, plane_settings.thickness, box_size.z),
-            Vec3::new(0., -box_size.y / 2., 0.0),
+            Position::new(0., -box_size.y / 2., 0.0),
             orientation.axis_mundi,
         ),
         (
             PlaneType::Top,
             plane_settings.top,
             Vec3::new(box_size.x, plane_settings.thickness, box_size.z),
-            Vec3::new(0., box_size.y / 2., 0.0),
+            Position::new(0., box_size.y / 2., 0.0),
             orientation.axis_mundi,
         ),
         (
             PlaneType::Left,
             plane_settings.left,
             Vec3::new(plane_settings.thickness, box_size.y, box_size.z),
-            Vec3::new(-box_size.x / 2., 0., 0.0),
+            Position::new(-box_size.x / 2., 0., 0.0),
             orientation.axis_orbis,
         ),
         (
             PlaneType::Right,
             plane_settings.right,
             Vec3::new(plane_settings.thickness, box_size.y, box_size.z),
-            Vec3::new(box_size.x / 2., 0., 0.0),
+            Position::new(box_size.x / 2., 0., 0.0),
             orientation.axis_orbis,
         ),
     ]

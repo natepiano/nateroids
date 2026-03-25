@@ -1,10 +1,10 @@
-use bevy::math::Vec3;
 use bevy::prelude::Color;
+use bevy_kana::Position;
 
 /// Initial camera distance for splash screen animation.
 /// Camera spawns at this distance to appear stationary during the opening text.
 pub(super) const CAMERA_SPLASH_START_RADIUS: f32 = 3000.0;
-pub(super) const CAMERA_SPLASH_START_FOCUS: Vec3 = Vec3::ZERO;
+pub(super) const CAMERA_SPLASH_START_FOCUS: Position = Position::new(0.0, 0.0, 0.0);
 pub(super) const CAMERA_SPLASH_START_PITCH: f32 = std::f32::consts::FRAC_PI_2;
 pub(super) const CAMERA_SPLASH_START_YAW: f32 = -std::f32::consts::PI;
 

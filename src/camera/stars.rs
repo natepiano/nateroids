@@ -6,6 +6,7 @@ use bevy::camera::visibility::VisibleEntities;
 use bevy::diagnostic::FrameCount;
 use bevy::mesh::Mesh3d;
 use bevy::prelude::*;
+use bevy_kana::Position;
 use rand::Rng;
 use rand::RngExt;
 use rand::prelude::ThreadRng;
@@ -74,7 +75,7 @@ fn debug_stars(
 
 #[derive(Reflect, Component, Default)]
 pub(super) struct Star {
-    position:     Vec3,
+    position:     Position,
     radius:       f32,
     pub emissive: Vec4,
 }
@@ -137,7 +138,7 @@ fn spawn_stars(
             RenderLayer::Stars.layers(),
             Mesh3d(mesh.clone()),
             MeshMaterial3d(material),
-            Transform::from_trs(position, Quat::IDENTITY, Vec3::splat(radius)),
+            Transform::from_trs(*position, Quat::IDENTITY, Vec3::splat(radius)),
         ));
     }
 }
@@ -146,7 +147,7 @@ fn get_star_position(
     inner_sphere_radius: f32,
     outer_sphere_radius: f32,
     rng: &mut ThreadRng,
-) -> Vec3 {
+) -> Position {
     // Generate uniform random points on spherical shell using spherical coordinates
     let azimuth_norm: f32 = rng.random_range(0.0..1.0); // normalized azimuthal angle
     let polar_norm: f32 = rng.random_range(0.0..1.0); // normalized polar angle
@@ -161,7 +162,7 @@ fn get_star_position(
     let y = radius * theta.sin() * phi.sin();
     let z = radius * phi.cos();
 
-    Vec3::new(x, y, z)
+    Position::new(x, y, z)
 }
 
 fn get_star_color(settings: &StarSettings, rng: &mut impl Rng) -> Vec4 {
@@ -219,6 +220,6 @@ fn rotate_stars(
     let rotation = Quat::from_axis_angle(settings.rotation_axis, rotation_state.current_angle);
 
     for (star, mut transform) in &mut stars {
-        transform.translation = rotation * star.position;
+        transform.translation = rotation * *star.position;
     }
 }

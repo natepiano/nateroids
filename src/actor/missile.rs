@@ -4,6 +4,7 @@ use bevy_enhanced_input::action::TriggerState;
 use bevy_enhanced_input::action::events as input_events;
 use bevy_enhanced_input::prelude::Action;
 use bevy_enhanced_input::prelude::ActionOf;
+use bevy_kana::Position;
 
 use super::Teleporter;
 use super::actor_settings::LOCKED_AXES_2D;
@@ -53,8 +54,8 @@ pub struct MissilePosition {
     pub total_distance:     f32,
     pub traveled_distance:  f32,
     remaining_distance:     f32,
-    pub last_position:      Option<Vec3>,
-    last_teleport_position: Option<Vec3>, // Add this field
+    pub last_position:      Option<Position>,
+    last_teleport_position: Option<Position>,
 }
 
 impl MissilePosition {
@@ -177,7 +178,7 @@ fn fire_missile_continuous(
 /// its total distance
 fn missile_movement(mut query: Query<(&Transform, &mut MissilePosition, &Teleporter)>) {
     for (transform, mut missile, teleporter) in &mut query {
-        let current_position = transform.translation;
+        let current_position = Position(transform.translation);
 
         if let Some(last_position) = missile.last_position {
             // Calculate the distance traveled since the last update

@@ -333,7 +333,7 @@ fn start_splash_camera_animation(
 
     // Instant snap to splash start position, then hold while text animates
     let snap_move = CameraMove::ToOrbit {
-        focus:    camera_settings.splash_start_focus,
+        focus:    *camera_settings.splash_start_focus,
         yaw:      camera_settings.splash_start_yaw,
         pitch:    camera_settings.splash_start_pitch,
         radius:   camera_settings.splash_start_radius,

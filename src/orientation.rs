@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use bevy_kana::Displacement;
+use bevy_kana::Position;
 
 pub struct OrientationPlugin;
 
@@ -41,8 +43,8 @@ pub struct OrientationSettings {
     pub axis_orbis:       Vec3,
     pub axis_profundus:   Vec3,
     pub locus:            Transform,
-    pub nexus:            Vec3,
-    pub spaceship_offset: Vec3,
+    pub nexus:            Position,
+    pub spaceship_offset: Displacement,
 }
 
 #[derive(Resource, Debug, Clone, Reflect)]
@@ -59,8 +61,8 @@ impl CameraOrientation {
         axis_orbis:       Vec3::ZERO,
         axis_profundus:   Vec3::ZERO,
         locus:            Transform::IDENTITY,
-        nexus:            Vec3::ZERO,
-        spaceship_offset: Vec3::new(0.0, 5.0, -10.0),
+        nexus:            Position::new(0.0, 0.0, 0.0),
+        spaceship_offset: Displacement::new(0.0, 5.0, -10.0),
     };
 
     pub fn set_orientation(&mut self, new_orientation: OrientationType) {

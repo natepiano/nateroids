@@ -236,7 +236,7 @@ impl Default for SpaceshipSettings {
                 scene:                    Handle::default(),
                 spawn_timer_seconds:      None,
                 transform:                Transform::from_trs(
-                    SPACESHIP_INITIAL_POSITION,
+                    *SPACESHIP_INITIAL_POSITION,
                     Quat::from_rotation_x(GLTF_ROTATION_X),
                     Vec3::splat(SPACESHIP_SCALE),
                 ),

@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+use bevy_kana::Position;
 
 use super::constants::CAMERA_SPLASH_START_FOCUS;
 use super::constants::CAMERA_SPLASH_START_PITCH;
@@ -79,7 +80,7 @@ pub struct CameraSettings {
     #[inspector(min = 1000.0, max = 50000.0)]
     pub splash_start_radius:       f32,
     /// Camera starting focus point for splash screen animation
-    pub splash_start_focus:        Vec3,
+    pub splash_start_focus:        Position,
     /// Camera starting pitch angle for splash screen animation
     #[inspector(min = -std::f32::consts::PI, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
     pub splash_start_pitch:        f32,

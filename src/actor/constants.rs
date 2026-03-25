@@ -1,11 +1,11 @@
-use bevy::prelude::*;
+use bevy_kana::Position;
 
 // Spaceship constants
 pub(super) const SPACESHIP_ANGULAR_DAMPING: f32 = 0.1;
 pub(super) const SPACESHIP_COLLIDER_MARGIN: f32 = 1.0;
 pub(super) const SPACESHIP_COLLISION_DAMAGE: f32 = 50.0;
 pub(super) const SPACESHIP_HEALTH: f32 = 5000.0;
-pub(super) const SPACESHIP_INITIAL_POSITION: Vec3 = Vec3::new(0.0, -20.0, 0.0);
+pub(super) const SPACESHIP_INITIAL_POSITION: Position = Position::new(0.0, -20.0, 0.0);
 pub(super) const SPACESHIP_LINEAR_DAMPING: f32 = 0.05;
 pub(super) const SPACESHIP_MASS: f32 = 10.0;
 pub(super) const SPACESHIP_RESTITUTION: f32 = 0.1;

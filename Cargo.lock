@@ -669,15 +669,14 @@ dependencies = [
 
 [[package]]
 name = "bevy_brp_extras"
-version = "0.18.7"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b3552a5537d0e8c6f14474297e6307e13449a9b1e32ae4c5a657e20da51fd49"
+checksum = "b18cf96aca02864c841de224a05d0325e3a7b0ef3f35fcd8345631101685463e"
 dependencies = [
  "bevy",
  "bevy_remote",
  "serde",
  "serde_json",
- "smol_str",
  "strum",
  "strum_macros",
  "thiserror 2.0.18",
@@ -1204,7 +1203,8 @@ dependencies = [
 [[package]]
 name = "bevy_kana"
 version = "0.0.1"
-source = "git+https://github.com/natepiano/bevy_kana?rev=e561dc8#e561dc8777ed6289bfb76f31098077e571cd8a0c"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f50a5f45a9a9db4db1cb105c327341e64c2139c6b044e2cbbe5ed4318caa181f"
 dependencies = [
  "bevy",
  "bevy_enhanced_input",

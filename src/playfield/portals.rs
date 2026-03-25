@@ -10,6 +10,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+use bevy_kana::Position;
 
 use super::Boundary;
 use super::BoundaryVolume;
@@ -149,7 +150,7 @@ pub(super) struct Portal {
     pub face:                       BoundaryFace,
     pub face_count:                 usize,
     fade_out_started:               Option<f32>,
-    pub position:                   Vec3,
+    pub position:                   Position,
     pub radius:                     f32,
 }
 
@@ -168,7 +169,7 @@ impl Default for Portal {
             face:                       BoundaryFace::Right,
             face_count:                 1,
             fade_out_started:           None,
-            position:                   Vec3::ZERO,
+            position:                   Position::new(0.0, 0.0, 0.0),
             radius:                     0.,
         }
     }
@@ -202,7 +203,7 @@ fn init_portals(
         let radius = aabb_max_dimension(aabb).max(portal_settings.portal_smallest)
             * portal_settings.portal_scalar;
 
-        let portal_position = transform.translation;
+        let portal_position = Position(transform.translation);
         let actor_direction = velocity.normalize_or_zero();
 
         let portal = Portal {
@@ -234,7 +235,7 @@ fn init_portals(
 
 /// Checks if a position is way beyond the boundary (physics burst).
 /// Prevents drawing portals when actors burst past boundary due to high physics stress.
-fn is_physics_burst(position: Vec3, boundary_transform: &Transform) -> bool {
+fn is_physics_burst(position: Position, boundary_transform: &Transform) -> bool {
     let boundary_half_size = boundary_transform.scale / 2.0;
     let max_distance_from_center = position.distance(boundary_transform.translation);
     let boundary_diagonal = boundary_half_size.length();
@@ -245,10 +246,10 @@ fn is_physics_burst(position: Vec3, boundary_transform: &Transform) -> bool {
 /// Recalculates face because snapping can move position to a different face (especially at
 /// corners).
 fn snap_and_get_face(
-    position: Vec3,
+    position: Position,
     initial_normal: Dir3,
     boundary_transform: &Transform,
-) -> (Vec3, Option<BoundaryFace>) {
+) -> (Position, Option<BoundaryFace>) {
     let snapped_position =
         Boundary::snap_position_to_boundary_face(position, initial_normal, boundary_transform);
     let final_normal = Boundary::get_normal_for_position(snapped_position, boundary_transform);
@@ -376,10 +377,10 @@ fn handle_approaching_visual(
 // extracted for readability/complexity
 fn smooth_circle_position(
     visual: &Mut<ActorPortals>,
-    collision_point: Vec3,
+    collision_point: Position,
     current_boundary_wall_normal: Dir3,
     portal_settings: &Res<PortalSettings>,
-) -> Vec3 {
+) -> Position {
     if let Some(approaching) = &visual.approaching {
         // Adjust this value to control smoothing (0.0 to 1.0)
         let smoothing_factor = portal_settings.movement_smoothing_factor;

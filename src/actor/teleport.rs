@@ -1,5 +1,6 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use bevy_kana::Position;
 
 use super::Deaderoid;
 use super::Health;
@@ -34,7 +35,7 @@ struct TeleportCollisionState {
 #[derive(Component, Reflect, Debug, Default, Clone)]
 pub struct Teleporter {
     pub just_teleported:          bool,
-    pub last_teleported_position: Option<Vec3>,
+    pub last_teleported_position: Option<Position>,
     pub last_teleported_normal:   Option<Dir3>,
 }
 
@@ -152,7 +153,7 @@ fn teleport_at_boundary(
     for (entity, mut transform, mut teleporter, collider, name, is_spaceship, is_deaderoid) in
         &mut teleporting_entities
     {
-        let original_position = transform.translation;
+        let original_position = Position(transform.translation);
 
         let teleported_position =
             Boundary::calculate_teleport_position(original_position, boundary_transform);
@@ -183,7 +184,7 @@ fn teleport_at_boundary(
                 );
             }
 
-            transform.translation = teleported_position;
+            transform.translation = *teleported_position;
             teleporter.just_teleported = true;
             teleporter.last_teleported_position = Some(teleported_position);
             teleporter.last_teleported_normal = Some(Boundary::get_normal_for_position(
@@ -194,7 +195,7 @@ fn teleport_at_boundary(
             // Trigger event to handle overlapping entities
             commands.trigger(Teleported {
                 entity,
-                position: teleported_position,
+                position: *teleported_position,
                 rotation: transform.rotation,
                 collider: collider.clone(),
             });

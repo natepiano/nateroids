@@ -1,5 +1,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use bevy_kana::Position;
+use bevy_kana::Velocity;
 use rand::RngExt;
 
 use crate::actor::Deaderoid;
@@ -47,13 +49,15 @@ pub fn despawn(commands: &mut Commands, entity: Entity) { commands.entity(entity
 /// Calculates velocity toward a boundary corner based on the death corner strategy.
 /// Velocity is calculated to reach the corner in exactly `death_duration` seconds.
 fn calculate_death_velocity(
-    position: Vec3,
-    current_velocity: Vec3,
+    position: Position,
+    current_velocity: Velocity,
     boundary_transform: &Transform,
     death_duration: f32,
     death_corner: DeathCorner,
-) -> Vec3 {
+) -> Velocity {
     const EPSILON: f32 = 0.001;
+    let position = *position;
+    let current_velocity = *current_velocity;
     let half_size = boundary_transform.scale / 2.0;
     let center = boundary_transform.translation;
 
@@ -160,7 +164,7 @@ fn calculate_death_velocity(
 
     // Calculate velocity to reach corner in exactly death_duration seconds
     // velocity = (target_position - current_position) / time
-    (target_corner - position) / death_duration
+    Velocity((target_corner - position) / death_duration)
 }
 
 fn despawn_dead_entities(
@@ -197,8 +201,8 @@ fn despawn_dead_entities(
 
                 // Calculate velocity to reach target corner in death_duration
                 let death_velocity = calculate_death_velocity(
-                    transform.translation,
-                    linear_velocity.0,
+                    Position(transform.translation),
+                    Velocity(linear_velocity.0),
                     boundary_transform,
                     nateroid_settings.death_duration_secs,
                     nateroid_settings.death_corner,
@@ -217,7 +221,7 @@ fn despawn_dead_entities(
                             current_material_index: 0,
                         },
                         CollisionLayers::NONE,
-                        LinearVelocity(death_velocity),
+                        LinearVelocity(*death_velocity),
                     ))
                     .remove::<LockedAxes>();
 

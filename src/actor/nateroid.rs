@@ -4,6 +4,7 @@ use std::ops::Range;
 use avian3d::prelude::*;
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
+use bevy_kana::Position;
 use rand::Rng;
 use rand::RngExt;
 
@@ -357,10 +358,10 @@ fn initialize_transform(
             },
         };
         let intersections =
-            spatial_query.shape_intersections(&spawn_collider, position, rotation, &filter);
+            spatial_query.shape_intersections(&spawn_collider, *position, rotation, &filter);
 
         if intersections.is_empty() {
-            return Some(Transform::from_trs(position, rotation, scale));
+            return Some(Transform::from_trs(*position, rotation, scale));
         }
     }
 
@@ -440,13 +441,13 @@ fn precompute_death_materials(
     );
 }
 
-fn get_random_position_within_bounds(bounds: &Transform) -> Vec3 {
+fn get_random_position_within_bounds(bounds: &Transform) -> Position {
     let mut rng = rand::rng();
     let half_scale = bounds.scale.abs() / 2.0; // Use absolute value to ensure positive scale
     let min = bounds.translation - half_scale;
     let max = bounds.translation + half_scale;
 
-    Vec3::new(
+    Position::new(
         get_random_component(min.x, max.x, &mut rng),
         get_random_component(min.y, max.y, &mut rng),
         get_random_component(min.z, max.z, &mut rng),
