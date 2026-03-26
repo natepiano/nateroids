@@ -1,6 +1,8 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_kana::Position;
+use bevy_kana::ToF32;
+use bevy_kana::ToUsize;
 use bevy_kana::Velocity;
 use rand::RngExt;
 
@@ -14,7 +16,6 @@ use crate::actor::NateroidSettings;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
 use crate::state::GameState;
-use crate::traits::UsizeExt;
 
 pub struct DespawnPlugin;
 
@@ -313,8 +314,8 @@ fn animate_dying_nateroids(
         // then slows down (exponential decay)
         let eased_progress = 1.0 - (1.0 - progress).powi(3);
         // Safe: eased_progress is 0.0-1.0, bounded by array size, result is valid index
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let new_index = (eased_progress * (death_materials.materials.len() - 1).to_f32()) as usize;
+        let new_index =
+            (eased_progress * (death_materials.materials.len() - 1).to_f32()).to_usize();
 
         // Only swap materials when index changes
         if new_index != deaderoid.current_material_index {

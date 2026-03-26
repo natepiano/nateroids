@@ -5,6 +5,7 @@ use bevy::prelude::*;
 use bevy_enhanced_input::action::TriggerState;
 use bevy_enhanced_input::prelude::Action;
 use bevy_enhanced_input::prelude::ActionOf;
+use bevy_kana::ToF32;
 use rand::RngExt;
 
 use super::Deaderoid;
@@ -337,12 +338,10 @@ fn draw_exhaust_flames(gizmos: &mut Gizmos<FlameGizmo>, transform: &Transform, e
     let color_orange = Color::from(tailwind::ORANGE_500);
     let color_red = Color::from(tailwind::RED_600);
 
-    #[allow(clippy::cast_precision_loss)]
-    let line_count_f32 = THRUSTER_LINE_COUNT as f32;
+    let line_count_f32 = THRUSTER_LINE_COUNT.to_f32();
 
     for i in 0..THRUSTER_LINE_COUNT {
-        #[allow(clippy::cast_precision_loss)]
-        let line_index = i as f32;
+        let line_index = i.to_f32();
         let angle_offset = (line_index - (line_count_f32 - 1.0) / 2.0) / (line_count_f32 / 2.0)
             * THRUSTER_CONE_HALF_ANGLE;
 
@@ -425,12 +424,10 @@ fn draw_ring_lines(
     let position = Vec3::from(isometry.translation);
     let rotation = isometry.rotation;
 
-    #[allow(clippy::cast_precision_loss)]
-    let line_count_f32 = DEATH_EFFECT_LINE_COUNT as f32;
+    let line_count_f32 = DEATH_EFFECT_LINE_COUNT.to_f32();
 
     for i in 0..DEATH_EFFECT_LINE_COUNT {
-        #[allow(clippy::cast_precision_loss)]
-        let line_index = i as f32;
+        let line_index = i.to_f32();
 
         let angle = std::f32::consts::TAU * line_index / line_count_f32;
 
@@ -471,8 +468,7 @@ fn draw_death_effect_ring(
     let line_length_variance = DEATH_EFFECT_LINE_LENGTH_VARIANCE * config.line_length_scale;
 
     for ring_idx in 0..config.ring_count {
-        #[allow(clippy::cast_precision_loss)]
-        let ring_idx_f32 = ring_idx as f32;
+        let ring_idx_f32 = ring_idx.to_f32();
         let ring_start_time = ring_idx_f32 * config.ring_delay_secs;
 
         if death_effect.elapsed < ring_start_time {

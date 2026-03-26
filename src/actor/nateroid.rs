@@ -5,6 +5,8 @@ use avian3d::prelude::*;
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
 use bevy_kana::Position;
+use bevy_kana::ToF32;
+use bevy_kana::ToUsize;
 use rand::Rng;
 use rand::RngExt;
 
@@ -20,7 +22,6 @@ use crate::playfield::ActorPortals;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
 use crate::traits::TransformExt;
-use crate::traits::UsizeExt;
 
 // half the size of the boundary and only in the x,y plane
 const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
@@ -385,8 +386,7 @@ fn precompute_death_materials(
     let initial_alpha = nateroid_settings.initial_alpha;
     let target_alpha = nateroid_settings.target_alpha;
     // Safe: alpha values are 0.0-1.0, result is small positive integer (~30-40)
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let num_levels = ((initial_alpha - target_alpha) * 100.0) as usize + 1;
+    let num_levels = ((initial_alpha - target_alpha) * 100.0).to_usize() + 1;
 
     // Collect material handles from the scene's world using try_query
     let mut material_handles = Vec::new();

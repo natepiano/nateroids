@@ -3,13 +3,13 @@ use bevy::diagnostic::Diagnostic;
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
+use bevy_kana::ToF32;
 
 use crate::actor::Nateroid;
 use crate::camera::RenderLayer;
 use crate::input::PhysicsAabbSwitch;
 use crate::switches::Switch;
 use crate::switches::Switches;
-use crate::traits::UsizeExt;
 
 event!(PhysicsAabbEvent);
 
