@@ -382,9 +382,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "avian3d"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccf73a986c8a79fa00483d75ccb6fb306bf37eef2681c1fdd86f0ae8afd07d46"
+checksum = "d0751cde05c2be789fad86cd19219daf8a8907e0c6c2175f2c8144706493f010"
 dependencies = [
  "approx",
  "avian_derive",
@@ -908,9 +908,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_enhanced_input"
-version = "0.24.1"
+version = "0.24.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f68d3e92cc29743386bba59180747035fef268d222e3d107bcb4540ebf09cac"
+checksum = "1fd528e0238ebc77e1e4737e55aa8f51188b7405eebc281f2498a627ae51a2e3"
 dependencies = [
  "bevy",
  "bevy_enhanced_input_macros",
@@ -1217,7 +1217,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60ebdf8bc7343201a70f6a7bf942d78733d22147086ecc4527f8314cdbb54eb4"
 dependencies = [
  "bevy",
- "bevy_egui",
 ]
 
 [[package]]
@@ -1914,9 +1913,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_window_manager"
-version = "0.18.3"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd2e3597567e577507cdd76fb60b8a427361681bf87209226eb4a5842ef1dfcb"
+checksum = "aa41e5a75e1e7fa9d41e3abda106266024dd677b551d91730702152b274ce7df"
 dependencies = [
  "bevy",
  "bevy_diagnostic",
