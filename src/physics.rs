@@ -11,6 +11,11 @@ use crate::input::PhysicsAabbSwitch;
 use crate::switches::Switch;
 use crate::switches::Switches;
 
+const MIN_NATEROIDS_FOR_MONITORING: usize = 50;
+const STRESS_EXIT_FPS_THRESHOLD: f64 = 45.0;
+const STRESS_ENTER_FPS_THRESHOLD: f64 = 35.0;
+const STRESS_VELOCITY_THRESHOLD: f32 = 200.0;
+
 event!(PhysicsAabbEvent);
 
 pub struct PhysicsPlugin;
@@ -63,7 +68,7 @@ fn monitor_physics_health(
     let nateroid_count = nateroids.iter().len();
 
     // Only monitor when there are enough entities to potentially cause issues
-    if nateroid_count < 50 {
+    if nateroid_count < MIN_NATEROIDS_FOR_MONITORING {
         return;
     }
 
@@ -84,11 +89,9 @@ fn monitor_physics_health(
     // Detect potential physics breakdown with hysteresis to prevent oscillation
     // Use different thresholds for entering vs exiting stress state
     let physics_struggling = if state.is_stressed {
-        // When already stressed, need FPS > 45.0 to exit
-        fps < 45.0 || avg_speed > 200.0
+        fps < STRESS_EXIT_FPS_THRESHOLD || avg_speed > STRESS_VELOCITY_THRESHOLD
     } else {
-        // When not stressed, need FPS < 35.0 to enter
-        fps < 35.0 || avg_speed > 200.0
+        fps < STRESS_ENTER_FPS_THRESHOLD || avg_speed > STRESS_VELOCITY_THRESHOLD
     };
 
     let current_time = time.elapsed_secs_f64();
@@ -99,11 +102,7 @@ fn monitor_physics_health(
 
         if should_log {
             warn!(
-                "⚠️  PHYSICS STRESS: {} nateroids | avg_speed: {:.1} | FPS: {:.1} | timestep:
-    {:.3}ms",
-                nateroid_count,
-                avg_speed,
-                fps,
+                "⚠️  PHYSICS STRESS: {nateroid_count} nateroids | avg_speed: {avg_speed:.1} | FPS: {fps:.1} | timestep: {:.3}ms",
                 time.delta_secs() * 1000.0
             );
             state.is_stressed = true;
@@ -114,8 +113,7 @@ fn monitor_physics_health(
         // When unstressed, log once on entry
         if !state.logged_unstressed {
             info!(
-                "Physics healthy: {} nateroids | avg_speed: {:.1} | FPS: {:.1}",
-                nateroid_count, avg_speed, fps
+                "Physics healthy: {nateroid_count} nateroids | avg_speed: {avg_speed:.1} | FPS: {fps:.1}"
             );
             state.logged_unstressed = true;
             state.is_stressed = false;

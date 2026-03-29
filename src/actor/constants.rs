@@ -1,4 +1,24 @@
+use avian3d::prelude::LockedAxes;
+use bevy::prelude::Vec3;
 use bevy_kana::Position;
+
+// Shared actor configuration
+/// Spaceship model orientation correction: rotates the model so nose points +Y
+pub(super) const GLTF_ROTATION_X: f32 = std::f32::consts::FRAC_PI_2; // +90°
+pub(super) const LOCKED_AXES_2D: LockedAxes = LockedAxes::new().lock_translation_z();
+pub(super) const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
+    .lock_rotation_x()
+    .lock_rotation_y()
+    .lock_translation_z();
+
+/// Half the size of the boundary and only in the x,y plane
+pub(super) const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
+
+// Spaceship rotation enforcement
+/// Tilt correction threshold (~5 degrees) — only correct if tilted beyond this
+pub(super) const SPACESHIP_TILT_THRESHOLD: f32 = 0.087;
+/// Forward vector epsilon for safe normalization
+pub(super) const SPACESHIP_FORWARD_EPSILON: f32 = 0.0001;
 
 // Spaceship constants
 pub(super) const SPACESHIP_ANGULAR_DAMPING: f32 = 0.1;

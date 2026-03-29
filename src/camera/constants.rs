@@ -8,6 +8,9 @@ pub(super) const CAMERA_SPLASH_START_FOCUS: Position = Position::new(0.0, 0.0, 0
 pub(super) const CAMERA_SPLASH_START_PITCH: f32 = std::f32::consts::FRAC_PI_2;
 pub(super) const CAMERA_SPLASH_START_YAW: f32 = -std::f32::consts::PI;
 
+/// Minimum rotation cycle in minutes (1 second = 0.01667 minutes)
+pub(super) const STAR_ROTATION_CYCLE_MINIMUM_MINUTES: f32 = 0.01667;
+
 /// Default margin for zoom-to-fit operations (0.1 = 10% margin on each side)
 pub const ZOOM_MARGIN: f32 = 0.1;
 

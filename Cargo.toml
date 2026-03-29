@@ -17,7 +17,7 @@ nursery  = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
 
 # Allow specific lints that conflict with Bevy patterns
-cargo_common_metadata   = "allow"
+cargo_common_metadata   = "allow" # Binary crate, never published
 multiple_crate_versions = "allow"
 needless_pass_by_value  = "allow"
 option_if_let_else      = "allow"

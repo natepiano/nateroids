@@ -13,10 +13,10 @@ use rand::prelude::ThreadRng;
 
 use super::RenderLayer;
 use super::camera_star::StarCamera;
+use super::constants::STAR_ROTATION_CYCLE_MINIMUM_MINUTES;
 use super::settings::StarSettings;
 use crate::playfield::Boundary;
 use crate::state::GameState;
-use crate::traits::TransformExt;
 
 pub(super) struct StarsPlugin;
 
@@ -62,8 +62,8 @@ fn debug_stars(
                 ve.entities.get(&TypeId::of::<Mesh3d>()).map_or(0, Vec::len)
             });
             debug!(
-                "Frame {frame}: Stars: {count} total, {visible_count} ViewVisible | Camera {cam_entity}: active={}, layers={:?}, VisibleEntities(Mesh3d)={mesh3d_visible}",
-                camera.is_active, render_layers
+                "Frame {frame}: Stars: {count} total, {visible_count} ViewVisible | Camera {cam_entity}: active={}, layers={render_layers:?}, VisibleEntities(Mesh3d)={mesh3d_visible}",
+                camera.is_active
             );
         } else {
             debug!(
@@ -138,7 +138,11 @@ fn spawn_stars(
             RenderLayer::Stars.layers(),
             Mesh3d(mesh.clone()),
             MeshMaterial3d(material),
-            Transform::from_trs(*position, Quat::IDENTITY, Vec3::splat(radius)),
+            Transform {
+                translation: *position,
+                rotation:    Quat::IDENTITY,
+                scale:       Vec3::splat(radius),
+            },
         ));
     }
 }
@@ -205,8 +209,7 @@ fn rotate_stars(
     mut rotation_state: ResMut<StarRotationState>,
     mut stars: Query<(&Star, &mut Transform)>,
 ) {
-    // Guard against invalid rotation cycle values (min: 1 second = 0.01667 minutes)
-    if settings.rotation_cycle_minutes < 0.01667 {
+    if settings.rotation_cycle_minutes < STAR_ROTATION_CYCLE_MINIMUM_MINUTES {
         return;
     }
 

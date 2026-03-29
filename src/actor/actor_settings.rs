@@ -26,10 +26,6 @@ event!(MissileInspectorEvent);
 event!(NateroidInspectorEvent);
 event!(SpaceshipInspectorEvent);
 
-// Spaceship model orientation correction: rotates the model so nose points +Y
-// Shared between initial spawn and runtime 2D enforcement
-pub(super) const GLTF_ROTATION_X: f32 = std::f32::consts::FRAC_PI_2; // +90°
-
 // call flow is to initialize the ensemble settings which has the defaults
 // for an actor
 pub(super) struct ActorSettingsPlugin;
@@ -139,13 +135,6 @@ fn propagate_render_layers_on_spawn(
         }
     }
 }
-
-// Public constants for physics configuration (used by missile.rs, spaceship.rs, nateroid.rs)
-pub(super) const LOCKED_AXES_2D: LockedAxes = LockedAxes::new().lock_translation_z();
-pub(super) const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
-    .lock_rotation_x()
-    .lock_rotation_y()
-    .lock_translation_z();
 
 pub(super) fn initialize_actors(mut commands: Commands, scene_assets: Res<SceneAssets>) {
     let mut nateroid_defaults = NateroidSettings::default();

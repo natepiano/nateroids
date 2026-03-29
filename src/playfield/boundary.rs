@@ -23,8 +23,8 @@ use super::constants::DEADEROID_APPROACHING_COLOR;
 use super::constants::GRID_FLASH_DURATION;
 use super::portals::Portal;
 use super::portals::PortalGizmo;
+use super::types;
 use super::types::BoundaryGizmo;
-use super::types::FlattenIntersections;
 use super::types::GridFlash;
 use super::types::GridFlashAnimation;
 use super::types::GridGizmo;
@@ -329,7 +329,8 @@ impl Boundary {
         // Calculate constrained intersections for each face
         for &face in &all_faces_in_corner {
             let face_points = face.get_face_points(&min, &max);
-            let intersections = intersect_portal_with_rectangle(portal, &face_points).to_vec();
+            let intersections =
+                types::flatten_intersections(intersect_portal_with_rectangle(portal, &face_points));
 
             // Only count faces with exactly 2 intersection points
             if intersections.len() == 2 {
@@ -428,7 +429,8 @@ impl Boundary {
         // Calculate constrained intersections for each face
         for &face in &all_faces_for_drawing {
             let face_points = face.get_face_points(&min, &max);
-            let intersections = intersect_portal_with_rectangle(portal, &face_points).to_vec();
+            let intersections =
+                types::flatten_intersections(intersect_portal_with_rectangle(portal, &face_points));
 
             // Only draw arcs for faces with exactly 2 intersection points
             if intersections.len() == 2 {

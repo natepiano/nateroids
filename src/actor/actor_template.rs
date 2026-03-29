@@ -13,7 +13,7 @@ use bevy_inspector_egui::InspectorOptions;
 
 use super::actor_settings::ActorSettings;
 use super::actor_settings::ColliderType;
-use super::actor_settings::GLTF_ROTATION_X;
+use super::constants::GLTF_ROTATION_X;
 use super::constants::MAX_MISSILE_ANGULAR_VELOCITY;
 use super::constants::MAX_MISSILE_LINEAR_VELOCITY;
 use super::constants::MAX_NATEROID_ANGULAR_VELOCITY;
@@ -55,7 +55,6 @@ use super::constants::SPACESHIP_MASS;
 use super::constants::SPACESHIP_RESTITUTION;
 use super::constants::SPACESHIP_SCALE;
 use crate::camera::RenderLayer;
-use crate::traits::TransformExt;
 
 #[derive(PhysicsLayer, Clone, Copy, Debug, Default)]
 pub(super) enum GameLayer {
@@ -235,11 +234,11 @@ impl Default for SpaceshipSettings {
                 rigid_body:               RigidBody::Dynamic,
                 scene:                    Handle::default(),
                 spawn_timer_seconds:      None,
-                transform:                Transform::from_trs(
-                    *SPACESHIP_INITIAL_POSITION,
-                    Quat::from_rotation_x(GLTF_ROTATION_X),
-                    Vec3::splat(SPACESHIP_SCALE),
-                ),
+                transform:                Transform {
+                    translation: *SPACESHIP_INITIAL_POSITION,
+                    rotation:    Quat::from_rotation_x(GLTF_ROTATION_X),
+                    scale:       Vec3::splat(SPACESHIP_SCALE),
+                },
                 spawn_timer:              None,
             },
         }

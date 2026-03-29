@@ -4,29 +4,12 @@ use bevy_enhanced_input::prelude::*;
 #[derive(Component)]
 pub struct ShipControlsContext;
 
-#[derive(InputAction)]
-#[action_output(bool)]
-pub struct ShipAccelerate;
-
-#[derive(InputAction)]
-#[action_output(bool)]
-pub struct ShipTurnLeft;
-
-#[derive(InputAction)]
-#[action_output(bool)]
-pub struct ShipTurnRight;
-
-#[derive(InputAction)]
-#[action_output(bool)]
-pub struct ShipFire;
-
-#[derive(InputAction)]
-#[action_output(bool)]
-pub struct ShipContinuousFire;
-
-#[derive(InputAction)]
-#[action_output(bool)]
-struct ShipShiftModifier;
+action!(ShipAccelerate);
+action!(ShipTurnLeft);
+action!(ShipTurnRight);
+action!(ShipFire);
+action!(ShipContinuousFire);
+action!(ShipShiftModifier);
 
 pub fn ship_controls_input_bundle() -> impl Bundle {
     let consume_input = ActionSettings {

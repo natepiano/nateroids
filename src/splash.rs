@@ -22,6 +22,7 @@ use crate::state::GameState;
 pub struct SplashPlugin;
 
 const SPLASH_TEXT_TIME: f32 = 2.;
+const SPLASH_TEXT_GROWTH_RATE: f32 = 1.2;
 const SPLASH_ZOOM_DURATION_MS: u64 = 1000;
 
 #[derive(Component)]
@@ -169,7 +170,7 @@ fn run_splash(
             commands.entity(text_entity).despawn();
         } else {
             // Still animating
-            text.font_size += 1.2;
+            text.font_size += SPLASH_TEXT_GROWTH_RATE;
         }
     }
 

@@ -196,8 +196,8 @@ fn despawn_dead_entities(
             if nateroid.is_some() {
                 let entity_name = name.map_or("Unknown", |n| (*n).as_str());
                 debug!(
-                    "☠️ despawn_dead_entities: Adding Deaderoid to {} (health: {})",
-                    entity_name, health.0
+                    "☠️ despawn_dead_entities: Adding Deaderoid to {entity_name} (health: {})",
+                    health.0
                 );
 
                 // Calculate velocity to reach target corner in death_duration
@@ -329,8 +329,7 @@ fn animate_dying_nateroids(
                 .mul_add(-0.01, nateroid_settings.initial_alpha);
 
             debug!(
-                "💀 {entity_name}: Material swap {old_index} → {new_index} | progress: {:.3} → {:.3} | alpha: {:.2}",
-                progress, eased_progress, alpha
+                "💀 {entity_name}: Material swap {old_index} → {new_index} | progress: {progress:.3} → {eased_progress:.3} | alpha: {alpha:.2}"
             );
 
             // Get the precomputed materials for this transparency level
@@ -352,7 +351,7 @@ fn animate_dying_nateroids(
             debug!("💀 {entity_name}: Swapped materials on {material_index} descendants");
         }
 
-        // Note: Velocity is constant (set once in despawn_dead_entities)
+        // Note: `Velocity` is constant (set once in `despawn_dead_entities`)
         // Despawn happens in teleport system when Deaderoid entities teleport
     }
 }

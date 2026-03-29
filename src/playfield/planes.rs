@@ -18,7 +18,6 @@ use crate::orientation::OrientationSettings;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
-use crate::traits::TransformExt;
 
 event!(PlanesInspectorEvent);
 
@@ -137,7 +136,11 @@ fn create_or_update_plane(
     let mesh = meshes.add(Mesh::from(cuboid));
     let material_handle = get_plane_material(materials, plane_settings);
     let rotation = Quat::from_axis_angle(axis, PLANE_ROTATION_ANGLE);
-    let transform = Transform::from_trs(*position, rotation, Vec3::ONE);
+    let transform = Transform {
+        translation: *position,
+        rotation,
+        scale: Vec3::ONE,
+    };
 
     if let Some(entity) = existing_entity {
         commands

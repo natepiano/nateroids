@@ -28,9 +28,9 @@ use super::constants::PORTAL_PHYSICS_BURST_MULTIPLIER;
 use super::constants::PORTAL_RESOLUTION;
 use super::constants::PORTAL_SCALAR;
 use super::constants::PORTAL_SMALLEST;
+use crate::actor;
 use crate::actor::Deaderoid;
 use crate::actor::Teleporter;
-use crate::actor::aabb_max_dimension;
 use crate::camera::RenderLayer;
 use crate::input::InspectPortalSwitch;
 use crate::orientation::CameraOrientation;
@@ -200,7 +200,7 @@ fn init_portals(
     let boundary_distance_shrink = boundary_size * portal_settings.distance_shrink;
 
     for (aabb, transform, velocity, teleporter, mut visual) in &mut q_actor {
-        let radius = aabb_max_dimension(aabb).max(portal_settings.portal_smallest)
+        let radius = actor::aabb_max_dimension(aabb).max(portal_settings.portal_smallest)
             * portal_settings.portal_scalar;
 
         let portal_position = Position(transform.translation);

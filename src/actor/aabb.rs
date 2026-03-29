@@ -15,7 +15,6 @@ use crate::input::InspectAabbSwitch;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
-use crate::traits::TransformExt;
 
 event!(AabbInspectorEvent);
 event!(AabbsEvent);
@@ -107,7 +106,11 @@ fn draw_aabb_system(
         let center = transform.transform_point(Vec3::from(aabb.center));
 
         gizmos.cube(
-            Transform::from_trs(center, transform.rotation, size(aabb) * transform.scale),
+            Transform {
+                translation: center,
+                rotation:    transform.rotation,
+                scale:       size(aabb) * transform.scale,
+            },
             settings.color,
         );
     }

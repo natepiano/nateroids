@@ -2,11 +2,13 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 
 use super::Teleporter;
-use super::actor_settings::GLTF_ROTATION_X;
-use super::actor_settings::LOCKED_AXES_SPACESHIP;
-use super::actor_settings::insert_configured_components;
+use super::actor_settings;
 use super::actor_template::SpaceshipSettings;
-use crate::input::ship_controls_input_bundle;
+use super::constants::GLTF_ROTATION_X;
+use super::constants::LOCKED_AXES_SPACESHIP;
+use super::constants::SPACESHIP_FORWARD_EPSILON;
+use super::constants::SPACESHIP_TILT_THRESHOLD;
+use crate::input;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
 use crate::splash::SplashText;
@@ -19,13 +21,13 @@ fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X)
 pub(super) struct SpaceshipPlugin;
 
 impl Plugin for SpaceshipPlugin {
-    // make sure this is done after asset_loader has run
+    // make sure this is done after `asset_loader` has run
     fn build(&self, app: &mut App) {
         // Spawn spaceship when entering `PauseState::Playing` (game start or unpause)
         app.add_observer(initialize_spaceship)
             .add_observer(spawn_after_splash_text_removed)
             .add_systems(OnEnter(PauseState::Playing), spawn_spaceship_if_needed)
-            // check if spaceship is destroyed...this will change the GameState
+            // check if spaceship is destroyed — this will change the `GameState`
             .add_systems(Update, spaceship_destroyed.in_set(InGameSet::EntityUpdates))
             .add_systems(
                 FixedUpdate,
@@ -89,17 +91,17 @@ fn initialize_spaceship(
         .entity(spaceship.entity)
         .insert(spaceship_settings.transform)
         // Ship controls now come from enhanced-input on the spaceship context entity.
-        .insert(ship_controls_input_bundle());
+        .insert(input::ship_controls_input_bundle());
 
-    insert_configured_components(
+    actor_settings::insert_configured_components(
         &mut commands,
         &mut spaceship_settings.actor_settings,
         spaceship.entity,
     );
 }
 
-// check if spaceship exists or not - query if get_single()
-// there should only be one - if it returns an error then the
+// check if spaceship exists or not — query via `single()`
+// there should only be one — if it returns an error then the
 // spaceship doesn't exist
 fn spaceship_destroyed(
     mut next_state: ResMut<NextState<GameState>>,
@@ -108,8 +110,7 @@ fn spaceship_destroyed(
 ) {
     if query.single().is_err() {
         info!(
-            "spaceship destroyed: {:?}, count {:?}",
-            state,
+            "spaceship destroyed: {state:?}, count {:?}",
             query.iter().count()
         );
         next_state.set(GameState::GameOver);
@@ -146,8 +147,7 @@ fn enforce_spaceship_2d_rotation(
 
         let tilt_amount = up.x.hypot(up.y);
 
-        // Only correct transform if significantly tilted (threshold: ~5 degrees)
-        if tilt_amount > 0.087 {
+        if tilt_amount > SPACESHIP_TILT_THRESHOLD {
             // Get current forward direction and project to XY plane
             let forward = transform.forward();
 
@@ -161,7 +161,7 @@ fn enforce_spaceship_2d_rotation(
             let forward_2d = Vec3::new(forward.x, forward.y, 0.0);
             let forward_len_sq = forward_2d.length_squared();
 
-            if forward_len_sq > 0.0001 {
+            if forward_len_sq > SPACESHIP_FORWARD_EPSILON {
                 let forward_2d_normalized = forward_2d / forward_len_sq.sqrt();
 
                 // Calculate angle in XY plane (from +Y axis)

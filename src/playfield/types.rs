@@ -43,41 +43,35 @@ pub(super) enum Intersection {
     Two(Vec3, Vec3),
 }
 
-/// we added Intersection for readability in our intersection logic
-/// however we need to be aware that as long as our portals are smaller than faces
-/// we could only ever have no, one or two intersections in total with the line segments
-/// comprising a boundary face
+/// Flattens an array of `Intersection` results into a `Vec<Vec3>`.
 ///
-/// the `to_vec()` takes our code and flattens it into Vec<Vec3> and this can NEVER be > 2
-/// so we added the `debug_assert` to make sure that if we ever change the invariant and
-/// allow portals to be larger than faces, that this will catch it and remind us that
-/// we need to update our portal drawing logic accordingly.
-pub(super) trait FlattenIntersections {
-    fn to_vec(self) -> Vec<Vec3>;
-}
+/// We need to be aware that as long as our portals are smaller than faces we could only ever
+/// have no, one or two intersections in total with the line segments comprising a boundary
+/// face.
+///
+/// The `debug_assert` makes sure that if we ever change the invariant and allow portals to be
+/// larger than faces, it will catch it and remind us that we need to update our portal drawing
+/// logic accordingly.
+pub(super) fn flatten_intersections(intersections: [Intersection; 4]) -> Vec<Vec3> {
+    let result: Vec<Vec3> = intersections
+        .into_iter()
+        .flat_map(|intersection| match intersection {
+            Intersection::NoneFound => vec![],
+            Intersection::One(p) => vec![p],
+            Intersection::Two(p1, p2) => vec![p1, p2],
+        })
+        .collect();
 
-impl FlattenIntersections for [Intersection; 4] {
-    fn to_vec(self) -> Vec<Vec3> {
-        let result: Vec<Vec3> = self
-            .into_iter()
-            .flat_map(|intersection| match intersection {
-                Intersection::NoneFound => vec![],
-                Intersection::One(p) => vec![p],
-                Intersection::Two(p1, p2) => vec![p1, p2],
-            })
-            .collect();
+    // Debug assertion: A circle can intersect a rectangle's 4 edges at most 4 times.
+    // This occurs when the portal is positioned near a corner of the face -
+    // the circle can intersect both adjacent edges (2 points each = 4 total).
+    // Portals positioned in the center typically produce 2 intersection points.
+    debug_assert!(
+        result.len() <= 4,
+        "Circle-rectangle intersection exceeded maximum: {} intersection points (expected ≤4). \
+         This indicates a geometric error in the intersection calculation.",
+        result.len()
+    );
 
-        // Debug assertion: A circle can intersect a rectangle's 4 edges at most 4 times.
-        // This occurs when the portal is positioned near a corner of the face -
-        // the circle can intersect both adjacent edges (2 points each = 4 total).
-        // Portals positioned in the center typically produce 2 intersection points.
-        debug_assert!(
-            result.len() <= 4,
-            "Circle-rectangle intersection exceeded maximum: {} intersection points (expected ≤4). \
-             This indicates a geometric error in the intersection calculation.",
-            result.len()
-        );
-
-        result
-    }
+    result
 }

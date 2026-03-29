@@ -7,9 +7,9 @@ use bevy_enhanced_input::prelude::ActionOf;
 use bevy_kana::Position;
 
 use super::Teleporter;
-use super::actor_settings::LOCKED_AXES_2D;
-use super::actor_settings::insert_configured_components;
+use super::actor_settings;
 use super::actor_template::MissileSettings;
+use super::constants::LOCKED_AXES_2D;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
 use crate::input::ShipControlsContext;
@@ -17,7 +17,6 @@ use crate::input::ShipFire;
 use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
-use crate::traits::TransformExt;
 
 pub(super) struct MissilePlugin;
 
@@ -104,7 +103,11 @@ fn initialize_missile(
         .insert(linear_velocity)
         .insert(angular_velocity);
 
-    insert_configured_components(&mut commands, &mut settings.actor_settings, missile.entity);
+    actor_settings::insert_configured_components(
+        &mut commands,
+        &mut settings.actor_settings,
+        missile.entity,
+    );
 }
 
 fn initialize_transform(
@@ -120,11 +123,11 @@ fn initialize_transform(
     let combined_rotation =
         spaceship_transform.rotation * missile_settings.actor_settings.transform.rotation;
 
-    Transform::from_trs(
-        spawn_position,
-        combined_rotation,
-        missile_settings.actor_settings.transform.scale,
-    )
+    Transform {
+        translation: spawn_position,
+        rotation:    combined_rotation,
+        scale:       missile_settings.actor_settings.transform.scale,
+    }
 }
 
 fn on_fire_input(_trigger: On<input_events::Start<ShipFire>>, mut commands: Commands) {

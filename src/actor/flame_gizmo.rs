@@ -409,17 +409,21 @@ fn draw_death_effects(
     }
 }
 
+struct RingDrawParams {
+    radius:               f32,
+    line_length_base:     f32,
+    line_length_variance: f32,
+    color_a:              Color,
+    color_b:              Color,
+    phase_offset:         f32,
+}
+
 /// Draws a ring of flickering lines radiating outward.
 fn draw_ring_lines(
     gizmos: &mut Gizmos<FlameGizmo>,
     isometry: Isometry3d,
-    radius: f32,
-    line_length_base: f32,
-    line_length_variance: f32,
-    color_a: Color,
-    color_b: Color,
+    params: &RingDrawParams,
     elapsed: f32,
-    phase_offset: f32,
 ) {
     let position = Vec3::from(isometry.translation);
     let rotation = isometry.rotation;
@@ -438,19 +442,19 @@ fn draw_ring_lines(
         let radial = rotation * radial_local;
         let tangent = rotation * tangent_local;
 
-        let phase = line_index.mul_add(FLAME_PHASE_SPREAD, phase_offset);
+        let phase = line_index.mul_add(FLAME_PHASE_SPREAD, params.phase_offset);
         let vibration =
             elapsed.mul_add(FLAME_VIBRATION_SPEED, phase).sin() * FLAME_VIBRATION_AMPLITUDE;
 
-        let flicker = compute_flicker(elapsed, line_index, phase_offset);
+        let flicker = compute_flicker(elapsed, line_index, params.phase_offset);
         let line_length = flicker
             .length
-            .mul_add(line_length_variance, line_length_base);
+            .mul_add(params.line_length_variance, params.line_length_base);
 
-        let start = position + radial * radius + tangent * vibration;
+        let start = position + radial * params.radius + tangent * vibration;
         let end = start + radial * line_length;
 
-        let color = lerp_color(color_a, color_b, flicker.color);
+        let color = lerp_color(params.color_a, params.color_b, flicker.color);
 
         gizmos.line(start, end, color);
     }
@@ -494,19 +498,19 @@ fn draw_death_effect_ring(
         };
 
         let alpha = config.alpha_curve.compute(progress);
-        let color_orange = Color::from(tailwind::ORANGE_500).with_alpha(alpha);
-        let color_yellow = Color::from(tailwind::YELLOW_400).with_alpha(alpha);
 
         draw_ring_lines(
             gizmos,
             isometry,
-            radius,
-            line_length_base,
-            line_length_variance,
-            color_orange,
-            color_yellow,
+            &RingDrawParams {
+                radius,
+                line_length_base,
+                line_length_variance,
+                color_a: Color::from(tailwind::ORANGE_500).with_alpha(alpha),
+                color_b: Color::from(tailwind::YELLOW_400).with_alpha(alpha),
+                phase_offset: ring_idx_f32 * config.ring_phase_offset,
+            },
             elapsed,
-            ring_idx_f32 * config.ring_phase_offset,
         );
     }
 }

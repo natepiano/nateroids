@@ -11,20 +11,17 @@ use rand::Rng;
 use rand::RngExt;
 
 use super::Teleporter;
+use super::actor_settings;
 use super::actor_settings::ColliderType;
-use super::actor_settings::LOCKED_AXES_2D;
-use super::actor_settings::insert_configured_components;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
+use super::constants::LOCKED_AXES_2D;
+use super::constants::SPAWN_WINDOW;
 use crate::asset_loader;
 use crate::asset_loader::SceneAssets;
 use crate::playfield::ActorPortals;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
-use crate::traits::TransformExt;
-
-// half the size of the boundary and only in the x,y plane
-const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
 
 #[derive(Resource)]
 pub(super) struct NateroidSpawnStats {
@@ -150,10 +147,9 @@ fn spawn_nateroid(
         if current_time - spawn_stats.last_warning_time >= 1.0 {
             let success_rate = spawn_stats.success_rate() * 100.0;
             warn!(
-                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last {} spawns",
+                "Nateroid spawn: {} / {} attempts ({success_rate:.0}%) in the last {} spawns",
                 spawn_stats.successes_count(),
                 spawn_stats.attempts_count(),
-                success_rate,
                 spawn_stats.attempts_count()
             );
             spawn_stats.last_warning_time = current_time;
@@ -172,8 +168,7 @@ fn spawn_nateroid(
         // Only warn if there were failures
         if successes < attempts {
             warn!(
-                "Nateroid spawn: {} / {} attempts ({:.0}%) in the last {} spawns",
-                successes, attempts, success_rate, attempts
+                "Nateroid spawn: {successes} / {attempts} attempts ({success_rate:.0}%) in the last {attempts} spawns"
             );
         }
         spawn_stats.last_warning_time = current_time;
@@ -314,7 +309,7 @@ fn initialize_nateroid(
     mut commands: Commands,
     mut settings: ResMut<NateroidSettings>,
 ) {
-    // Normal nateroid: transform already set by spawn_nateroid, just add velocities
+    // Normal nateroid: transform already set by `spawn_nateroid`, just add velocities
     let (linear_velocity, angular_velocity) =
         calculate_nateroid_velocity(settings.linear_velocity, settings.angular_velocity);
 
@@ -323,7 +318,11 @@ fn initialize_nateroid(
         .insert(linear_velocity)
         .insert(angular_velocity);
 
-    insert_configured_components(&mut commands, &mut settings.actor_settings, nateroid.entity);
+    actor_settings::insert_configured_components(
+        &mut commands,
+        &mut settings.actor_settings,
+        nateroid.entity,
+    );
 }
 
 fn initialize_transform(
@@ -362,7 +361,11 @@ fn initialize_transform(
             spatial_query.shape_intersections(&spawn_collider, *position, rotation, &filter);
 
         if intersections.is_empty() {
-            return Some(Transform::from_trs(*position, rotation, scale));
+            return Some(Transform {
+                translation: *position,
+                rotation,
+                scale,
+            });
         }
     }
 

@@ -9,7 +9,7 @@ use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
 use super::nateroid::NateroidSpawnStats;
 use super::spaceship::Spaceship;
-use crate::despawn::despawn;
+use crate::despawn;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
@@ -90,13 +90,11 @@ fn on_teleported(
         && collision_state.last_field_crowded != Some(field_is_crowded)
     {
         info!(
-            "🔍 Teleport collision detected - attempts: {}, successes: {}, rate: {:.1}%, threshold: {:.1}%, crowded: {}, is_nateroid: {}",
+            "🔍 Teleport collision detected - attempts: {}, successes: {}, rate: {:.1}%, threshold: {:.1}%, crowded: {field_is_crowded}, is_nateroid: {is_teleporting_nateroid}",
             spawn_stats.attempts_count(),
             spawn_stats.successes_count(),
             spawn_success_rate * 100.0,
             nateroid_settings.density_culling_threshold * 100.0,
-            field_is_crowded,
-            is_teleporting_nateroid
         );
         collision_state.last_field_crowded = Some(field_is_crowded);
     }
@@ -110,8 +108,8 @@ fn on_teleported(
             // Always kill if spaceship teleported, or if field is crowded
             if !is_teleporting_nateroid || field_is_crowded {
                 info!(
-                    "💀 Killing overlapping nateroid - spaceship_teleported: {}, field_crowded: {}",
-                    !is_teleporting_nateroid, field_is_crowded
+                    "💀 Killing overlapping nateroid - spaceship_teleported: {}, field_crowded: {field_is_crowded}",
+                    !is_teleporting_nateroid
                 );
                 commands.entity(entity).insert(CollisionLayers::NONE);
                 health.0 = -1.0;
@@ -165,7 +163,7 @@ fn teleport_at_boundary(
         } else {
             // If this is a dying nateroid, despawn it instead of teleporting
             if is_deaderoid.is_some() {
-                despawn(&mut commands, entity);
+                despawn::despawn(&mut commands, entity);
                 continue;
             }
 
