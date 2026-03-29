@@ -15,6 +15,8 @@ use crate::actor::NateroidDeathMaterials;
 use crate::actor::NateroidSettings;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
+use crate::splash::SplashSkipHint;
+use crate::splash::SplashText;
 use crate::state::GameState;
 
 pub struct DespawnPlugin;
@@ -266,13 +268,7 @@ fn despawn_all_entities(mut commands: Commands, query: Query<Entity, With<Health
 
 fn despawn_splash(
     mut commands: Commands,
-    query: Query<
-        Entity,
-        Or<(
-            With<crate::splash::SplashText>,
-            With<crate::splash::SplashSkipHint>,
-        )>,
-    >,
+    query: Query<Entity, Or<(With<SplashText>, With<SplashSkipHint>)>>,
 ) {
     for entity in query.iter() {
         despawn(&mut commands, entity);
