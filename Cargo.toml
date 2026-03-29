@@ -29,16 +29,16 @@ wildcard_imports        = "allow"
 missing_docs = "deny"
 
 [dependencies]
-avian3d = { version = "0.6.0", features = ["debug-plugin", "parallel", "simd"] }
-bevy = { version = "0.18.1", features = ["bevy_dev_tools", "bevy_remote"] }
+avian3d             = { version = "0.6.0", features = ["debug-plugin", "parallel", "simd"] }
+bevy                = { version = "0.18.1", features = ["bevy_dev_tools", "bevy_remote"] }
 bevy-inspector-egui = "0.36.0"
-bevy_brp_extras = "0.19.0"
+bevy_brp_extras     = "0.19.0"
 bevy_enhanced_input = "0.24.1"
-bevy_kana = { version = "0.0.2", features = ["input"] }
-bevy_liminal = { git = "https://github.com/natepiano/bevy_liminal", rev = "572cd0fc44879cf62223cfc91a5a08ee57bf7d32" }
-bevy_lagrange = { version = "0.0.1", features = ["bevy_egui", "fit_overlay"] }
+bevy_kana           = { version = "0.0.2", features = ["input"] }
+bevy_lagrange       = { version = "0.0.1", features = ["bevy_egui", "fit_overlay"] }
+bevy_liminal        = { git = "https://github.com/natepiano/bevy_liminal", rev = "572cd0fc44879cf62223cfc91a5a08ee57bf7d32" }
 bevy_window_manager = "0.18.3"
-rand = "0.10.0"
+rand                = "0.10.0"
 
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
