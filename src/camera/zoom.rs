@@ -5,11 +5,11 @@ use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
-use bevy_panorbit_camera::PanOrbitCamera;
-use bevy_panorbit_camera_ext::AnimateToFit;
-use bevy_panorbit_camera_ext::FitVisualization;
-use bevy_panorbit_camera_ext::SetFitTarget;
-use bevy_panorbit_camera_ext::ZoomToFit as PanOrbitZoomToFit;
+use bevy_lagrange::AnimateToFit;
+use bevy_lagrange::FitOverlay;
+use bevy_lagrange::OrbitCam;
+use bevy_lagrange::SetFitTarget;
+use bevy_lagrange::ZoomToFit;
 
 use super::constants::EDGE_MARKER_FONT_SIZE;
 use super::constants::EDGE_MARKER_SPHERE_RADIUS;
@@ -127,7 +127,7 @@ fn zoom_to_fit_command(
     mut commands: Commands,
     zoom_target: Res<ZoomTarget>,
     boundary_volume: Query<Entity, With<BoundaryVolume>>,
-    camera_entity: Single<Entity, With<PanOrbitCamera>>,
+    camera_entity: Single<Entity, With<OrbitCam>>,
 ) {
     let camera_entity = *camera_entity;
 
@@ -142,7 +142,7 @@ fn zoom_to_fit_command(
     };
 
     commands.trigger(
-        PanOrbitZoomToFit::new(camera_entity, target)
+        ZoomToFit::new(camera_entity, target)
             .margin(ZOOM_MARGIN)
             .duration(Duration::from_millis(ZOOM_TO_FIT_DURATION_MS))
             .easing(EaseFunction::Linear),
@@ -152,7 +152,7 @@ fn zoom_to_fit_command(
 
 fn set_fit_target_debug(
     mut commands: Commands,
-    camera_query: Query<Entity, With<PanOrbitCamera>>,
+    camera_query: Query<Entity, With<OrbitCam>>,
     boundary_volume_query: Query<Entity, With<BoundaryVolume>>,
 ) {
     let Ok(camera_entity) = camera_query.single() else {
@@ -171,7 +171,7 @@ fn set_fit_target_debug(
 fn camera_home_command(
     mut commands: Commands,
     boundary_volume_query: Query<Entity, With<BoundaryVolume>>,
-    camera_entity: Single<Entity, With<PanOrbitCamera>>,
+    camera_entity: Single<Entity, With<OrbitCam>>,
 ) {
     let camera_entity = *camera_entity;
 
@@ -193,14 +193,14 @@ fn camera_home_command(
 /// Reusable on-demand command for toggling fit-target visualization.
 fn toggle_fit_target_debug_command(
     mut commands: Commands,
-    camera_entity: Single<Entity, With<PanOrbitCamera>>,
-    viz_query: Query<(), With<FitVisualization>>,
+    camera_entity: Single<Entity, With<OrbitCam>>,
+    viz_query: Query<(), With<FitOverlay>>,
 ) {
     let camera_entity = *camera_entity;
     if viz_query.get(camera_entity).is_ok() {
-        commands.entity(camera_entity).remove::<FitVisualization>();
+        commands.entity(camera_entity).remove::<FitOverlay>();
     } else {
-        commands.entity(camera_entity).insert(FitVisualization);
+        commands.entity(camera_entity).insert(FitOverlay);
     }
 }
 
@@ -211,8 +211,8 @@ fn apply_focus_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<
 }
 
 fn update_focus_gizmo_state(
-    camera_query: Query<&PanOrbitCamera, With<Camera>>,
-    camera_changed: Query<(), (With<Camera>, Changed<PanOrbitCamera>)>,
+    camera_query: Query<&OrbitCam, With<Camera>>,
+    camera_changed: Query<(), (With<Camera>, Changed<OrbitCam>)>,
     settings: Res<FocusSettings>,
     mut state: ResMut<FocusGizmoState>,
 ) {
@@ -220,8 +220,8 @@ fn update_focus_gizmo_state(
         return;
     }
 
-    if let Ok(pan_orbit) = camera_query.single() {
-        let camera_radius = pan_orbit.radius.unwrap_or(100.0);
+    if let Ok(orbit_cam) = camera_query.single() {
+        let camera_radius = orbit_cam.radius.unwrap_or(100.0);
         state.sphere_radius = settings.sphere_radius * (camera_radius / 100.0);
     }
 }
@@ -229,13 +229,13 @@ fn update_focus_gizmo_state(
 fn draw_camera_focus_gizmo(
     mut commands: Commands,
     mut gizmos: Gizmos<FocusGizmo>,
-    camera_query: Query<(&Camera, &GlobalTransform, &PanOrbitCamera)>,
+    camera_query: Query<(&Camera, &GlobalTransform, &OrbitCam)>,
     focus_settings: Res<FocusSettings>,
     state: Res<FocusGizmoState>,
     mut label_query: Query<(&mut Text, &mut Node, &mut TextColor), With<FocusDistanceLabel>>,
 ) {
-    if let Ok((cam, cam_transform, pan_orbit)) = camera_query.single() {
-        let focus = pan_orbit.target_focus;
+    if let Ok((cam, cam_transform, orbit_cam)) = camera_query.single() {
+        let focus = orbit_cam.target_focus;
 
         gizmos.sphere(focus, state.sphere_radius, focus_settings.color);
         gizmos.arrow(Vec3::ZERO, focus, focus_settings.color);

@@ -2,13 +2,13 @@ use std::time::Duration;
 
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
-use bevy_panorbit_camera::PanOrbitCamera;
-use bevy_panorbit_camera_ext::AnimationEnd;
-use bevy_panorbit_camera_ext::CameraMove;
-use bevy_panorbit_camera_ext::CameraMoveList;
-use bevy_panorbit_camera_ext::PlayAnimation;
-use bevy_panorbit_camera_ext::ZoomEnd;
-use bevy_panorbit_camera_ext::ZoomToFit;
+use bevy_lagrange::AnimationEnd;
+use bevy_lagrange::CameraMove;
+use bevy_lagrange::CameraMoveList;
+use bevy_lagrange::OrbitCam;
+use bevy_lagrange::PlayAnimation;
+use bevy_lagrange::ZoomEnd;
+use bevy_lagrange::ZoomToFit;
 
 use crate::camera::CameraHomeEvent;
 use crate::camera::CameraSettings;
@@ -129,11 +129,11 @@ fn run_splash(
     time: Res<Time>,
     mut q_text: Query<(Entity, &mut TextFont), With<SplashText>>,
     splash_ui_query: Query<Entity, Or<(With<SplashText>, With<SplashSkipHint>)>>,
-    camera_entity: Single<Entity, With<PanOrbitCamera>>,
+    camera_entity: Single<Entity, With<OrbitCam>>,
     camera_query: Query<
         (),
         (
-            With<PanOrbitCamera>,
+            With<OrbitCam>,
             Or<(With<CameraMoveList>, With<SplashZoomActive>)>,
         ),
     >,
@@ -191,7 +191,7 @@ fn on_animation_end(_trigger: On<AnimationEnd>, mut commands: Commands) {
 /// Reusable on-demand command that starts splash zoom-to-fit to boundary.
 fn splash_zoom_to_boundary_command(
     mut commands: Commands,
-    camera_query: Query<Entity, (With<PanOrbitCamera>, With<SplashZoomActive>)>,
+    camera_query: Query<Entity, (With<OrbitCam>, With<SplashZoomActive>)>,
     boundary_volume: Query<Entity, With<BoundaryVolume>>,
 ) {
     let Ok(camera_entity) = camera_query.single() else {
@@ -219,13 +219,13 @@ fn on_zoom_end(_trigger: On<ZoomEnd>, mut commands: Commands) {
 /// Reusable on-demand command that transitions splash zoom into spin animation.
 fn splash_start_spin_animation_command(
     mut commands: Commands,
-    camera_query: Query<(Entity, &PanOrbitCamera), With<SplashZoomActive>>,
+    camera_query: Query<(Entity, &OrbitCam), With<SplashZoomActive>>,
 ) {
-    let Ok((camera_entity, panorbit)) = camera_query.single() else {
+    let Ok((camera_entity, orbit_cam)) = camera_query.single() else {
         return;
     };
 
-    let orbit_radius = panorbit.target_radius;
+    let orbit_radius = orbit_cam.target_radius;
 
     commands.entity(camera_entity).remove::<SplashZoomActive>();
 
@@ -323,7 +323,7 @@ fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
 fn start_splash_camera_animation(
     mut commands: Commands,
     camera_settings: Res<CameraSettings>,
-    camera_query: Query<Entity, With<PanOrbitCamera>>,
+    camera_query: Query<Entity, With<OrbitCam>>,
 ) {
     let Ok(entity) = camera_query.single() else {
         return;

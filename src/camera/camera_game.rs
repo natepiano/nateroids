@@ -1,8 +1,8 @@
 use bevy::anti_alias::smaa::Smaa;
 use bevy::prelude::*;
+use bevy_lagrange::OrbitCam;
+use bevy_lagrange::TrackpadBehavior;
 use bevy_liminal::OutlineCamera;
-use bevy_panorbit_camera::PanOrbitCamera;
-use bevy_panorbit_camera::TrackpadBehavior;
 
 use super::RenderLayer;
 use super::camera_star::StarCamera;
@@ -31,7 +31,7 @@ pub(super) fn spawn_game_camera(
         .spawn((
             RequiredCameraComponents,
             OutlineCamera,
-            PanOrbitCamera {
+            OrbitCam {
                 focus: Vec3::ZERO,
                 target_radius: camera_settings.splash_start_radius,
                 button_orbit: MouseButton::Middle,

@@ -7,7 +7,7 @@ use bevy_enhanced_input::prelude::ActionOf;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
-use bevy_panorbit_camera::PanOrbitCamera;
+use bevy_lagrange::OrbitCam;
 
 use super::actor_template::SpaceshipSettings;
 use super::spaceship::ContinuousFire;
@@ -106,7 +106,7 @@ fn spaceship_movement_controls(
         (&mut Transform, &mut LinearVelocity, &mut AngularVelocity),
         With<Spaceship>,
     >,
-    camera_transform: Single<&Transform, (With<PanOrbitCamera>, Without<Spaceship>)>,
+    camera_transform: Single<&Transform, (With<OrbitCam>, Without<Spaceship>)>,
     accelerate_state: ShipAccelerateStateQuery,
     turn_left_state: ShipTurnLeftStateQuery,
     turn_right_state: ShipTurnRightStateQuery,

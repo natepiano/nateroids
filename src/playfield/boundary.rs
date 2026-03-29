@@ -4,7 +4,7 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_kana::Position;
-use bevy_panorbit_camera_ext::CameraMoveList;
+use bevy_lagrange::CameraMoveList;
 
 use super::boundary_face::BoundaryFace;
 use super::constants::BOUNDARY_CELL_COUNT;

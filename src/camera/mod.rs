@@ -24,8 +24,7 @@ pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MeshPickingPlugin)
-            .add_plugins(bevy_panorbit_camera::PanOrbitCameraPlugin)
-            .add_plugins(bevy_panorbit_camera_ext::PanOrbitCameraExtPlugin)
+            .add_plugins(bevy_lagrange::LagrangePlugin)
             .add_plugins(MeshOutlinePlugin)
             .add_plugins(camera_game::GameCameraPlugin)
             .add_plugins(camera_star::StarCameraPlugin)

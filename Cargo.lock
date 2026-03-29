@@ -1211,6 +1211,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_lagrange"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60ebdf8bc7343201a70f6a7bf942d78733d22147086ecc4527f8314cdbb54eb4"
+dependencies = [
+ "bevy",
+ "bevy_egui",
+]
+
+[[package]]
 name = "bevy_light"
 version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1327,25 +1337,6 @@ name = "bevy_mikktspace"
 version = "0.17.0-dev"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ef8e4b7e61dfe7719bb03c884dc270cd46a82efb40f93e9933b990c5c190c59"
-
-[[package]]
-name = "bevy_panorbit_camera"
-version = "0.34.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec2a3ef5147368953aecb485e6362ea0e23acbd3e4adb02e47058a8c16e9bfe5"
-dependencies = [
- "bevy",
- "bevy_egui",
-]
-
-[[package]]
-name = "bevy_panorbit_camera_ext"
-version = "0.1.0"
-source = "git+https://github.com/natepiano/bevy_panorbit_camera_ext?rev=f7cdfb4#f7cdfb43b25f6191eeab5fac0bc9c6a67bf88e59"
-dependencies = [
- "bevy",
- "bevy_panorbit_camera",
-]
 
 [[package]]
 name = "bevy_pbr"
@@ -4025,9 +4016,8 @@ dependencies = [
  "bevy_brp_extras",
  "bevy_enhanced_input",
  "bevy_kana",
+ "bevy_lagrange",
  "bevy_liminal",
- "bevy_panorbit_camera",
- "bevy_panorbit_camera_ext",
  "bevy_window_manager",
  "rand 0.10.0",
 ]

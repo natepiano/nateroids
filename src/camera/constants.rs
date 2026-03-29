@@ -17,7 +17,7 @@ pub(super) const ZOOM_TO_FIT_DURATION_MS: u64 = 500;
 /// Duration in milliseconds for home camera animation
 pub(super) const HOME_ANIMATION_DURATION_MS: u64 = 1200;
 
-/// Default zoom sensitivity for pan-orbit camera controls
+/// Default zoom sensitivity for orbit camera controls
 pub(super) const CAMERA_ZOOM_SENSITIVITY: f32 = 0.2;
 
 /// Minimum zoom distance (allows zoom-to-fit to get very close)

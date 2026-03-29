@@ -49,11 +49,11 @@ echo ""
 # Query for camera entity (done once at startup)
 echo "Querying for camera entity..."
 CAMERA=$(curl -s -X POST http://127.0.0.1:$PORT/jsonrpc -H "Content-Type: application/json" \
-  -d '{"jsonrpc": "2.0", "id": 1, "method": "world.query", "params": {"filter": {"with": ["bevy_panorbit_camera::PanOrbitCamera"]}, "data": {}}}' \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "world.query", "params": {"filter": {"with": ["bevy_lagrange::OrbitCam"]}, "data": {}}}' \
   | jq -r '.result[0].entity')
 
 if [ -z "$CAMERA" ]; then
-  echo "Error: Could not find camera entity with PanOrbitCamera component"
+  echo "Error: Could not find camera entity with OrbitCam component"
   exit 1
 fi
 
@@ -132,7 +132,7 @@ while true; do
 
   # Zoom in (while paused)
   curl -s -X POST http://127.0.0.1:$PORT/jsonrpc -H "Content-Type: application/json" \
-    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_panorbit_camera_ext::extension::ZoomToFit\", \"value\": {\"entity\": $CAMERA, \"target\": $target, \"margin\": 0.1, \"duration_ms\": 500.0}}}" >/dev/null 2>&1
+    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_lagrange::ZoomToFit\", \"value\": {\"entity\": $CAMERA, \"target\": $target, \"margin\": 0.1, \"duration_ms\": 500.0}}}" >/dev/null 2>&1
   echo "Zoomed in (paused for ${PAUSED_DURATION}s)"
 
   sleep "$PAUSED_DURATION"
@@ -168,7 +168,7 @@ while true; do
 
   # Zoom out
   curl -s -X POST http://127.0.0.1:$PORT/jsonrpc -H "Content-Type: application/json" \
-    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_panorbit_camera_ext::extension::StartAnimation\", \"value\": {\"entity\": $CAMERA, \"moves\": [{\"target_translation\": [$x, $y, $z], \"target_focus\": [$focus_x, $focus_y, $focus_z], \"duration_ms\": $ZOOM_OUT_ANIMATION_MS, \"easing\": \"$EASING\"}]}}}" >/dev/null 2>&1
+    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_lagrange::PlayAnimation\", \"value\": {\"entity\": $CAMERA, \"moves\": [{\"target_translation\": [$x, $y, $z], \"target_focus\": [$focus_x, $focus_y, $focus_z], \"duration_ms\": $ZOOM_OUT_ANIMATION_MS, \"easing\": \"$EASING\"}]}}}" >/dev/null 2>&1
   echo "Zooming out (${ZOOM_OUT_ANIMATION_MS}ms animation, watching for ${DISTANCE_WATCH_DURATION}s)"
 
   sleep "$DISTANCE_WATCH_DURATION"

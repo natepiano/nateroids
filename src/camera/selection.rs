@@ -4,9 +4,9 @@ use bevy_inspector_egui::bevy_egui::EguiContexts;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+use bevy_lagrange::OrbitCam;
+use bevy_lagrange::SetFitTarget;
 use bevy_liminal::MeshOutline;
-use bevy_panorbit_camera::PanOrbitCamera;
-use bevy_panorbit_camera_ext::SetFitTarget;
 
 use super::constants::SELECTION_OUTLINE_COLOR;
 use super::constants::SELECTION_OUTLINE_INTENSITY;
@@ -97,7 +97,7 @@ fn select_actor_command(
     mut commands: Commands,
     mut zoom_target: ResMut<ZoomTarget>,
     previously_selected: Query<Entity, With<Selected>>,
-    camera: Single<Entity, With<PanOrbitCamera>>,
+    camera: Single<Entity, With<OrbitCam>>,
 ) {
     // Deselect previous
     for prev in previously_selected.iter() {
@@ -152,7 +152,7 @@ fn remove_selection_outline_command(
     In(entity): In<Entity>,
     mut commands: Commands,
     mut zoom_target: ResMut<ZoomTarget>,
-    camera: Single<Entity, With<PanOrbitCamera>>,
+    camera: Single<Entity, With<OrbitCam>>,
     boundary_query: Query<Entity, With<BoundaryVolume>>,
     children_query: Query<&Children>,
     mesh_query: Query<Entity, With<Mesh3d>>,
