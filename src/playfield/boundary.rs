@@ -106,7 +106,7 @@ fn spawn_boundary_volume(
     boundary: Res<Boundary>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    let scale = boundary.boundary_scalar * boundary.cell_count.as_vec3();
+    let scale = boundary.exterior_scalar * boundary.cell_count.as_vec3();
 
     commands.spawn((
         BoundaryVolume,
@@ -128,7 +128,7 @@ fn sync_boundary_volume(
     };
 
     // Update Transform scale to match boundary size (mesh is a unit cube scaled by Transform)
-    transform.scale = boundary.boundary_scalar * boundary.cell_count.as_vec3();
+    transform.scale = boundary.exterior_scalar * boundary.cell_count.as_vec3();
 }
 
 /// defines
@@ -143,7 +143,7 @@ pub struct Boundary {
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
     pub exterior_line_width: f32,
     #[inspector(min = 50., max = 300., display = NumberDisplay::Slider)]
-    pub boundary_scalar:     f32,
+    pub exterior_scalar:     f32,
 }
 
 impl Default for Boundary {
@@ -155,7 +155,7 @@ impl Default for Boundary {
             outer_color:         Color::from(tailwind::BLUE_500).with_alpha(0.0),
             grid_line_width:     BOUNDARY_GRID_LINE_WIDTH,
             exterior_line_width: BOUNDARY_OUTER_LINE_WIDTH,
-            boundary_scalar:     BOUNDARY_SCALAR,
+            exterior_scalar:     BOUNDARY_SCALAR,
         }
     }
 }
@@ -541,25 +541,49 @@ impl Boundary {
         // otherwise the edge runs along that axis, so use position's coordinate.
 
         let x = if normal1.x != 0.0 {
-            if normal1.x > 0.0 { max.x } else { min.x }
+            if normal1.x > 0.0 {
+                max.x
+            } else {
+                min.x
+            }
         } else if normal2.x != 0.0 {
-            if normal2.x > 0.0 { max.x } else { min.x }
+            if normal2.x > 0.0 {
+                max.x
+            } else {
+                min.x
+            }
         } else {
             position.x // Edge runs along X axis
         };
 
         let y = if normal1.y != 0.0 {
-            if normal1.y > 0.0 { max.y } else { min.y }
+            if normal1.y > 0.0 {
+                max.y
+            } else {
+                min.y
+            }
         } else if normal2.y != 0.0 {
-            if normal2.y > 0.0 { max.y } else { min.y }
+            if normal2.y > 0.0 {
+                max.y
+            } else {
+                min.y
+            }
         } else {
             position.y // Edge runs along Y axis
         };
 
         let z = if normal1.z != 0.0 {
-            if normal1.z > 0.0 { max.z } else { min.z }
+            if normal1.z > 0.0 {
+                max.z
+            } else {
+                min.z
+            }
         } else if normal2.z != 0.0 {
-            if normal2.z > 0.0 { max.z } else { min.z }
+            if normal2.z > 0.0 {
+                max.z
+            } else {
+                min.z
+            }
         } else {
             position.z // Edge runs along Z axis
         };
@@ -737,7 +761,7 @@ impl Boundary {
         boundary_scale.x.max(boundary_scale.y).max(boundary_scale.z)
     }
 
-    pub fn scale(&self) -> Vec3 { self.boundary_scalar * self.cell_count.as_vec3() }
+    pub fn scale(&self) -> Vec3 { self.exterior_scalar * self.cell_count.as_vec3() }
 
     /// Returns the 8 corner points of the boundary as a fixed-size array
     pub fn corners(&self) -> [Vec3; 8] {
@@ -797,7 +821,7 @@ fn draw_boundary(
         .grid_3d(
             Isometry3d::new(boundary_transform.translation, Quat::IDENTITY),
             boundary.cell_count,
-            Vec3::splat(boundary.boundary_scalar),
+            Vec3::splat(boundary.exterior_scalar),
             boundary.grid_color,
         )
         .outer_edges();

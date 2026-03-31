@@ -55,7 +55,7 @@ pub enum ToggleState {
     reason = "Kept for parity with hana switch model; not all helpers are used yet"
 )]
 impl Switches {
-    const INSPECTOR_SWITCHES: [Switch; 14] = [
+    const INSPECTOR_SWITCHES: [Switch; 13] = [
         Switch::InspectAabb,
         Switch::InspectBoundary,
         Switch::InspectCamera,
@@ -64,7 +64,6 @@ impl Switches {
         Switch::InspectMissile,
         Switch::InspectNateroid,
         Switch::InspectOutline,
-        Switch::InspectPlanes,
         Switch::InspectPortals,
         Switch::InspectSpaceship,
         Switch::InspectSpaceshipControl,
@@ -125,7 +124,6 @@ pub enum Switch {
     InspectMissile,
     InspectNateroid,
     InspectOutline,
-    InspectPlanes,
     InspectPortals,
     InspectSpaceship,
     InspectSpaceshipControl,

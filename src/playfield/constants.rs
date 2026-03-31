@@ -100,22 +100,3 @@ pub(super) const PORTAL_MIN_RADIUS_FRACTION: f32 = 0.5;
 
 /// Multiplier for boundary diagonal to detect physics burst events
 pub(super) const PORTAL_PHYSICS_BURST_MULTIPLIER: f32 = 2.0;
-
-// =============================================================================
-// Plane Configuration
-// =============================================================================
-
-/// Default index of refraction for boundary planes
-pub(super) const PLANE_IOR: f32 = 1.5;
-
-/// Default perceptual roughness for plane material
-pub(super) const PLANE_PERCEPTUAL_ROUGHNESS: f32 = 0.5;
-
-/// Default reflectance for plane material
-pub(super) const PLANE_REFLECTANCE: f32 = 0.5;
-
-/// Default thickness for boundary planes
-pub(super) const PLANE_THICKNESS: f32 = 0.001;
-
-/// Rotation angle for plane orientation (no rotation)
-pub(super) const PLANE_ROTATION_ANGLE: f32 = 0.0;

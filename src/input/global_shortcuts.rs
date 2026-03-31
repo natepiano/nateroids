@@ -15,7 +15,6 @@ action!(InspectLightsSwitch);
 action!(InspectMissileSwitch);
 action!(InspectNateroidSwitch);
 action!(InspectOutlineSwitch);
-action!(InspectPlanesSwitch);
 action!(InspectPortalSwitch);
 action!(InspectSpaceshipControlSwitch);
 action!(InspectSpaceshipSwitch);
@@ -57,7 +56,6 @@ fn spawn_inspector_shortcuts(
     kb.spawn_shift_key::<InspectMissileSwitch>(ctx, KeyCode::Digit1);
     kb.spawn_shift_key::<InspectNateroidSwitch>(ctx, KeyCode::Digit2);
     kb.spawn_shift_key::<InspectOutlineSwitch>(ctx, KeyCode::KeyO);
-    kb.spawn_shift_key::<InspectPlanesSwitch>(ctx, KeyCode::KeyP);
     kb.spawn_shift_key::<InspectPortalSwitch>(ctx, KeyCode::KeyG);
     kb.spawn_shift_key::<ShowFocusSwitch>(ctx, KeyCode::KeyF);
     kb.spawn_shift_key::<InspectSpaceshipSwitch>(ctx, KeyCode::Digit3);

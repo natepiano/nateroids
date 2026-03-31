@@ -28,7 +28,6 @@ pub use global_shortcuts::InspectLightsSwitch;
 pub use global_shortcuts::InspectMissileSwitch;
 pub use global_shortcuts::InspectNateroidSwitch;
 pub use global_shortcuts::InspectOutlineSwitch;
-pub use global_shortcuts::InspectPlanesSwitch;
 pub use global_shortcuts::InspectPortalSwitch;
 pub use global_shortcuts::InspectSpaceshipControlSwitch;
 pub use global_shortcuts::InspectSpaceshipSwitch;
