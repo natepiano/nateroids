@@ -13,6 +13,7 @@ use rand::RngExt;
 use super::Teleporter;
 use super::actor_settings;
 use super::actor_settings::ColliderType;
+use super::actor_settings::Spawnability;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
 use super::constants::LOCKED_AXES_2D;
@@ -106,7 +107,7 @@ pub struct Deaderoid {
     pub current_material_index: usize,
 }
 
-/// Precomputed materials for nateroid death animation at different transparency levels
+/// Precomputed materials for `Nateroid` death animation at different transparency levels
 #[derive(Resource)]
 pub struct NateroidDeathMaterials {
     pub materials: Vec<Vec<Handle<StandardMaterial>>>,
@@ -120,7 +121,7 @@ fn spawn_nateroid(
     spatial_query: SpatialQuery,
     mut spawn_stats: ResMut<NateroidSpawnStats>,
 ) {
-    if !settings.spawnable {
+    if settings.spawnability == Spawnability::Disabled {
         return;
     }
 
@@ -177,7 +178,7 @@ fn spawn_nateroid(
     commands.spawn((Nateroid, Name::new("Nateroid"), transform));
 }
 
-/// System that applies custom materials to nateroid mesh children (donut and icing)
+/// System that applies custom materials to `Nateroid` mesh children (donut and icing)
 fn apply_nateroid_materials_to_children(
     mut commands: Commands,
     nateroid_query: Query<Entity, (With<Nateroid>, Added<Children>)>,

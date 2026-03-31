@@ -41,11 +41,18 @@ impl Plugin for PhysicsPlugin {
     }
 }
 
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
+enum StressLevel {
+    #[default]
+    Monitoring,
+    Stressed,
+    Recovered,
+}
+
 #[derive(Resource, Default)]
 struct PhysicsMonitorState {
-    is_stressed:       bool,
-    last_stress_log:   f64,
-    logged_unstressed: bool,
+    stress_level:    StressLevel,
+    last_stress_log: f64,
 }
 
 fn init_physics_debug_aabb(mut config_store: ResMut<GizmoConfigStore>) {
@@ -88,35 +95,34 @@ fn monitor_physics_health(
 
     // Detect potential physics breakdown with hysteresis to prevent oscillation
     // Use different thresholds for entering vs exiting stress state
-    let physics_struggling = if state.is_stressed {
-        fps < STRESS_EXIT_FPS_THRESHOLD || avg_speed > STRESS_VELOCITY_THRESHOLD
-    } else {
-        fps < STRESS_ENTER_FPS_THRESHOLD || avg_speed > STRESS_VELOCITY_THRESHOLD
+    let physics_struggling = match state.stress_level {
+        StressLevel::Stressed => {
+            fps < STRESS_EXIT_FPS_THRESHOLD || avg_speed > STRESS_VELOCITY_THRESHOLD
+        },
+        StressLevel::Monitoring | StressLevel::Recovered => {
+            fps < STRESS_ENTER_FPS_THRESHOLD || avg_speed > STRESS_VELOCITY_THRESHOLD
+        },
     };
 
     let current_time = time.elapsed_secs_f64();
 
     if physics_struggling {
         // When stressed, log every 1 second
-        let should_log = !state.is_stressed || (current_time - state.last_stress_log >= 1.0);
+        let should_log = state.stress_level != StressLevel::Stressed
+            || (current_time - state.last_stress_log >= 1.0);
 
         if should_log {
             warn!(
                 "⚠️  PHYSICS STRESS: {nateroid_count} nateroids | avg_speed: {avg_speed:.1} | FPS: {fps:.1} | timestep: {:.3}ms",
                 time.delta_secs() * 1000.0
             );
-            state.is_stressed = true;
+            state.stress_level = StressLevel::Stressed;
             state.last_stress_log = current_time;
-            state.logged_unstressed = false;
         }
-    } else {
-        // When unstressed, log once on entry
-        if !state.logged_unstressed {
-            info!(
-                "Physics healthy: {nateroid_count} nateroids | avg_speed: {avg_speed:.1} | FPS: {fps:.1}"
-            );
-            state.logged_unstressed = true;
-            state.is_stressed = false;
-        }
+    } else if state.stress_level != StressLevel::Recovered {
+        info!(
+            "Physics healthy: {nateroid_count} nateroids | avg_speed: {avg_speed:.1} | FPS: {fps:.1}"
+        );
+        state.stress_level = StressLevel::Recovered;
     }
 }

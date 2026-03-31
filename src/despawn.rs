@@ -46,7 +46,7 @@ fn despawn_missiles(mut commands: Commands, query: Query<(Entity, &MissilePositi
 }
 
 /// Uses `try_despawn` because entities can be queued for despawn multiple times in a frame
-/// (e.g., missile reaching max distance AND taking lethal damage simultaneously)
+/// (e.g., `Missile` reaching max distance AND taking lethal damage simultaneously)
 pub fn despawn(commands: &mut Commands, entity: Entity) { commands.entity(entity).try_despawn(); }
 
 /// Calculates velocity toward a boundary corner based on the death corner strategy.

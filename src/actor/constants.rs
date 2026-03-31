@@ -3,7 +3,7 @@ use bevy::prelude::Vec3;
 use bevy_kana::Position;
 
 // Shared actor configuration
-/// Spaceship model orientation correction: rotates the model so nose points +Y
+/// `Spaceship` model orientation correction: rotates the model so nose points +Y
 pub(super) const GLTF_ROTATION_X: f32 = std::f32::consts::FRAC_PI_2; // +90°
 pub(super) const LOCKED_AXES_2D: LockedAxes = LockedAxes::new().lock_translation_z();
 pub(super) const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()

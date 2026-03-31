@@ -8,10 +8,12 @@ use bevy_kana::Position;
 
 use super::Teleporter;
 use super::actor_settings;
+use super::actor_settings::Spawnability;
 use super::actor_template::MissileSettings;
 use super::constants::LOCKED_AXES_2D;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
+use super::teleport::TeleportStatus;
 use crate::input::ShipControlsContext;
 use crate::input::ShipFire;
 use crate::playfield::ActorPortals;
@@ -134,13 +136,13 @@ fn on_fire_input(_trigger: On<input_events::Start<ShipFire>>, mut commands: Comm
     commands.run_system_cached(fire_missile_command);
 }
 
-/// Reusable on-demand command for firing a single missile.
+/// Reusable on-demand command for firing a single `Missile`.
 fn fire_missile_command(
     mut commands: Commands,
     continuous_fire_enabled: Single<Option<&ContinuousFire>, With<Spaceship>>,
     missile_settings: Res<MissileSettings>,
 ) {
-    if !missile_settings.spawnable {
+    if missile_settings.spawnability == Spawnability::Disabled {
         return;
     }
 
@@ -158,7 +160,8 @@ fn fire_missile_continuous(
     fire_state: ShipFireStateQuery,
     time: Res<Time>,
 ) {
-    if continuous_fire_enabled.is_none() || !missile_settings.spawnable {
+    if continuous_fire_enabled.is_none() || missile_settings.spawnability == Spawnability::Disabled
+    {
         return;
     }
 
@@ -177,7 +180,7 @@ fn fire_missile_continuous(
     commands.spawn((Missile, Name::new("Missile")));
 }
 
-/// we update missile movement so that it can be despawned after it has traveled
+/// we update `Missile` movement so that it can be despawned after it has traveled
 /// its total distance
 fn missile_movement(mut query: Query<(&Transform, &mut MissilePosition, &Teleporter)>) {
     for (transform, mut missile, teleporter) in &mut query {
@@ -185,7 +188,7 @@ fn missile_movement(mut query: Query<(&Transform, &mut MissilePosition, &Telepor
 
         if let Some(last_position) = missile.last_position {
             // Calculate the distance traveled since the last update
-            let distance_traveled = if teleporter.just_teleported {
+            let distance_traveled = if teleporter.status == TeleportStatus::JustTeleported {
                 0.0
             } else {
                 last_position.distance(current_position)
@@ -196,7 +199,7 @@ fn missile_movement(mut query: Query<(&Transform, &mut MissilePosition, &Telepor
             missile.remaining_distance = missile.total_distance - missile.traveled_distance;
 
             // Update the last teleport position if the missile wrapped
-            if teleporter.just_teleported {
+            if teleporter.status == TeleportStatus::JustTeleported {
                 missile.last_teleport_position = Some(current_position);
             }
         }

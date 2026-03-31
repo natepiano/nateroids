@@ -32,9 +32,16 @@ struct TeleportCollisionState {
     last_field_crowded: Option<bool>,
 }
 
+#[derive(Reflect, Clone, Debug, Default, PartialEq, Eq)]
+pub enum TeleportStatus {
+    #[default]
+    Ready,
+    JustTeleported,
+}
+
 #[derive(Component, Reflect, Debug, Default, Clone)]
 pub struct Teleporter {
-    pub just_teleported:          bool,
+    pub status:                   TeleportStatus,
     pub last_teleported_position: Option<Position>,
     pub last_teleported_normal:   Option<Dir3>,
 }
@@ -157,7 +164,7 @@ fn teleport_at_boundary(
             Boundary::calculate_teleport_position(original_position, boundary_transform);
 
         if teleported_position == original_position {
-            teleporter.just_teleported = false;
+            teleporter.status = TeleportStatus::Ready;
             teleporter.last_teleported_position = None;
             teleporter.last_teleported_normal = None;
         } else {
@@ -183,7 +190,7 @@ fn teleport_at_boundary(
             }
 
             transform.translation = *teleported_position;
-            teleporter.just_teleported = true;
+            teleporter.status = TeleportStatus::JustTeleported;
             teleporter.last_teleported_position = Some(teleported_position);
             teleporter.last_teleported_normal = Some(Boundary::get_normal_for_position(
                 teleported_position,

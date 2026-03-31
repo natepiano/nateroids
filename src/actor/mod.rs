@@ -29,6 +29,7 @@ pub use spaceship::Spaceship;
 use spaceship::SpaceshipPlugin;
 use spaceship_control::SpaceshipControlPlugin;
 use teleport::TeleportPlugin;
+pub use teleport::TeleportStatus;
 pub use teleport::Teleporter;
 
 pub struct ActorPlugin;

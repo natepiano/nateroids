@@ -67,10 +67,17 @@ impl Plugin for ActorSettingsPlugin {
     }
 }
 
+#[derive(Reflect, InspectorOptions, Clone, Debug, Default, PartialEq, Eq)]
+pub enum Spawnability {
+    #[default]
+    Enabled,
+    Disabled,
+}
+
 #[derive(Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(InspectorOptions)]
 pub struct ActorSettings {
-    pub spawnable:                bool,
+    pub spawnability:             Spawnability,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub angular_damping:          Option<f32>,
     #[inspector(min = 0.1, max = 3.0, display = NumberDisplay::Slider)]

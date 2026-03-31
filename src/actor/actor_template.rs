@@ -13,6 +13,7 @@ use bevy_inspector_egui::InspectorOptions;
 
 use super::actor_settings::ActorSettings;
 use super::actor_settings::ColliderType;
+use super::actor_settings::Spawnability;
 use super::constants::GLTF_ROTATION_X;
 use super::constants::MAX_MISSILE_ANGULAR_VELOCITY;
 use super::constants::MAX_MISSILE_LINEAR_VELOCITY;
@@ -78,7 +79,7 @@ impl Default for MissileSettings {
     fn default() -> Self {
         Self {
             actor_settings:          ActorSettings {
-                spawnable:                true,
+                spawnability:             Spawnability::Enabled,
                 angular_damping:          None,
                 collider_margin:          MISSILE_COLLIDER_MARGIN,
                 collider_type:            ColliderType::Cuboid,
@@ -148,7 +149,7 @@ impl Default for NateroidSettings {
     fn default() -> Self {
         Self {
             actor_settings:            ActorSettings {
-                spawnable:                true,
+                spawnability:             Spawnability::Enabled,
                 angular_damping:          Some(NATEROID_ANGULAR_DAMPING),
                 collider_margin:          NATEROID_COLLIDER_MARGIN,
                 collider_type:            ColliderType::Ball,
@@ -209,7 +210,7 @@ impl Default for SpaceshipSettings {
     fn default() -> Self {
         Self {
             actor_settings: ActorSettings {
-                spawnable:                true,
+                spawnability:             Spawnability::Enabled,
                 angular_damping:          Some(SPACESHIP_ANGULAR_DAMPING),
                 collider_margin:          SPACESHIP_COLLIDER_MARGIN,
                 collider_type:            ColliderType::Cuboid,

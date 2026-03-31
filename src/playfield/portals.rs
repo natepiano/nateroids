@@ -30,6 +30,7 @@ use super::constants::PORTAL_SCALAR;
 use super::constants::PORTAL_SMALLEST;
 use crate::actor;
 use crate::actor::Deaderoid;
+use crate::actor::TeleportStatus;
 use crate::actor::Teleporter;
 use crate::camera::RenderLayer;
 use crate::input::InspectPortalSwitch;
@@ -265,7 +266,7 @@ fn handle_emerging_visual(
     visual: &mut Mut<ActorPortals>,
     boundary_transform: &Transform,
 ) {
-    if teleporter.just_teleported {
+    if teleporter.status == TeleportStatus::JustTeleported {
         if let Some(normal) = teleporter.last_teleported_normal {
             // establish the existence of an emerging
             if let Some(face) = BoundaryFace::from_normal(normal)
