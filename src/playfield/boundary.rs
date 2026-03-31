@@ -95,7 +95,7 @@ fn apply_boundary_settings(mut config_store: ResMut<GizmoConfigStore>, boundary:
     config.render_layers = RenderLayer::Game.layers();
 
     let (outer_config, _) = config_store.config_mut::<BoundaryGizmo>();
-    outer_config.line.width = boundary.boundary_line_width;
+    outer_config.line.width = boundary.exterior_line_width;
     outer_config.render_layers = RenderLayer::Game.layers();
 }
 
@@ -134,7 +134,6 @@ fn sync_boundary_volume(
 /// defines
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
-#[allow(clippy::struct_field_names)] // "boundary_" prefix distinguishes from grid_line_width
 pub struct Boundary {
     pub cell_count:          UVec3,
     pub grid_color:          Color,
@@ -142,7 +141,7 @@ pub struct Boundary {
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
     pub grid_line_width:     f32,
     #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
-    pub boundary_line_width: f32,
+    pub exterior_line_width: f32,
     #[inspector(min = 50., max = 300., display = NumberDisplay::Slider)]
     pub boundary_scalar:     f32,
 }
@@ -155,7 +154,7 @@ impl Default for Boundary {
             grid_color:          Color::from(tailwind::BLUE_500).with_alpha(0.0),
             outer_color:         Color::from(tailwind::BLUE_500).with_alpha(0.0),
             grid_line_width:     BOUNDARY_GRID_LINE_WIDTH,
-            boundary_line_width: BOUNDARY_OUTER_LINE_WIDTH,
+            exterior_line_width: BOUNDARY_OUTER_LINE_WIDTH,
             boundary_scalar:     BOUNDARY_SCALAR,
         }
     }
@@ -991,7 +990,10 @@ fn animate_grid_flash(
 }
 
 #[cfg(test)]
-#[allow(clippy::float_cmp)]
+#[allow(
+    clippy::float_cmp,
+    reason = "test assertions compare exact known float values"
+)]
 mod tests {
     use super::*;
 

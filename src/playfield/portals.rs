@@ -421,11 +421,8 @@ fn update_approaching_portals(
 
                 // Fade out over n seconds
                 let fade_out_duration = portal_settings.fadeout_duration;
-                #[allow(clippy::suspicious_operation_groupings)]
-                // minimum_radius is correct here, not radius
-                if elapsed_time >= fade_out_duration
-                    || approaching.radius < portal_settings.minimum_radius
-                {
+                let below_minimum = approaching.radius < portal_settings.minimum_radius;
+                if elapsed_time >= fade_out_duration || below_minimum {
                     // Remove visual after fade-out is complete
                     portal.approaching = None;
                     continue;
