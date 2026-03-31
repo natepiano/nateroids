@@ -8,8 +8,8 @@ version = "0.18.0"
 # Our strict lints
 allow_attributes_without_reason = "deny"
 expect_used                     = "deny"
-panic       = "deny"
-unwrap_used = "deny"
+panic                           = "deny"
+unwrap_used                     = "deny"
 
 # Enable lint groups as errors (with lower priority so allows can override)
 all      = { level = "deny", priority = -1 }
