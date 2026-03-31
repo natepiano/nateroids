@@ -5,6 +5,7 @@ use super::Health;
 use super::Teleporter;
 use super::actor_settings::CollisionDamage;
 use super::spaceship::Spaceship;
+use super::teleport::TeleportStatus;
 use crate::schedule::InGameSet;
 
 pub(super) struct CollisionDetectionPlugin;
@@ -27,7 +28,7 @@ fn handle_collision_events(
     // Check if spaceship just teleported
     let spaceship_just_teleported = spaceship_query
         .single()
-        .map(|(entity, teleporter)| (entity, teleporter.just_teleported))
+        .map(|(entity, teleporter)| (entity, teleporter.status == TeleportStatus::JustTeleported))
         .ok();
 
     for event in collision_events.read() {

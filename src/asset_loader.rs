@@ -57,7 +57,7 @@ pub fn load_assets(
     };
 }
 
-/// Create custom PBR materials with baked textures for nateroid (donut and icing)
+/// Create custom PBR materials with baked textures for `Nateroid` (donut and icing)
 fn create_nateroid_material(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut scene_assets: ResMut<SceneAssets>,

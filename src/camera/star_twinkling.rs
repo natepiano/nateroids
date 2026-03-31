@@ -32,10 +32,7 @@ struct StartTwinklingTimer {
 
 fn should_start_twinkling(start_timer: &mut ResMut<StartTwinklingTimer>, time: Res<Time>) -> bool {
     start_timer.timer.tick(time.delta());
-    if !start_timer.timer.just_finished() {
-        return false;
-    }
-    true
+    start_timer.timer.just_finished()
 }
 
 fn get_random_indices(count: usize, range: usize) -> Vec<usize> {

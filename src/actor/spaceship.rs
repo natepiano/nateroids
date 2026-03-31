@@ -3,6 +3,7 @@ use bevy::prelude::*;
 
 use super::Teleporter;
 use super::actor_settings;
+use super::actor_settings::Spawnability;
 use super::actor_template::SpaceshipSettings;
 use super::constants::GLTF_ROTATION_X;
 use super::constants::LOCKED_AXES_SPACESHIP;
@@ -15,7 +16,7 @@ use crate::splash::SplashText;
 use crate::state::GameState;
 use crate::state::PauseState;
 
-/// Returns the default spaceship rotation: model correction (90° around X)
+/// Returns the default `Spaceship` rotation: model correction (90° around X)
 fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X) }
 
 pub(super) struct SpaceshipPlugin;
@@ -53,7 +54,7 @@ pub(super) struct ContinuousFire;
 )]
 pub struct Spaceship;
 
-/// Observer that spawns the spaceship when splash text is removed
+/// Observer that spawns the `Spaceship` when `SplashText` is removed
 fn spawn_after_splash_text_removed(
     _trigger: On<Remove, SplashText>,
     commands: Commands,
@@ -62,7 +63,7 @@ fn spawn_after_splash_text_removed(
     spawn_spaceship(commands, spaceship_settings);
 }
 
-/// Spawns a spaceship only if one doesn't already exist
+/// Spawns a `Spaceship` only if one doesn't already exist
 fn spawn_spaceship_if_needed(
     commands: Commands,
     spaceship_settings: Res<SpaceshipSettings>,
@@ -75,7 +76,7 @@ fn spawn_spaceship_if_needed(
 }
 
 fn spawn_spaceship(mut commands: Commands, spaceship_settings: Res<SpaceshipSettings>) {
-    if !spaceship_settings.spawnable {
+    if spaceship_settings.spawnability == Spawnability::Disabled {
         return;
     }
 
@@ -118,7 +119,7 @@ fn spaceship_destroyed(
 }
 
 /// Enforce strict 2D rotation by zeroing X/Y angular velocity and correcting transform if tilted
-/// Keeps the spaceship flat in the XY plane (up vector should point in +Z)
+/// Keeps the `Spaceship` flat in the XY plane (up vector should point in +Z)
 fn enforce_spaceship_2d_rotation(
     mut spaceship: Query<(&mut Transform, &mut AngularVelocity), With<Spaceship>>,
 ) {

@@ -46,7 +46,7 @@ pub(super) const BOUNDARY_NORMAL_EPSILON: f32 = 0.001;
 // Portal Colors
 // =============================================================================
 
-/// Color for Deaderoid approaching portals (Red)
+/// Color for `Deaderoid` approaching portals (Red)
 pub(super) const DEADEROID_APPROACHING_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 
 /// Color for Left/Right face corners on YZ plane (Red)

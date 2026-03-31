@@ -43,6 +43,13 @@ impl Plugin for PlanesPlugin {
 // you can't use an #[inspector()] w/attenuation_distance
 // because you have to use a logarithmic range to reach f32::INFINITY which is
 // its default problem for another day...
+#[derive(Reflect, InspectorOptions, Clone, Debug, Default, PartialEq, Eq)]
+pub enum PlaneSidedness {
+    #[default]
+    SingleSided,
+    DoubleSided,
+}
+
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 #[allow(clippy::struct_excessive_bools)] // 6 directional bools (front/back/top/bottom/left/right) are intentional
@@ -57,7 +64,7 @@ struct PlaneSettings {
     pub base_color:            Color,
     #[reflect(ignore)]
     pub cull_mode:             Option<Face>,
-    pub double_sided:          bool,
+    pub sidedness:             PlaneSidedness,
     pub emissive:              LinearRgba,
     pub attenuation_distance:  f32,
     #[inspector(min = 1.0, max = 3.0, display = NumberDisplay::Slider)]
@@ -91,7 +98,7 @@ impl Default for PlaneSettings {
                                                   * with_alpha(0.0), */
             cull_mode:             Some(Face::Back),
             diffuse_transmission:  0.,
-            double_sided:          false,
+            sidedness:             PlaneSidedness::SingleSided,
             emissive:              LinearRgba::BLACK,
             ior:                   PLANE_IOR,
             metallic:              0.,
@@ -272,7 +279,7 @@ fn get_plane_material(
         base_color: settings.base_color,
         cull_mode: settings.cull_mode,
         diffuse_transmission: settings.diffuse_transmission,
-        double_sided: settings.double_sided,
+        double_sided: settings.sidedness == PlaneSidedness::DoubleSided,
         emissive: settings.emissive,
         ior: settings.ior,
         metallic: settings.metallic,
