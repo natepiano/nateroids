@@ -52,7 +52,7 @@ impl Plugin for SpaceshipControlPlugin {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
-pub struct SpaceshipControlSettings {
+pub(super) struct SpaceshipControlSettings {
     #[inspector(min = 30., max = 300.0, display = NumberDisplay::Slider)]
     pub acceleration:   f32,
     #[inspector(min = 50., max = 300.0, display = NumberDisplay::Slider)]

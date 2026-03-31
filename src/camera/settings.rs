@@ -6,10 +6,38 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_kana::Position;
 
+use super::constants::CAMERA_BLOOM_HIGH_PASS_FREQUENCY;
+use super::constants::CAMERA_BLOOM_INTENSITY;
+use super::constants::CAMERA_BLOOM_LOW_FREQUENCY_BOOST;
+use super::constants::CAMERA_ORBIT_SMOOTHNESS;
+use super::constants::CAMERA_PAN_SMOOTHNESS;
 use super::constants::CAMERA_SPLASH_START_FOCUS;
 use super::constants::CAMERA_SPLASH_START_PITCH;
 use super::constants::CAMERA_SPLASH_START_RADIUS;
 use super::constants::CAMERA_SPLASH_START_YAW;
+use super::constants::CAMERA_ZOOM_SMOOTHNESS;
+use super::constants::STAR_BATCH_SIZE_REPLACE;
+use super::constants::STAR_COLOR_RANGE_MAX;
+use super::constants::STAR_COLOR_RANGE_MIN;
+use super::constants::STAR_COLOR_WHITE_PROBABILITY;
+use super::constants::STAR_COLOR_WHITE_START_RATIO;
+use super::constants::STAR_COUNT;
+use super::constants::STAR_DURATION_REPLACE_TIMER;
+use super::constants::STAR_FIELD_INNER_DIAMETER;
+use super::constants::STAR_FIELD_OUTER_DIAMETER;
+use super::constants::STAR_RADIUS_MAX;
+use super::constants::STAR_RADIUS_MIN;
+use super::constants::STAR_ROTATION_CYCLE_MINUTES;
+use super::constants::STAR_TWINKLE_CHOOSE_MULTIPLE_COUNT;
+use super::constants::STAR_TWINKLE_DURATION_MAX;
+use super::constants::STAR_TWINKLE_DURATION_MIN;
+use super::constants::STAR_TWINKLE_INTENSITY_MAX;
+use super::constants::STAR_TWINKLE_INTENSITY_MIN;
+use super::constants::STAR_TWINKLING_DELAY;
+use super::constants::ZOOM_CONVERGENCE_RATE;
+use super::constants::ZOOM_MARGIN_TOLERANCE;
+use super::constants::ZOOM_MAX_ITERATIONS;
+use super::constants::ZOOM_SETTINGS_MARGIN;
 use crate::input::InspectCameraSwitch;
 use crate::input::InspectStarSwitch;
 use crate::input::InspectZoomSwitch;
@@ -92,12 +120,12 @@ pub struct CameraSettings {
 impl Default for CameraSettings {
     fn default() -> Self {
         Self {
-            bloom_intensity:           0.5,
-            bloom_low_frequency_boost: 0.5,
-            bloom_high_pass_frequency: 0.5,
-            zoom_smoothness:           0.10,
-            orbit_smoothness:          0.02,
-            pan_smoothness:            0.02,
+            bloom_intensity:           CAMERA_BLOOM_INTENSITY,
+            bloom_low_frequency_boost: CAMERA_BLOOM_LOW_FREQUENCY_BOOST,
+            bloom_high_pass_frequency: CAMERA_BLOOM_HIGH_PASS_FREQUENCY,
+            zoom_smoothness:           CAMERA_ZOOM_SMOOTHNESS,
+            orbit_smoothness:          CAMERA_ORBIT_SMOOTHNESS,
+            pan_smoothness:            CAMERA_PAN_SMOOTHNESS,
             splash_start_radius:       CAMERA_SPLASH_START_RADIUS,
             splash_start_focus:        CAMERA_SPLASH_START_FOCUS,
             splash_start_pitch:        CAMERA_SPLASH_START_PITCH,
@@ -108,7 +136,7 @@ impl Default for CameraSettings {
 
 #[derive(Debug, Clone, Reflect, Resource, InspectorOptions)]
 #[reflect(Resource, InspectorOptions)]
-pub struct StarSettings {
+pub(super) struct StarSettings {
     pub batch_size_replace:            usize,
     pub duration_replace_timer:        f32,
     pub star_color:                    Range<f32>,
@@ -131,21 +159,21 @@ pub struct StarSettings {
 impl Default for StarSettings {
     fn default() -> Self {
         Self {
-            batch_size_replace:            10,
-            duration_replace_timer:        1.,
-            star_count:                    1000,
-            star_color:                    -30.0..30.0,
-            star_color_white_probability:  0.85,
-            star_color_white_start_ratio:  0.7,
-            star_radius_max:               2.5,
-            star_radius_min:               0.3,
-            star_field_inner_diameter:     200.,
-            star_field_outer_diameter:     400.,
-            start_twinkling_delay:         0.5,
-            twinkle_duration:              0.5..2.,
-            twinkle_intensity:             10.0..20.,
-            twinkle_choose_multiple_count: 2, // stars to look at each update
-            rotation_cycle_minutes:        15., // i mean why not
+            batch_size_replace:            STAR_BATCH_SIZE_REPLACE,
+            duration_replace_timer:        STAR_DURATION_REPLACE_TIMER,
+            star_count:                    STAR_COUNT,
+            star_color:                    STAR_COLOR_RANGE_MIN..STAR_COLOR_RANGE_MAX,
+            star_color_white_probability:  STAR_COLOR_WHITE_PROBABILITY,
+            star_color_white_start_ratio:  STAR_COLOR_WHITE_START_RATIO,
+            star_radius_max:               STAR_RADIUS_MAX,
+            star_radius_min:               STAR_RADIUS_MIN,
+            star_field_inner_diameter:     STAR_FIELD_INNER_DIAMETER,
+            star_field_outer_diameter:     STAR_FIELD_OUTER_DIAMETER,
+            start_twinkling_delay:         STAR_TWINKLING_DELAY,
+            twinkle_duration:              STAR_TWINKLE_DURATION_MIN..STAR_TWINKLE_DURATION_MAX,
+            twinkle_intensity:             STAR_TWINKLE_INTENSITY_MIN..STAR_TWINKLE_INTENSITY_MAX,
+            twinkle_choose_multiple_count: STAR_TWINKLE_CHOOSE_MULTIPLE_COUNT,
+            rotation_cycle_minutes:        STAR_ROTATION_CYCLE_MINUTES,
             rotation_axis:                 Vec3::Y,
         }
     }
@@ -153,7 +181,7 @@ impl Default for StarSettings {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
-pub struct ZoomSettings {
+pub(super) struct ZoomSettings {
     /// Maximum iterations before giving up
     #[inspector(min = 50, max = 500)]
     pub max_iterations:   usize,
@@ -172,16 +200,10 @@ pub struct ZoomSettings {
 impl Default for ZoomSettings {
     fn default() -> Self {
         Self {
-            max_iterations:   200,
-            margin:           0.1, //percent of screen
-            margin_tolerance: 0.00001,
-            convergence_rate: 0.30,
+            max_iterations:   ZOOM_MAX_ITERATIONS,
+            margin:           ZOOM_SETTINGS_MARGIN,
+            margin_tolerance: ZOOM_MARGIN_TOLERANCE,
+            convergence_rate: ZOOM_CONVERGENCE_RATE,
         }
     }
-}
-
-impl ZoomSettings {
-    /// Returns the zoom margin multiplier (1.0 + margin)
-    /// For example, a margin of 0.08 returns 1.08 (8% margin)
-    pub const fn zoom_margin_multiplier(&self) -> f32 { 1.0 / (1.0 - self.margin) }
 }

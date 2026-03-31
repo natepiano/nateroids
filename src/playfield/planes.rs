@@ -118,26 +118,29 @@ enum PlaneType {
     Right,
 }
 
-#[allow(clippy::too_many_arguments)]
+struct PlaneGeometry {
+    size:     Vec3,
+    position: Position,
+    axis:     Vec3,
+}
+
 fn create_or_update_plane(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     plane_settings: &PlaneSettings,
-    size: Vec3,
-    position: Position,
-    axis: Vec3,
+    geometry: &PlaneGeometry,
     plane_type: PlaneType,
     existing_entity: Option<Entity>,
 ) -> Entity {
     let cuboid = Cuboid {
-        half_size: size / 2.0,
+        half_size: geometry.size / 2.0,
     };
     let mesh = meshes.add(Mesh::from(cuboid));
     let material_handle = get_plane_material(materials, plane_settings);
-    let rotation = Quat::from_axis_angle(axis, PLANE_ROTATION_ANGLE);
+    let rotation = Quat::from_axis_angle(geometry.axis, PLANE_ROTATION_ANGLE);
     let transform = Transform {
-        translation: *position,
+        translation: *geometry.position,
         rotation,
         scale: Vec3::ONE,
     };
@@ -195,9 +198,11 @@ fn manage_box_planes(
                 &mut meshes,
                 &mut materials,
                 &plane_settings,
-                size,
-                position,
-                axis,
+                &PlaneGeometry {
+                    size,
+                    position,
+                    axis,
+                },
                 plane_type,
                 existing_entity,
             );

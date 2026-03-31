@@ -29,7 +29,7 @@ pub(super) struct Selected;
 /// Inspector-tunable configuration for selection outlines
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource, InspectorOptions)]
-pub struct SelectionOutlineSettings {
+pub(super) struct SelectionOutlineSettings {
     #[inspector(min = 0.0, max = 30.0, display = NumberDisplay::Slider)]
     pub width:     f32,
     #[inspector(min = 0.0, max = 30.0, display = NumberDisplay::Slider)]

@@ -45,3 +45,107 @@ pub(super) const SELECTION_OUTLINE_COLOR: Color = Color::Srgba(bevy::color::Srgb
     blue:  1.0,
     alpha: 1.0,
 });
+
+/// Default bloom intensity for camera
+pub(super) const CAMERA_BLOOM_INTENSITY: f32 = 0.5;
+
+/// Default bloom low frequency boost for camera
+pub(super) const CAMERA_BLOOM_LOW_FREQUENCY_BOOST: f32 = 0.5;
+
+/// Default bloom high pass frequency for camera
+pub(super) const CAMERA_BLOOM_HIGH_PASS_FREQUENCY: f32 = 0.5;
+
+/// Default zoom smoothness (0.10 = 10% per frame)
+pub(super) const CAMERA_ZOOM_SMOOTHNESS: f32 = 0.10;
+
+/// Default orbit smoothness (0.02 = 2% per frame)
+pub(super) const CAMERA_ORBIT_SMOOTHNESS: f32 = 0.02;
+
+/// Default pan smoothness (0.02 = 2% per frame)
+pub(super) const CAMERA_PAN_SMOOTHNESS: f32 = 0.02;
+
+/// Number of stars to replace per batch
+pub(super) const STAR_BATCH_SIZE_REPLACE: usize = 10;
+
+/// Duration in seconds for star replace timer
+pub(super) const STAR_DURATION_REPLACE_TIMER: f32 = 1.0;
+
+/// Total number of stars in the star field
+pub(super) const STAR_COUNT: usize = 1000;
+
+/// Minimum of star color hue range
+pub(super) const STAR_COLOR_RANGE_MIN: f32 = -30.0;
+
+/// Maximum of star color hue range
+pub(super) const STAR_COLOR_RANGE_MAX: f32 = 30.0;
+
+/// Probability that a star will be white
+pub(super) const STAR_COLOR_WHITE_PROBABILITY: f32 = 0.85;
+
+/// Starting ratio for white star color blending
+pub(super) const STAR_COLOR_WHITE_START_RATIO: f32 = 0.7;
+
+/// Maximum star radius
+pub(super) const STAR_RADIUS_MAX: f32 = 2.5;
+
+/// Minimum star radius
+pub(super) const STAR_RADIUS_MIN: f32 = 0.3;
+
+/// Inner diameter of the star field sphere
+pub(super) const STAR_FIELD_INNER_DIAMETER: f32 = 200.0;
+
+/// Outer diameter of the star field sphere
+pub(super) const STAR_FIELD_OUTER_DIAMETER: f32 = 400.0;
+
+/// Delay in seconds before stars begin twinkling
+pub(super) const STAR_TWINKLING_DELAY: f32 = 0.5;
+
+/// Minimum twinkle animation duration in seconds
+pub(super) const STAR_TWINKLE_DURATION_MIN: f32 = 0.5;
+
+/// Maximum twinkle animation duration in seconds
+pub(super) const STAR_TWINKLE_DURATION_MAX: f32 = 2.0;
+
+/// Minimum twinkle intensity
+pub(super) const STAR_TWINKLE_INTENSITY_MIN: f32 = 10.0;
+
+/// Maximum twinkle intensity
+pub(super) const STAR_TWINKLE_INTENSITY_MAX: f32 = 20.0;
+
+/// Number of stars to evaluate for twinkling each update
+pub(super) const STAR_TWINKLE_CHOOSE_MULTIPLE_COUNT: usize = 2;
+
+/// Star field rotation cycle in minutes
+pub(super) const STAR_ROTATION_CYCLE_MINUTES: f32 = 15.0;
+
+/// Maximum iterations for zoom-to-fit convergence
+pub(super) const ZOOM_MAX_ITERATIONS: usize = 200;
+
+/// Default zoom settings margin (percent of screen)
+pub(super) const ZOOM_SETTINGS_MARGIN: f32 = 0.1;
+
+/// Margin tolerance for zoom convergence detection
+pub(super) const ZOOM_MARGIN_TOLERANCE: f32 = 0.00001;
+
+/// Convergence rate for zoom-to-fit adjustments
+pub(super) const ZOOM_CONVERGENCE_RATE: f32 = 0.30;
+
+/// Default illuminance for directional lights
+pub(super) const DIRECTIONAL_LIGHT_ILLUMINANCE: f32 = 1700.0;
+
+/// Default ambient light brightness
+pub(super) const AMBIENT_LIGHT_BRIGHTNESS: f32 = 100.0;
+
+/// Default environment map intensity
+pub(super) const ENVIRONMENT_MAP_INTENSITY: f32 = 25_000.0;
+
+/// Default focus gizmo color (red)
+pub(super) const FOCUS_GIZMO_COLOR: Color = Color::Srgba(bevy::color::Srgba {
+    red:   1.0,
+    green: 0.0,
+    blue:  0.0,
+    alpha: 1.0,
+});
+
+/// Default focus gizmo line width
+pub(super) const FOCUS_GIZMO_LINE_WIDTH: f32 = 2.0;

@@ -7,6 +7,9 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use super::RenderLayer;
+use super::constants::AMBIENT_LIGHT_BRIGHTNESS;
+use super::constants::DIRECTIONAL_LIGHT_ILLUMINANCE;
+use super::constants::ENVIRONMENT_MAP_INTENSITY;
 use crate::input::InspectLightsSwitch;
 use crate::orientation::CameraOrientation;
 use crate::switches;
@@ -37,7 +40,7 @@ impl Plugin for DirectionalLightsPlugin {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
-pub struct DirectionalLightSettings {
+pub(super) struct DirectionalLightSettings {
     pub color:           Color,
     pub enabled:         bool,
     #[inspector(min = 0.0, max = 10_000.0, display = NumberDisplay::Slider)]
@@ -50,7 +53,7 @@ impl Default for DirectionalLightSettings {
         Self {
             color:           Color::from(tailwind::GRAY_50),
             enabled:         false,
-            illuminance:     1700.0,
+            illuminance:     DIRECTIONAL_LIGHT_ILLUMINANCE,
             // CRITICAL: Must start disabled. Enabling shadows at startup before the scene
             // is fully initialized breaks rendering (causes stars to disappear). Shadows
             // can be safely enabled at runtime via inspector or code.
@@ -61,7 +64,7 @@ impl Default for DirectionalLightSettings {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone)]
 #[reflect(Resource, InspectorOptions)]
-pub struct LightSettings {
+pub(super) struct LightSettings {
     #[inspector(min = 0.0, max = 10_000.0, display = NumberDisplay::Slider)]
     pub ambient_light_brightness:  f32,
     pub ambient_light_color:       Color,
@@ -78,9 +81,9 @@ pub struct LightSettings {
 impl Default for LightSettings {
     fn default() -> Self {
         Self {
-            ambient_light_brightness:  100.0,
+            ambient_light_brightness:  AMBIENT_LIGHT_BRIGHTNESS,
             ambient_light_color:       Color::WHITE,
-            environment_map_intensity: 25_000.0,
+            environment_map_intensity: ENVIRONMENT_MAP_INTENSITY,
             front:                     DirectionalLightSettings {
                 enabled: true,
                 ..Default::default()
@@ -111,7 +114,7 @@ impl LightSettings {
 }
 
 #[derive(Resource, Debug, PartialEq, Eq, Clone, Copy)]
-pub enum LightPosition {
+pub(super) enum LightPosition {
     Front,
     Back,
     Top,
@@ -154,7 +157,7 @@ impl LightPosition {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct RotationInfo {
+pub(super) struct RotationInfo {
     pub axis:  Vec3,
     pub angle: f32,
 }

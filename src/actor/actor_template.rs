@@ -68,7 +68,7 @@ pub(super) enum GameLayer {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
-pub struct MissileSettings {
+pub(super) struct MissileSettings {
     pub actor_settings:          ActorSettings,
     pub forward_distance_scalar: f32,
     pub base_velocity:           f32,
@@ -201,7 +201,7 @@ impl DerefMut for NateroidSettings {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
-pub struct SpaceshipSettings {
+pub(super) struct SpaceshipSettings {
     pub actor_settings: ActorSettings,
 }
 

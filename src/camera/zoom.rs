@@ -11,16 +11,14 @@ use bevy_lagrange::OrbitCam;
 use bevy_lagrange::SetFitTarget;
 use bevy_lagrange::ZoomToFit;
 
+use super::RenderLayer;
 use super::constants::EDGE_MARKER_FONT_SIZE;
 use super::constants::EDGE_MARKER_SPHERE_RADIUS;
+use super::constants::FOCUS_GIZMO_COLOR;
+use super::constants::FOCUS_GIZMO_LINE_WIDTH;
 use super::constants::HOME_ANIMATION_DURATION_MS;
 use super::constants::ZOOM_MARGIN;
 use super::constants::ZOOM_TO_FIT_DURATION_MS;
-/// Resource tracking the currently selected entity for zoom-to-fit.
-/// When `None`, Z zooms to boundary.
-#[derive(Resource, Default)]
-pub(super) struct ZoomTarget(pub Option<Entity>);
-use super::RenderLayer;
 use crate::input::BoundaryBoxSwitch;
 use crate::input::CameraHome as CameraHomeShortcut;
 use crate::input::InspectFocusSwitch;
@@ -30,6 +28,11 @@ use crate::playfield::BoundaryVolume;
 use crate::switches;
 use crate::switches::Switch;
 use crate::switches::Switches;
+
+/// Resource tracking the currently selected entity for zoom-to-fit.
+/// When `None`, Z zooms to boundary.
+#[derive(Resource, Default)]
+pub(super) struct ZoomTarget(pub Option<Entity>);
 
 event!(CameraHomeEvent);
 event!(FocusInspectorEvent);
@@ -53,8 +56,8 @@ struct FocusSettings {
 impl Default for FocusSettings {
     fn default() -> Self {
         Self {
-            color:         Color::srgb(1.0, 0.0, 0.0),
-            line_width:    2.0,
+            color:         FOCUS_GIZMO_COLOR,
+            line_width:    FOCUS_GIZMO_LINE_WIDTH,
             sphere_radius: EDGE_MARKER_SPHERE_RADIUS,
         }
     }
