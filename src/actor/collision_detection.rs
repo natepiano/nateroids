@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use super::Health;
 use super::Teleporter;
 use super::actor_settings::CollisionDamage;
+use super::constants::INSTANT_DEATH_HEALTH;
 use super::spaceship::Spaceship;
 use super::teleport::TeleportStatus;
 use crate::schedule::InGameSet;
@@ -48,7 +49,7 @@ fn handle_collision_events(
                 info!(
                     "💀 Spaceship invincibility: killing nateroid that collided with just-teleported spaceship"
                 );
-                health.0 = -1.0; // Instant death
+                health.0 = INSTANT_DEATH_HEALTH;
             }
             // Spaceship still takes normal damage
             apply_collision_damage(
@@ -63,7 +64,7 @@ fn handle_collision_events(
                 info!(
                     "💀 Spaceship invincibility: killing nateroid that collided with just-teleported spaceship"
                 );
-                health.0 = -1.0; // Instant death
+                health.0 = INSTANT_DEATH_HEALTH;
             }
             // Spaceship still takes normal damage
             apply_collision_damage(

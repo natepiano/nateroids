@@ -18,7 +18,7 @@ use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
 use super::constants::LOCKED_AXES_2D;
 use super::constants::SPAWN_WINDOW;
-use crate::asset_loader;
+use crate::asset_loader::AssetsState;
 use crate::asset_loader::SceneAssets;
 use crate::playfield::ActorPortals;
 use crate::playfield::BoundaryVolume;
@@ -85,7 +85,7 @@ impl Plugin for NateroidPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<NateroidSpawnStats>()
             .add_systems(
-                OnEnter(asset_loader::AssetsState::Loaded),
+                OnEnter(AssetsState::Loaded),
                 precompute_death_materials.after(super::actor_settings::initialize_actors),
             )
             .add_observer(initialize_nateroid)

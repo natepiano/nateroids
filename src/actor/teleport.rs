@@ -7,6 +7,7 @@ use super::Health;
 use super::Nateroid;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
+use super::constants::INSTANT_DEATH_HEALTH;
 use super::nateroid::NateroidSpawnStats;
 use super::spaceship::Spaceship;
 use crate::despawn;
@@ -129,7 +130,7 @@ fn on_teleported(
                     !is_teleporting_nateroid
                 );
                 commands.entity(entity).insert(CollisionLayers::NONE);
-                health.0 = -1.0;
+                health.0 = INSTANT_DEATH_HEALTH;
             }
         }
     }
@@ -141,7 +142,7 @@ fn on_teleported(
     {
         info!("💀 Nateroid teleported onto spaceship - killing nateroid");
         commands.entity(event.entity).insert(CollisionLayers::NONE);
-        health.0 = -1.0;
+        health.0 = INSTANT_DEATH_HEALTH;
     }
 }
 
