@@ -10,6 +10,9 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_lagrange::OrbitCam;
 
 use super::actor_template::SpaceshipSettings;
+use super::constants::SPACESHIP_ACCELERATION;
+use super::constants::SPACESHIP_MAX_SPEED;
+use super::constants::SPACESHIP_ROTATION_SPEED;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
 use crate::input::InspectSpaceshipControlSwitch;
@@ -64,9 +67,9 @@ pub(super) struct SpaceshipControlSettings {
 impl Default for SpaceshipControlSettings {
     fn default() -> Self {
         Self {
-            acceleration:   60.,
-            rotation_speed: 5.0,
-            max_speed:      80.,
+            acceleration:   SPACESHIP_ACCELERATION,
+            rotation_speed: SPACESHIP_ROTATION_SPEED,
+            max_speed:      SPACESHIP_MAX_SPEED,
         }
     }
 }
@@ -152,13 +155,13 @@ fn spaceship_movement_controls(
         angular_velocity.z = target_angular_velocity;
 
         let max_speed = movement_settings.max_speed;
-        let accel = movement_settings.acceleration;
+        let acceleration = movement_settings.acceleration;
 
         if accelerate {
             apply_acceleration(
                 &mut linear_velocity,
                 spaceship_transform.forward().as_vec3(),
-                accel,
+                acceleration,
                 max_speed,
                 delta_seconds,
                 orientation_mode,

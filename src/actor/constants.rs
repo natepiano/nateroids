@@ -20,6 +20,11 @@ pub(super) const SPACESHIP_TILT_THRESHOLD: f32 = 0.087;
 /// Forward vector epsilon for safe normalization
 pub(super) const SPACESHIP_FORWARD_EPSILON: f32 = 0.0001;
 
+// Spaceship control constants
+pub(super) const SPACESHIP_ACCELERATION: f32 = 60.0;
+pub(super) const SPACESHIP_ROTATION_SPEED: f32 = 5.0;
+pub(super) const SPACESHIP_MAX_SPEED: f32 = 80.0;
+
 // Spaceship constants
 pub(super) const SPACESHIP_ANGULAR_DAMPING: f32 = 0.1;
 pub(super) const SPACESHIP_COLLIDER_MARGIN: f32 = 1.0;

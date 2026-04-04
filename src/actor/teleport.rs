@@ -27,9 +27,15 @@ impl Plugin for TeleportPlugin {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum FieldDensity {
+    Open,
+    Crowded,
+}
+
 #[derive(Resource, Default)]
 struct TeleportCollisionState {
-    last_field_crowded: Option<bool>,
+    last_field_density: Option<FieldDensity>,
 }
 
 #[derive(Reflect, Clone, Debug, Default, PartialEq, Eq)]
@@ -86,7 +92,11 @@ fn on_teleported(
     // Check if we should be aggressive based on spawn success rate
     // Lower spawn success rate = field is crowded = be more aggressive
     let spawn_success_rate = spawn_stats.success_rate();
-    let field_is_crowded = spawn_success_rate < nateroid_settings.density_culling_threshold;
+    let field_density = if spawn_success_rate < nateroid_settings.density_culling_threshold {
+        FieldDensity::Crowded
+    } else {
+        FieldDensity::Open
+    };
 
     // Kill overlapping asteroids (but not the teleporting entity)
     // Only kill nateroid-on-nateroid overlaps if field is crowded
@@ -94,16 +104,16 @@ fn on_teleported(
 
     // Debug logging - only log when crowded state changes
     if (!overlapping_asteroids.is_empty() || !overlapping_spaceship.is_empty())
-        && collision_state.last_field_crowded != Some(field_is_crowded)
+        && collision_state.last_field_density != Some(field_density)
     {
         info!(
-            "🔍 Teleport collision detected - attempts: {}, successes: {}, rate: {:.1}%, threshold: {:.1}%, crowded: {field_is_crowded}, is_nateroid: {is_teleporting_nateroid}",
+            "🔍 Teleport collision detected - attempts: {}, successes: {}, rate: {:.1}%, threshold: {:.1}%, density: {field_density:?}, is_nateroid: {is_teleporting_nateroid}",
             spawn_stats.attempts_count(),
             spawn_stats.successes_count(),
             spawn_success_rate * 100.0,
             nateroid_settings.density_culling_threshold * 100.0,
         );
-        collision_state.last_field_crowded = Some(field_is_crowded);
+        collision_state.last_field_density = Some(field_density);
     }
 
     for entity in overlapping_asteroids {
@@ -113,9 +123,9 @@ fn on_teleported(
 
         if let Ok(mut health) = nateroid_query.get_mut(entity) {
             // Always kill if spaceship teleported, or if field is crowded
-            if !is_teleporting_nateroid || field_is_crowded {
+            if !is_teleporting_nateroid || field_density == FieldDensity::Crowded {
                 info!(
-                    "💀 Killing overlapping nateroid - spaceship_teleported: {}, field_crowded: {field_is_crowded}",
+                    "💀 Killing overlapping nateroid - spaceship_teleported: {}, density: {field_density:?}",
                     !is_teleporting_nateroid
                 );
                 commands.entity(entity).insert(CollisionLayers::NONE);

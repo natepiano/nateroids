@@ -24,10 +24,16 @@ use crate::playfield::ActorPortals;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum SpawnResult {
+    Success,
+    Failure,
+}
+
 #[derive(Resource)]
 pub(super) struct NateroidSpawnStats {
-    /// Ring buffer tracking last N spawn attempts (true = success, false = failure)
-    attempts:          VecDeque<bool>,
+    /// Ring buffer tracking last N spawn attempts
+    attempts:          VecDeque<SpawnResult>,
     last_warning_time: f32,
 }
 
@@ -43,8 +49,8 @@ impl Default for NateroidSpawnStats {
 impl NateroidSpawnStats {
     const MAX_ATTEMPTS: usize = 50;
 
-    pub(super) fn record_attempt(&mut self, success: bool) {
-        self.attempts.push_back(success);
+    pub(super) fn record_attempt(&mut self, result: SpawnResult) {
+        self.attempts.push_back(result);
         if self.attempts.len() > Self::MAX_ATTEMPTS {
             self.attempts.pop_front();
         }
@@ -54,7 +60,11 @@ impl NateroidSpawnStats {
         if self.attempts.is_empty() {
             1.0 // No data - assume field is not crowded
         } else {
-            let successes = self.attempts.iter().filter(|&&success| success).count();
+            let successes = self
+                .attempts
+                .iter()
+                .filter(|&&result| result == SpawnResult::Success)
+                .count();
             successes.to_f32() / self.attempts.len().to_f32()
         }
     }
@@ -62,7 +72,10 @@ impl NateroidSpawnStats {
     pub(super) fn attempts_count(&self) -> usize { self.attempts.len() }
 
     pub(super) fn successes_count(&self) -> usize {
-        self.attempts.iter().filter(|&&success| success).count()
+        self.attempts
+            .iter()
+            .filter(|&&result| result == SpawnResult::Success)
+            .count()
     }
 }
 
@@ -142,7 +155,7 @@ fn spawn_nateroid(
     let current_time = time.elapsed_secs();
     let Some(transform) = initialize_transform(boundary_transform, &settings, &spatial_query)
     else {
-        spawn_stats.record_attempt(false);
+        spawn_stats.record_attempt(SpawnResult::Failure);
 
         // Check if we should output warning (once per second)
         if current_time - spawn_stats.last_warning_time >= 1.0 {
@@ -158,7 +171,7 @@ fn spawn_nateroid(
         return;
     };
 
-    spawn_stats.record_attempt(true);
+    spawn_stats.record_attempt(SpawnResult::Success);
 
     // Check if we should output stats (once per second, even on success)
     if current_time - spawn_stats.last_warning_time >= 1.0 {
@@ -354,8 +367,8 @@ fn initialize_transform(
                 Collider::sphere(nateroid_settings.actor_settings.collider_margin)
             },
             ColliderType::Cuboid => {
-                let m = nateroid_settings.actor_settings.collider_margin;
-                Collider::cuboid(m, m, m)
+                let margin = nateroid_settings.actor_settings.collider_margin;
+                Collider::cuboid(margin, margin, margin)
             },
         };
         let intersections =
@@ -497,13 +510,20 @@ fn random_vec3(range_x: Range<f32>, range_y: Range<f32>, range_z: Range<f32>) ->
     Vec3::new(x, y, z)
 }
 
-fn calculate_nateroid_velocity(linvel: f32, angvel: f32) -> (LinearVelocity, AngularVelocity) {
+fn calculate_nateroid_velocity(
+    linear_velocity: f32,
+    angular_velocity: f32,
+) -> (LinearVelocity, AngularVelocity) {
     (
-        LinearVelocity(random_vec3(-linvel..linvel, -linvel..linvel, 0.0..0.0)),
+        LinearVelocity(random_vec3(
+            -linear_velocity..linear_velocity,
+            -linear_velocity..linear_velocity,
+            0.0..0.0,
+        )),
         AngularVelocity(random_vec3(
-            -angvel..angvel,
-            -angvel..angvel,
-            -angvel..angvel,
+            -angular_velocity..angular_velocity,
+            -angular_velocity..angular_velocity,
+            -angular_velocity..angular_velocity,
         )),
     )
 }

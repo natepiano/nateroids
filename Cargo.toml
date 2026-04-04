@@ -20,13 +20,13 @@ pedantic = { level = "deny", priority = -1 }
 
 # Allow specific lints that conflict with Bevy patterns
 cargo_common_metadata   = "allow" # Binary crate, never published
-multiple_crate_versions = "allow"
-needless_pass_by_value  = "allow"
-option_if_let_else      = "allow"
+multiple_crate_versions = "allow" # Transitive deps — out of our control
+needless_pass_by_value  = "allow" # Bevy systems require owned params
+option_if_let_else      = "allow" # False positives with Bevy reflect macros
 redundant_pub_crate     = "allow" # pub(super) intentionally documents sibling-shared items
-too_many_arguments      = "allow"
-type_complexity         = "allow"
-wildcard_imports        = "allow"
+too_many_arguments      = "allow" # Bevy systems often require many params
+type_complexity         = "allow" # Bevy query types are inherently complex
+wildcard_imports        = "allow" # Bevy prelude convention
 
 [lints.rust]
 missing_docs = "deny"
