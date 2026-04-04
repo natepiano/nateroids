@@ -6,10 +6,10 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
+use super::RenderLayer;
 use super::constants::AMBIENT_LIGHT_BRIGHTNESS;
 use super::constants::DIRECTIONAL_LIGHT_ILLUMINANCE;
 use super::constants::ENVIRONMENT_MAP_INTENSITY;
-use super::RenderLayer;
 use crate::input::InspectLightsSwitch;
 use crate::orientation::CameraOrientation;
 use crate::switches;

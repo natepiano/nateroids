@@ -201,8 +201,8 @@ fn init_portals(
     let boundary_distance_shrink = boundary_size * portal_settings.distance_shrink;
 
     for (aabb, transform, velocity, teleporter, mut visual) in &mut actor_query {
-        let radius = actor::aabb_max_dimension(aabb).max(portal_settings.smallest)
-            * portal_settings.scalar;
+        let radius =
+            actor::aabb_max_dimension(aabb).max(portal_settings.smallest) * portal_settings.scalar;
 
         let portal_position = Position(transform.translation);
         let actor_direction = velocity.normalize_or_zero();
