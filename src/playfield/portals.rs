@@ -109,9 +109,9 @@ struct PortalSettings {
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
     pub movement_smoothing_factor: f32,
     #[inspector(min = 1., max = 10., display = NumberDisplay::Slider)]
-    pub portal_scalar:             f32,
+    pub scalar:                    f32,
     #[inspector(min = 1., max = 10., display = NumberDisplay::Slider)]
-    pub portal_smallest:           f32,
+    pub smallest:                  f32,
     #[inspector(min = 3, max = 256, display = NumberDisplay::Slider)]
     resolution:                    u32,
 }
@@ -129,8 +129,8 @@ impl Default for PortalSettings {
             line_width:                PORTAL_LINE_WIDTH,
             minimum_radius:            PORTAL_MINIMUM_RADIUS,
             movement_smoothing_factor: PORTAL_MOVEMENT_SMOOTHING_FACTOR,
-            portal_scalar:             PORTAL_SCALAR,
-            portal_smallest:           PORTAL_SMALLEST,
+            scalar:                    PORTAL_SCALAR,
+            smallest:                  PORTAL_SMALLEST,
             resolution:                PORTAL_RESOLUTION,
         }
     }
@@ -177,7 +177,7 @@ impl Default for Portal {
 }
 
 fn init_portals(
-    mut q_actor: Query<(
+    mut actor_query: Query<(
         &Aabb,
         &Transform,
         &LinearVelocity,
@@ -200,9 +200,9 @@ fn init_portals(
     let boundary_distance_approach = boundary_size * portal_settings.distance_approach;
     let boundary_distance_shrink = boundary_size * portal_settings.distance_shrink;
 
-    for (aabb, transform, velocity, teleporter, mut visual) in &mut q_actor {
-        let radius = actor::aabb_max_dimension(aabb).max(portal_settings.portal_smallest)
-            * portal_settings.portal_scalar;
+    for (aabb, transform, velocity, teleporter, mut visual) in &mut actor_query {
+        let radius = actor::aabb_max_dimension(aabb).max(portal_settings.smallest)
+            * portal_settings.scalar;
 
         let portal_position = Position(transform.translation);
         let actor_direction = velocity.normalize_or_zero();
@@ -407,9 +407,9 @@ fn smooth_circle_position(
 fn update_approaching_portals(
     time: Res<Time>,
     portal_settings: Res<PortalSettings>,
-    mut q_portals: Query<&mut ActorPortals>,
+    mut portals_query: Query<&mut ActorPortals>,
 ) {
-    for mut portal in &mut q_portals {
+    for mut portal in &mut portals_query {
         if let Some(ref mut approaching) = portal.approaching {
             let radius = get_approaching_radius(approaching);
 
@@ -443,14 +443,14 @@ fn draw_approaching_portals(
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     portal_settings: Res<PortalSettings>,
     orientation: Res<CameraOrientation>,
-    q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
+    portals_query: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
 ) {
     let Ok(boundary_transform) = boundary_volume_query.single() else {
         return;
     };
 
-    for (portal, deaderoid) in q_portals.iter() {
+    for (portal, deaderoid) in portals_query.iter() {
         if let Some(ref approaching) = portal.approaching {
             Boundary::draw_portal(
                 &mut gizmos,
@@ -489,9 +489,9 @@ fn get_approaching_radius(approaching: &Portal) -> f32 {
 fn update_emerging_portals(
     time: Res<Time>,
     portal_settings: Res<PortalSettings>,
-    mut q_portals: Query<&mut ActorPortals>,
+    mut portals_query: Query<&mut ActorPortals>,
 ) {
-    for mut portal in &mut q_portals {
+    for mut portal in &mut portals_query {
         if let Some(ref mut emerging) = portal.emerging
             && let Some(emerging_start) = emerging.fade_out_started
         {
@@ -524,14 +524,14 @@ fn draw_emerging_portals(
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     portal_settings: Res<PortalSettings>,
     orientation: Res<CameraOrientation>,
-    q_portals: Query<(&ActorPortals, Option<&Deaderoid>)>,
+    portals_query: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
 ) {
     let Ok(boundary_transform) = boundary_volume_query.single() else {
         return;
     };
 
-    for (portal, deaderoid) in q_portals.iter() {
+    for (portal, deaderoid) in portals_query.iter() {
         if let Some(ref emerging) = portal.emerging {
             Boundary::draw_portal(
                 &mut gizmos,

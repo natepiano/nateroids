@@ -1202,9 +1202,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_kana"
-version = "0.0.2"
+version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "883d381be67b1cdb1cb8378e3d34783fee92433a956b9befd134599293138aa9"
+checksum = "30e3ee689bf79e2740e4edcee886c7296b756ae748c7a9213cf787e6b4f941c0"
 dependencies = [
  "bevy",
  "bevy_enhanced_input",
@@ -1913,12 +1913,13 @@ dependencies = [
 
 [[package]]
 name = "bevy_window_manager"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa41e5a75e1e7fa9d41e3abda106266024dd677b551d91730702152b274ce7df"
+checksum = "dc5f08fc43fcbb695a02f4ab85189402ee1f87faff7ef0db2fe7737c64ac4b4d"
 dependencies = [
  "bevy",
  "bevy_diagnostic",
+ "bevy_kana",
  "dirs",
  "objc2 0.6.4",
  "objc2-app-kit 0.3.2",

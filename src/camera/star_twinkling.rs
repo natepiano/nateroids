@@ -66,7 +66,7 @@ fn start_twinkling(
 
     let indices = get_random_indices(
         star_settings.twinkle_choose_multiple_count,
-        star_settings.star_count,
+        star_settings.count,
     );
 
     //todo: #bevy_question - I've tried a bunch of different implementations

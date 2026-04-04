@@ -348,6 +348,6 @@ fn animate_dying_nateroids(
         }
 
         // Note: `Velocity` is constant (set once in `despawn_dead_entities`)
-        // Despawn happens in teleport system when Deaderoid entities teleport
+        // Despawn happens in teleport system when `Deaderoid` entities teleport
     }
 }

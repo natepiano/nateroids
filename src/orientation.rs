@@ -36,9 +36,16 @@ pub enum OrientationType {
     BehindSpaceship3D,
 }
 
+/// Whether the orientation permits full 3D movement.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
+pub enum DimensionMode {
+    TwoD,
+    ThreeD,
+}
+
 #[derive(Debug, Clone, Reflect)]
 pub struct OrientationSettings {
-    pub allow_3d:         bool,
+    pub dimension_mode:   DimensionMode,
     pub axis_mundi:       Vec3,
     pub axis_orbis:       Vec3,
     pub axis_profundus:   Vec3,
@@ -56,7 +63,7 @@ pub struct CameraOrientation {
 
 impl CameraOrientation {
     const DEFAULT_CONFIG: OrientationSettings = OrientationSettings {
-        allow_3d:         false,
+        dimension_mode:   DimensionMode::TwoD,
         axis_mundi:       Vec3::ZERO,
         axis_orbis:       Vec3::ZERO,
         axis_profundus:   Vec3::ZERO,
@@ -81,7 +88,7 @@ impl CameraOrientation {
                 ..Self::DEFAULT_CONFIG
             },
             OrientationType::BehindSpaceship3D => OrientationSettings {
-                allow_3d: true,
+                dimension_mode: DimensionMode::ThreeD,
                 axis_mundi: Vec3::Z,
                 axis_orbis: Vec3::X,
                 axis_profundus: -Vec3::Y,

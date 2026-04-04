@@ -6,10 +6,10 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
-use super::RenderLayer;
 use super::constants::AMBIENT_LIGHT_BRIGHTNESS;
 use super::constants::DIRECTIONAL_LIGHT_ILLUMINANCE;
 use super::constants::ENVIRONMENT_MAP_INTENSITY;
+use super::RenderLayer;
 use crate::input::InspectLightsSwitch;
 use crate::orientation::CameraOrientation;
 use crate::switches;
@@ -38,26 +38,40 @@ impl Plugin for DirectionalLightsPlugin {
     }
 }
 
+/// Whether a directional light should be active.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
+pub(super) enum LightSwitch {
+    On,
+    Off,
+}
+
+/// Whether shadow casting is active for a directional light.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
+pub(super) enum ShadowSwitch {
+    On,
+    Off,
+}
+
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub(super) struct DirectionalLightSettings {
-    pub color:           Color,
-    pub enabled:         bool,
+    pub color:       Color,
+    pub enabled:     LightSwitch,
     #[inspector(min = 0.0, max = 10_000.0, display = NumberDisplay::Slider)]
-    pub illuminance:     f32,
-    pub shadows_enabled: bool,
+    pub illuminance: f32,
+    pub shadows:     ShadowSwitch,
 }
 
 impl Default for DirectionalLightSettings {
     fn default() -> Self {
         Self {
-            color:           Color::from(tailwind::GRAY_50),
-            enabled:         false,
-            illuminance:     DIRECTIONAL_LIGHT_ILLUMINANCE,
+            color:       Color::from(tailwind::GRAY_50),
+            enabled:     LightSwitch::Off,
+            illuminance: DIRECTIONAL_LIGHT_ILLUMINANCE,
             // CRITICAL: Must start disabled. Enabling shadows at startup before the scene
             // is fully initialized breaks rendering (causes stars to disappear). Shadows
             // can be safely enabled at runtime via inspector or code.
-            shadows_enabled: false,
+            shadows:     ShadowSwitch::Off,
         }
     }
 }
@@ -85,11 +99,11 @@ impl Default for LightSettings {
             ambient_light_color:       Color::WHITE,
             environment_map_intensity: ENVIRONMENT_MAP_INTENSITY,
             front:                     DirectionalLightSettings {
-                enabled: true,
+                enabled: LightSwitch::On,
                 ..Default::default()
             },
             back:                      DirectionalLightSettings {
-                enabled: true,
+                enabled: LightSwitch::On,
                 ..Default::default()
             },
             top:                       DirectionalLightSettings::default(),
@@ -184,7 +198,7 @@ fn spawn_directional_light(
         .spawn(DirectionalLight {
             color: settings.color,
             illuminance: settings.illuminance,
-            shadows_enabled: settings.shadows_enabled,
+            shadows_enabled: matches!(settings.shadows, ShadowSwitch::On),
             shadow_depth_bias: 0.02,
             shadow_normal_bias: 0.6,
             ..default()
@@ -241,21 +255,21 @@ fn manage_lighting(
         let light_rotation = position.get_rotation(&camera_orientation);
 
         match (existing_light, settings.enabled) {
-            (Some((_, mut light, _)), true) => {
+            (Some((_, mut light, _)), LightSwitch::On) => {
                 // Update existing light
                 light.color = settings.color;
                 light.illuminance = settings.illuminance;
-                light.shadows_enabled = settings.shadows_enabled;
+                light.shadows_enabled = matches!(settings.shadows, ShadowSwitch::On);
             },
-            (Some((entity, _, _)), false) => {
+            (Some((entity, _, _)), LightSwitch::Off) => {
                 // Remove disabled light
                 commands.entity(entity).despawn();
             },
-            (None, true) => {
+            (None, LightSwitch::On) => {
                 // Spawn new light
                 spawn_directional_light(&mut commands, settings, *position, &light_rotation);
             },
-            (None, false) => {}, // Do nothing for disabled lights that don't exist
+            (None, LightSwitch::Off) => {}, // Do nothing for disabled lights that don't exist
         }
     }
 }

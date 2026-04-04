@@ -32,10 +32,10 @@ pub(super) fn spawn_star_camera(mut commands: Commands, camera_settings: Res<Cam
 
 fn update_bloom_settings(
     camera_settings: Res<CameraSettings>,
-    mut q_current_settings: Query<&mut Bloom, With<StarCamera>>,
+    mut bloom_query: Query<&mut Bloom, With<StarCamera>>,
 ) {
     if camera_settings.is_changed()
-        && let Ok(mut old_bloom_settings) = q_current_settings.single_mut()
+        && let Ok(mut old_bloom_settings) = bloom_query.single_mut()
     {
         *old_bloom_settings = get_bloom_settings(camera_settings);
     }

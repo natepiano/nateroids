@@ -102,7 +102,7 @@ type ShipTurnRightStateQuery<'w, 's> = Single<
 >;
 
 fn spaceship_movement_controls(
-    mut q_spaceship: Query<
+    mut spaceship_query: Query<
         (&mut Transform, &mut LinearVelocity, &mut AngularVelocity),
         With<Spaceship>,
     >,
@@ -118,7 +118,7 @@ fn spaceship_movement_controls(
     // we can use this because there is only exactly one spaceship - so we're not
     // looping over the query
     if let Ok((mut spaceship_transform, mut linear_velocity, mut angular_velocity)) =
-        q_spaceship.single_mut()
+        spaceship_query.single_mut()
     {
         // dynamically update from inspector while game is running to change size
         spaceship_transform.scale = spaceship_settings.transform.scale;

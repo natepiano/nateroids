@@ -95,7 +95,7 @@ fn despawn_stars(
         commands.entity(entity).despawn();
     }
     // Reset rotation angle so new stars start from 0 (prevents jump on reset)
-    // This was a nasty bug - we couldn't tell why the Splash animation would land smoothly
+    // This was a nasty bug - we couldn't tell why the `Splash` animation would land smoothly
     // but when we manally re-invoked this, it looked like the spaceship jumped with
     // respect to the star background at the end - thinking this was a camera movement but
     // but it was actually that we needed to reset the rotation angle so we wouldn't be using the
@@ -113,15 +113,15 @@ fn spawn_stars(
 ) {
     debug!("spawning stars");
     let longest_diagonal = boundary_settings.longest_diagonal();
-    let inner_sphere_radius = longest_diagonal + star_settings.star_field_inner_diameter;
-    let outer_sphere_radius = inner_sphere_radius + star_settings.star_field_outer_diameter;
+    let inner_sphere_radius = longest_diagonal + star_settings.field_inner_diameter;
+    let outer_sphere_radius = inner_sphere_radius + star_settings.field_outer_diameter;
 
     let mesh = meshes.add(Sphere::new(1.));
     let mut rng = rand::rng();
 
-    for _ in 0..star_settings.star_count {
+    for _ in 0..star_settings.count {
         let position = get_star_position(inner_sphere_radius, outer_sphere_radius, &mut rng);
-        let radius = rng.random_range(star_settings.star_radius_min..star_settings.star_radius_max);
+        let radius = rng.random_range(star_settings.radius_min..star_settings.radius_max);
         let emissive = get_star_color(&star_settings, &mut rng);
 
         let material = materials.add(StandardMaterial {
@@ -170,11 +170,11 @@ fn get_star_position(
 }
 
 fn get_star_color(settings: &StarSettings, rng: &mut impl Rng) -> Vec4 {
-    let end = settings.star_color.end;
-    let color_start = settings.star_color.start;
-    let white_start = end * settings.star_color_white_start_ratio;
+    let end = settings.color.end;
+    let color_start = settings.color.start;
+    let white_start = end * settings.color_white_start_ratio;
 
-    let start = if rng.random::<f32>() < settings.star_color_white_probability {
+    let start = if rng.random::<f32>() < settings.color_white_probability {
         white_start
     } else {
         color_start

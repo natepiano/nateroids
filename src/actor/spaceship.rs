@@ -24,11 +24,11 @@ pub(super) struct SpaceshipPlugin;
 impl Plugin for SpaceshipPlugin {
     // make sure this is done after `asset_loader` has run
     fn build(&self, app: &mut App) {
-        // Spawn spaceship when entering `PauseState::Playing` (game start or unpause)
+        // Spawn `Spaceship` when entering `PauseState::Playing` (game start or unpause)
         app.add_observer(initialize_spaceship)
             .add_observer(spawn_after_splash_text_removed)
             .add_systems(OnEnter(PauseState::Playing), spawn_spaceship_if_needed)
-            // check if spaceship is destroyed — this will change the `GameState`
+            // check if `Spaceship` is destroyed — this will change the `GameState`
             .add_systems(Update, spaceship_destroyed.in_set(InGameSet::EntityUpdates))
             .add_systems(
                 FixedUpdate,

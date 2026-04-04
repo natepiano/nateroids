@@ -128,7 +128,7 @@ fn run_splash(
     mut skip_state: ResMut<SplashSkipState>,
     key_input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
-    mut q_text: Query<(Entity, &mut TextFont), With<SplashText>>,
+    mut text_query: Query<(Entity, &mut TextFont), With<SplashText>>,
     splash_ui_query: Query<Entity, Or<(With<SplashText>, With<SplashSkipHint>)>>,
     camera_entity: Single<Entity, With<OrbitCam>>,
     camera_query: Query<
@@ -164,7 +164,7 @@ fn run_splash(
     splash_text_timer.timer.tick(time.delta());
 
     // Animate text for 2 seconds, then despawn it (observer will spawn objects)
-    if let Ok((text_entity, mut text)) = q_text.single_mut() {
+    if let Ok((text_entity, mut text)) = text_query.single_mut() {
         if splash_text_timer.timer.just_finished() {
             // Text timer done - remove the text (triggers On<Remove, SplashText> observer)
             commands.entity(text_entity).despawn();
