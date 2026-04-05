@@ -4,9 +4,7 @@
 use bevy::color::Color;
 use bevy::math::UVec3;
 
-// =============================================================================
-// Boundary Configuration
-// =============================================================================
+// Boundary configuration
 
 /// Default cell count for the boundary grid (X, Y, Z cells)
 pub(super) const BOUNDARY_CELL_COUNT: UVec3 = UVec3::new(3, 2, 1);
@@ -29,9 +27,7 @@ pub(super) const BOUNDARY_OUTER_ALPHA: f32 = 1.0;
 /// Duration in seconds for the grid flash animation when cell count changes
 pub(super) const GRID_FLASH_DURATION: f32 = 2.0;
 
-// =============================================================================
-// Boundary Position Snapping
-// =============================================================================
+// Boundary position snapping
 
 /// Epsilon for boundary position snapping to prevent false-positive overextension
 pub(super) const BOUNDARY_SNAP_EPSILON: f32 = 0.01;
@@ -42,9 +38,7 @@ pub(super) const BOUNDARY_OVEREXTENSION_EPSILON: f32 = BOUNDARY_SNAP_EPSILON * 2
 /// Epsilon tolerance for normal comparison in boundary position detection
 pub(super) const BOUNDARY_NORMAL_EPSILON: f32 = 0.001;
 
-// =============================================================================
-// Portal Colors
-// =============================================================================
+// Portal colors
 
 /// Color for `Deaderoid` approaching portals (Red)
 pub(super) const DEADEROID_APPROACHING_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
@@ -58,9 +52,7 @@ pub(super) const CORNER_COLOR_TOP_BOTTOM_XZ: Color = Color::srgb(0.0, 1.0, 0.0);
 /// Color for Front/Back face corners on XY plane (Yellow)
 pub(super) const CORNER_COLOR_FRONT_BACK_XY: Color = Color::srgb(1.0, 1.0, 0.0);
 
-// =============================================================================
-// Portal Configuration
-// =============================================================================
+// Portal configuration
 
 /// Threshold for considering normals "similar" during portal movement smoothing
 pub(super) const PORTAL_DIRECTION_CHANGE_FACTOR: f32 = 0.75;

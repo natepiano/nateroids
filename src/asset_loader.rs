@@ -1,5 +1,5 @@
 use bevy::asset::LoadState;
-/// let's use just load assets once, amigos
+// Load assets once at startup
 use bevy::prelude::*;
 
 pub struct AssetLoaderPlugin;
@@ -39,7 +39,7 @@ pub struct SceneAssets {
     pub env_specular_map:        Handle<Image>,
 }
 
-pub fn load_assets(
+fn load_assets(
     //    mut commands: Commands,
     mut scene_assets: ResMut<SceneAssets>,
     asset_server: Res<AssetServer>,
@@ -116,7 +116,7 @@ fn create_nateroid_material(
     scene_assets.nateroid_icing_material = Some(icing_material);
 }
 
-pub fn check_asset_loading(
+fn check_asset_loading(
     mut next_state: ResMut<NextState<AssetsState>>,
     asset_server: Res<AssetServer>,
     scene_assets: Res<SceneAssets>,

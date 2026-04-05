@@ -14,16 +14,15 @@ use crate::camera::CameraHomeEvent;
 use crate::camera::CameraSettings;
 use crate::camera::RenderLayer;
 use crate::camera::ZOOM_MARGIN;
+use crate::constants::SPLASH_TEXT_GROWTH_RATE;
+use crate::constants::SPLASH_TEXT_TIME;
+use crate::constants::SPLASH_ZOOM_DURATION_MS;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
 use crate::playfield::GridFlash;
 use crate::state::GameState;
 
 pub struct SplashPlugin;
-
-const SPLASH_TEXT_TIME: f32 = 2.;
-const SPLASH_TEXT_GROWTH_RATE: f32 = 1.2;
-const SPLASH_ZOOM_DURATION_MS: u64 = 1000;
 
 #[derive(Component)]
 pub struct SplashText;

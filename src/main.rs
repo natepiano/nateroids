@@ -13,6 +13,7 @@ mod switches;
 mod actor;
 mod asset_loader;
 mod camera;
+mod constants;
 mod despawn;
 mod orientation;
 mod physics;

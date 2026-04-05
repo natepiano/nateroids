@@ -13,6 +13,7 @@ use crate::actor::MissilePosition;
 use crate::actor::Nateroid;
 use crate::actor::NateroidDeathMaterials;
 use crate::actor::NateroidSettings;
+use crate::constants::DEATH_VELOCITY_EPSILON;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
 use crate::splash::SplashSkipHint;
@@ -58,7 +59,6 @@ fn calculate_death_velocity(
     death_duration: f32,
     death_corner: DeathCorner,
 ) -> Velocity {
-    const EPSILON: f32 = 0.001;
     let position = *position;
     let current_velocity = *current_velocity;
     let half_size = boundary_transform.scale / 2.0;
@@ -151,7 +151,7 @@ fn calculate_death_velocity(
             // Collect all corners within epsilon of max (handles ties)
             let best_corners: Vec<Vec3> = corner_scores
                 .iter()
-                .filter(|(_, dot)| (dot - max_dot).abs() < EPSILON)
+                .filter(|(_, dot)| (dot - max_dot).abs() < DEATH_VELOCITY_EPSILON)
                 .map(|(corner, _)| *corner)
                 .collect();
 

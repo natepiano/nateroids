@@ -101,7 +101,7 @@ fn initialize_spaceship(
     );
 }
 
-// check if spaceship exists or not — query via `single()`
+// Check if `Spaceship` exists or not — query via `single()`
 // there should only be one — if it returns an error then the
 // spaceship doesn't exist
 fn spaceship_destroyed(

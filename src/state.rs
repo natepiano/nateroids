@@ -50,9 +50,9 @@ pub enum GameState {
     // component on an unrelated entity could cause the stars to flash and disappear. I don't
     // understand the timing/sequencing that causes this it's as if it's some kind of conflict
     // between running `GameOver` (which was our prior default) and `Splash` but in any case,
-    // this seems to work for now so we'll go with it. Something about archetype restructing
-    // interfering maybe. We proved that when we switched to spawning a Resource instead of a
-    // component, the bug didn't surface. See: the camera/stars.rs system set scheduling.
+    // this seems to work for now so we'll go with it. Something about archetype restructuring
+    // interfering maybe. We proved that when we switched to spawning a `Resource` instead of a
+    // component, the bug didn't surface. See: the `camera/stars.rs` system set scheduling.
     #[default]
     Launch,
     Splash,

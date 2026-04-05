@@ -7,14 +7,13 @@ use bevy_kana::ToF32;
 
 use crate::actor::Nateroid;
 use crate::camera::RenderLayer;
+use crate::constants::MIN_NATEROIDS_FOR_MONITORING;
+use crate::constants::STRESS_ENTER_FPS_THRESHOLD;
+use crate::constants::STRESS_EXIT_FPS_THRESHOLD;
+use crate::constants::STRESS_VELOCITY_THRESHOLD;
 use crate::input::PhysicsAabbSwitch;
 use crate::switches::Switch;
 use crate::switches::Switches;
-
-const MIN_NATEROIDS_FOR_MONITORING: usize = 50;
-const STRESS_EXIT_FPS_THRESHOLD: f64 = 45.0;
-const STRESS_ENTER_FPS_THRESHOLD: f64 = 35.0;
-const STRESS_VELOCITY_THRESHOLD: f32 = 200.0;
 
 event!(PhysicsAabbEvent);
 
