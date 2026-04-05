@@ -22,6 +22,9 @@ pub(super) const CAMERA_SPLASH_START_PITCH: f32 = std::f32::consts::FRAC_PI_2;
 pub(super) const CAMERA_SPLASH_START_RADIUS: f32 = 3000.0;
 pub(super) const CAMERA_SPLASH_START_YAW: f32 = -std::f32::consts::PI;
 
+// Camera trackpad
+pub(super) const CAMERA_TRACKPAD_SENSITIVITY: f32 = 0.8;
+
 // Camera zoom
 /// Minimum zoom distance (allows zoom-to-fit to get very close)
 pub(super) const CAMERA_ZOOM_LOWER_LIMIT: f32 = 0.001;
@@ -45,6 +48,10 @@ pub(super) const HOME_ANIMATION_DURATION_MS: u64 = 1200;
 
 // Lighting
 pub(super) const AMBIENT_LIGHT_BRIGHTNESS: f32 = 100.0;
+pub(super) const CASCADE_SHADOW_FIRST_FAR_BOUND: f32 = 50.0;
+pub(super) const CASCADE_SHADOW_MAX_DISTANCE: f32 = 1500.0;
+pub(super) const CASCADE_SHADOW_NUM_CASCADES: usize = 4;
+pub(super) const CASCADE_SHADOW_OVERLAP_PROPORTION: f32 = 0.3;
 pub(super) const DIRECTIONAL_LIGHT_ILLUMINANCE: f32 = 1700.0;
 pub(super) const ENVIRONMENT_MAP_INTENSITY: f32 = 25_000.0;
 

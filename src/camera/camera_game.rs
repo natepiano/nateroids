@@ -7,6 +7,7 @@ use bevy_liminal::OutlineCamera;
 use super::RenderLayer;
 use super::camera_star::StarCamera;
 use super::components::RequiredCameraComponents;
+use super::constants::CAMERA_TRACKPAD_SENSITIVITY;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::lights::LightSettings;
@@ -43,7 +44,7 @@ pub(super) fn spawn_game_camera(
                     modifier_pan:  Some(KeyCode::ShiftLeft),
                     modifier_zoom: Some(KeyCode::ControlLeft),
                 },
-                trackpad_sensitivity: 0.8,
+                trackpad_sensitivity: CAMERA_TRACKPAD_SENSITIVITY,
                 trackpad_pinch_to_zoom_enabled: true,
                 ..default()
             },

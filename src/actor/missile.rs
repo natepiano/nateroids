@@ -37,8 +37,8 @@ impl Plugin for MissilePlugin {
     }
 }
 
-// todo: #rustquestion - how can i make it so that new has to be used and
-// DrawDirection isn't constructed directly - i still need the fields visible
+// todo: #rustquestion - how can i make it so that `new` has to be used and
+// `DrawDirection` isn't constructed directly - i still need the fields visible
 #[derive(Component, Reflect, Copy, Clone, Debug)]
 #[reflect(Component)]
 #[require(

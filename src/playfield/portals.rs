@@ -28,6 +28,7 @@ use super::constants::PORTAL_PHYSICS_BURST_MULTIPLIER;
 use super::constants::PORTAL_RESOLUTION;
 use super::constants::PORTAL_SCALAR;
 use super::constants::PORTAL_SMALLEST;
+use super::types::PortalActorKind;
 use crate::actor;
 use crate::actor::Deaderoid;
 use crate::actor::TeleportStatus;
@@ -266,30 +267,30 @@ fn handle_emerging_visual(
     visual: &mut Mut<ActorPortals>,
     boundary_transform: &Transform,
 ) {
-    if teleporter.status == TeleportStatus::JustTeleported {
-        if let Some(normal) = teleporter.last_teleported_normal {
-            // establish the existence of an emerging
-            if let Some(face) = BoundaryFace::from_normal(normal)
-                && let Some(teleported_position) = teleporter.last_teleported_position
-            {
-                // If actor burst way past boundary, don't create emerging portal
-                if is_physics_burst(teleported_position, boundary_transform) {
-                    visual.emerging = None;
-                    return;
-                }
-
-                // Snap to boundary face and recalculate face to prevent corner glitches
-                let (snapped_position, final_face) =
-                    snap_and_get_face(teleported_position, normal, boundary_transform);
-
-                visual.emerging = Some(Portal {
-                    actor_distance_to_wall: 0.0,
-                    face: final_face.unwrap_or(face),
-                    position: snapped_position,
-                    fade_out_started: Some(time.elapsed_secs()),
-                    ..portal
-                });
+    if teleporter.status == TeleportStatus::JustTeleported
+        && let Some(normal) = teleporter.last_teleported_normal
+    {
+        // establish the existence of an emerging
+        if let Some(face) = BoundaryFace::from_normal(normal)
+            && let Some(teleported_position) = teleporter.last_teleported_position
+        {
+            // If actor burst way past boundary, don't create emerging portal
+            if is_physics_burst(teleported_position, boundary_transform) {
+                visual.emerging = None;
+                return;
             }
+
+            // Snap to boundary face and recalculate face to prevent corner glitches
+            let (snapped_position, final_face) =
+                snap_and_get_face(teleported_position, normal, boundary_transform);
+
+            visual.emerging = Some(Portal {
+                actor_distance_to_wall: 0.0,
+                face: final_face.unwrap_or(face),
+                position: snapped_position,
+                fade_out_started: Some(time.elapsed_secs()),
+                ..portal
+            });
         }
     }
     // once the radius gets small enough we can eliminate it
@@ -458,7 +459,7 @@ fn draw_approaching_portals(
                 portal_settings.color_approaching,
                 portal_settings.resolution,
                 &orientation,
-                deaderoid.is_some(),
+                deaderoid.map_or(PortalActorKind::Nateroid, |_| PortalActorKind::Deaderoid),
                 boundary_transform,
             );
         }
@@ -531,7 +532,7 @@ fn draw_emerging_portals(
         return;
     };
 
-    for (portal, deaderoid) in portals_query.iter() {
+    for (portal, actor_kind) in portals_query.iter() {
         if let Some(ref emerging) = portal.emerging {
             Boundary::draw_portal(
                 &mut gizmos,
@@ -539,7 +540,7 @@ fn draw_emerging_portals(
                 portal_settings.color_emerging,
                 portal_settings.resolution,
                 &orientation,
-                deaderoid.is_some(),
+                actor_kind.map_or(PortalActorKind::Nateroid, |_| PortalActorKind::Deaderoid),
                 boundary_transform,
             );
         }

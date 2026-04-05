@@ -3,6 +3,13 @@ use bevy::prelude::*;
 
 use super::boundary_face::BoundaryFace;
 
+/// Distinguishes normal actors from deaderoids in portal rendering
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum PortalActorKind {
+    Nateroid,
+    Deaderoid,
+}
+
 /// Describes the geometric configuration of a portal relative to boundary faces
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum PortalGeometry {

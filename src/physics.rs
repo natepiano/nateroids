@@ -8,6 +8,7 @@ use bevy_kana::ToF32;
 use crate::actor::Nateroid;
 use crate::camera::RenderLayer;
 use crate::constants::MIN_NATEROIDS_FOR_MONITORING;
+use crate::constants::PHYSICS_SUBSTEP_COUNT;
 use crate::constants::STRESS_ENTER_FPS_THRESHOLD;
 use crate::constants::STRESS_EXIT_FPS_THRESHOLD;
 use crate::constants::STRESS_VELOCITY_THRESHOLD;
@@ -23,7 +24,7 @@ impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(avian3d::PhysicsPlugins::default())
             .add_plugins(PhysicsDebugPlugin)
-            .insert_resource(SubstepCount(15))
+            .insert_resource(SubstepCount(PHYSICS_SUBSTEP_COUNT))
             .init_resource::<PhysicsMonitorState>()
             .add_systems(Startup, init_physics_debug_aabb)
             .add_systems(

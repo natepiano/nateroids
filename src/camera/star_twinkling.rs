@@ -70,7 +70,7 @@ fn start_twinkling(
     );
 
     //todo: #bevy_question - I've tried a bunch of different implementations
-    //                      but it all comes down to calling iter() when there are
+    //                      but it all comes down to calling `iter()` when there are
     //                      thousands of entities - it slows things down enough to
     // affect the frame                      rate in dev - more than half a ms
     // for iterating 3000 entities                      that seems bonkers to

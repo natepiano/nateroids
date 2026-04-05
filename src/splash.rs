@@ -14,6 +14,11 @@ use crate::camera::CameraHomeEvent;
 use crate::camera::CameraSettings;
 use crate::camera::RenderLayer;
 use crate::camera::ZOOM_MARGIN;
+use crate::constants::SPLASH_FAST_SPIN_COUNT;
+use crate::constants::SPLASH_FAST_SPIN_DURATION_MS;
+use crate::constants::SPLASH_LAND_HOME_DURATION_MS;
+use crate::constants::SPLASH_SLOWDOWN_DURATIONS_MS;
+use crate::constants::SPLASH_SPIN_DURATIONS_MS;
 use crate::constants::SPLASH_TEXT_GROWTH_RATE;
 use crate::constants::SPLASH_TEXT_TIME;
 use crate::constants::SPLASH_ZOOM_DURATION_MS;
@@ -262,64 +267,43 @@ fn create_spin_sequence(radius: f32, durations: &[u64]) -> Vec<CameraMove> {
 
 /// Creates the spin animation sequence using the orbit radius from zoom-to-fit.
 fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
-    let mut moves = vec![
-        // start spin 1 (already at radius from zoom-to-fit, just orbit)
-        CameraMove::ToPosition {
-            translation: Vec3::new(radius, 0.0, 0.0),
-            focus:       Vec3::ZERO,
-            duration:    Duration::from_millis(500),
-            easing:      EaseFunction::Linear,
-        },
-        CameraMove::ToPosition {
-            translation: Vec3::new(0.0, 0.0, -radius),
-            focus:       Vec3::ZERO,
-            duration:    Duration::from_millis(400),
-            easing:      EaseFunction::Linear,
-        },
-        CameraMove::ToPosition {
-            translation: Vec3::new(-radius, 0.0, 0.0),
-            focus:       Vec3::ZERO,
-            duration:    Duration::from_millis(300),
-            easing:      EaseFunction::Linear,
-        },
-        // start spin 2
-        CameraMove::ToPosition {
-            translation: Vec3::new(0.0, 0.0, radius),
-            focus:       Vec3::ZERO,
-            duration:    Duration::from_millis(200),
-            easing:      EaseFunction::Linear,
-        },
-        CameraMove::ToPosition {
-            translation: Vec3::new(radius, 0.0, 0.0),
-            focus:       Vec3::ZERO,
-            duration:    Duration::from_millis(100),
-            easing:      EaseFunction::Linear,
-        },
-        CameraMove::ToPosition {
-            translation: Vec3::new(0.0, 0.0, -radius),
-            focus:       Vec3::ZERO,
-            duration:    Duration::from_millis(50),
-            easing:      EaseFunction::Linear,
-        },
-        CameraMove::ToPosition {
-            translation: Vec3::new(-radius, 0.0, 0.0),
-            focus:       Vec3::ZERO,
-            duration:    Duration::from_millis(25),
-            easing:      EaseFunction::Linear,
-        },
+    // Orbit positions for one quarter-turn cycle
+    let quarter_positions = [
+        Vec3::new(radius, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -radius),
+        Vec3::new(-radius, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, radius),
     ];
 
-    // Add fast spins 3, 4, 5 (all with 25ms duration)
-    (0..5).for_each(|_| moves.extend(create_spin_sequence(radius, &[25])));
+    // Initial accelerating spins (spins 1-2) with decreasing durations per quarter
+    let mut moves: Vec<CameraMove> = quarter_positions
+        .iter()
+        .cycle()
+        .zip(SPLASH_SPIN_DURATIONS_MS.iter())
+        .map(|(&translation, &ms)| CameraMove::ToPosition {
+            translation,
+            focus: Vec3::ZERO,
+            duration: Duration::from_millis(ms),
+            easing: EaseFunction::Linear,
+        })
+        .collect();
 
-    // Add spin 6 with increasing durations (slowdown effect)
-    moves.extend(create_spin_sequence(radius, &[50, 100, 150, 200]));
+    // Add fast spins (all with fast spin duration)
+    (0..SPLASH_FAST_SPIN_COUNT).for_each(|_| {
+        moves.extend(create_spin_sequence(
+            radius,
+            &[SPLASH_FAST_SPIN_DURATION_MS],
+        ));
+    });
+
+    // Add slowdown spin with increasing durations
+    moves.extend(create_spin_sequence(radius, SPLASH_SLOWDOWN_DURATIONS_MS));
 
     // Land at home with smooth easing
     moves.push(CameraMove::ToPosition {
         translation: Vec3::new(0.0, 0.0, radius),
         focus:       Vec3::ZERO,
-        duration:    Duration::from_millis(1200),
+        duration:    Duration::from_millis(SPLASH_LAND_HOME_DURATION_MS),
         easing:      EaseFunction::QuadraticOut,
     });
 

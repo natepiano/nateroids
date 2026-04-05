@@ -8,6 +8,10 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use super::RenderLayer;
 use super::constants::AMBIENT_LIGHT_BRIGHTNESS;
+use super::constants::CASCADE_SHADOW_FIRST_FAR_BOUND;
+use super::constants::CASCADE_SHADOW_MAX_DISTANCE;
+use super::constants::CASCADE_SHADOW_NUM_CASCADES;
+use super::constants::CASCADE_SHADOW_OVERLAP_PROPORTION;
 use super::constants::DIRECTIONAL_LIGHT_ILLUMINANCE;
 use super::constants::ENVIRONMENT_MAP_INTENSITY;
 use crate::input::InspectLightsSwitch;
@@ -182,7 +186,7 @@ pub(super) struct RotationInfo {
 // rays. As such they do not have a position in practical terms and only the
 // rotation matters. The direction of the light is defined by the forward
 // direction and by default the -z axis is forwards (right-handed, y-up, z
-// points backwards and -z is forwards). Rotations are then applied to a Vec3 of
+// points backwards and -z is forwards). Rotations are then applied to a `Vec3` of
 // (0,0,-1) to calculate the transform’s forward direction.
 
 #[derive(Component)]
@@ -205,10 +209,10 @@ fn spawn_directional_light(
         })
         .insert(
             CascadeShadowConfigBuilder {
-                num_cascades: 4,
-                maximum_distance: 1500.0,
-                first_cascade_far_bound: 50.0,
-                overlap_proportion: 0.3,
+                num_cascades: CASCADE_SHADOW_NUM_CASCADES,
+                maximum_distance: CASCADE_SHADOW_MAX_DISTANCE,
+                first_cascade_far_bound: CASCADE_SHADOW_FIRST_FAR_BOUND,
+                overlap_proportion: CASCADE_SHADOW_OVERLAP_PROPORTION,
                 ..default()
             }
             .build(),

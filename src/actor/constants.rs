@@ -59,6 +59,8 @@ pub(super) const NATEROID_LINEAR_VELOCITY: f32 = 35.0;
 pub(super) const NATEROID_MASS: f32 = 1.0;
 pub(super) const NATEROID_RESTITUTION: f32 = 0.3;
 pub(super) const NATEROID_SCALE_UP: f32 = 100.0; // we need bigger nateroids than just donut sized ones
+/// Maximum spawn placement attempts before giving up
+pub(super) const NATEROID_SPAWN_MAX_ATTEMPTS: u32 = 20;
 pub(super) const NATEROID_SPAWN_TIMER_SECONDS: f32 = 2.0;
 pub(super) const NATEROID_TARGET_ALPHA: f32 = 0.05;
 

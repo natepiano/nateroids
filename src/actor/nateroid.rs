@@ -17,6 +17,7 @@ use super::actor_settings::Spawnability;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
 use super::constants::LOCKED_AXES_2D;
+use super::constants::NATEROID_SPAWN_MAX_ATTEMPTS;
 use super::constants::SPAWN_WINDOW;
 use crate::asset_loader::AssetsState;
 use crate::asset_loader::SceneAssets;
@@ -344,8 +345,6 @@ fn initialize_transform(
     nateroid_settings: &NateroidSettings,
     spatial_query: &SpatialQuery,
 ) -> Option<Transform> {
-    const MAX_ATTEMPTS: u32 = 20;
-
     let bounds = Transform {
         translation: boundary_transform.translation,
         scale: boundary_transform.scale * SPAWN_WINDOW,
@@ -356,7 +355,7 @@ fn initialize_transform(
     let filter =
         SpatialQueryFilter::from_mask(LayerMask::from([GameLayer::Spaceship, GameLayer::Asteroid]));
 
-    for _ in 0..MAX_ATTEMPTS {
+    for _ in 0..NATEROID_SPAWN_MAX_ATTEMPTS {
         let position = get_random_position_within_bounds(&bounds);
         let rotation = get_random_rotation();
 

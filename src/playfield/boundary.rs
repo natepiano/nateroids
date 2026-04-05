@@ -30,6 +30,7 @@ use super::types::GridFlashAnimation;
 use super::types::GridGizmo;
 use super::types::Intersection;
 use super::types::MultiFaceGeometry;
+use super::types::PortalActorKind;
 use super::types::PortalGeometry;
 use crate::camera::RenderLayer;
 use crate::input::InspectBoundarySwitch;
@@ -346,7 +347,7 @@ impl Boundary {
         color: Color,
         resolution: u32,
         orientation: &CameraOrientation,
-        is_deaderoid: bool,
+        actor_kind: PortalActorKind,
         transform: &Transform,
     ) {
         let geometry = Self::classify_portal_geometry(portal, transform);
@@ -356,7 +357,7 @@ impl Boundary {
             color,
             resolution,
             orientation,
-            is_deaderoid,
+            actor_kind,
             &geometry,
             transform,
         );
@@ -368,7 +369,7 @@ impl Boundary {
         color: Color,
         resolution: u32,
         orientation: &CameraOrientation,
-        is_deaderoid: bool,
+        actor_kind: PortalActorKind,
         geometry: &PortalGeometry,
         transform: &Transform,
     ) {
@@ -386,13 +387,7 @@ impl Boundary {
             },
             PortalGeometry::MultiFace(multiface) => {
                 Self::draw_multiface_portal(
-                    gizmos,
-                    portal,
-                    color,
-                    resolution,
-                    is_deaderoid,
-                    multiface,
-                    transform,
+                    gizmos, portal, color, resolution, actor_kind, multiface, transform,
                 );
             },
         }
@@ -403,7 +398,7 @@ impl Boundary {
         portal: &Portal,
         color: Color,
         resolution: u32,
-        is_deaderoid: bool,
+        actor_kind: PortalActorKind,
         geometry: &MultiFaceGeometry,
         transform: &Transform,
     ) {
@@ -439,7 +434,7 @@ impl Boundary {
 
         // Draw all arcs
         for (face, points) in face_arcs {
-            let face_color = get_portal_color(is_deaderoid, geometry, face, color);
+            let face_color = get_portal_color(actor_kind, geometry, face, color);
 
             match geometry {
                 MultiFaceGeometry::Edge { .. } if face == primary_face => {
@@ -541,25 +536,49 @@ impl Boundary {
         // otherwise the edge runs along that axis, so use position's coordinate.
 
         let x = if normal1.x != 0.0 {
-            if normal1.x > 0.0 { max.x } else { min.x }
+            if normal1.x > 0.0 {
+                max.x
+            } else {
+                min.x
+            }
         } else if normal2.x != 0.0 {
-            if normal2.x > 0.0 { max.x } else { min.x }
+            if normal2.x > 0.0 {
+                max.x
+            } else {
+                min.x
+            }
         } else {
             position.x // Edge runs along X axis
         };
 
         let y = if normal1.y != 0.0 {
-            if normal1.y > 0.0 { max.y } else { min.y }
+            if normal1.y > 0.0 {
+                max.y
+            } else {
+                min.y
+            }
         } else if normal2.y != 0.0 {
-            if normal2.y > 0.0 { max.y } else { min.y }
+            if normal2.y > 0.0 {
+                max.y
+            } else {
+                min.y
+            }
         } else {
             position.y // Edge runs along Y axis
         };
 
         let z = if normal1.z != 0.0 {
-            if normal1.z > 0.0 { max.z } else { min.z }
+            if normal1.z > 0.0 {
+                max.z
+            } else {
+                min.z
+            }
         } else if normal2.z != 0.0 {
-            if normal2.z > 0.0 { max.z } else { min.z }
+            if normal2.z > 0.0 {
+                max.z
+            } else {
+                min.z
+            }
         } else {
             position.z // Edge runs along Z axis
         };
@@ -811,13 +830,13 @@ fn draw_boundary(
 }
 
 const fn get_portal_color(
-    is_deaderoid: bool,
+    actor_kind: PortalActorKind,
     geometry: &MultiFaceGeometry,
     face: BoundaryFace,
     default_color: Color,
 ) -> Color {
-    if is_deaderoid {
-        match geometry {
+    match actor_kind {
+        PortalActorKind::Deaderoid => match geometry {
             MultiFaceGeometry::Corner { .. } => {
                 // Corner: use 3-color diagnostic scheme
                 match face {
@@ -827,9 +846,8 @@ const fn get_portal_color(
                 }
             },
             MultiFaceGeometry::Edge { .. } => DEADEROID_APPROACHING_COLOR,
-        }
-    } else {
-        default_color
+        },
+        PortalActorKind::Nateroid => default_color,
     }
 }
 
