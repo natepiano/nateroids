@@ -15,6 +15,7 @@ use super::RenderLayer;
 use super::constants::EDGE_MARKER_FONT_SIZE;
 use super::constants::EDGE_MARKER_SPHERE_RADIUS;
 use super::constants::FOCUS_GIZMO_COLOR;
+use super::constants::FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS;
 use super::constants::FOCUS_GIZMO_LINE_WIDTH;
 use super::constants::HOME_ANIMATION_DURATION_MS;
 use super::constants::ZOOM_MARGIN;
@@ -224,8 +225,11 @@ fn update_focus_gizmo_state(
     }
 
     if let Ok(orbit_cam) = camera_query.single() {
-        let camera_radius = orbit_cam.radius.unwrap_or(100.0);
-        state.sphere_radius = settings.sphere_radius * (camera_radius / 100.0);
+        let camera_radius = orbit_cam
+            .radius
+            .unwrap_or(FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS);
+        state.sphere_radius =
+            settings.sphere_radius * (camera_radius / FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS);
     }
 }
 

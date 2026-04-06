@@ -35,6 +35,7 @@ pub(super) const EDGE_MARKER_FONT_SIZE: f32 = 11.0;
 pub(super) const EDGE_MARKER_SPHERE_RADIUS: f32 = 1.0;
 
 // Focus gizmo
+pub(super) const FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS: f32 = 100.0;
 pub(super) const FOCUS_GIZMO_COLOR: Color = Color::Srgba(bevy::color::Srgba {
     red:   1.0,
     green: 0.0,

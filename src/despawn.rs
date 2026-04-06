@@ -211,7 +211,7 @@ fn despawn_dead_entities(
                     nateroid_settings.death_corner,
                 );
 
-                // Nateroid - start death animation
+                // `Nateroid` - start death animation
                 commands
                     .entity(entity)
                     .insert((

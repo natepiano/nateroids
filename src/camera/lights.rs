@@ -1,3 +1,6 @@
+use std::f32::consts::FRAC_PI_2;
+use std::f32::consts::PI;
+
 use bevy::color::palettes::tailwind;
 use bevy::light::CascadeShadowConfigBuilder;
 use bevy::light::GlobalAmbientLight;
@@ -143,8 +146,6 @@ pub(super) enum LightPosition {
 
 impl LightPosition {
     pub fn get_rotation(self, orientation: &CameraOrientation) -> RotationInfo {
-        use std::f32::consts::FRAC_PI_2;
-        use std::f32::consts::PI;
         match self {
             Self::Right => RotationInfo {
                 axis:  orientation.settings.axis_mundi,

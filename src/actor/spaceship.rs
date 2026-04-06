@@ -102,8 +102,8 @@ fn initialize_spaceship(
 }
 
 // Check if `Spaceship` exists or not — query via `single()`
-// there should only be one — if it returns an error then the
-// spaceship doesn't exist
+// There should only be one — if it returns an error then the
+// `Spaceship` doesn't exist
 fn spaceship_destroyed(
     mut next_state: ResMut<NextState<GameState>>,
     query: Query<Entity, With<Spaceship>>,

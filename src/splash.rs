@@ -16,7 +16,11 @@ use crate::camera::RenderLayer;
 use crate::camera::ZOOM_MARGIN;
 use crate::constants::SPLASH_FAST_SPIN_COUNT;
 use crate::constants::SPLASH_FAST_SPIN_DURATION_MS;
+use crate::constants::SPLASH_HOLD_DURATION_MS;
 use crate::constants::SPLASH_LAND_HOME_DURATION_MS;
+use crate::constants::SPLASH_SKIP_HINT_ALPHA;
+use crate::constants::SPLASH_SKIP_HINT_BOTTOM_OFFSET;
+use crate::constants::SPLASH_SKIP_HINT_FONT_SIZE;
 use crate::constants::SPLASH_SLOWDOWN_DURATIONS_MS;
 use crate::constants::SPLASH_SPIN_DURATIONS_MS;
 use crate::constants::SPLASH_TEXT_GROWTH_RATE;
@@ -116,14 +120,14 @@ fn spawn_splash_skip_hint(mut commands: Commands) {
         SplashSkipHint,
         Text::new("Press any key to skip"),
         TextFont {
-            font_size: 20.0,
+            font_size: SPLASH_SKIP_HINT_FONT_SIZE,
             ..default()
         },
         TextLayout::new_with_justify(Justify::Center),
-        TextColor(Color::srgba(1.0, 1.0, 1.0, 0.8)),
+        TextColor(Color::srgba(1.0, 1.0, 1.0, SPLASH_SKIP_HINT_ALPHA)),
         Node {
             position_type: PositionType::Absolute,
-            bottom: Val::Px(24.0),
+            bottom: Val::Px(SPLASH_SKIP_HINT_BOTTOM_OFFSET),
             left: Val::Px(0.0),
             width: Val::Percent(100.0),
             ..default()
@@ -334,7 +338,7 @@ fn start_splash_camera_animation(
     let hold_move = CameraMove::ToPosition {
         translation: Vec3::new(0.0, 0.0, camera_settings.splash_start_radius),
         focus:       Vec3::ZERO,
-        duration:    Duration::from_millis(2500),
+        duration:    Duration::from_millis(SPLASH_HOLD_DURATION_MS),
         easing:      EaseFunction::BounceOut,
     };
 

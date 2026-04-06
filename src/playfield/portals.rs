@@ -294,11 +294,10 @@ fn handle_emerging_visual(
         }
     }
     // once the radius gets small enough we can eliminate it
-    else if let Some(ref mut emerging) = visual.emerging {
-        // Check if the radius has shrunk to a small value (near zero)
-        if emerging.radius <= portal_settings.minimum_radius {
-            visual.emerging = None; // Remove the visual
-        }
+    else if let Some(ref mut emerging) = visual.emerging
+        && emerging.radius <= portal_settings.minimum_radius
+    {
+        visual.emerging = None; // Remove the visual
     }
 }
 
@@ -451,7 +450,7 @@ fn draw_approaching_portals(
         return;
     };
 
-    for (portal, deaderoid) in portals_query.iter() {
+    for (portal, actor_kind) in portals_query.iter() {
         if let Some(ref approaching) = portal.approaching {
             Boundary::draw_portal(
                 &mut gizmos,
@@ -459,7 +458,7 @@ fn draw_approaching_portals(
                 portal_settings.color_approaching,
                 portal_settings.resolution,
                 &orientation,
-                deaderoid.map_or(PortalActorKind::Nateroid, |_| PortalActorKind::Deaderoid),
+                actor_kind.map_or(PortalActorKind::Nateroid, |_| PortalActorKind::Deaderoid),
                 boundary_transform,
             );
         }

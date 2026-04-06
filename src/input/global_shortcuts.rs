@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy_enhanced_input::prelude::*;
 use bevy_kana::Keybindings;
 
+use super::constants::GLOBAL_SHORTCUTS_PRIORITY;
+
 #[derive(Component)]
 pub(super) struct GlobalShortcutsContext;
 
@@ -90,7 +92,7 @@ pub(super) fn setup_global_shortcuts(mut commands: Commands) {
         GlobalShortcutsContext,
         // Evaluate global shortcuts before entity-scoped contexts so Shift+<key>
         // chords can win over ship controls bound to the base key.
-        ContextPriority::<GlobalShortcutsContext>::new(100),
+        ContextPriority::<GlobalShortcutsContext>::new(GLOBAL_SHORTCUTS_PRIORITY),
         Actions::<GlobalShortcutsContext>::spawn(SpawnWith(
             move |ctx: &mut ActionSpawner<GlobalShortcutsContext>| {
                 let kb = Keybindings::new::<ModifySelection>(ctx, consume_input);

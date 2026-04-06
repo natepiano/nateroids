@@ -122,16 +122,15 @@ fn on_teleported(
             continue;
         }
 
-        if let Ok(mut health) = nateroid_query.get_mut(entity) {
-            // Always kill if spaceship teleported, or if field is crowded
-            if !is_teleporting_nateroid || field_density == FieldDensity::Crowded {
-                info!(
-                    "💀 Killing overlapping nateroid - spaceship_teleported: {}, density: {field_density:?}",
-                    !is_teleporting_nateroid
-                );
-                commands.entity(entity).insert(CollisionLayers::NONE);
-                health.0 = INSTANT_DEATH_HEALTH;
-            }
+        if let Ok(mut health) = nateroid_query.get_mut(entity)
+            && (!is_teleporting_nateroid || field_density == FieldDensity::Crowded)
+        {
+            info!(
+                "💀 Killing overlapping nateroid - spaceship_teleported: {}, density: {field_density:?}",
+                !is_teleporting_nateroid
+            );
+            commands.entity(entity).insert(CollisionLayers::NONE);
+            health.0 = INSTANT_DEATH_HEALTH;
         }
     }
 

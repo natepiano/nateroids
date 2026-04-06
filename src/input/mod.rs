@@ -12,6 +12,7 @@
 //! - Tests can exercise either layer:
 //!   - behavior-level tests by triggering app command events;
 //!   - system-level tests by invoking command systems directly.
+mod constants;
 mod global_shortcuts;
 mod ship_controls;
 
