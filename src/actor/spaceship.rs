@@ -27,9 +27,8 @@ impl Plugin for SpaceshipPlugin {
         // Spawn `Spaceship` when entering `PauseState::Playing` (game start or unpause)
         app.add_observer(initialize_spaceship)
             .add_observer(spawn_after_splash_text_removed)
+            .add_observer(on_spaceship_removed)
             .add_systems(OnEnter(PauseState::Playing), spawn_spaceship_if_needed)
-            // check if `Spaceship` is destroyed — this will change the `GameState`
-            .add_systems(Update, spaceship_destroyed.in_set(InGameSet::EntityUpdates))
             .add_systems(
                 FixedUpdate,
                 enforce_spaceship_2d_rotation
@@ -101,21 +100,12 @@ fn initialize_spaceship(
     );
 }
 
-// Check if `Spaceship` exists or not — query via `single()`
-// There should only be one — if it returns an error then the
-// `Spaceship` doesn't exist
-fn spaceship_destroyed(
+fn on_spaceship_removed(
+    trigger: On<Remove, Spaceship>,
     mut next_state: ResMut<NextState<GameState>>,
-    query: Query<Entity, With<Spaceship>>,
-    state: Res<State<GameState>>,
 ) {
-    if query.single().is_err() {
-        info!(
-            "spaceship destroyed: {state:?}, count {:?}",
-            query.iter().count()
-        );
-        next_state.set(GameState::GameOver);
-    }
+    info!("spaceship destroyed: entity {:?}", trigger.entity);
+    next_state.set(GameState::GameOver);
 }
 
 /// Enforce strict 2D rotation by zeroing X/Y angular velocity and correcting transform if tilted

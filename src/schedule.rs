@@ -3,14 +3,14 @@ use bevy::prelude::*;
 use crate::state::PauseState;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-pub enum InGameSet {
+pub(crate) enum InGameSet {
     UserInput,
     EntityUpdates,
     CollisionDetection,
     DespawnEntities,
 }
 
-pub struct SchedulePlugin;
+pub(crate) struct SchedulePlugin;
 
 impl Plugin for SchedulePlugin {
     fn build(&self, app: &mut App) {

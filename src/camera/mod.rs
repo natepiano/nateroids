@@ -19,7 +19,7 @@ pub use settings::CameraSettings;
 pub use support::RenderLayer;
 pub use zoom::CameraHomeEvent;
 
-pub struct CameraPlugin;
+pub(crate) struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {

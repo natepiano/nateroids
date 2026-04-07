@@ -23,10 +23,8 @@ use super::constants::STAR_COLOR_WHITE_PROBABILITY;
 use super::constants::STAR_COLOR_WHITE_START_RATIO;
 use super::constants::STAR_COUNT;
 use super::constants::STAR_DURATION_REPLACE_TIMER;
-use super::constants::STAR_FIELD_INNER_DIAMETER;
-use super::constants::STAR_FIELD_OUTER_DIAMETER;
-use super::constants::STAR_RADIUS_MAX;
-use super::constants::STAR_RADIUS_MIN;
+use super::constants::STAR_FIELD_DIAMETER;
+use super::constants::STAR_RADIUS;
 use super::constants::STAR_ROTATION_CYCLE_MINUTES;
 use super::constants::STAR_TWINKLE_CHOOSE_MULTIPLE_COUNT;
 use super::constants::STAR_TWINKLE_DURATION_MAX;
@@ -143,10 +141,8 @@ pub(super) struct StarSettings {
     pub color_white_probability:       f32,
     pub color_white_start_ratio:       f32,
     pub count:                         usize,
-    pub radius_max:                    f32,
-    pub radius_min:                    f32,
-    pub field_inner_diameter:          f32,
-    pub field_outer_diameter:          f32,
+    pub radius:                        Range<f32>,
+    pub field_diameter:                Range<f32>,
     pub start_twinkling_delay:         f32,
     pub twinkle_duration:              Range<f32>,
     pub twinkle_intensity:             Range<f32>,
@@ -165,10 +161,8 @@ impl Default for StarSettings {
             color:                         STAR_COLOR_RANGE_MIN..STAR_COLOR_RANGE_MAX,
             color_white_probability:       STAR_COLOR_WHITE_PROBABILITY,
             color_white_start_ratio:       STAR_COLOR_WHITE_START_RATIO,
-            radius_max:                    STAR_RADIUS_MAX,
-            radius_min:                    STAR_RADIUS_MIN,
-            field_inner_diameter:          STAR_FIELD_INNER_DIAMETER,
-            field_outer_diameter:          STAR_FIELD_OUTER_DIAMETER,
+            radius:                        STAR_RADIUS,
+            field_diameter:                STAR_FIELD_DIAMETER,
             start_twinkling_delay:         STAR_TWINKLING_DELAY,
             twinkle_duration:              STAR_TWINKLE_DURATION_MIN..STAR_TWINKLE_DURATION_MAX,
             twinkle_intensity:             STAR_TWINKLE_INTENSITY_MIN..STAR_TWINKLE_INTENSITY_MAX,

@@ -12,7 +12,7 @@ pub use portals::ActorPortals;
 use portals::PortalPlugin;
 pub use types::GridFlash;
 
-pub struct PlayfieldPlugin;
+pub(crate) struct PlayfieldPlugin;
 
 impl Plugin for PlayfieldPlugin {
     fn build(&self, app: &mut App) { app.add_plugins(BoundaryPlugin).add_plugins(PortalPlugin); }

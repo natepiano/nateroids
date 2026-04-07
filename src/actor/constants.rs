@@ -45,6 +45,9 @@ pub(super) const MISSILE_SCALE: f32 = 2.5;
 pub(super) const MISSILE_SPAWN_TIMER_SECONDS: f32 = 1.0 / 20.0;
 
 // Nateroid constants
+/// Minimum interval between spawn-rate warning log messages
+pub(super) const NATEROID_WARN_THROTTLE_INTERVAL_SECS: f32 = 1.0;
+
 pub(super) const NATEROID_ANGULAR_DAMPING: f32 = 0.001;
 pub(super) const NATEROID_ANGULAR_VELOCITY: f32 = 4.5;
 pub(super) const NATEROID_COLLIDER_MARGIN: f32 = 1.0 / 3.0;

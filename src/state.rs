@@ -10,7 +10,7 @@ event!(PauseEvent);
 event!(RestartGameEvent);
 event!(RestartWithSplashEvent);
 
-pub struct StatePlugin;
+pub(crate) struct StatePlugin;
 
 impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
@@ -42,7 +42,7 @@ impl Plugin for StatePlugin {
 /// `GameState`'s for Nateroids
 /// `PostStartup` transitions to `Splash` _after_ camera is spawned.
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, Reflect, States)]
-pub enum GameState {
+pub(crate) enum GameState {
     // `Launch` is the default to prevent `OnEnter(Splash)` from firing before camera exists. (is
     // that even possible? this is an old comment, maybe it's not actually true).
     //
@@ -64,7 +64,7 @@ pub enum GameState {
 /// Only exists when in `GameState::InGame`.
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, SubStates)]
 #[source(GameState = GameState::InGame)]
-pub enum PauseState {
+pub(crate) enum PauseState {
     #[default]
     Playing,
     Paused,

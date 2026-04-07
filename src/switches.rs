@@ -30,7 +30,7 @@ macro_rules! bind_action_switch {
     };
 }
 
-pub struct SwitchesPlugin;
+pub(crate) struct SwitchesPlugin;
 
 impl Plugin for SwitchesPlugin {
     fn build(&self, app: &mut App) { app.init_resource::<Switches>(); }
@@ -38,13 +38,13 @@ impl Plugin for SwitchesPlugin {
 
 #[derive(Resource, Default, Debug, Reflect)]
 #[reflect(Resource)]
-pub struct Switches {
+pub(crate) struct Switches {
     map: HashMap<Switch, ToggleState>,
 }
 
 #[derive(Default, Copy, Clone, Debug, Reflect, PartialEq, Eq, Hash)]
 #[reflect(Debug, PartialEq, Hash)]
-pub enum ToggleState {
+pub(crate) enum ToggleState {
     On,
     #[default]
     Off,
@@ -89,7 +89,7 @@ impl Switches {
             .any(|switch| self.is_on(*switch))
     }
 
-    pub fn close_all_active_inspectors(&mut self) -> bool {
+    pub(crate) fn close_all_active_inspectors(&mut self) -> bool {
         if !self.is_any_inspector_active() {
             return false;
         }
@@ -103,16 +103,16 @@ impl Switches {
         true
     }
 
-    pub fn has_any_inspector_active(&self) -> bool { self.is_any_inspector_active() }
+    pub(crate) fn has_any_inspector_active(&self) -> bool { self.is_any_inspector_active() }
 
-    pub fn toggle_switch(&mut self, switch: Switch) { self.toggle(switch); }
+    pub(crate) fn toggle_switch(&mut self, switch: Switch) { self.toggle(switch); }
 
-    pub fn is_switch_on(&self, switch: Switch) -> bool { self.is_on(switch) }
+    pub(crate) fn is_switch_on(&self, switch: Switch) -> bool { self.is_on(switch) }
 }
 
 #[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[reflect(Debug, PartialEq, Hash)]
-pub enum Switch {
+pub(crate) enum Switch {
     ShowAabbs,
     ShowPhysicsDebug,
     InspectAabb,
@@ -135,14 +135,14 @@ pub enum Switch {
     dead_code,
     reason = "Kept for parity with hana switch model; not used yet in nateroids"
 )]
-pub fn any_inspector_active() -> impl Fn(Res<Switches>) -> bool + Clone {
+pub(crate) fn any_inspector_active() -> impl Fn(Res<Switches>) -> bool + Clone {
     move |switches: Res<Switches>| switches.is_any_inspector_active()
 }
 
-pub fn is_switch_on(switch: Switch) -> impl Fn(Res<Switches>) -> bool + Clone {
+pub(crate) fn is_switch_on(switch: Switch) -> impl Fn(Res<Switches>) -> bool + Clone {
     move |switches: Res<Switches>| switches.is_on(switch)
 }
 
-pub fn is_switch_off(switch: Switch) -> impl Fn(Res<Switches>) -> bool + Clone {
+pub(crate) fn is_switch_off(switch: Switch) -> impl Fn(Res<Switches>) -> bool + Clone {
     move |switches: Res<Switches>| !switches.is_on(switch)
 }

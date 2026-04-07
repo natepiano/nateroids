@@ -113,15 +113,15 @@ fn spawn_stars(
 ) {
     debug!("spawning stars");
     let longest_diagonal = boundary_settings.longest_diagonal();
-    let inner_sphere_radius = longest_diagonal + star_settings.field_inner_diameter;
-    let outer_sphere_radius = inner_sphere_radius + star_settings.field_outer_diameter;
+    let inner_sphere_radius = longest_diagonal + star_settings.field_diameter.start;
+    let outer_sphere_radius = inner_sphere_radius + star_settings.field_diameter.end;
 
     let mesh = meshes.add(Sphere::new(1.));
     let mut rng = rand::rng();
 
     for _ in 0..star_settings.count {
         let position = get_star_position(inner_sphere_radius, outer_sphere_radius, &mut rng);
-        let radius = rng.random_range(star_settings.radius_min..star_settings.radius_max);
+        let radius = rng.random_range(star_settings.radius.clone());
         let emissive = get_star_color(&star_settings, &mut rng);
 
         let material = materials.add(StandardMaterial {

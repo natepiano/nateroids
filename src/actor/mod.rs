@@ -32,7 +32,7 @@ use teleport::TeleportPlugin;
 pub use teleport::TeleportStatus;
 pub use teleport::Teleporter;
 
-pub struct ActorPlugin;
+pub(crate) struct ActorPlugin;
 
 impl Plugin for ActorPlugin {
     fn build(&self, app: &mut App) {

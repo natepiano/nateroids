@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_kana::Displacement;
 use bevy_kana::Position;
 
-pub struct OrientationPlugin;
+pub(crate) struct OrientationPlugin;
 
 impl Plugin for OrientationPlugin {
     fn build(&self, app: &mut App) { app.init_resource::<CameraOrientation>(); }
@@ -30,7 +30,7 @@ impl Plugin for OrientationPlugin {
 // of reference, which aligns well with the idea of a camera's home or default
 // position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
-pub enum OrientationType {
+pub(crate) enum OrientationType {
     TopDown,
     BehindSpaceship,
     BehindSpaceship3D,
@@ -38,13 +38,13 @@ pub enum OrientationType {
 
 /// Whether the orientation permits full 3D movement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
-pub enum DimensionMode {
+pub(crate) enum DimensionMode {
     TwoD,
     ThreeD,
 }
 
 #[derive(Debug, Clone, Reflect)]
-pub struct OrientationSettings {
+pub(crate) struct OrientationSettings {
     pub dimension_mode:   DimensionMode,
     pub axis_mundi:       Vec3,
     pub axis_orbis:       Vec3,
@@ -56,7 +56,7 @@ pub struct OrientationSettings {
 
 #[derive(Resource, Debug, Clone, Reflect)]
 #[reflect(Resource)]
-pub struct CameraOrientation {
+pub(crate) struct CameraOrientation {
     pub orientation: OrientationType,
     pub settings:    OrientationSettings,
 }
@@ -72,7 +72,7 @@ impl CameraOrientation {
         spaceship_offset: Displacement::new(0.0, 5.0, -10.0),
     };
 
-    pub fn set_orientation(&mut self, new_orientation: OrientationType) {
+    pub(crate) fn set_orientation(&mut self, new_orientation: OrientationType) {
         self.orientation = new_orientation;
         self.settings = match new_orientation {
             OrientationType::TopDown => OrientationSettings {

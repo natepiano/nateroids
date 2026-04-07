@@ -18,6 +18,7 @@ use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
 use super::constants::LOCKED_AXES_2D;
 use super::constants::NATEROID_SPAWN_MAX_ATTEMPTS;
+use super::constants::NATEROID_WARN_THROTTLE_INTERVAL_SECS;
 use super::constants::SPAWN_WINDOW;
 use crate::asset_loader::AssetsState;
 use crate::asset_loader::SceneAssets;
@@ -159,7 +160,7 @@ fn spawn_nateroid(
         spawn_stats.record_attempt(SpawnResult::Failure);
 
         // Check if we should output warning (once per second)
-        if current_time - spawn_stats.last_warning_time >= 1.0 {
+        if current_time - spawn_stats.last_warning_time >= NATEROID_WARN_THROTTLE_INTERVAL_SECS {
             let success_rate = spawn_stats.success_rate() * 100.0;
             warn!(
                 "Nateroid spawn: {} / {} attempts ({success_rate:.0}%) in the last {} spawns",
@@ -175,7 +176,7 @@ fn spawn_nateroid(
     spawn_stats.record_attempt(SpawnResult::Success);
 
     // Check if we should output stats (once per second, even on success)
-    if current_time - spawn_stats.last_warning_time >= 1.0 {
+    if current_time - spawn_stats.last_warning_time >= NATEROID_WARN_THROTTLE_INTERVAL_SECS {
         let success_rate = spawn_stats.success_rate() * 100.0;
         let successes = spawn_stats.successes_count();
         let attempts = spawn_stats.attempts_count();

@@ -48,7 +48,7 @@ pub use ship_controls::ShipTurnLeft;
 pub use ship_controls::ShipTurnRight;
 pub use ship_controls::ship_controls_input_bundle;
 
-pub struct EnhancedInputAppPlugin;
+pub(crate) struct EnhancedInputAppPlugin;
 
 impl Plugin for EnhancedInputAppPlugin {
     fn build(&self, app: &mut App) {

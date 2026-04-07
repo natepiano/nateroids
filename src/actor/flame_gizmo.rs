@@ -230,11 +230,17 @@ impl AlphaCurve {
     }
 }
 
+#[derive(Clone, Copy)]
+enum RingExpansion {
+    Expanding,
+    Static,
+}
+
 /// Configuration for ring-based death effects.
 #[derive(Clone, Copy)]
 struct RingEffectConfig {
     ring_count:        usize,
-    expands:           bool,
+    expansion:         RingExpansion,
     radius_scale:      f32,
     line_length_scale: f32,
     ring_delay_secs:   f32,
@@ -245,7 +251,7 @@ struct RingEffectConfig {
 impl RingEffectConfig {
     const EXPANDING_RING: Self = Self {
         ring_count:        1,
-        expands:           true,
+        expansion:         RingExpansion::Expanding,
         radius_scale:      1.0,
         line_length_scale: 0.5,
         ring_delay_secs:   0.0,
@@ -255,7 +261,7 @@ impl RingEffectConfig {
 
     const STATIC_FLASH: Self = Self {
         ring_count:        1,
-        expands:           false,
+        expansion:         RingExpansion::Static,
         radius_scale:      0.4,
         line_length_scale: 0.5,
         ring_delay_secs:   0.0,
@@ -267,7 +273,7 @@ impl RingEffectConfig {
 
     const MULTIPLE_RINGS: Self = Self {
         ring_count:        3,
-        expands:           true,
+        expansion:         RingExpansion::Expanding,
         radius_scale:      1.0,
         line_length_scale: 1.0 / 3.0,
         ring_delay_secs:   0.4,
@@ -488,7 +494,7 @@ fn draw_death_effect_ring(
 
         let progress = ring_elapsed / ring_duration;
 
-        let radius = if config.expands {
+        let radius = if matches!(config.expansion, RingExpansion::Expanding) {
             let ease_out = (1.0 - progress).mul_add(-(1.0 - progress), 1.0);
             let scale = (1.0 - DEATH_EFFECT_EXPANDING_RING_START_SCALE)
                 .mul_add(ease_out, DEATH_EFFECT_EXPANDING_RING_START_SCALE);

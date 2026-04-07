@@ -2,7 +2,7 @@ use bevy::asset::LoadState;
 // Load assets once at startup
 use bevy::prelude::*;
 
-pub struct AssetLoaderPlugin;
+pub(crate) struct AssetLoaderPlugin;
 
 impl Plugin for AssetLoaderPlugin {
     fn build(&self, app: &mut App) {
@@ -20,7 +20,7 @@ impl Plugin for AssetLoaderPlugin {
 }
 
 #[derive(States, Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
-pub enum AssetsState {
+pub(crate) enum AssetsState {
     #[default]
     Loading,
     Loaded,
@@ -29,7 +29,7 @@ pub enum AssetsState {
 // all the models are loaded via SceneBundle - the models
 // can have multiple elements and scene makes all that possible
 #[derive(Resource, Clone, Debug, Default)]
-pub struct SceneAssets {
+pub(crate) struct SceneAssets {
     pub missile:                 Handle<Scene>,
     pub nateroid:                Handle<Scene>,
     pub nateroid_donut_material: Option<Handle<StandardMaterial>>,

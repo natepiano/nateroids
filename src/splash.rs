@@ -31,14 +31,14 @@ use crate::playfield::BoundaryVolume;
 use crate::playfield::GridFlash;
 use crate::state::GameState;
 
-pub struct SplashPlugin;
+pub(crate) struct SplashPlugin;
 
 #[derive(Component)]
-pub struct SplashText;
+pub(crate) struct SplashText;
 
 /// Bottom hint shown during splash to indicate that users can skip.
 #[derive(Component)]
-pub struct SplashSkipHint;
+pub(crate) struct SplashSkipHint;
 
 /// Marker component indicating the splash zoom-to-fit sequence is active.
 /// Present during hold and zoom phases, removed before spins start.

@@ -9,6 +9,7 @@ use crate::actor::Nateroid;
 use crate::camera::RenderLayer;
 use crate::constants::MIN_NATEROIDS_FOR_MONITORING;
 use crate::constants::PHYSICS_SUBSTEP_COUNT;
+use crate::constants::PHYSICS_WARN_THROTTLE_INTERVAL_SECS;
 use crate::constants::STRESS_ENTER_FPS_THRESHOLD;
 use crate::constants::STRESS_EXIT_FPS_THRESHOLD;
 use crate::constants::STRESS_VELOCITY_THRESHOLD;
@@ -18,7 +19,7 @@ use crate::switches::Switches;
 
 event!(PhysicsAabbEvent);
 
-pub struct PhysicsPlugin;
+pub(crate) struct PhysicsPlugin;
 
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
@@ -109,7 +110,7 @@ fn monitor_physics_health(
     if physics_struggling {
         // When stressed, log every 1 second
         let should_log = state.stress_level != StressLevel::Stressed
-            || (current_time - state.last_stress_log >= 1.0);
+            || (current_time - state.last_stress_log >= PHYSICS_WARN_THROTTLE_INTERVAL_SECS);
 
         if should_log {
             warn!(

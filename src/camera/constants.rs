@@ -75,10 +75,8 @@ pub(super) const STAR_COLOR_WHITE_PROBABILITY: f32 = 0.85;
 pub(super) const STAR_COLOR_WHITE_START_RATIO: f32 = 0.7;
 pub(super) const STAR_COUNT: usize = 1000;
 pub(super) const STAR_DURATION_REPLACE_TIMER: f32 = 1.0;
-pub(super) const STAR_FIELD_INNER_DIAMETER: f32 = 200.0;
-pub(super) const STAR_FIELD_OUTER_DIAMETER: f32 = 400.0;
-pub(super) const STAR_RADIUS_MAX: f32 = 2.5;
-pub(super) const STAR_RADIUS_MIN: f32 = 0.3;
+pub(super) const STAR_FIELD_DIAMETER: std::ops::Range<f32> = 200.0..400.0;
+pub(super) const STAR_RADIUS: std::ops::Range<f32> = 0.3..2.5;
 
 // Star rotation
 /// Minimum rotation cycle in minutes (1 second = 0.01667 minutes)
