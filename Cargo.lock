@@ -1212,11 +1212,12 @@ dependencies = [
 
 [[package]]
 name = "bevy_lagrange"
-version = "0.0.1"
+version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60ebdf8bc7343201a70f6a7bf942d78733d22147086ecc4527f8314cdbb54eb4"
+checksum = "f5c8105effac45b8e5ed8e40dc766903ffebfeb27202de81704e1ad494eafb4e"
 dependencies = [
  "bevy",
+ "bevy_kana",
 ]
 
 [[package]]

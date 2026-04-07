@@ -1,7 +1,8 @@
 use bevy::anti_alias::smaa::Smaa;
 use bevy::prelude::*;
+use bevy_lagrange::InputControl;
 use bevy_lagrange::OrbitCam;
-use bevy_lagrange::TrackpadBehavior;
+use bevy_lagrange::TrackpadInput;
 use bevy_liminal::OutlineCamera;
 
 use super::RenderLayer;
@@ -40,12 +41,13 @@ pub(super) fn spawn_game_camera(
                 modifier_pan: Some(KeyCode::ShiftLeft),
                 zoom_sensitivity: CAMERA_ZOOM_SENSITIVITY,
                 zoom_lower_limit: CAMERA_ZOOM_LOWER_LIMIT,
-                trackpad_behavior: TrackpadBehavior::BlenderLike {
-                    modifier_pan:  Some(KeyCode::ShiftLeft),
-                    modifier_zoom: Some(KeyCode::ControlLeft),
-                },
-                trackpad_sensitivity: CAMERA_TRACKPAD_SENSITIVITY,
-                trackpad_pinch_to_zoom_enabled: true,
+                input_control: Some(InputControl {
+                    trackpad: Some(TrackpadInput {
+                        sensitivity: CAMERA_TRACKPAD_SENSITIVITY,
+                        ..TrackpadInput::blender_default()
+                    }),
+                    ..default()
+                }),
                 ..default()
             },
             Camera {
