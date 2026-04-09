@@ -18,6 +18,7 @@ pub use actor_template::DeathCorner;
 pub use actor_template::NateroidSettings;
 use bevy::prelude::*;
 use collision_detection::CollisionDetectionPlugin;
+pub use constants::NATEROID_DEATH_ALPHA_STEP;
 use flame_gizmo::FlameGizmoPlugin;
 use missile::MissilePlugin;
 pub use missile::MissilePosition;

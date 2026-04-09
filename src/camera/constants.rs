@@ -67,6 +67,10 @@ pub(super) const SELECTION_OUTLINE_COLOR: Color = Color::Srgba(bevy::color::Srgb
 pub(super) const SELECTION_OUTLINE_INTENSITY: f32 = 4.0;
 pub(super) const SELECTION_OUTLINE_WIDTH: f32 = 5.0;
 
+// Star brightness
+/// Minimum star brightness as fraction of range (0.2 = 20%)
+pub(super) const STAR_MINIMUM_BRIGHTNESS_FRACTION: f32 = 0.2;
+
 // Star field
 pub(super) const STAR_BATCH_SIZE_REPLACE: usize = 10;
 pub(super) const STAR_COLOR_RANGE_MAX: f32 = 30.0;

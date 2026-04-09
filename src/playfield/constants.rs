@@ -9,20 +9,20 @@ use bevy::math::UVec3;
 /// Default cell count for the boundary grid (X, Y, Z cells)
 pub(super) const BOUNDARY_CELL_COUNT: UVec3 = UVec3::new(3, 2, 1);
 
-/// Scalar multiplier for boundary dimensions
-pub(super) const BOUNDARY_SCALAR: f32 = 110.0;
+/// Target alpha value for grid color
+pub(super) const BOUNDARY_GRID_ALPHA: f32 = 0.0;
 
 /// Line width for the boundary grid lines
 pub(super) const BOUNDARY_GRID_LINE_WIDTH: f32 = 1.5;
 
+/// Target alpha value for outer boundary color
+pub(super) const BOUNDARY_OUTER_ALPHA: f32 = 1.0;
+
 /// Line width for the outer boundary box
 pub(super) const BOUNDARY_OUTER_LINE_WIDTH: f32 = 4.0;
 
-/// Target alpha value for grid color
-pub(super) const BOUNDARY_GRID_ALPHA: f32 = 0.0;
-
-/// Target alpha value for outer boundary color
-pub(super) const BOUNDARY_OUTER_ALPHA: f32 = 1.0;
+/// Scalar multiplier for boundary dimensions
+pub(super) const BOUNDARY_SCALAR: f32 = 110.0;
 
 /// Duration in seconds for the grid flash animation when cell count changes
 pub(super) const GRID_FLASH_DURATION: f32 = 2.0;
@@ -40,8 +40,8 @@ pub(super) const BOUNDARY_NORMAL_EPSILON: f32 = 0.001;
 
 // Portal colors
 
-/// Color for `Deaderoid` approaching portals (Red)
-pub(super) const DEADEROID_APPROACHING_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
+/// Color for Front/Back face corners on XY plane (Yellow)
+pub(super) const CORNER_COLOR_FRONT_BACK_XY: Color = Color::srgb(1.0, 1.0, 0.0);
 
 /// Color for Left/Right face corners on YZ plane (Red)
 pub(super) const CORNER_COLOR_LEFT_RIGHT_YZ: Color = Color::srgb(1.0, 0.0, 0.0);
@@ -49,8 +49,8 @@ pub(super) const CORNER_COLOR_LEFT_RIGHT_YZ: Color = Color::srgb(1.0, 0.0, 0.0);
 /// Color for Top/Bottom face corners on XZ plane (Green)
 pub(super) const CORNER_COLOR_TOP_BOTTOM_XZ: Color = Color::srgb(0.0, 1.0, 0.0);
 
-/// Color for Front/Back face corners on XY plane (Yellow)
-pub(super) const CORNER_COLOR_FRONT_BACK_XY: Color = Color::srgb(1.0, 1.0, 0.0);
+/// Color for `Deaderoid` approaching portals (Red)
+pub(super) const DEADEROID_APPROACHING_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 
 // Portal configuration
 
@@ -72,23 +72,23 @@ pub(super) const PORTAL_LINE_JOINTS: u32 = 4;
 /// Line width for portal rendering
 pub(super) const PORTAL_LINE_WIDTH: f32 = 2.0;
 
+/// Minimum radius fraction for approaching portals (0.5 = half of `max_radius`)
+pub(super) const PORTAL_MIN_RADIUS_FRACTION: f32 = 0.5;
+
 /// Minimum portal radius before removal
 pub(super) const PORTAL_MINIMUM_RADIUS: f32 = 0.1;
 
 /// Smoothing factor for portal position interpolation (0.0 to 1.0)
 pub(super) const PORTAL_MOVEMENT_SMOOTHING_FACTOR: f32 = 0.08;
 
+/// Multiplier for boundary diagonal to detect physics burst events
+pub(super) const PORTAL_PHYSICS_BURST_MULTIPLIER: f32 = 2.0;
+
+/// Resolution (segments) for rendering portal circles
+pub(super) const PORTAL_RESOLUTION: u32 = 128;
+
 /// Scalar multiplier for portal size relative to actor AABB
 pub(super) const PORTAL_SCALAR: f32 = 2.0;
 
 /// Smallest base portal size
 pub(super) const PORTAL_SMALLEST: f32 = 5.0;
-
-/// Resolution (segments) for rendering portal circles
-pub(super) const PORTAL_RESOLUTION: u32 = 128;
-
-/// Minimum radius fraction for approaching portals (0.5 = half of `max_radius`)
-pub(super) const PORTAL_MIN_RADIUS_FRACTION: f32 = 0.5;
-
-/// Multiplier for boundary diagonal to detect physics burst events
-pub(super) const PORTAL_PHYSICS_BURST_MULTIPLIER: f32 = 2.0;

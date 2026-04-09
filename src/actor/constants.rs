@@ -45,13 +45,12 @@ pub(super) const MISSILE_SCALE: f32 = 2.5;
 pub(super) const MISSILE_SPAWN_TIMER_SECONDS: f32 = 1.0 / 20.0;
 
 // Nateroid constants
-/// Minimum interval between spawn-rate warning log messages
-pub(super) const NATEROID_WARN_THROTTLE_INTERVAL_SECS: f32 = 1.0;
-
 pub(super) const NATEROID_ANGULAR_DAMPING: f32 = 0.001;
 pub(super) const NATEROID_ANGULAR_VELOCITY: f32 = 4.5;
 pub(super) const NATEROID_COLLIDER_MARGIN: f32 = 1.0 / 3.0;
 pub(super) const NATEROID_COLLISION_DAMAGE: f32 = 10.0;
+/// Alpha decrement per death animation material level
+pub const NATEROID_DEATH_ALPHA_STEP: f32 = 0.01;
 pub(super) const NATEROID_DEATH_DURATION_SECS: f32 = 3.0;
 pub(super) const NATEROID_DEATH_SHRINK_PCT: f32 = 0.3;
 pub(super) const NATEROID_DENSITY_CULLING_THRESHOLD: f32 = 0.01;
@@ -66,6 +65,8 @@ pub(super) const NATEROID_SCALE_UP: f32 = 100.0; // we need bigger nateroids tha
 pub(super) const NATEROID_SPAWN_MAX_ATTEMPTS: u32 = 20;
 pub(super) const NATEROID_SPAWN_TIMER_SECONDS: f32 = 2.0;
 pub(super) const NATEROID_TARGET_ALPHA: f32 = 0.05;
+/// Minimum interval between spawn-rate warning log messages
+pub(super) const NATEROID_WARN_THROTTLE_INTERVAL_SECS: f32 = 1.0;
 
 // Shared actor configuration
 /// `Spaceship` model orientation correction: rotates the model so nose points +Y

@@ -10,6 +10,7 @@ use crate::actor::Deaderoid;
 use crate::actor::DeathCorner;
 use crate::actor::Health;
 use crate::actor::MissilePosition;
+use crate::actor::NATEROID_DEATH_ALPHA_STEP;
 use crate::actor::Nateroid;
 use crate::actor::NateroidDeathMaterials;
 use crate::actor::NateroidSettings;
@@ -198,7 +199,7 @@ fn despawn_dead_entities(
     for (entity, health, transform, linear_velocity, nateroid, name) in query.iter() {
         if health.0 <= 0.0 {
             if nateroid.is_some() {
-                let entity_name = name.map_or("Unknown", |n| (*n).as_str());
+                let entity_name = name.map_or("Unknown", Name::as_str);
                 debug!(
                     "☠️ despawn_dead_entities: Adding Deaderoid to {entity_name} (health: {})",
                     health.0
@@ -292,7 +293,7 @@ fn animate_dying_nateroids(
     };
 
     for (mut deaderoid, mut transform, entity, name) in &mut query {
-        let entity_name = name.map_or("Unknown", |n| (*n).as_str());
+        let entity_name = name.map_or("Unknown", Name::as_str);
 
         // Update elapsed time
         deaderoid.elapsed_time += time.delta_secs();
@@ -321,10 +322,10 @@ fn animate_dying_nateroids(
             deaderoid.current_material_index = new_index;
 
             // Calculate the alpha value for this level
-            // FMA optimization (faster + more precise): initial_alpha - (new_index as f32 * 0.01)
+            // FMA optimization (faster + more precise): initial_alpha - (new_index as f32 * step)
             let alpha = new_index
                 .to_f32()
-                .mul_add(-0.01, nateroid_settings.initial_alpha);
+                .mul_add(-NATEROID_DEATH_ALPHA_STEP, nateroid_settings.initial_alpha);
 
             debug!(
                 "💀 {entity_name}: Material swap {old_index} → {new_index} | progress: {progress:.3} → {eased_progress:.3} | alpha: {alpha:.2}"

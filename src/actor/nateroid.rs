@@ -17,6 +17,7 @@ use super::actor_settings::Spawnability;
 use super::actor_template::GameLayer;
 use super::actor_template::NateroidSettings;
 use super::constants::LOCKED_AXES_2D;
+use super::constants::NATEROID_DEATH_ALPHA_STEP;
 use super::constants::NATEROID_SPAWN_MAX_ATTEMPTS;
 use super::constants::NATEROID_WARN_THROTTLE_INTERVAL_SECS;
 use super::constants::SPAWN_WINDOW;
@@ -403,7 +404,8 @@ fn precompute_death_materials(
     let initial_alpha = nateroid_settings.initial_alpha;
     let target_alpha = nateroid_settings.target_alpha;
     // Safe: alpha values are 0.0-1.0, result is small positive integer (~30-40)
-    let num_levels = ((initial_alpha - target_alpha) * 100.0).to_usize() + 1;
+    let num_levels =
+        ((initial_alpha - target_alpha) * (1.0 / NATEROID_DEATH_ALPHA_STEP)).to_usize() + 1;
 
     // Collect material handles from the scene's world using try_query
     let mut material_handles = Vec::new();
@@ -429,8 +431,10 @@ fn precompute_death_materials(
     // Precompute materials for each alpha level
     let mut precomputed_materials = Vec::with_capacity(num_levels);
     for level in 0..num_levels {
-        // FMA optimization (faster + more precise): initial_alpha - (level as f32 * 0.01)
-        let alpha = level.to_f32().mul_add(-0.01, initial_alpha);
+        // FMA optimization (faster + more precise): initial_alpha - (level as f32 * step)
+        let alpha = level
+            .to_f32()
+            .mul_add(-NATEROID_DEATH_ALPHA_STEP, initial_alpha);
         let mut level_materials = Vec::with_capacity(material_handles.len());
 
         for material_handle in &material_handles {

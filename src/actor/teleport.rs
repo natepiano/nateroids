@@ -186,7 +186,7 @@ fn teleport_at_boundary(
 
             // Only log spaceship teleports
             if is_spaceship.is_some() {
-                let entity_name = name.map_or("Spaceship", |n| (*n).as_str());
+                let entity_name = name.map_or("Spaceship", Name::as_str);
                 debug!(
                     "🔄 {} teleporting: from ({:.1}, {:.1}, {:.1}) to ({:.1}, {:.1}, {:.1})",
                     entity_name,

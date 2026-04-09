@@ -13,6 +13,7 @@ use rand::prelude::ThreadRng;
 
 use super::RenderLayer;
 use super::camera_star::StarCamera;
+use super::constants::STAR_MINIMUM_BRIGHTNESS_FRACTION;
 use super::constants::STAR_ROTATION_CYCLE_MINIMUM_MINUTES;
 use super::settings::StarSettings;
 use crate::playfield::Boundary;
@@ -186,8 +187,8 @@ fn get_star_color(settings: &StarSettings, rng: &mut impl Rng) -> Vec4 {
     let mut b = rng.random_range(start..end);
 
     // Ensure minimum brightness
-    // FMA optimization (faster + more precise): start + (end - start) * 0.2
-    let min_brightness = (end - start).mul_add(0.2, start); // 20% above start
+    // FMA optimization (faster + more precise): start + (end - start) * fraction
+    let min_brightness = (end - start).mul_add(STAR_MINIMUM_BRIGHTNESS_FRACTION, start);
     let current_brightness = r.max(g).max(b);
 
     if current_brightness < min_brightness {

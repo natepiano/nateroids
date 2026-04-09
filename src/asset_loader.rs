@@ -30,13 +30,13 @@ pub(crate) enum AssetsState {
 // can have multiple elements and scene makes all that possible
 #[derive(Resource, Clone, Debug, Default)]
 pub(crate) struct SceneAssets {
-    pub missile:                 Handle<Scene>,
-    pub nateroid:                Handle<Scene>,
-    pub nateroid_donut_material: Option<Handle<StandardMaterial>>,
-    pub nateroid_icing_material: Option<Handle<StandardMaterial>>,
-    pub spaceship:               Handle<Scene>,
-    pub env_diffuse_map:         Handle<Image>,
-    pub env_specular_map:        Handle<Image>,
+    pub missile:                  Handle<Scene>,
+    pub nateroid:                 Handle<Scene>,
+    pub nateroid_donut_material:  Option<Handle<StandardMaterial>>,
+    pub nateroid_icing_material:  Option<Handle<StandardMaterial>>,
+    pub spaceship:                Handle<Scene>,
+    pub environment_diffuse_map:  Handle<Image>,
+    pub environment_specular_map: Handle<Image>,
 }
 
 fn load_assets(
@@ -45,14 +45,14 @@ fn load_assets(
     asset_server: Res<AssetServer>,
 ) {
     *scene_assets = SceneAssets {
-        missile:                 asset_server.load("models/Bullets Pickup.glb#Scene0"),
-        nateroid:                asset_server.load("nateroid/nateroid.glb#Scene0"),
-        nateroid_donut_material: None,
-        nateroid_icing_material: None,
-        spaceship:               asset_server.load("models/Spaceship.glb#Scene0"),
-        env_diffuse_map:         asset_server
+        missile:                  asset_server.load("models/Bullets Pickup.glb#Scene0"),
+        nateroid:                 asset_server.load("nateroid/nateroid.glb#Scene0"),
+        nateroid_donut_material:  None,
+        nateroid_icing_material:  None,
+        spaceship:                asset_server.load("models/Spaceship.glb#Scene0"),
+        environment_diffuse_map:  asset_server
             .load("environment_maps/dikhololo_night_2k_diffuse.ktx2"),
-        env_specular_map:        asset_server
+        environment_specular_map: asset_server
             .load("environment_maps/dikhololo_night_2k_specular.ktx2"),
     };
 }
@@ -132,8 +132,8 @@ fn check_asset_loading(
 
     // Check environment map images
     let env_maps_loaded = [
-        scene_assets.env_diffuse_map.id(),
-        scene_assets.env_specular_map.id(),
+        scene_assets.environment_diffuse_map.id(),
+        scene_assets.environment_specular_map.id(),
     ]
     .iter()
     .all(|&id| matches!(asset_server.get_load_state(id), Some(LoadState::Loaded)));

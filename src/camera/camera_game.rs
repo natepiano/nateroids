@@ -59,8 +59,8 @@ pub(super) fn spawn_game_camera(
             RenderLayer::Game.layers(),
             Smaa::default(),
             EnvironmentMapLight {
-                diffuse_map: scene_assets.env_diffuse_map.clone(),
-                specular_map: scene_assets.env_specular_map.clone(),
+                diffuse_map: scene_assets.environment_diffuse_map.clone(),
+                specular_map: scene_assets.environment_specular_map.clone(),
                 intensity: light_settings.environment_map_intensity,
                 ..default()
             },

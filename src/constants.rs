@@ -4,11 +4,10 @@
 pub(crate) const DEATH_VELOCITY_EPSILON: f32 = 0.001;
 
 // Physics constants
-/// Minimum interval between physics-stress log messages
-pub(crate) const PHYSICS_WARN_THROTTLE_INTERVAL_SECS: f64 = 1.0;
-
 pub(crate) const MIN_NATEROIDS_FOR_MONITORING: usize = 50;
 pub(crate) const PHYSICS_SUBSTEP_COUNT: u32 = 15;
+/// Minimum interval between physics-stress log messages
+pub(crate) const PHYSICS_WARN_THROTTLE_INTERVAL_SECS: f64 = 1.0;
 pub(crate) const STRESS_ENTER_FPS_THRESHOLD: f64 = 35.0;
 pub(crate) const STRESS_EXIT_FPS_THRESHOLD: f64 = 45.0;
 pub(crate) const STRESS_VELOCITY_THRESHOLD: f32 = 200.0;
