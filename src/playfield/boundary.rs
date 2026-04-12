@@ -20,7 +20,10 @@ use super::constants::CORNER_COLOR_FRONT_BACK_XY;
 use super::constants::CORNER_COLOR_LEFT_RIGHT_YZ;
 use super::constants::CORNER_COLOR_TOP_BOTTOM_XZ;
 use super::constants::DEADEROID_APPROACHING_COLOR;
+use super::constants::FADE_LOG_FRAME_EPSILON;
+use super::constants::FADE_LOG_INTERVAL_SECS;
 use super::constants::GRID_FLASH_DURATION;
+use super::constants::INTERSECTION_DEDUP_EPSILON;
 use super::portals::Portal;
 use super::portals::PortalGizmo;
 use super::types;
@@ -165,6 +168,22 @@ impl Default for Boundary {
 /// Lerps the `Boundary` resource's color alphas from 0.0 to target values over time
 #[derive(Component)]
 struct BoundaryFadeIn(Timer);
+
+struct PortalRenderContext<'a> {
+    color:       Color,
+    resolution:  u32,
+    orientation: &'a CameraOrientation,
+    actor_kind:  PortalActorKind,
+    transform:   &'a Transform,
+}
+
+struct ArcGeometry {
+    center: Vec3,
+    radius: f32,
+    normal: Vec3,
+    from:   Vec3,
+    to:     Vec3,
+}
 
 impl Boundary {
     /// Analyzes portal geometry relative to boundary faces
@@ -351,43 +370,43 @@ impl Boundary {
         transform: &Transform,
     ) {
         let geometry = Self::classify_portal_geometry(portal, transform);
-        Self::render_portal_by_geometry(
-            gizmos,
-            portal,
+        let context = PortalRenderContext {
             color,
             resolution,
             orientation,
             actor_kind,
-            &geometry,
             transform,
-        );
+        };
+        Self::render_portal_by_geometry(gizmos, portal, &context, &geometry);
     }
 
     fn render_portal_by_geometry(
         gizmos: &mut Gizmos<PortalGizmo>,
         portal: &Portal,
-        color: Color,
-        resolution: u32,
-        orientation: &CameraOrientation,
-        actor_kind: PortalActorKind,
+        context: &PortalRenderContext<'_>,
         geometry: &PortalGeometry,
-        transform: &Transform,
     ) {
         match geometry {
             PortalGeometry::SingleFace => {
                 // Draw full circle
                 let rotation = Quat::from_rotation_arc(
-                    orientation.settings.axis_profundus,
+                    context.orientation.settings.axis_profundus,
                     portal.normal().as_vec3(),
                 );
                 let isometry = Isometry3d::new(*portal.position, rotation);
                 gizmos
-                    .circle(isometry, portal.radius, color)
-                    .resolution(resolution);
+                    .circle(isometry, portal.radius, context.color)
+                    .resolution(context.resolution);
             },
             PortalGeometry::MultiFace(multiface) => {
                 Self::draw_multiface_portal(
-                    gizmos, portal, color, resolution, actor_kind, multiface, transform,
+                    gizmos,
+                    portal,
+                    context.color,
+                    context.resolution,
+                    context.actor_kind,
+                    multiface,
+                    context.transform,
                 );
             },
         }
@@ -442,13 +461,15 @@ impl Boundary {
                     // with TAU angle inversion
                     Self::draw_primary_face_arc(
                         gizmos,
-                        *portal.position,
-                        portal.radius,
-                        portal.normal().as_vec3(),
+                        &ArcGeometry {
+                            center: *portal.position,
+                            radius: portal.radius,
+                            normal: portal.normal().as_vec3(),
+                            from:   points[0],
+                            to:     points[1],
+                        },
                         face_color,
                         resolution,
-                        points[0],
-                        points[1],
                     );
                 },
                 MultiFaceGeometry::Edge { .. } => {
@@ -566,28 +587,24 @@ impl Boundary {
     // Used for primary face arcs - inverts the angle for proper rendering
     fn draw_primary_face_arc(
         gizmos: &mut Gizmos<PortalGizmo>,
-        center: Vec3,
-        radius: f32,
-        normal: Vec3,
+        arc: &ArcGeometry,
         color: Color,
         resolution: u32,
-        from: Vec3,
-        to: Vec3,
     ) {
         // Calculate vectors from center to intersection points
-        let vec_from = (from - center).normalize();
-        let vec_to = (to - center).normalize();
+        let vec_from = (arc.from - arc.center).normalize();
+        let vec_to = (arc.to - arc.center).normalize();
 
         // Calculate the angle and determine direction
         let mut angle = vec_from.angle_between(vec_to);
         let cross_product = vec_from.cross(vec_to);
-        let is_clockwise = cross_product.dot(normal) < 0.0;
+        let is_clockwise = cross_product.dot(arc.normal) < 0.0;
 
         // Invert the angle for arc_3d rendering logic
         angle = std::f32::consts::TAU - angle;
 
         // Calculate the rotation to align the arc with the boundary face
-        let face_rotation = Quat::from_rotation_arc(Vec3::Y, normal);
+        let face_rotation = Quat::from_rotation_arc(Vec3::Y, arc.normal);
 
         // Determine the start vector based on clockwise/counterclockwise
         let start_vec = if is_clockwise { vec_from } else { vec_to };
@@ -600,8 +617,8 @@ impl Boundary {
         gizmos
             .arc_3d(
                 angle,
-                radius,
-                Isometry3d::new(center, final_rotation),
+                arc.radius,
+                Isometry3d::new(arc.center, final_rotation),
                 color,
             )
             .resolution(resolution);
@@ -860,7 +877,7 @@ fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -
     let t2 = (-b - discriminant.sqrt()) / (2.0 * a);
 
     let t1_valid = (0.0..=1.0).contains(&t1);
-    let t2_valid = (0.0..=1.0).contains(&t2) && (t1 - t2).abs() > 1e-6;
+    let t2_valid = (0.0..=1.0).contains(&t2) && (t1 - t2).abs() > INTERSECTION_DEDUP_EPSILON;
 
     match (t1_valid, t2_valid) {
         (false, false) => Intersection::NoneFound,
@@ -915,7 +932,7 @@ fn fade_boundary_in(
         boundary.outer_color = Color::from(tailwind::BLUE_500).with_alpha(outer_alpha);
 
         // Log progress occasionally
-        if fade.0.elapsed_secs() % 0.5 < 0.016 {
+        if fade.0.elapsed_secs() % FADE_LOG_INTERVAL_SECS < FADE_LOG_FRAME_EPSILON {
             debug!(
                 "🎨 Boundary fade progress: {:.1}% (grid α={:.3}, outer α={:.3})",
                 t * 100.0,

@@ -259,7 +259,7 @@ fn apply_nateroid_materials_to_children(
 
 /// Diagnostic system to check mesh entity components
 fn debug_mesh_components(
-    nateroid_query: Query<&Children, With<Nateroid>>,
+    nateroid_query: Query<Entity, With<Nateroid>>,
     mesh_query: Query<
         (
             Entity,
@@ -275,15 +275,8 @@ fn debug_mesh_components(
     all_children_query: Query<&Children>,
     meshes: Res<Assets<Mesh>>,
 ) {
-    for children in nateroid_query.iter() {
-        let mut to_visit: Vec<Entity> = children.iter().collect();
-        let mut visited = std::collections::HashSet::new();
-
-        while let Some(child) = to_visit.pop() {
-            if !visited.insert(child) {
-                continue;
-            }
-
+    for nateroid_entity in nateroid_query.iter() {
+        for descendant in all_children_query.iter_descendants(nateroid_entity) {
             if let Ok((
                 entity,
                 mesh3d,
@@ -292,7 +285,7 @@ fn debug_mesh_components(
                 render_layers,
                 transform,
                 global_transform,
-            )) = mesh_query.get(child)
+            )) = mesh_query.get(descendant)
             {
                 // Check if the mesh asset actually has data
                 let mesh_data = meshes.get(&mesh3d.0);
@@ -312,10 +305,6 @@ fn debug_mesh_components(
                 if vertex_count == 0 {
                     warn!("Mesh entity {:?} has ZERO vertices!", entity);
                 }
-            }
-
-            if let Ok(grandchildren) = all_children_query.get(child) {
-                to_visit.extend(grandchildren.iter());
             }
         }
     }

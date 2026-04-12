@@ -49,6 +49,8 @@ pub(super) const HOME_ANIMATION_DURATION_MS: u64 = 1200;
 
 // Lighting
 pub(super) const AMBIENT_LIGHT_BRIGHTNESS: f32 = 100.0;
+pub(super) const SHADOW_DEPTH_BIAS: f32 = 0.02;
+pub(super) const SHADOW_NORMAL_BIAS: f32 = 0.6;
 pub(super) const CASCADE_SHADOW_FIRST_FAR_BOUND: f32 = 50.0;
 pub(super) const CASCADE_SHADOW_MAX_DISTANCE: f32 = 1500.0;
 pub(super) const CASCADE_SHADOW_NUM_CASCADES: usize = 4;

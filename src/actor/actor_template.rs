@@ -35,7 +35,7 @@ use super::constants::NATEROID_ANGULAR_VELOCITY;
 use super::constants::NATEROID_COLLIDER_MARGIN;
 use super::constants::NATEROID_COLLISION_DAMAGE;
 use super::constants::NATEROID_DEATH_DURATION_SECS;
-use super::constants::NATEROID_DEATH_SHRINK_PCT;
+use super::constants::NATEROID_DEATH_SHRINK_PERCENTAGE;
 use super::constants::NATEROID_DENSITY_CULLING_THRESHOLD;
 use super::constants::NATEROID_HEALTH;
 use super::constants::NATEROID_INITIAL_ALPHA;
@@ -138,7 +138,7 @@ pub struct NateroidSettings {
     pub linear_velocity:           f32,
     pub angular_velocity:          f32,
     pub death_duration_secs:       f32,
-    pub death_shrink_pct:          f32,
+    pub death_shrink_percentage:   f32,
     pub death_corner:              DeathCorner,
     pub initial_alpha:             f32,
     pub target_alpha:              f32,
@@ -181,7 +181,7 @@ impl Default for NateroidSettings {
             linear_velocity:           NATEROID_LINEAR_VELOCITY,
             angular_velocity:          NATEROID_ANGULAR_VELOCITY,
             death_duration_secs:       NATEROID_DEATH_DURATION_SECS,
-            death_shrink_pct:          NATEROID_DEATH_SHRINK_PCT,
+            death_shrink_percentage:   NATEROID_DEATH_SHRINK_PERCENTAGE,
             death_corner:              DeathCorner::Directional,
             initial_alpha:             NATEROID_INITIAL_ALPHA,
             target_alpha:              NATEROID_TARGET_ALPHA,

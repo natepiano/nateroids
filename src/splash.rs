@@ -17,6 +17,7 @@ use crate::camera::ZOOM_MARGIN;
 use crate::constants::SPLASH_FAST_SPIN_COUNT;
 use crate::constants::SPLASH_FAST_SPIN_DURATION_MS;
 use crate::constants::SPLASH_HOLD_DURATION_MS;
+use crate::constants::SPLASH_INITIAL_FONT_SIZE;
 use crate::constants::SPLASH_LAND_HOME_DURATION_MS;
 use crate::constants::SPLASH_SKIP_HINT_ALPHA;
 use crate::constants::SPLASH_SKIP_HINT_BOTTOM_OFFSET;
@@ -102,7 +103,7 @@ fn spawn_splash_text(mut commands: Commands) {
         SplashText,
         Text::new("nateroids"),
         TextFont {
-            font_size: 1.0,
+            font_size: SPLASH_INITIAL_FONT_SIZE,
             ..default()
         },
         Node {

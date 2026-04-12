@@ -1211,13 +1211,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_kana"
+version = "0.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d61d0697743cb2bb7c083e7394878babecc4b949b68caf5d9ab54d7026010d5"
+dependencies = [
+ "bevy",
+ "bevy_enhanced_input",
+]
+
+[[package]]
 name = "bevy_lagrange"
 version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5c8105effac45b8e5ed8e40dc766903ffebfeb27202de81704e1ad494eafb4e"
 dependencies = [
  "bevy",
- "bevy_kana",
+ "bevy_kana 0.0.3",
 ]
 
 [[package]]
@@ -1251,7 +1261,7 @@ dependencies = [
  "bytemuck",
  "getrandom 0.4.2",
  "nonmax",
- "rand 0.10.0",
+ "rand 0.10.1",
  "tracing",
  "wgpu-types",
 ]
@@ -1920,7 +1930,7 @@ checksum = "f0ed2b8f6acbc5424928d48b7e8564dd9c752add26284c17652cf5025419118f"
 dependencies = [
  "bevy",
  "bevy_diagnostic",
- "bevy_kana",
+ "bevy_kana 0.0.3",
  "dirs",
  "objc2 0.6.4",
  "objc2-app-kit 0.3.2",
@@ -4016,11 +4026,11 @@ dependencies = [
  "bevy-inspector-egui",
  "bevy_brp_extras",
  "bevy_enhanced_input",
- "bevy_kana",
+ "bevy_kana 0.0.5",
  "bevy_lagrange",
  "bevy_liminal",
  "bevy_window_manager",
- "rand 0.10.0",
+ "rand 0.10.1",
 ]
 
 [[package]]
@@ -5063,9 +5073,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc266eb313df6c5c09c1c7b1fbe2510961e5bcd3add930c1e31f7ed9da0feff8"
+checksum = "d2e8e8bcc7961af1fdac401278c6a831614941f6164ee3bf4ce61b7edb162207"
 dependencies = [
  "chacha20",
  "getrandom 0.4.2",

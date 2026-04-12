@@ -27,7 +27,7 @@ pub(super) const DEATH_EFFECT_LINE_LENGTH_VARIANCE: f32 = 2.0;
 // Flame gizmo shared constants
 pub(super) const FLAME_COLOR_FLICKER_SPEED: f32 = 12.0;
 pub(super) const FLAME_GIZMO_LINE_WIDTH: f32 = 2.5;
-pub(super) const FLAME_LENGTH_FLICKER_PHASE_MULT: f32 = 2.3;
+pub(super) const FLAME_LENGTH_FLICKER_PHASE_MULTIPLIER: f32 = 2.3;
 pub(super) const FLAME_LENGTH_FLICKER_SPEED: f32 = 15.0;
 pub(super) const FLAME_PHASE_SPREAD: f32 = 1.7;
 pub(super) const FLAME_VIBRATION_AMPLITUDE: f32 = 0.4;
@@ -52,7 +52,7 @@ pub(super) const NATEROID_COLLISION_DAMAGE: f32 = 10.0;
 /// Alpha decrement per death animation material level
 pub const NATEROID_DEATH_ALPHA_STEP: f32 = 0.01;
 pub(super) const NATEROID_DEATH_DURATION_SECS: f32 = 3.0;
-pub(super) const NATEROID_DEATH_SHRINK_PCT: f32 = 0.3;
+pub(super) const NATEROID_DEATH_SHRINK_PERCENTAGE: f32 = 0.3;
 pub(super) const NATEROID_DENSITY_CULLING_THRESHOLD: f32 = 0.01;
 pub(super) const NATEROID_HEALTH: f32 = 200.0;
 pub(super) const NATEROID_INITIAL_ALPHA: f32 = 0.35;
@@ -110,6 +110,6 @@ pub(super) const THRUSTER_LINE_LENGTH_BASE: f32 = 12.0;
 pub(super) const THRUSTER_LINE_LENGTH_VARIANCE: f32 = 4.0;
 pub(super) const THRUSTER_LINE_OFFSET: f32 = 3.0;
 /// Vertical vibration runs 30% faster than lateral, creating non-repeating patterns.
-pub(super) const THRUSTER_VIBRATION_VERTICAL_SPEED_MULT: f32 = 1.3;
+pub(super) const THRUSTER_VIBRATION_VERTICAL_SPEED_MULTIPLIER: f32 = 1.3;
 /// Vertical phase offset is 70% of lateral, making adjacent lines more in-sync vertically.
-pub(super) const THRUSTER_VIBRATION_VERTICAL_PHASE_MULT: f32 = 0.7;
+pub(super) const THRUSTER_VIBRATION_VERTICAL_PHASE_MULTIPLIER: f32 = 0.7;

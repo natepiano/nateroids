@@ -92,3 +92,13 @@ pub(super) const PORTAL_SCALAR: f32 = 2.0;
 
 /// Smallest base portal size
 pub(super) const PORTAL_SMALLEST: f32 = 5.0;
+
+// Circle–line-segment intersection
+/// Epsilon for deduplicating circle–line-segment intersection points
+pub(super) const INTERSECTION_DEDUP_EPSILON: f32 = 1e-6;
+
+// Boundary fade-in logging
+/// Interval between boundary fade-in log messages (seconds)
+pub(super) const FADE_LOG_INTERVAL_SECS: f32 = 0.5;
+/// Approximate frame duration for fade-in logging throttle (seconds)
+pub(super) const FADE_LOG_FRAME_EPSILON: f32 = 0.016;

@@ -17,6 +17,8 @@ use super::constants::CASCADE_SHADOW_NUM_CASCADES;
 use super::constants::CASCADE_SHADOW_OVERLAP_PROPORTION;
 use super::constants::DIRECTIONAL_LIGHT_ILLUMINANCE;
 use super::constants::ENVIRONMENT_MAP_INTENSITY;
+use super::constants::SHADOW_DEPTH_BIAS;
+use super::constants::SHADOW_NORMAL_BIAS;
 use crate::input::InspectLightsSwitch;
 use crate::orientation::CameraOrientation;
 use crate::switches;
@@ -204,8 +206,8 @@ fn spawn_directional_light(
             color: settings.color,
             illuminance: settings.illuminance,
             shadows_enabled: matches!(settings.shadows, ShadowSwitch::On),
-            shadow_depth_bias: 0.02,
-            shadow_normal_bias: 0.6,
+            shadow_depth_bias: SHADOW_DEPTH_BIAS,
+            shadow_normal_bias: SHADOW_NORMAL_BIAS,
             ..default()
         })
         .insert(

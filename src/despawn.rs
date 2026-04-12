@@ -220,7 +220,7 @@ fn despawn_dead_entities(
                     .insert((
                         Deaderoid {
                             initial_scale:          transform.scale,
-                            target_shrink:          nateroid_settings.death_shrink_pct,
+                            target_shrink:          nateroid_settings.death_shrink_percentage,
                             shrink_duration:        nateroid_settings.death_duration_secs,
                             elapsed_time:           0.0,
                             current_shrink:         1.0,
