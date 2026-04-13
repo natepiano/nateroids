@@ -128,7 +128,7 @@ fn calculate_death_velocity(
         DeathCorner::Random => {
             // Randomly select one corner
             let mut rng = rand::rng();
-            corners[rng.random_range(0..8)]
+            corners[rng.random_range(0..corners.len())]
         },
         DeathCorner::Directional => {
             // Find corner most aligned with current velocity direction

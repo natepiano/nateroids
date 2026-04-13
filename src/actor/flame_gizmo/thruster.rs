@@ -6,7 +6,7 @@ use bevy_enhanced_input::prelude::ActionOf;
 use bevy_kana::ToF32;
 
 use super::FlameGizmo;
-use super::compute_flicker;
+use super::flicker;
 use crate::actor::constants::FLAME_COLOR_FLICKER_SPEED;
 use crate::actor::constants::FLAME_PHASE_SPREAD;
 use crate::actor::constants::FLAME_VIBRATION_AMPLITUDE;
@@ -66,25 +66,25 @@ impl FlameZone {
         color_yellow: Color,
     ) -> Color {
         match self {
-            Self::Outer(t) => super::lerp_color(color_red, color_orange, *t),
+            Self::Outer(t) => super::flicker::lerp_color(color_red, color_orange, *t),
             Self::Middle => {
                 // Flicker between cooler (red) and hotter (yellow)
                 let flicker = elapsed.mul_add(FLAME_COLOR_FLICKER_SPEED, phase).sin();
                 if flicker > 0.0 {
-                    super::lerp_color(
+                    super::flicker::lerp_color(
                         color_orange,
                         color_yellow,
                         flicker * THRUSTER_COLOR_FLICKER_INTENSITY,
                     )
                 } else {
-                    super::lerp_color(
+                    super::flicker::lerp_color(
                         color_orange,
                         color_red,
                         -flicker * THRUSTER_COLOR_FLICKER_INTENSITY,
                     )
                 }
             },
-            Self::Center(t) => super::lerp_color(color_orange, color_yellow, *t),
+            Self::Center(t) => super::flicker::lerp_color(color_orange, color_yellow, *t),
         }
     }
 }
@@ -169,7 +169,7 @@ fn draw_exhaust_flames(gizmos: &mut Gizmos<FlameGizmo>, transform: &Transform, e
             .cos()
             * FLAME_VIBRATION_AMPLITUDE;
 
-        let flicker = compute_flicker(elapsed, line_index, 0.0);
+        let flicker = flicker::compute_flicker(elapsed, line_index, 0.0);
         let line_length = flicker
             .length
             .mul_add(THRUSTER_LINE_LENGTH_VARIANCE, THRUSTER_LINE_LENGTH_BASE);

@@ -6,8 +6,7 @@ use bevy_kana::ToF32;
 use rand::RngExt;
 
 use super::FlameGizmo;
-use super::compute_flicker;
-use super::lerp_color;
+use super::flicker;
 use crate::actor::Deaderoid;
 use crate::actor::aabb;
 use crate::actor::constants::DEATH_EFFECT_DURATION_SECS;
@@ -227,7 +226,7 @@ fn draw_ring_lines(
         let vibration =
             elapsed.mul_add(FLAME_VIBRATION_SPEED, phase).sin() * FLAME_VIBRATION_AMPLITUDE;
 
-        let flicker = compute_flicker(elapsed, line_index, params.phase_offset);
+        let flicker = flicker::compute_flicker(elapsed, line_index, params.phase_offset);
         let line_length = flicker
             .length
             .mul_add(params.line_length_variance, params.line_length_base);
@@ -235,7 +234,7 @@ fn draw_ring_lines(
         let start = position + radial * params.radius + tangent * vibration;
         let end = start + radial * line_length;
 
-        let color = lerp_color(params.color_a, params.color_b, flicker.color);
+        let color = flicker::lerp_color(params.color_a, params.color_b, flicker.color);
 
         gizmos.line(start, end, color);
     }
