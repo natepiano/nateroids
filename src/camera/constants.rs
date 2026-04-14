@@ -35,13 +35,13 @@ pub(super) const EDGE_MARKER_FONT_SIZE: f32 = 11.0;
 pub(super) const EDGE_MARKER_SPHERE_RADIUS: f32 = 1.0;
 
 // Focus gizmo
-pub(super) const FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS: f32 = 100.0;
 pub(super) const FOCUS_GIZMO_COLOR: Color = Color::Srgba(bevy::color::Srgba {
     red:   1.0,
     green: 0.0,
     blue:  0.0,
     alpha: 1.0,
 });
+pub(super) const FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS: f32 = 100.0;
 pub(super) const FOCUS_GIZMO_LINE_WIDTH: f32 = 2.0;
 
 // Home animation
@@ -49,14 +49,14 @@ pub(super) const HOME_ANIMATION_DURATION_MS: u64 = 1200;
 
 // Lighting
 pub(super) const AMBIENT_LIGHT_BRIGHTNESS: f32 = 100.0;
-pub(super) const SHADOW_DEPTH_BIAS: f32 = 0.02;
-pub(super) const SHADOW_NORMAL_BIAS: f32 = 0.6;
 pub(super) const CASCADE_SHADOW_FIRST_FAR_BOUND: f32 = 50.0;
 pub(super) const CASCADE_SHADOW_MAX_DISTANCE: f32 = 1500.0;
 pub(super) const CASCADE_SHADOW_NUM_CASCADES: usize = 4;
 pub(super) const CASCADE_SHADOW_OVERLAP_PROPORTION: f32 = 0.3;
 pub(super) const DIRECTIONAL_LIGHT_ILLUMINANCE: f32 = 1700.0;
 pub(super) const ENVIRONMENT_MAP_INTENSITY: f32 = 25_000.0;
+pub(super) const SHADOW_DEPTH_BIAS: f32 = 0.02;
+pub(super) const SHADOW_NORMAL_BIAS: f32 = 0.6;
 
 // Selection outline
 pub(super) const SELECTION_OUTLINE_COLOR: Color = Color::Srgba(bevy::color::Srgba {
@@ -93,8 +93,12 @@ pub(super) const STAR_ROTATION_CYCLE_MINUTES: f32 = 15.0;
 pub(super) const STAR_TWINKLE_CHOOSE_MULTIPLE_COUNT: usize = 2;
 pub(super) const STAR_TWINKLE_DURATION_MAX: f32 = 2.0;
 pub(super) const STAR_TWINKLE_DURATION_MIN: f32 = 0.5;
+/// Rescaling factor to normalize each half of the twinkle animation to 0.0–1.0
+pub(super) const STAR_TWINKLE_HALF_SCALE: f32 = 2.0;
 pub(super) const STAR_TWINKLE_INTENSITY_MAX: f32 = 20.0;
 pub(super) const STAR_TWINKLE_INTENSITY_MIN: f32 = 10.0;
+/// Fraction of twinkle duration spent brightening (0.5 = symmetric brighten/dim)
+pub(super) const STAR_TWINKLE_MIDPOINT: f32 = 0.5;
 pub(super) const STAR_TWINKLING_DELAY: f32 = 0.5;
 
 // Zoom

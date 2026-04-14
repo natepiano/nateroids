@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_kana::Position;
 
 use super::Boundary;
-use crate::playfield::constants::BOUNDARY_NORMAL_EPSILON;
+use crate::playfield::boundary_face::BoundaryFace;
 use crate::playfield::constants::BOUNDARY_SNAP_EPSILON;
 
 impl Boundary {
@@ -122,36 +122,18 @@ impl Boundary {
         let boundary_max = transform.translation + half_size;
 
         // Calculate distance to all 6 faces and return normal of closest
-        let dist_to_min_x = (position.x - boundary_min.x).abs();
-        let dist_to_max_x = (position.x - boundary_max.x).abs();
-        let dist_to_min_y = (position.y - boundary_min.y).abs();
-        let dist_to_max_y = (position.y - boundary_max.y).abs();
-        let dist_to_min_z = (position.z - boundary_min.z).abs();
-        let dist_to_max_z = (position.z - boundary_max.z).abs();
-
-        let min_dist = dist_to_min_x
-            .min(dist_to_max_x)
-            .min(dist_to_min_y)
-            .min(dist_to_max_y)
-            .min(dist_to_min_z)
-            .min(dist_to_max_z);
-
-        if (dist_to_min_x - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
-            Dir3::NEG_X
-        } else if (dist_to_max_x - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
-            Dir3::X
-        } else if (dist_to_min_y - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
-            Dir3::NEG_Y
-        } else if (dist_to_max_y - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
-            Dir3::Y
-        } else if (dist_to_min_z - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
-            Dir3::NEG_Z
-        } else if (dist_to_max_z - min_dist).abs() < BOUNDARY_NORMAL_EPSILON {
-            Dir3::Z
-        } else {
-            // Fallback to Y
-            Dir3::Y
-        }
+        let faces = [
+            ((position.x - boundary_min.x).abs(), BoundaryFace::Left),
+            ((position.x - boundary_max.x).abs(), BoundaryFace::Right),
+            ((position.y - boundary_min.y).abs(), BoundaryFace::Bottom),
+            ((position.y - boundary_max.y).abs(), BoundaryFace::Top),
+            ((position.z - boundary_min.z).abs(), BoundaryFace::Back),
+            ((position.z - boundary_max.z).abs(), BoundaryFace::Front),
+        ];
+        faces
+            .iter()
+            .min_by(|a, b| a.0.total_cmp(&b.0))
+            .map_or(Dir3::Y, |(_, face)| face.to_dir3())
     }
 
     pub fn find_edge_point(

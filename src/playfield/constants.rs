@@ -27,16 +27,23 @@ pub(super) const BOUNDARY_SCALAR: f32 = 110.0;
 /// Duration in seconds for the grid flash animation when cell count changes
 pub(super) const GRID_FLASH_DURATION: f32 = 2.0;
 
-// Boundary position snapping
+// Boundary fade-in logging
+/// Approximate frame duration for fade-in logging throttle (seconds)
+pub(super) const FADE_LOG_FRAME_EPSILON: f32 = 0.016;
+/// Interval between boundary fade-in log messages (seconds)
+pub(super) const FADE_LOG_INTERVAL_SECS: f32 = 0.5;
 
-/// Epsilon for boundary position snapping to prevent false-positive overextension
-pub(super) const BOUNDARY_SNAP_EPSILON: f32 = 0.01;
+// Boundary position snapping
 
 /// Epsilon for portal overextension detection (2x snap epsilon)
 pub(super) const BOUNDARY_OVEREXTENSION_EPSILON: f32 = BOUNDARY_SNAP_EPSILON * 2.0;
 
-/// Epsilon tolerance for normal comparison in boundary position detection
-pub(super) const BOUNDARY_NORMAL_EPSILON: f32 = 0.001;
+/// Epsilon for boundary position snapping to prevent false-positive overextension
+pub(super) const BOUNDARY_SNAP_EPSILON: f32 = 0.01;
+
+// Circle–line-segment intersection
+/// Epsilon for deduplicating circle–line-segment intersection points
+pub(super) const INTERSECTION_DEDUP_EPSILON: f32 = 1e-6;
 
 // Portal colors
 
@@ -92,13 +99,3 @@ pub(super) const PORTAL_SCALAR: f32 = 2.0;
 
 /// Smallest base portal size
 pub(super) const PORTAL_SMALLEST: f32 = 5.0;
-
-// Circle–line-segment intersection
-/// Epsilon for deduplicating circle–line-segment intersection points
-pub(super) const INTERSECTION_DEDUP_EPSILON: f32 = 1e-6;
-
-// Boundary fade-in logging
-/// Interval between boundary fade-in log messages (seconds)
-pub(super) const FADE_LOG_INTERVAL_SECS: f32 = 0.5;
-/// Approximate frame duration for fade-in logging throttle (seconds)
-pub(super) const FADE_LOG_FRAME_EPSILON: f32 = 0.016;

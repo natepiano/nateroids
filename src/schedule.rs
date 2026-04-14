@@ -25,7 +25,7 @@ impl Plugin for SchedulePlugin {
             Update,
             // All in-game systems are gated by `PauseState::Playing`. When paused,
             // `PauseState` transitions to `Paused` and these systems stop running.
-            // `PauseState` is a SubState that only exists while in `GameState::InGame`.
+            // `PauseState` is a `SubState` that only exists while in `GameState::InGame`.
             IN_GAME_SETS.chain().run_if(in_state(PauseState::Playing)),
         )
         .configure_sets(

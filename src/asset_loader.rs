@@ -9,7 +9,7 @@ impl Plugin for AssetLoaderPlugin {
         app.init_state::<AssetsState>() // necessary to tell if they've finished loading
             .init_resource::<SceneAssets>()
             // make sure this loads before the spaceship uses it - right now that is
-            // handled by running this PreStartup and spaceship in Startup
+            // handled by running this `PreStartup` and spaceship in `Startup`
             .add_systems(PreStartup, load_assets)
             .add_systems(
                 Update,
@@ -26,7 +26,7 @@ pub(crate) enum AssetsState {
     Loaded,
 }
 
-// all the models are loaded via SceneBundle - the models
+// all the models are loaded via `SceneBundle` - the models
 // can have multiple elements and scene makes all that possible
 #[derive(Resource, Clone, Debug, Default)]
 pub(crate) struct SceneAssets {

@@ -8,6 +8,7 @@ use bevy_kana::ToF32;
 use super::FlameGizmo;
 use super::flicker;
 use crate::actor::constants::FLAME_COLOR_FLICKER_SPEED;
+use crate::actor::constants::FLAME_GIZMO_LINE_WIDTH;
 use crate::actor::constants::FLAME_PHASE_SPREAD;
 use crate::actor::constants::FLAME_VIBRATION_AMPLITUDE;
 use crate::actor::constants::FLAME_VIBRATION_SPEED;
@@ -21,6 +22,7 @@ use crate::actor::constants::THRUSTER_LINE_OFFSET;
 use crate::actor::constants::THRUSTER_VIBRATION_VERTICAL_PHASE_MULTIPLIER;
 use crate::actor::constants::THRUSTER_VIBRATION_VERTICAL_SPEED_MULTIPLIER;
 use crate::actor::spaceship::Spaceship;
+use crate::camera::RenderLayer;
 use crate::input::ShipAccelerate;
 use crate::input::ShipControlsContext;
 use crate::state::PauseState;
@@ -185,4 +187,10 @@ fn draw_exhaust_flames(gizmos: &mut Gizmos<FlameGizmo>, transform: &Transform, e
 
         gizmos.line(start, end, color);
     }
+}
+
+pub(super) fn configure_flame_gizmo(mut config_store: ResMut<GizmoConfigStore>) {
+    let (config, _) = config_store.config_mut::<FlameGizmo>();
+    config.line.width = FLAME_GIZMO_LINE_WIDTH;
+    config.render_layers = RenderLayer::Game.layers();
 }

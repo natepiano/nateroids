@@ -12,13 +12,11 @@ pub(crate) const STRESS_ENTER_FPS_THRESHOLD: f64 = 35.0;
 pub(crate) const STRESS_EXIT_FPS_THRESHOLD: f64 = 45.0;
 pub(crate) const STRESS_VELOCITY_THRESHOLD: f32 = 200.0;
 
-// Splash font
-pub(crate) const SPLASH_INITIAL_FONT_SIZE: f32 = 1.0;
-
 // Splash constants
 pub(crate) const SPLASH_FAST_SPIN_COUNT: usize = 5;
 pub(crate) const SPLASH_FAST_SPIN_DURATION_MS: u64 = 25;
 pub(crate) const SPLASH_HOLD_DURATION_MS: u64 = 2500;
+pub(crate) const SPLASH_INITIAL_FONT_SIZE: f32 = 1.0;
 pub(crate) const SPLASH_LAND_HOME_DURATION_MS: u64 = 1200;
 pub(crate) const SPLASH_SKIP_HINT_ALPHA: f32 = 0.8;
 pub(crate) const SPLASH_SKIP_HINT_BOTTOM_OFFSET: f32 = 24.0;

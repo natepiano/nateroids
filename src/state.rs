@@ -100,8 +100,8 @@ fn restart_game_command(
     }
 
     // Quick restart flow (Shift+R):
-    // 1. InGame → GameOver: Stars regenerate, actors despawn
-    // 2. GameOver → InGame: No star regeneration (stars from step 1 persist)
+    // 1. `InGame` → `GameOver`: Stars regenerate, actors despawn
+    // 2. `GameOver` → `InGame`: No star regeneration (stars from step 1 persist)
     // 3. Fresh game starts with stars already generated
     debug!("restart quick");
     next_state.set(GameState::GameOver);
@@ -117,8 +117,8 @@ fn restart_with_splash_command(
     }
 
     // Full restart with splash flow (Super+Shift+R):
-    // 1. InGame → Splash: Stars regenerate, actors despawn, splash timer resets
-    // 2. Splash → InGame: No star regeneration (stars from step 1 persist)
+    // 1. `InGame` → `Splash`: Stars regenerate, actors despawn, splash timer resets
+    // 2. `Splash` → `InGame`: No star regeneration (stars from step 1 persist)
     // 3. Game starts with stars that were generated during splash
     debug!("restart with splash");
     next_state.set(GameState::Splash);

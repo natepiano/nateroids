@@ -45,7 +45,7 @@ use crate::switches::SwitchesPlugin;
 fn main() {
     let mut app = App::new();
 
-    // Get effective port from BrpExtrasPlugin to include in window title if non-default
+    // Get effective port from `BrpExtrasPlugin` to include in window title if non-default
     let brp_plugin = BrpExtrasPlugin::default();
     let (effective_port, _) = brp_plugin.get_effective_port();
     let window_title = if effective_port == bevy_brp_extras::DEFAULT_REMOTE_PORT {

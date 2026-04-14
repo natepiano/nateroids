@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use bevy::prelude::*;
 use rand::RngExt;
 
+use super::constants::STAR_TWINKLE_HALF_SCALE;
+use super::constants::STAR_TWINKLE_MIDPOINT;
 use super::settings::StarSettings;
 use super::stars::Star;
 
@@ -127,18 +129,16 @@ fn update_twinkling(
         if let Some(material) = materials.get_mut(material_handle) {
             let progress = twinkling.twinkle_timer.elapsed_secs()
                 / twinkling.twinkle_timer.duration().as_secs_f32();
-            // .5 -> brighten until halfway and then dim back
-            // .2 in the lerp -> used to make sure full range of the lerp function is used
-            // in each                   half of the animation - so we go from
-            // 0..1 in each half
-            let new_emissive = if progress < 0.5 {
-                twinkling
-                    .original_emissive
-                    .lerp(twinkling.target_emissive, progress * 2.0)
+            let new_emissive = if progress < STAR_TWINKLE_MIDPOINT {
+                twinkling.original_emissive.lerp(
+                    twinkling.target_emissive,
+                    progress * STAR_TWINKLE_HALF_SCALE,
+                )
             } else {
-                twinkling
-                    .target_emissive
-                    .lerp(twinkling.original_emissive, (progress - 0.5) * 2.0)
+                twinkling.target_emissive.lerp(
+                    twinkling.original_emissive,
+                    (progress - STAR_TWINKLE_MIDPOINT) * STAR_TWINKLE_HALF_SCALE,
+                )
             };
             material.emissive = LinearRgba::new(
                 new_emissive.x,

@@ -68,7 +68,7 @@ fn spawn_spaceship_if_needed(
     spaceship_settings: Res<SpaceshipSettings>,
     query: Query<(), With<Spaceship>>,
 ) {
-    // Only spawn if no spaceship exists (e.g., coming from GameOver)
+    // Only spawn if no spaceship exists (e.g., coming from `GameOver`)
     if query.is_empty() {
         spawn_spaceship(commands, spaceship_settings);
     }

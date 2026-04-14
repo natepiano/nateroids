@@ -255,7 +255,7 @@ fn manage_lighting(
     ] {
         let settings = light_settings.get_light_settings(*position);
 
-        // we always spawn a light with its current LightDirection - see
+        // we always spawn a light with its current `LightDirection` - see
         // if we have the current loop's position in an already spawned entity
         let existing_light = query.iter_mut().find(|(_, _, dir)| dir.0 == *position);
 
