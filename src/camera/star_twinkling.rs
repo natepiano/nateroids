@@ -32,7 +32,7 @@ struct StartTwinklingTimer {
     timer: Timer,
 }
 
-fn should_start_twinkling(start_timer: &mut ResMut<StartTwinklingTimer>, time: Res<Time>) -> bool {
+fn should_start_twinkling(start_timer: &mut StartTwinklingTimer, time: &Time) -> bool {
     start_timer.timer.tick(time.delta());
     start_timer.timer.just_finished()
 }
@@ -62,7 +62,7 @@ fn start_twinkling(
     mut start_timer: ResMut<StartTwinklingTimer>,
     time: Res<Time>,
 ) {
-    if !should_start_twinkling(&mut start_timer, time) {
+    if !should_start_twinkling(&mut start_timer, &time) {
         return;
     }
 

@@ -164,7 +164,7 @@ fn spaceship_movement_controls(
                 acceleration,
                 max_speed,
                 delta_seconds,
-                orientation_mode,
+                &orientation_mode,
             );
         }
     }
@@ -176,7 +176,7 @@ fn apply_acceleration(
     acceleration: f32,
     max_speed: f32,
     delta_seconds: f32,
-    orientation: Res<CameraOrientation>,
+    orientation: &CameraOrientation,
 ) {
     let proposed_velocity = **linear_velocity + direction * (acceleration * delta_seconds);
     let proposed_speed = proposed_velocity.length();

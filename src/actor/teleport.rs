@@ -188,8 +188,7 @@ fn teleport_at_boundary(
             if is_spaceship.is_some() {
                 let entity_name = name.map_or("Spaceship", Name::as_str);
                 debug!(
-                    "🔄 {} teleporting: from ({:.1}, {:.1}, {:.1}) to ({:.1}, {:.1}, {:.1})",
-                    entity_name,
+                    "🔄 {entity_name} teleporting: from ({:.1}, {:.1}, {:.1}) to ({:.1}, {:.1}, {:.1})",
                     original_position.x,
                     original_position.y,
                     original_position.z,

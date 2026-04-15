@@ -14,10 +14,18 @@ mod zoom;
 use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::prelude::*;
 use bevy_liminal::MeshOutlinePlugin;
+use camera_game::GameCameraPlugin;
+use camera_star::StarCameraPlugin;
 pub use constants::ZOOM_MARGIN;
+use lights::DirectionalLightsPlugin;
+use selection::SelectionPlugin;
 pub use settings::CameraSettings;
+use settings::CameraSettingsPlugin;
+use star_twinkling::StarTwinklingPlugin;
+use stars::StarsPlugin;
 pub use support::RenderLayer;
 pub use zoom::CameraHomeEvent;
+use zoom::ZoomPlugin;
 
 pub(crate) struct CameraPlugin;
 
@@ -26,14 +34,14 @@ impl Plugin for CameraPlugin {
         app.add_plugins(MeshPickingPlugin)
             .add_plugins(bevy_lagrange::LagrangePlugin)
             .add_plugins(MeshOutlinePlugin)
-            .add_plugins(camera_game::GameCameraPlugin)
-            .add_plugins(camera_star::StarCameraPlugin)
-            .add_plugins(zoom::ZoomPlugin)
-            .add_plugins(settings::CameraSettingsPlugin)
-            .add_plugins(lights::DirectionalLightsPlugin)
-            .add_plugins(selection::SelectionPlugin)
-            .add_plugins(star_twinkling::StarTwinklingPlugin)
-            .add_plugins(stars::StarsPlugin)
+            .add_plugins(GameCameraPlugin)
+            .add_plugins(StarCameraPlugin)
+            .add_plugins(ZoomPlugin)
+            .add_plugins(CameraSettingsPlugin)
+            .add_plugins(DirectionalLightsPlugin)
+            .add_plugins(SelectionPlugin)
+            .add_plugins(StarTwinklingPlugin)
+            .add_plugins(StarsPlugin)
             .add_systems(
                 Startup,
                 (

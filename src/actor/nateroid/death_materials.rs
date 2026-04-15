@@ -122,12 +122,9 @@ pub(super) fn debug_mesh_components(
                 let vertex_count = mesh_data.map_or(0, Mesh::count_vertices);
 
                 debug!(
-                    "Mesh entity {:?}: has_material={}, visible={:?}, vertices={}, render_layers={:?}, scale={:?}, global_pos={:?}",
-                    entity,
+                    "Mesh entity {entity:?}: has_material={}, visible={:?}, vertices={vertex_count}, render_layers={render_layers:?}, scale={:?}, global_pos={:?}",
                     material.is_some(),
                     visibility.map(|v| v.get()),
-                    vertex_count,
-                    render_layers,
                     transform.map(|t| t.scale),
                     global_transform.map(GlobalTransform::translation)
                 );

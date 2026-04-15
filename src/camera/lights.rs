@@ -147,7 +147,7 @@ pub(super) enum LightPosition {
 }
 
 impl LightPosition {
-    pub fn get_rotation(self, orientation: &CameraOrientation) -> RotationInfo {
+    pub const fn get_rotation(self, orientation: &CameraOrientation) -> RotationInfo {
         match self {
             Self::Right => RotationInfo {
                 axis:  orientation.settings.axis_mundi,

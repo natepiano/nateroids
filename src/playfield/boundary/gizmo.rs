@@ -148,10 +148,8 @@ pub(super) fn fade_boundary_in(
         // Log progress occasionally
         if fade.0.elapsed_secs() % FADE_LOG_INTERVAL_SECS < FADE_LOG_FRAME_EPSILON {
             debug!(
-                "Boundary fade progress: {:.1}% (grid alpha={:.3}, outer alpha={:.3})",
+                "Boundary fade progress: {:.1}% (grid alpha={grid_alpha:.3}, outer alpha={outer_alpha:.3})",
                 t * 100.0,
-                grid_alpha,
-                outer_alpha
             );
         }
 

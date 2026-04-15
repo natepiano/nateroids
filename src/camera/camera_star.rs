@@ -25,7 +25,7 @@ pub(super) fn spawn_star_camera(mut commands: Commands, camera_settings: Res<Cam
             ..default()
         },
         StarCamera,
-        get_bloom_settings(camera_settings),
+        get_bloom_settings(&camera_settings),
         RenderLayer::Stars.layers(),
     ));
 }
@@ -37,11 +37,11 @@ fn update_bloom_settings(
     if camera_settings.is_changed()
         && let Ok(mut old_bloom_settings) = bloom_query.single_mut()
     {
-        *old_bloom_settings = get_bloom_settings(camera_settings);
+        *old_bloom_settings = get_bloom_settings(&camera_settings);
     }
 }
 
-fn get_bloom_settings(camera_settings: Res<CameraSettings>) -> Bloom {
+const fn get_bloom_settings(camera_settings: &CameraSettings) -> Bloom {
     let mut new_bloom_settings = Bloom::NATURAL;
     new_bloom_settings.intensity = camera_settings.bloom_intensity;
     new_bloom_settings.low_frequency_boost = camera_settings.bloom_low_frequency_boost;

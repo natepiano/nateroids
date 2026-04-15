@@ -99,6 +99,38 @@ impl Default for Boundary {
 }
 
 impl Boundary {
+    pub fn longest_diagonal(&self) -> f32 {
+        let boundary_scale = self.scale();
+        let x = boundary_scale.x;
+        let y = boundary_scale.y;
+        let z = boundary_scale.z;
+        // FMA optimization (faster + more precise): (x² + y² + z²).sqrt()
+        z.mul_add(z, y.mul_add(y, x.mul_add(x, 0.0))).sqrt()
+    }
+
+    pub fn max_missile_distance(&self) -> f32 {
+        let boundary_scale = self.scale();
+        boundary_scale.x.max(boundary_scale.y).max(boundary_scale.z)
+    }
+
+    pub fn scale(&self) -> Vec3 { self.exterior_scalar * self.cell_count.as_vec3() }
+
+    /// Returns the 8 corner points of the boundary as a fixed-size array
+    pub fn corners(&self) -> [Vec3; 8] {
+        let grid_size = self.scale();
+        let half_size = grid_size / 2.0;
+        [
+            Vec3::new(-half_size.x, -half_size.y, -half_size.z),
+            Vec3::new(half_size.x, -half_size.y, -half_size.z),
+            Vec3::new(-half_size.x, half_size.y, -half_size.z),
+            Vec3::new(half_size.x, half_size.y, -half_size.z),
+            Vec3::new(-half_size.x, -half_size.y, half_size.z),
+            Vec3::new(half_size.x, -half_size.y, half_size.z),
+            Vec3::new(-half_size.x, half_size.y, half_size.z),
+            Vec3::new(half_size.x, half_size.y, half_size.z),
+        ]
+    }
+
     pub(super) fn draw_portal(
         gizmos: &mut Gizmos<PortalGizmo>,
         portal: &Portal,

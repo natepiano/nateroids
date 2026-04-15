@@ -261,9 +261,9 @@ fn snap_and_get_face(
 
 fn handle_emerging_visual(
     portal: Portal,
-    portal_settings: &Res<PortalSettings>,
+    portal_settings: &PortalSettings,
     teleporter: &Teleporter,
-    time: &Res<Time>,
+    time: &Time,
     visual: &mut Mut<ActorPortals>,
     boundary_transform: &Transform,
 ) {
@@ -304,8 +304,8 @@ fn handle_emerging_visual(
 fn handle_approaching_visual(
     boundary_transform: &Transform,
     portal: Portal,
-    portal_settings: &Res<PortalSettings>,
-    time: &Res<Time>,
+    portal_settings: &PortalSettings,
+    time: &Time,
     visual: &mut Mut<ActorPortals>,
 ) {
     if let Some(collision_point) =
@@ -380,7 +380,7 @@ fn smooth_circle_position(
     visual: &Mut<ActorPortals>,
     collision_point: Position,
     current_boundary_wall_normal: Dir3,
-    portal_settings: &Res<PortalSettings>,
+    portal_settings: &PortalSettings,
 ) -> Position {
     if let Some(approaching) = &visual.approaching {
         // Adjust this value to control smoothing (0.0 to 1.0)
