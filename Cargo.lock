@@ -1207,7 +1207,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "30e3ee689bf79e2740e4edcee886c7296b756ae748c7a9213cf787e6b4f941c0"
 dependencies = [
  "bevy",
- "bevy_enhanced_input",
 ]
 
 [[package]]
@@ -1222,12 +1221,12 @@ dependencies = [
 
 [[package]]
 name = "bevy_lagrange"
-version = "0.0.2"
+version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5c8105effac45b8e5ed8e40dc766903ffebfeb27202de81704e1ad494eafb4e"
+checksum = "3c31cfcf16c00e6ee255b1ea42d99ff763aec21d1acb1cf234064191782e5cae"
 dependencies = [
  "bevy",
- "bevy_kana 0.0.3",
+ "bevy_kana 0.0.5",
 ]
 
 [[package]]
