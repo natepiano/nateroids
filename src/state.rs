@@ -2,11 +2,12 @@ use avian3d::prelude::*;
 use bevy::dev_tools::states::*;
 use bevy::prelude::*;
 
-use crate::input::PauseSwitch;
+use crate::input::EscapeSwitch;
 use crate::input::RestartGameShortcut;
 use crate::input::RestartWithSplashShortcut;
+use crate::switches::Switches;
 
-event!(PauseEvent);
+event!(EscapeEvent);
 event!(RestartGameEvent);
 event!(RestartWithSplashEvent);
 
@@ -15,7 +16,7 @@ pub(crate) struct StatePlugin;
 impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>().add_sub_state::<PauseState>();
-        bind_action_system!(app, PauseSwitch, PauseEvent, pause_command);
+        bind_action_system!(app, EscapeSwitch, EscapeEvent, escape_command);
         bind_action_system!(
             app,
             RestartGameShortcut,
@@ -63,12 +64,18 @@ pub(crate) enum PauseState {
     Paused,
 }
 
-/// Reusable on-demand command for toggling pause state.
-fn pause_command(
+/// Handles the Esc key: closes any active inspectors first, and only toggles
+/// pause if no inspectors were open.
+fn escape_command(
     game_state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<PauseState>>,
     pause_state: Option<Res<State<PauseState>>>,
+    mut switches: ResMut<Switches>,
 ) {
+    if switches.close_all_active_inspectors() {
+        return;
+    }
+
     if *game_state.get() != GameState::InGame {
         return;
     }

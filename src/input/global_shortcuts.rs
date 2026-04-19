@@ -22,7 +22,7 @@ action!(InspectSpaceshipControlSwitch);
 action!(InspectSpaceshipSwitch);
 action!(InspectStarSwitch);
 action!(InspectZoomSwitch);
-action!(PauseSwitch);
+action!(EscapeSwitch);
 action!(PhysicsAabbSwitch);
 action!(ShowFocusSwitch);
 
@@ -43,7 +43,7 @@ fn spawn_main_shortcuts(
     keybindings.spawn_key::<BoundaryBoxSwitch>(spawner, KeyCode::KeyB);
     keybindings.spawn_key::<CameraHome>(spawner, KeyCode::F12);
     keybindings.spawn_key::<ZoomToFitShortcut>(spawner, KeyCode::KeyZ);
-    keybindings.spawn_key::<PauseSwitch>(spawner, KeyCode::Escape);
+    keybindings.spawn_key::<EscapeSwitch>(spawner, KeyCode::Escape);
 }
 
 fn spawn_inspector_shortcuts(

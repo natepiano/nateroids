@@ -51,6 +51,22 @@ pub(crate) enum ToggleState {
 }
 
 impl Switches {
+    const INSPECTOR_SWITCHES: [Switch; 13] = [
+        Switch::InspectAabb,
+        Switch::InspectBoundary,
+        Switch::InspectCamera,
+        Switch::InspectFocus,
+        Switch::InspectLights,
+        Switch::InspectMissile,
+        Switch::InspectNateroid,
+        Switch::InspectOutline,
+        Switch::InspectPortals,
+        Switch::InspectSpaceship,
+        Switch::InspectSpaceshipControl,
+        Switch::InspectStar,
+        Switch::InspectZoom,
+    ];
+
     fn is_on(&self, switch: Switch) -> bool {
         matches!(self.map.get(&switch), Some(ToggleState::On))
     }
@@ -61,6 +77,25 @@ impl Switches {
             ToggleState::Off => ToggleState::On,
         };
         self.map.insert(switch, toggle_state);
+    }
+
+    fn is_any_inspector_active(&self) -> bool {
+        Self::INSPECTOR_SWITCHES
+            .iter()
+            .any(|switch| self.is_on(*switch))
+    }
+
+    /// Turn off every active inspector. Returns `true` if any were closed.
+    pub(crate) fn close_all_active_inspectors(&mut self) -> bool {
+        if !self.is_any_inspector_active() {
+            return false;
+        }
+        for inspector_switch in &Self::INSPECTOR_SWITCHES {
+            if self.is_on(*inspector_switch) {
+                self.toggle(*inspector_switch);
+            }
+        }
+        true
     }
 
     pub(crate) fn toggle_switch(&mut self, switch: Switch) { self.toggle(switch); }
