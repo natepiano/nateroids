@@ -329,15 +329,15 @@ fn start_splash_camera_animation(
 
     // Instant snap to splash start position, then hold while text animates
     let snap_move = CameraMove::ToOrbit {
-        focus:    *camera_settings.splash_start_focus,
-        yaw:      camera_settings.splash_start_yaw,
-        pitch:    camera_settings.splash_start_pitch,
-        radius:   camera_settings.splash_start_radius,
+        focus:    *camera_settings.splash_start.focus,
+        yaw:      camera_settings.splash_start.yaw,
+        pitch:    camera_settings.splash_start.pitch,
+        radius:   camera_settings.splash_start.radius,
         duration: Duration::ZERO,
         easing:   EaseFunction::Linear,
     };
     let hold_move = CameraMove::ToPosition {
-        translation: Vec3::new(0.0, 0.0, camera_settings.splash_start_radius),
+        translation: Vec3::new(0.0, 0.0, camera_settings.splash_start.radius),
         focus:       Vec3::ZERO,
         duration:    Duration::from_millis(SPLASH_HOLD_DURATION_MS),
         easing:      EaseFunction::BounceOut,

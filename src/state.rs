@@ -43,16 +43,9 @@ impl Plugin for StatePlugin {
 /// `PostStartup` transitions to `Splash` _after_ camera is spawned.
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, Reflect, States)]
 pub(crate) enum GameState {
-    // `Launch` is the default to prevent `OnEnter(Splash)` from firing before camera exists. (is
-    // that even possible? this is an old comment, maybe it's not actually true).
-    //
-    // For sure, without `Launch`, we could get spurious random bugs where just spawning a
-    // component on an unrelated entity could cause the stars to flash and disappear. I don't
-    // understand the timing/sequencing that causes this it's as if it's some kind of conflict
-    // between running `GameOver` (which was our prior default) and `Splash` but in any case,
-    // this seems to work for now so we'll go with it. Something about archetype restructuring
-    // interfering maybe. We proved that when we switched to spawning a `Resource` instead of a
-    // component, the bug didn't surface. See: the `camera/stars.rs` system set scheduling.
+    // `Launch` is a startup staging state. We transition to `Splash` from `PostStartup` so the
+    // `OnEnter(Splash)` star-regeneration systems run only after the startup camera systems have
+    // spawned their cameras.
     #[default]
     Launch,
     Splash,

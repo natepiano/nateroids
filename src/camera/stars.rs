@@ -171,11 +171,11 @@ fn get_star_position(
 }
 
 fn get_star_color(settings: &StarSettings, rng: &mut impl Rng) -> Vec4 {
-    let end = settings.color.end;
-    let color_start = settings.color.start;
-    let white_start = end * settings.color_white_start_ratio;
+    let end = settings.color.range.end;
+    let color_start = settings.color.range.start;
+    let white_start = end * settings.color.white_start_ratio;
 
-    let start = if rng.random::<f32>() < settings.color_white_probability {
+    let start = if rng.random::<f32>() < settings.color.white_probability {
         white_start
     } else {
         color_start

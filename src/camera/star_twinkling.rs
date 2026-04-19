@@ -12,7 +12,7 @@ pub(super) struct StarTwinklingPlugin;
 
 impl Plugin for StarTwinklingPlugin {
     fn build(&self, app: &mut App) {
-        let start_twinkling_timer_duration = StarSettings::default().start_twinkling_delay;
+        let start_twinkling_timer_duration = StarSettings::default().twinkle.delay;
         app.insert_resource(StartTwinklingTimer {
             timer: Timer::from_seconds(start_twinkling_timer_duration, TimerMode::Repeating),
         })
@@ -66,27 +66,14 @@ fn start_twinkling(
         return;
     }
 
-    let indices = get_random_indices(
-        star_settings.twinkle_choose_multiple_count,
-        star_settings.count,
-    );
-
-    //todo: #bevy_question - I've tried a bunch of different implementations
-    //                      but it all comes down to calling `iter()` when there are
-    //                      thousands of entities - it slows things down enough to
-    // affect the frame                      rate in dev - more than half a ms
-    // for iterating 3000 entities                      that seems bonkers to
-    // me...a lot of the time seems to be in the destructuring...
-
-    // this takes about 70-80K ns in dev and in release it's many times faster
-    // which becomes negligible - so for now, i guess live with it -
-    // still don't understand why it's so slow
-    // it's more like 500K if we use the iter directly and randomize as
-    // the destructuring in the loop eats up 90% of the loop time
-    // this pre-filtering avoids that cost - i don't know what is the difference
-    // of collecting into a Vec vs. destructuring in the for loop - but it's a LOT
-    // slower
     let all_stars: Vec<(Entity, &MeshMaterial3d<StandardMaterial>)> = stars.iter().collect();
+    let twinkle_count = star_settings
+        .twinkle
+        .choose_multiple_count
+        .min(all_stars.len());
+    let indices = get_random_indices(twinkle_count, all_stars.len());
+
+    // Snapshot the untwinkling stars once so we can sample a bounded subset by index.
     let filtered_stars = extract_elements_at_indices(&all_stars, &indices);
 
     let mut rng = rand::rng();
@@ -100,12 +87,12 @@ fn start_twinkling(
                 material.emissive.alpha,
             );
             let intensity = rng.random_range(
-                star_settings.twinkle_intensity.start..star_settings.twinkle_intensity.end,
+                star_settings.twinkle.intensity.start..star_settings.twinkle.intensity.end,
             );
             let target_emissive = original_emissive * intensity;
 
             let duration = rng.random_range(
-                star_settings.twinkle_duration.start..star_settings.twinkle_duration.end,
+                star_settings.twinkle.duration.start..star_settings.twinkle.duration.end,
             );
 
             commands.entity(entity).insert(Twinkling {

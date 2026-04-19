@@ -167,9 +167,9 @@ fn create_spawn_timer(spawn_timer_seconds: Option<f32>) -> Option<Timer> {
     spawn_timer_seconds.map(|seconds| Timer::from_seconds(seconds, TimerMode::Repeating))
 }
 
-fn initialize_actor_settings(config: &mut ActorSettings, scene_handle: &Handle<Scene>) {
-    config.spawn_timer = create_spawn_timer(config.spawn_timer_seconds);
-    config.scene = scene_handle.clone();
+fn initialize_actor_settings(actor_settings: &mut ActorSettings, scene_handle: &Handle<Scene>) {
+    actor_settings.spawn_timer = create_spawn_timer(actor_settings.spawn_timer_seconds);
+    actor_settings.scene = scene_handle.clone();
 }
 
 /// use settings values so inspectors can provide new defaults

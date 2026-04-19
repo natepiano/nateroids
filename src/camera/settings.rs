@@ -87,88 +87,120 @@ impl Plugin for CameraSettingsPlugin {
     }
 }
 
+#[derive(Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
+#[reflect(InspectorOptions)]
+pub struct BloomSettings {
+    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    pub intensity:           f32,
+    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    pub low_frequency_boost: f32,
+    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    pub high_pass_frequency: f32,
+}
+
+#[derive(Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
+#[reflect(InspectorOptions)]
+pub struct SplashStart {
+    /// Camera starting distance for splash screen animation
+    #[inspector(min = 1000.0, max = 50000.0)]
+    pub radius: f32,
+    /// Camera starting focus point for splash screen animation
+    pub focus:  Position,
+    /// Camera starting pitch angle for splash screen animation
+    #[inspector(min = -std::f32::consts::PI, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
+    pub pitch:  f32,
+    /// Camera starting yaw angle for splash screen animation
+    #[inspector(min = -std::f32::consts::PI, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
+    pub yaw:    f32,
+}
+
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct CameraSettings {
+    pub bloom:            BloomSettings,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub bloom_intensity:           f32,
+    pub zoom_smoothness:  f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub bloom_low_frequency_boost: f32,
+    pub pan_smoothness:   f32,
     #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub bloom_high_pass_frequency: f32,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub zoom_smoothness:           f32,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub pan_smoothness:            f32,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
-    pub orbit_smoothness:          f32,
-    /// Camera starting distance for splash screen animation
-    #[inspector(min = 1000.0, max = 50000.0)]
-    pub splash_start_radius:       f32,
-    /// Camera starting focus point for splash screen animation
-    pub splash_start_focus:        Position,
-    /// Camera starting pitch angle for splash screen animation
-    #[inspector(min = -std::f32::consts::PI, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
-    pub splash_start_pitch:        f32,
-    /// Camera starting yaw angle for splash screen animation
-    #[inspector(min = -std::f32::consts::PI, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
-    pub splash_start_yaw:          f32,
+    pub orbit_smoothness: f32,
+    pub splash_start:     SplashStart,
 }
 
 impl Default for CameraSettings {
     fn default() -> Self {
         Self {
-            bloom_intensity:           CAMERA_BLOOM_INTENSITY,
-            bloom_low_frequency_boost: CAMERA_BLOOM_LOW_FREQUENCY_BOOST,
-            bloom_high_pass_frequency: CAMERA_BLOOM_HIGH_PASS_FREQUENCY,
-            zoom_smoothness:           CAMERA_ZOOM_SMOOTHNESS,
-            orbit_smoothness:          CAMERA_ORBIT_SMOOTHNESS,
-            pan_smoothness:            CAMERA_PAN_SMOOTHNESS,
-            splash_start_radius:       CAMERA_SPLASH_START_RADIUS,
-            splash_start_focus:        CAMERA_SPLASH_START_FOCUS,
-            splash_start_pitch:        CAMERA_SPLASH_START_PITCH,
-            splash_start_yaw:          CAMERA_SPLASH_START_YAW,
+            bloom:            BloomSettings {
+                intensity:           CAMERA_BLOOM_INTENSITY,
+                low_frequency_boost: CAMERA_BLOOM_LOW_FREQUENCY_BOOST,
+                high_pass_frequency: CAMERA_BLOOM_HIGH_PASS_FREQUENCY,
+            },
+            zoom_smoothness:  CAMERA_ZOOM_SMOOTHNESS,
+            orbit_smoothness: CAMERA_ORBIT_SMOOTHNESS,
+            pan_smoothness:   CAMERA_PAN_SMOOTHNESS,
+            splash_start:     SplashStart {
+                radius: CAMERA_SPLASH_START_RADIUS,
+                focus:  CAMERA_SPLASH_START_FOCUS,
+                pitch:  CAMERA_SPLASH_START_PITCH,
+                yaw:    CAMERA_SPLASH_START_YAW,
+            },
         }
     }
+}
+
+#[derive(Debug, Clone, Reflect, InspectorOptions)]
+#[reflect(InspectorOptions)]
+pub(super) struct StarColorSettings {
+    pub range:             Range<f32>,
+    pub white_probability: f32,
+    pub white_start_ratio: f32,
+}
+
+#[derive(Debug, Clone, Reflect, InspectorOptions)]
+#[reflect(InspectorOptions)]
+pub(super) struct StarTwinkleSettings {
+    pub delay:                 f32,
+    pub duration:              Range<f32>,
+    pub intensity:             Range<f32>,
+    pub choose_multiple_count: usize,
 }
 
 #[derive(Debug, Clone, Reflect, Resource, InspectorOptions)]
 #[reflect(Resource, InspectorOptions)]
 pub(super) struct StarSettings {
-    pub batch_size_replace:            usize,
-    pub duration_replace_timer:        f32,
-    pub color:                         Range<f32>,
-    pub color_white_probability:       f32,
-    pub color_white_start_ratio:       f32,
-    pub count:                         usize,
-    pub radius:                        Range<f32>,
-    pub field_diameter:                Range<f32>,
-    pub start_twinkling_delay:         f32,
-    pub twinkle_duration:              Range<f32>,
-    pub twinkle_intensity:             Range<f32>,
-    pub twinkle_choose_multiple_count: usize,
+    pub batch_size_replace:     usize,
+    pub duration_replace_timer: f32,
+    pub color:                  StarColorSettings,
+    pub count:                  usize,
+    pub radius:                 Range<f32>,
+    pub field_diameter:         Range<f32>,
+    pub twinkle:                StarTwinkleSettings,
     #[inspector(min = 0.01667, max = 30.0, display = NumberDisplay::Slider)]
-    pub rotation_cycle_minutes:        f32,
-    pub rotation_axis:                 Vec3,
+    pub rotation_cycle_minutes: f32,
+    pub rotation_axis:          Vec3,
 }
 
 impl Default for StarSettings {
     fn default() -> Self {
         Self {
-            batch_size_replace:            STAR_BATCH_SIZE_REPLACE,
-            duration_replace_timer:        STAR_DURATION_REPLACE_TIMER,
-            count:                         STAR_COUNT,
-            color:                         STAR_COLOR_RANGE_MIN..STAR_COLOR_RANGE_MAX,
-            color_white_probability:       STAR_COLOR_WHITE_PROBABILITY,
-            color_white_start_ratio:       STAR_COLOR_WHITE_START_RATIO,
-            radius:                        STAR_RADIUS,
-            field_diameter:                STAR_FIELD_DIAMETER,
-            start_twinkling_delay:         STAR_TWINKLING_DELAY,
-            twinkle_duration:              STAR_TWINKLE_DURATION_MIN..STAR_TWINKLE_DURATION_MAX,
-            twinkle_intensity:             STAR_TWINKLE_INTENSITY_MIN..STAR_TWINKLE_INTENSITY_MAX,
-            twinkle_choose_multiple_count: STAR_TWINKLE_CHOOSE_MULTIPLE_COUNT,
-            rotation_cycle_minutes:        STAR_ROTATION_CYCLE_MINUTES,
-            rotation_axis:                 Vec3::Y,
+            batch_size_replace:     STAR_BATCH_SIZE_REPLACE,
+            duration_replace_timer: STAR_DURATION_REPLACE_TIMER,
+            count:                  STAR_COUNT,
+            color:                  StarColorSettings {
+                range:             STAR_COLOR_RANGE_MIN..STAR_COLOR_RANGE_MAX,
+                white_probability: STAR_COLOR_WHITE_PROBABILITY,
+                white_start_ratio: STAR_COLOR_WHITE_START_RATIO,
+            },
+            radius:                 STAR_RADIUS,
+            field_diameter:         STAR_FIELD_DIAMETER,
+            twinkle:                StarTwinkleSettings {
+                delay:                 STAR_TWINKLING_DELAY,
+                duration:              STAR_TWINKLE_DURATION_MIN..STAR_TWINKLE_DURATION_MAX,
+                intensity:             STAR_TWINKLE_INTENSITY_MIN..STAR_TWINKLE_INTENSITY_MAX,
+                choose_multiple_count: STAR_TWINKLE_CHOOSE_MULTIPLE_COUNT,
+            },
+            rotation_cycle_minutes: STAR_ROTATION_CYCLE_MINUTES,
+            rotation_axis:          Vec3::Y,
         }
     }
 }

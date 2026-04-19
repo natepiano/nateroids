@@ -43,8 +43,8 @@ fn update_bloom_settings(
 
 const fn get_bloom_settings(camera_settings: &CameraSettings) -> Bloom {
     let mut new_bloom_settings = Bloom::NATURAL;
-    new_bloom_settings.intensity = camera_settings.bloom_intensity;
-    new_bloom_settings.low_frequency_boost = camera_settings.bloom_low_frequency_boost;
-    new_bloom_settings.high_pass_frequency = camera_settings.bloom_high_pass_frequency;
+    new_bloom_settings.intensity = camera_settings.bloom.intensity;
+    new_bloom_settings.low_frequency_boost = camera_settings.bloom.low_frequency_boost;
+    new_bloom_settings.high_pass_frequency = camera_settings.bloom.high_pass_frequency;
     new_bloom_settings
 }

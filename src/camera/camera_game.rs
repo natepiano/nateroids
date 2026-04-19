@@ -35,7 +35,7 @@ pub(super) fn spawn_game_camera(
             OutlineCamera,
             OrbitCam {
                 focus: Vec3::ZERO,
-                target_radius: camera_settings.splash_start_radius,
+                target_radius: camera_settings.splash_start.radius,
                 button_orbit: MouseButton::Middle,
                 button_pan: MouseButton::Middle,
                 modifier_pan: Some(KeyCode::ShiftLeft),

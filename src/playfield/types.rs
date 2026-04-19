@@ -13,18 +13,18 @@ pub(super) enum PortalActorKind {
 /// Describes the geometric configuration of a portal relative to boundary faces
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum PortalGeometry {
-    /// Portal completely within a single boundary face
+    /// `Portal` completely within a single boundary face.
     SingleFace,
-    /// Portal extends across multiple faces (edge or corner)
+    /// `Portal` extends across multiple faces (edge or corner).
     MultiFace(MultiFaceGeometry),
 }
 
-/// Describes portals that span multiple boundary faces
+/// Describes `Portal`s that span multiple boundary faces.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum MultiFaceGeometry {
-    /// Portal extends across an edge between two faces
+    /// `Portal` extends across an edge between two `BoundaryFace`s.
     Edge { overextended: BoundaryFace },
-    /// Portal extends into a corner (3+ faces)
+    /// `Portal` extends into a corner (3+ `BoundaryFace`s).
     Corner { overextended: Vec<BoundaryFace> },
 }
 
