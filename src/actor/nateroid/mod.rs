@@ -12,6 +12,7 @@ use super::constants::LOCKED_AXES_2D;
 use crate::asset_loader::AssetsState;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
+use super::actor_settings;
 
 pub(super) struct NateroidPlugin;
 
@@ -21,7 +22,7 @@ impl Plugin for NateroidPlugin {
             .add_systems(
                 OnEnter(AssetsState::Loaded),
                 death_materials::precompute_death_materials
-                    .after(super::actor_settings::initialize_actors),
+                    .after(actor_settings::initialize_actors),
             )
             .add_observer(spawn::initialize_nateroid)
             .add_systems(

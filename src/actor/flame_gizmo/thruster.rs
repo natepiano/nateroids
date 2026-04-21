@@ -68,25 +68,25 @@ impl FlameZone {
         color_yellow: Color,
     ) -> Color {
         match self {
-            Self::Outer(t) => super::flicker::lerp_color(color_red, color_orange, *t),
+            Self::Outer(t) => flicker::lerp_color(color_red, color_orange, *t),
             Self::Middle => {
                 // Flicker between cooler (red) and hotter (yellow)
                 let flicker = elapsed.mul_add(FLAME_COLOR_FLICKER_SPEED, phase).sin();
                 if flicker > 0.0 {
-                    super::flicker::lerp_color(
+                    flicker::lerp_color(
                         color_orange,
                         color_yellow,
                         flicker * THRUSTER_COLOR_FLICKER_INTENSITY,
                     )
                 } else {
-                    super::flicker::lerp_color(
+                    flicker::lerp_color(
                         color_orange,
                         color_red,
                         -flicker * THRUSTER_COLOR_FLICKER_INTENSITY,
                     )
                 }
             },
-            Self::Center(t) => super::flicker::lerp_color(color_orange, color_yellow, *t),
+            Self::Center(t) => flicker::lerp_color(color_orange, color_yellow, *t),
         }
     }
 }
