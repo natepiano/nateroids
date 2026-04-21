@@ -9,6 +9,8 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use super::actor_settings::ColliderType;
+use super::constants::AABB_LINE_WIDTH_MAX;
+use super::constants::AABB_LINE_WIDTH_MIN;
 use crate::camera::RenderLayer;
 use crate::input::AabbsSwitch;
 use crate::input::InspectAabbSwitch;
@@ -67,7 +69,11 @@ struct AabbGizmo {}
 #[reflect(Resource, InspectorOptions)]
 struct AabbSettings {
     color:      Color,
-    #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = AABB_LINE_WIDTH_MIN,
+        max = AABB_LINE_WIDTH_MAX,
+        display = NumberDisplay::Slider
+    )]
     line_width: f32,
 }
 
@@ -80,9 +86,12 @@ impl Default for AabbSettings {
     }
 }
 
-fn apply_aabb_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<AabbSettings>) {
+fn apply_aabb_settings(
+    mut config_store: ResMut<GizmoConfigStore>,
+    aabb_settings: Res<AabbSettings>,
+) {
     let (gizmo_config, _) = config_store.config_mut::<AabbGizmo>();
-    gizmo_config.line.width = config.line_width;
+    gizmo_config.line.width = aabb_settings.line_width;
     gizmo_config.render_layers = RenderLayer::Game.layers();
 }
 
@@ -100,7 +109,7 @@ pub fn max_dimension(aabb: &Aabb) -> f32 {
 fn draw_aabb_system(
     mut gizmos: Gizmos<AabbGizmo>,
     aabbs: Query<(&Transform, &Aabb), Without<ChildOf>>,
-    settings: Res<AabbSettings>,
+    aabb_settings: Res<AabbSettings>,
 ) {
     for (transform, aabb) in aabbs.iter() {
         let center = transform.transform_point(Vec3::from(aabb.center));
@@ -111,7 +120,7 @@ fn draw_aabb_system(
                 rotation:    transform.rotation,
                 scale:       size(aabb) * transform.scale,
             },
-            settings.color,
+            aabb_settings.color,
         );
     }
 }

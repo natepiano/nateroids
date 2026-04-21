@@ -9,11 +9,23 @@ use crate::playfield::constants::BOUNDARY_OUTER_ALPHA;
 use crate::playfield::constants::FADE_LOG_FRAME_EPSILON;
 use crate::playfield::constants::FADE_LOG_INTERVAL_SECS;
 use crate::playfield::constants::GRID_FLASH_DURATION;
-use crate::playfield::types::BoundaryGizmo;
-use crate::playfield::types::GridFlash;
-use crate::playfield::types::GridFlashAnimation;
-use crate::playfield::types::GridGizmo;
 use crate::splash::SplashText;
+
+#[derive(Default, Reflect, GizmoConfigGroup)]
+pub(super) struct GridGizmo {}
+
+/// Trigger event to start a grid flash animation.
+#[derive(Event)]
+pub struct GridFlash;
+
+/// Active grid flash animation timer.
+#[derive(Resource)]
+pub(super) struct GridFlashAnimation {
+    pub timer: Timer,
+}
+
+#[derive(Default, Reflect, GizmoConfigGroup)]
+pub(super) struct BoundaryGizmo {}
 
 /// Marker component for the boundary volume entity.
 /// Holds a hidden unit-cube mesh so zoom-to-fit can extract vertices.

@@ -2,9 +2,25 @@ use avian3d::prelude::LockedAxes;
 use bevy::prelude::Vec3;
 use bevy_kana::Position;
 
+// Aabb gizmo inspector bounds
+pub(super) const AABB_LINE_WIDTH_MAX: f32 = 40.0;
+pub(super) const AABB_LINE_WIDTH_MIN: f32 = 0.1;
+
 // Actor health
 /// Health value that triggers instant death
 pub(super) const INSTANT_DEATH_HEALTH: f32 = -1.0;
+
+// Actor inspector bounds
+pub(super) const ACTOR_COLLIDER_MARGIN_MAX: f32 = 3.0;
+pub(super) const ACTOR_COLLIDER_MARGIN_MIN: f32 = 0.1;
+pub(super) const ACTOR_DAMPING_MAX: f32 = 1.0;
+pub(super) const ACTOR_DAMPING_MIN: f32 = 0.0;
+pub(super) const ACTOR_MASS_MAX: f32 = 20.0;
+pub(super) const ACTOR_MASS_MIN: f32 = 0.0;
+pub(super) const ACTOR_MAX_VELOCITY_MAX: f32 = 500.0;
+pub(super) const ACTOR_MAX_VELOCITY_MIN: f32 = 0.0;
+pub(super) const ACTOR_RESTITUTION_MAX: f32 = 1.0;
+pub(super) const ACTOR_RESTITUTION_MIN: f32 = 0.1;
 
 // Actor physics velocity limits
 pub(super) const MAX_MISSILE_ANGULAR_VELOCITY: f32 = 20.0;
@@ -94,6 +110,14 @@ pub(super) const SPACESHIP_SCALE: f32 = 2.0;
 pub(super) const SPACESHIP_ACCELERATION: f32 = 60.0;
 pub(super) const SPACESHIP_MAX_SPEED: f32 = 80.0;
 pub(super) const SPACESHIP_ROTATION_SPEED: f32 = 5.0;
+
+// Spaceship control inspector bounds
+pub(super) const SPACESHIP_ACCELERATION_MAX: f32 = 300.0;
+pub(super) const SPACESHIP_ACCELERATION_MIN: f32 = 30.0;
+pub(super) const SPACESHIP_MAX_SPEED_MAX: f32 = 300.0;
+pub(super) const SPACESHIP_MAX_SPEED_MIN: f32 = 50.0;
+pub(super) const SPACESHIP_ROTATION_SPEED_MAX: f32 = 10.0;
+pub(super) const SPACESHIP_ROTATION_SPEED_MIN: f32 = 1.0;
 
 // Spaceship rotation enforcement
 /// Forward vector epsilon for safe normalization

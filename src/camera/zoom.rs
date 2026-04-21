@@ -17,6 +17,10 @@ use super::constants::EDGE_MARKER_SPHERE_RADIUS;
 use super::constants::FOCUS_GIZMO_COLOR;
 use super::constants::FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS;
 use super::constants::FOCUS_GIZMO_LINE_WIDTH;
+use super::constants::FOCUS_GIZMO_LINE_WIDTH_MAX;
+use super::constants::FOCUS_GIZMO_LINE_WIDTH_MIN;
+use super::constants::FOCUS_GIZMO_SPHERE_RADIUS_MAX;
+use super::constants::FOCUS_GIZMO_SPHERE_RADIUS_MIN;
 use super::constants::HOME_ANIMATION_DURATION_MS;
 use super::constants::ZOOM_MARGIN;
 use super::constants::ZOOM_TO_FIT_DURATION_MS;
@@ -48,9 +52,17 @@ struct FocusGizmo {}
 #[reflect(Resource, InspectorOptions)]
 struct FocusSettings {
     color:         Color,
-    #[inspector(min = 0.1, max = 10.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = FOCUS_GIZMO_LINE_WIDTH_MIN,
+        max = FOCUS_GIZMO_LINE_WIDTH_MAX,
+        display = NumberDisplay::Slider
+    )]
     line_width:    f32,
-    #[inspector(min = 0.1, max = 50.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = FOCUS_GIZMO_SPHERE_RADIUS_MIN,
+        max = FOCUS_GIZMO_SPHERE_RADIUS_MAX,
+        display = NumberDisplay::Slider
+    )]
     sphere_radius: f32,
 }
 
@@ -208,19 +220,22 @@ fn toggle_fit_target_debug_command(
     }
 }
 
-fn apply_focus_settings(mut config_store: ResMut<GizmoConfigStore>, config: Res<FocusSettings>) {
+fn apply_focus_settings(
+    mut config_store: ResMut<GizmoConfigStore>,
+    focus_settings: Res<FocusSettings>,
+) {
     let (gizmo_config, _) = config_store.config_mut::<FocusGizmo>();
-    gizmo_config.line.width = config.line_width;
+    gizmo_config.line.width = focus_settings.line_width;
     gizmo_config.render_layers = RenderLayer::Game.layers();
 }
 
 fn update_focus_gizmo_state(
     camera_query: Query<&OrbitCam, With<Camera>>,
     camera_changed: Query<(), (With<Camera>, Changed<OrbitCam>)>,
-    settings: Res<FocusSettings>,
+    focus_settings: Res<FocusSettings>,
     mut state: ResMut<FocusGizmoState>,
 ) {
-    if camera_changed.is_empty() && !settings.is_changed() {
+    if camera_changed.is_empty() && !focus_settings.is_changed() {
         return;
     }
 
@@ -229,7 +244,7 @@ fn update_focus_gizmo_state(
             .radius
             .unwrap_or(FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS);
         state.sphere_radius =
-            settings.sphere_radius * (camera_radius / FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS);
+            focus_settings.sphere_radius * (camera_radius / FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS);
     }
 }
 

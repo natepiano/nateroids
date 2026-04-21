@@ -76,17 +76,17 @@ impl NateroidSpawnStats {
 
 pub(super) fn spawn_nateroid(
     mut commands: Commands,
-    mut settings: ResMut<NateroidSettings>,
+    mut nateroid_settings: ResMut<NateroidSettings>,
     time: Res<Time>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     spatial_query: SpatialQuery,
     mut spawn_stats: ResMut<NateroidSpawnStats>,
 ) {
-    if settings.spawnability == Spawnability::Disabled {
+    if nateroid_settings.spawnability == Spawnability::Disabled {
         return;
     }
 
-    let Some(spawn_timer) = settings.spawn_timer.as_mut() else {
+    let Some(spawn_timer) = nateroid_settings.spawn_timer.as_mut() else {
         return;
     };
     spawn_timer.tick(time.delta());
@@ -101,7 +101,8 @@ pub(super) fn spawn_nateroid(
 
     // Pre-validate: only spawn if we can find a valid position
     let current_time = time.elapsed_secs();
-    let Some(transform) = initialize_transform(boundary_transform, &settings, &spatial_query)
+    let Some(transform) =
+        initialize_transform(boundary_transform, &nateroid_settings, &spatial_query)
     else {
         spawn_stats.record_attempt(SpawnResult::Failure);
 
@@ -142,11 +143,13 @@ pub(super) fn spawn_nateroid(
 pub(super) fn initialize_nateroid(
     nateroid: On<Add, Nateroid>,
     mut commands: Commands,
-    mut settings: ResMut<NateroidSettings>,
+    mut nateroid_settings: ResMut<NateroidSettings>,
 ) {
     // Normal nateroid: transform already set by `spawn_nateroid`, just add velocities
-    let (linear_velocity, angular_velocity) =
-        calculate_nateroid_velocity(settings.linear_velocity, settings.angular_velocity);
+    let (linear_velocity, angular_velocity) = calculate_nateroid_velocity(
+        nateroid_settings.linear_velocity,
+        nateroid_settings.angular_velocity,
+    );
 
     commands
         .entity(nateroid.entity)
@@ -155,7 +158,7 @@ pub(super) fn initialize_nateroid(
 
     actor_settings::insert_configured_components(
         &mut commands,
-        &mut settings.actor_settings,
+        &mut nateroid_settings.actor_settings,
         nateroid.entity,
     );
 }

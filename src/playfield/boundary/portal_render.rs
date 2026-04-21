@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use super::PortalActorKind;
 use crate::orientation::CameraOrientation;
 use crate::playfield::boundary_face::BoundaryFace;
 use crate::playfield::constants::BOUNDARY_OVEREXTENSION_EPSILON;
@@ -10,11 +11,30 @@ use crate::playfield::constants::DEADEROID_APPROACHING_COLOR;
 use crate::playfield::constants::INTERSECTION_DEDUP_EPSILON;
 use crate::playfield::portals::Portal;
 use crate::playfield::portals::PortalGizmo;
-use crate::playfield::types;
-use crate::playfield::types::Intersection;
-use crate::playfield::types::MultiFaceGeometry;
-use crate::playfield::types::PortalActorKind;
-use crate::playfield::types::PortalGeometry;
+
+/// Describes the geometric configuration of a portal relative to boundary faces.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum PortalGeometry {
+    /// `Portal` completely within a single boundary face.
+    SingleFace,
+    /// `Portal` extends across multiple faces (edge or corner).
+    MultiFace(MultiFaceGeometry),
+}
+
+/// Describes `Portal`s that span multiple boundary faces.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum MultiFaceGeometry {
+    /// `Portal` extends across an edge between two `BoundaryFace`s.
+    Edge { overextended: BoundaryFace },
+    /// `Portal` extends into a corner (3+ `BoundaryFace`s).
+    Corner { overextended: Vec<BoundaryFace> },
+}
+
+enum Intersection {
+    NoneFound,
+    One(Vec3),
+    Two(Vec3, Vec3),
+}
 
 struct PortalRenderContext<'a> {
     color:       Color,
@@ -108,7 +128,7 @@ fn count_faces_with_valid_arcs(
     for &face in &all_faces_in_corner {
         let face_points = face.get_face_points(&min, &max);
         let intersections =
-            types::flatten_intersections(intersect_portal_with_rectangle(portal, &face_points));
+            flatten_intersections(intersect_portal_with_rectangle(portal, &face_points));
 
         // Only count faces with exactly 2 intersection points
         if intersections.len() == 2 {
@@ -182,7 +202,7 @@ fn draw_multiface_portal(
     for &face in &all_faces_for_drawing {
         let face_points = face.get_face_points(&min, &max);
         let intersections =
-            types::flatten_intersections(intersect_portal_with_rectangle(portal, &face_points));
+            flatten_intersections(intersect_portal_with_rectangle(portal, &face_points));
 
         // Only draw arcs for faces with exactly 2 intersection points
         if intersections.len() == 2 {
@@ -431,6 +451,38 @@ fn intersect_portal_with_rectangle(
         intersect_circle_with_line_segment(portal, rectangle_points[2], rectangle_points[3]),
         intersect_circle_with_line_segment(portal, rectangle_points[3], rectangle_points[0]),
     ]
+}
+
+/// Flattens an array of `Intersection` results into a `Vec<Vec3>`.
+///
+/// As long as portals are smaller than boundary faces, the four per-edge
+/// intersection tests can yield at most two points in total against a given
+/// face. The `debug_assert` below guards that invariant: if portals ever grow
+/// larger than faces, it will fire and remind us to revisit the portal-drawing
+/// logic.
+fn flatten_intersections(intersections: [Intersection; 4]) -> Vec<Vec3> {
+    let result: Vec<Vec3> = intersections
+        .into_iter()
+        .flat_map(|intersection| match intersection {
+            Intersection::NoneFound => vec![],
+            Intersection::One(point) => vec![point],
+            Intersection::Two(point_one, point_two) => vec![point_one, point_two],
+        })
+        .collect();
+
+    // A circle can intersect a rectangle's 4 edges at most 4 times. This
+    // occurs when the portal is positioned near a corner of the face — the
+    // circle can intersect both adjacent edges (2 points each = 4 total).
+    // Portals positioned in the center typically produce 2 intersection
+    // points.
+    debug_assert!(
+        result.len() <= 4,
+        "Circle-rectangle intersection exceeded maximum: {} intersection points (expected <=4). \
+         This indicates a geometric error in the intersection calculation.",
+        result.len()
+    );
+
+    result
 }
 
 fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -> Intersection {

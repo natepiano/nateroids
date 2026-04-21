@@ -9,8 +9,16 @@ use bevy_kana::Position;
 use super::constants::CAMERA_BLOOM_HIGH_PASS_FREQUENCY;
 use super::constants::CAMERA_BLOOM_INTENSITY;
 use super::constants::CAMERA_BLOOM_LOW_FREQUENCY_BOOST;
+use super::constants::CAMERA_BLOOM_MAX;
+use super::constants::CAMERA_BLOOM_MIN;
 use super::constants::CAMERA_ORBIT_SMOOTHNESS;
 use super::constants::CAMERA_PAN_SMOOTHNESS;
+use super::constants::CAMERA_SMOOTHNESS_MAX;
+use super::constants::CAMERA_SMOOTHNESS_MIN;
+use super::constants::CAMERA_SPLASH_ANGLE_MAX;
+use super::constants::CAMERA_SPLASH_ANGLE_MIN;
+use super::constants::CAMERA_SPLASH_RADIUS_MAX;
+use super::constants::CAMERA_SPLASH_RADIUS_MIN;
 use super::constants::CAMERA_SPLASH_START_FOCUS;
 use super::constants::CAMERA_SPLASH_START_PITCH;
 use super::constants::CAMERA_SPLASH_START_RADIUS;
@@ -25,6 +33,8 @@ use super::constants::STAR_COUNT;
 use super::constants::STAR_DURATION_REPLACE_TIMER;
 use super::constants::STAR_FIELD_DIAMETER;
 use super::constants::STAR_RADIUS;
+use super::constants::STAR_ROTATION_CYCLE_MAX;
+use super::constants::STAR_ROTATION_CYCLE_MINIMUM_MINUTES;
 use super::constants::STAR_ROTATION_CYCLE_MINUTES;
 use super::constants::STAR_TWINKLE_CHOOSE_MULTIPLE_COUNT;
 use super::constants::STAR_TWINKLE_DURATION_MAX;
@@ -33,8 +43,16 @@ use super::constants::STAR_TWINKLE_INTENSITY_MAX;
 use super::constants::STAR_TWINKLE_INTENSITY_MIN;
 use super::constants::STAR_TWINKLING_DELAY;
 use super::constants::ZOOM_CONVERGENCE_RATE;
+use super::constants::ZOOM_CONVERGENCE_RATE_MAX;
+use super::constants::ZOOM_CONVERGENCE_RATE_MIN;
+use super::constants::ZOOM_MARGIN_MAX;
+use super::constants::ZOOM_MARGIN_MIN;
 use super::constants::ZOOM_MARGIN_TOLERANCE;
+use super::constants::ZOOM_MARGIN_TOLERANCE_MAX;
+use super::constants::ZOOM_MARGIN_TOLERANCE_MIN;
 use super::constants::ZOOM_MAX_ITERATIONS;
+use super::constants::ZOOM_MAX_ITERATIONS_MAX;
+use super::constants::ZOOM_MAX_ITERATIONS_MIN;
 use super::constants::ZOOM_SETTINGS_MARGIN;
 use crate::input::InspectCameraSwitch;
 use crate::input::InspectStarSwitch;
@@ -90,11 +108,23 @@ impl Plugin for CameraSettingsPlugin {
 #[derive(Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(InspectorOptions)]
 pub struct BloomSettings {
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = CAMERA_BLOOM_MIN,
+        max = CAMERA_BLOOM_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub intensity:           f32,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = CAMERA_BLOOM_MIN,
+        max = CAMERA_BLOOM_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub low_frequency_boost: f32,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = CAMERA_BLOOM_MIN,
+        max = CAMERA_BLOOM_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub high_pass_frequency: f32,
 }
 
@@ -102,15 +132,23 @@ pub struct BloomSettings {
 #[reflect(InspectorOptions)]
 pub struct SplashStart {
     /// Camera starting distance for splash screen animation
-    #[inspector(min = 1000.0, max = 50000.0)]
+    #[inspector(min = CAMERA_SPLASH_RADIUS_MIN, max = CAMERA_SPLASH_RADIUS_MAX)]
     pub radius: f32,
     /// Camera starting focus point for splash screen animation
     pub focus:  Position,
     /// Camera starting pitch angle for splash screen animation
-    #[inspector(min = -std::f32::consts::PI, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = CAMERA_SPLASH_ANGLE_MIN,
+        max = CAMERA_SPLASH_ANGLE_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub pitch:  f32,
     /// Camera starting yaw angle for splash screen animation
-    #[inspector(min = -std::f32::consts::PI, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = CAMERA_SPLASH_ANGLE_MIN,
+        max = CAMERA_SPLASH_ANGLE_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub yaw:    f32,
 }
 
@@ -118,11 +156,23 @@ pub struct SplashStart {
 #[reflect(Resource, InspectorOptions)]
 pub struct CameraSettings {
     pub bloom:            BloomSettings,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = CAMERA_SMOOTHNESS_MIN,
+        max = CAMERA_SMOOTHNESS_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub zoom_smoothness:  f32,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = CAMERA_SMOOTHNESS_MIN,
+        max = CAMERA_SMOOTHNESS_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub pan_smoothness:   f32,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = CAMERA_SMOOTHNESS_MIN,
+        max = CAMERA_SMOOTHNESS_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub orbit_smoothness: f32,
     pub splash_start:     SplashStart,
 }
@@ -175,7 +225,11 @@ pub(super) struct StarSettings {
     pub radius:                 Range<f32>,
     pub field_diameter:         Range<f32>,
     pub twinkle:                StarTwinkleSettings,
-    #[inspector(min = 0.01667, max = 30.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = STAR_ROTATION_CYCLE_MINIMUM_MINUTES,
+        max = STAR_ROTATION_CYCLE_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub rotation_cycle_minutes: f32,
     pub rotation_axis:          Vec3,
 }
@@ -209,17 +263,29 @@ impl Default for StarSettings {
 #[reflect(Resource, InspectorOptions)]
 pub(super) struct ZoomSettings {
     /// Maximum iterations before giving up
-    #[inspector(min = 50, max = 500)]
+    #[inspector(min = ZOOM_MAX_ITERATIONS_MIN, max = ZOOM_MAX_ITERATIONS_MAX)]
     pub max_iterations:   usize,
-    #[inspector(min = 0.0, max = 0.5, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = ZOOM_MARGIN_MIN,
+        max = ZOOM_MARGIN_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub margin:           f32,
     /// Margin tolerance for convergence detection (0.001 = 0.1% tolerance).
     /// Used for both balance and fit checks.
-    #[inspector(min = 0.00001, max = 0.01, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = ZOOM_MARGIN_TOLERANCE_MIN,
+        max = ZOOM_MARGIN_TOLERANCE_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub margin_tolerance: f32,
     // Zoom-to-fit convergence parameters
     /// Convergence rate for zoom-to-fit adjustments (0.18 = 18% per frame).
-    #[inspector(min = 0.01, max = 0.5, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = ZOOM_CONVERGENCE_RATE_MIN,
+        max = ZOOM_CONVERGENCE_RATE_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub convergence_rate: f32,
 }
 

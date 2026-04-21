@@ -9,6 +9,16 @@ use super::aabb;
 use super::actor_template::MissileSettings;
 use super::actor_template::NateroidSettings;
 use super::actor_template::SpaceshipSettings;
+use super::constants::ACTOR_COLLIDER_MARGIN_MAX;
+use super::constants::ACTOR_COLLIDER_MARGIN_MIN;
+use super::constants::ACTOR_DAMPING_MAX;
+use super::constants::ACTOR_DAMPING_MIN;
+use super::constants::ACTOR_MASS_MAX;
+use super::constants::ACTOR_MASS_MIN;
+use super::constants::ACTOR_MAX_VELOCITY_MAX;
+use super::constants::ACTOR_MAX_VELOCITY_MIN;
+use super::constants::ACTOR_RESTITUTION_MAX;
+use super::constants::ACTOR_RESTITUTION_MIN;
 use super::missile::Missile;
 use super::nateroid::Nateroid;
 use super::spaceship::Spaceship;
@@ -78,26 +88,54 @@ pub enum Spawnability {
 #[reflect(InspectorOptions)]
 pub struct ActorSettings {
     pub spawnability:             Spawnability,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = ACTOR_DAMPING_MIN,
+        max = ACTOR_DAMPING_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub angular_damping:          Option<f32>,
-    #[inspector(min = 0.1, max = 3.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = ACTOR_COLLIDER_MARGIN_MIN,
+        max = ACTOR_COLLIDER_MARGIN_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub collider_margin:          f32,
     pub collider_type:            ColliderType,
     pub collision_damage:         f32,
     pub collision_layers:         CollisionLayers,
     pub gravity_scale:            f32,
     pub health:                   f32,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = ACTOR_DAMPING_MIN,
+        max = ACTOR_DAMPING_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub linear_damping:           Option<f32>,
     pub locked_axes:              LockedAxes,
-    #[inspector(min = 0.0, max = 20.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = ACTOR_MASS_MIN,
+        max = ACTOR_MASS_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub mass:                     f32,
-    #[inspector(min = 0.0, max = 500.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = ACTOR_MAX_VELOCITY_MIN,
+        max = ACTOR_MAX_VELOCITY_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub max_angular_velocity:     f32,
-    #[inspector(min = 0.0, max = 500.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = ACTOR_MAX_VELOCITY_MIN,
+        max = ACTOR_MAX_VELOCITY_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub max_linear_velocity:      f32,
     pub render_layer:             RenderLayer,
-    #[inspector(min = 0.1, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = ACTOR_RESTITUTION_MIN,
+        max = ACTOR_RESTITUTION_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub restitution:              f32,
     pub restitution_combine_rule: CoefficientCombine,
     pub rigid_body:               RigidBody,

@@ -14,10 +14,10 @@ use crate::actor::Teleporter;
 use crate::orientation::CameraOrientation;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
+use crate::playfield::boundary::PortalActorKind;
 use crate::playfield::boundary_face::BoundaryFace;
 use crate::playfield::constants::PORTAL_MIN_RADIUS_FRACTION;
 use crate::playfield::constants::PORTAL_PHYSICS_BURST_MULTIPLIER;
-use crate::playfield::types::PortalActorKind;
 
 #[derive(Component, Default)]
 pub struct ActorPortals {

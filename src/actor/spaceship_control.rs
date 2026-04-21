@@ -11,8 +11,14 @@ use bevy_lagrange::OrbitCam;
 
 use super::actor_template::SpaceshipSettings;
 use super::constants::SPACESHIP_ACCELERATION;
+use super::constants::SPACESHIP_ACCELERATION_MAX;
+use super::constants::SPACESHIP_ACCELERATION_MIN;
 use super::constants::SPACESHIP_MAX_SPEED;
+use super::constants::SPACESHIP_MAX_SPEED_MAX;
+use super::constants::SPACESHIP_MAX_SPEED_MIN;
 use super::constants::SPACESHIP_ROTATION_SPEED;
+use super::constants::SPACESHIP_ROTATION_SPEED_MAX;
+use super::constants::SPACESHIP_ROTATION_SPEED_MIN;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
 use crate::input::InspectSpaceshipControlSwitch;
@@ -56,11 +62,23 @@ impl Plugin for SpaceshipControlPlugin {
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub(super) struct SpaceshipControlSettings {
-    #[inspector(min = 30., max = 300.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = SPACESHIP_ACCELERATION_MIN,
+        max = SPACESHIP_ACCELERATION_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub acceleration:   f32,
-    #[inspector(min = 50., max = 300.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = SPACESHIP_MAX_SPEED_MIN,
+        max = SPACESHIP_MAX_SPEED_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub max_speed:      f32,
-    #[inspector(min = 1.0, max = 10.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = SPACESHIP_ROTATION_SPEED_MIN,
+        max = SPACESHIP_ROTATION_SPEED_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub rotation_speed: f32,
 }
 

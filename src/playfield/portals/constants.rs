@@ -1,0 +1,21 @@
+// Portal inspector bounds
+pub(super) const PORTAL_DIRECTION_CHANGE_FACTOR_MAX: f32 = std::f32::consts::PI;
+pub(super) const PORTAL_DIRECTION_CHANGE_FACTOR_MIN: f32 = 0.0;
+pub(super) const PORTAL_DISTANCE_MAX: f32 = 1.0;
+pub(super) const PORTAL_DISTANCE_MIN: f32 = 0.0;
+pub(super) const PORTAL_FADEOUT_DURATION_MAX: f32 = 30.0;
+pub(super) const PORTAL_FADEOUT_DURATION_MIN: f32 = 1.0;
+pub(super) const PORTAL_LINE_JOINTS_MAX: u32 = 40;
+pub(super) const PORTAL_LINE_JOINTS_MIN: u32 = 0;
+pub(super) const PORTAL_LINE_WIDTH_MAX: f32 = 40.0;
+pub(super) const PORTAL_LINE_WIDTH_MIN: f32 = 0.1;
+pub(super) const PORTAL_MINIMUM_RADIUS_MAX: f32 = 1.0;
+pub(super) const PORTAL_MINIMUM_RADIUS_MIN: f32 = 0.001;
+pub(super) const PORTAL_MOVEMENT_SMOOTHING_FACTOR_MAX: f32 = 1.0;
+pub(super) const PORTAL_MOVEMENT_SMOOTHING_FACTOR_MIN: f32 = 0.0;
+pub(super) const PORTAL_RESOLUTION_MAX: u32 = 256;
+pub(super) const PORTAL_RESOLUTION_MIN: u32 = 3;
+pub(super) const PORTAL_SCALE_MAX: f32 = 10.0;
+pub(super) const PORTAL_SCALE_MIN: f32 = 1.0;
+pub(super) const PORTAL_SMALLEST_MAX: f32 = 10.0;
+pub(super) const PORTAL_SMALLEST_MIN: f32 = 1.0;

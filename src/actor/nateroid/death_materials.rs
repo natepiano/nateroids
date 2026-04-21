@@ -124,7 +124,7 @@ pub(super) fn debug_mesh_components(
                 debug!(
                     "Mesh entity {entity:?}: has_material={}, visible={:?}, vertices={vertex_count}, render_layers={render_layers:?}, scale={:?}, global_pos={:?}",
                     material.is_some(),
-                    visibility.map(|v| v.get()),
+                    visibility.copied().map(ViewVisibility::get),
                     transform.map(|t| t.scale),
                     global_transform.map(GlobalTransform::translation)
                 );

@@ -1,6 +1,7 @@
 use bevy::picking::hover::PickingInteraction;
 use bevy::prelude::*;
 use bevy_inspector_egui::bevy_egui::EguiContexts;
+use bevy_inspector_egui::bevy_egui::egui;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -10,6 +11,8 @@ use bevy_liminal::MeshOutline;
 
 use super::constants::SELECTION_OUTLINE_COLOR;
 use super::constants::SELECTION_OUTLINE_INTENSITY;
+use super::constants::SELECTION_OUTLINE_MAX;
+use super::constants::SELECTION_OUTLINE_MIN;
 use super::constants::SELECTION_OUTLINE_WIDTH;
 use super::zoom::ZoomTarget;
 use crate::actor::Nateroid;
@@ -30,9 +33,17 @@ pub(super) struct Selected;
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource, InspectorOptions)]
 pub(super) struct SelectionOutlineSettings {
-    #[inspector(min = 0.0, max = 30.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = SELECTION_OUTLINE_MIN,
+        max = SELECTION_OUTLINE_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub width:     f32,
-    #[inspector(min = 0.0, max = 30.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = SELECTION_OUTLINE_MIN,
+        max = SELECTION_OUTLINE_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub intensity: f32,
     pub color:     Color,
 }
@@ -220,9 +231,10 @@ fn clear_selection_on_background_click(
     }
 
     // Don't clear selection when clicking on egui inspector windows
-    if egui_contexts
-        .ctx_mut()
-        .is_ok_and(|ctx| ctx.wants_pointer_input())
+    let egui_context = egui_contexts.ctx_mut();
+    if egui_context
+        .as_deref()
+        .is_ok_and(egui::Context::wants_pointer_input)
     {
         return;
     }

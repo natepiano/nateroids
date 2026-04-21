@@ -9,7 +9,6 @@ use rand::RngExt;
 use crate::actor::Deaderoid;
 use crate::actor::DeathCorner;
 use crate::actor::Health;
-use crate::actor::MissilePosition;
 use crate::actor::NATEROID_DEATH_ALPHA_STEP;
 use crate::actor::Nateroid;
 use crate::actor::NateroidDeathMaterials;
@@ -27,23 +26,10 @@ impl Plugin for DespawnPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (
-                despawn_dead_entities,
-                despawn_missiles,
-                animate_dying_nateroids,
-            )
-                .in_set(InGameSet::DespawnEntities),
+            (despawn_dead_entities, animate_dying_nateroids).in_set(InGameSet::DespawnEntities),
         )
         .add_systems(OnExit(GameState::InGame), despawn_all_entities)
         .add_systems(OnExit(GameState::Splash), despawn_splash);
-    }
-}
-
-fn despawn_missiles(mut commands: Commands, query: Query<(Entity, &MissilePosition)>) {
-    for (entity, missile) in query.iter() {
-        if missile.traveled_distance >= missile.total_distance {
-            despawn(&mut commands, entity);
-        }
     }
 }
 
@@ -184,7 +170,7 @@ fn despawn_dead_entities(
             Option<&Nateroid>,
             Option<&Name>,
         ),
-        Without<Deaderoid>,
+        (Without<Deaderoid>, Changed<Health>),
     >,
     nateroid_settings: Res<NateroidSettings>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,

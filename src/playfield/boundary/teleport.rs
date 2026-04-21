@@ -212,6 +212,22 @@ mod tests {
         }
     }
 
+    fn boundary_extents(transform: &Transform) -> (Vec3, Vec3) {
+        let half_size = transform.scale / 2.0;
+        (
+            transform.translation - half_size,
+            transform.translation + half_size,
+        )
+    }
+
+    fn wrap_from_max_axis(position: f32, axis_min: f32, axis_max: f32) -> f32 {
+        axis_min + (position - axis_max)
+    }
+
+    fn wrap_from_min_axis(position: f32, axis_min: f32, axis_max: f32) -> f32 {
+        axis_max - (axis_min - position)
+    }
+
     fn assert_float_eq(actual: f32, expected: f32) {
         assert!(
             (actual - expected).abs() <= FLOAT_EPSILON,
@@ -247,124 +263,191 @@ mod tests {
     #[test]
     fn test_teleport_right_face_to_left() {
         let transform = create_test_transform(Vec3::new(100.0, 100.0, 100.0));
-        // boundary_max.x = 50.0, boundary_min.x = -50.0
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Entity exits right face (+X) at x=55.0 (5.0 past boundary)
         let position = Position::new(55.0, 0.0, 0.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
 
-        // Should wrap to left face at x=-45.0 (5.0 offset from left boundary)
-        assert_position_eq(result, Position::new(-45.0, 0.0, 0.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                wrap_from_max_axis(position.x, boundary_min.x, boundary_max.x),
+                position.y,
+                position.z,
+            ),
+        );
     }
 
     #[test]
     fn test_teleport_left_face_to_right() {
         let transform = create_test_transform(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Entity exits left face (-X) at x=-60.0 (10.0 past boundary)
         let position = Position::new(-60.0, 0.0, 0.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
 
-        // Should wrap to right face at x=40.0 (10.0 offset from right boundary)
-        assert_position_eq(result, Position::new(40.0, 0.0, 0.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                wrap_from_min_axis(position.x, boundary_min.x, boundary_max.x),
+                position.y,
+                position.z,
+            ),
+        );
     }
 
     #[test]
     fn test_teleport_top_face_to_bottom() {
         let transform = create_test_transform(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Entity exits top face (+Y) at y=53.0 (3.0 past boundary)
         let position = Position::new(0.0, 53.0, 0.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
 
-        // Should wrap to bottom face at y=-47.0 (3.0 offset from bottom boundary)
-        assert_position_eq(result, Position::new(0.0, -47.0, 0.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                position.x,
+                wrap_from_max_axis(position.y, boundary_min.y, boundary_max.y),
+                position.z,
+            ),
+        );
     }
 
     #[test]
     fn test_teleport_bottom_face_to_top() {
         let transform = create_test_transform(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Entity exits bottom face (-Y) at y=-58.0 (8.0 past boundary)
         let position = Position::new(0.0, -58.0, 0.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
 
-        // Should wrap to top face at y=42.0 (8.0 offset from top boundary)
-        assert_position_eq(result, Position::new(0.0, 42.0, 0.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                position.x,
+                wrap_from_min_axis(position.y, boundary_min.y, boundary_max.y),
+                position.z,
+            ),
+        );
     }
 
     #[test]
     fn test_teleport_front_face_to_back() {
         let transform = create_test_transform(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Entity exits front face (+Z) at z=52.0 (2.0 past boundary)
         let position = Position::new(0.0, 0.0, 52.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
 
-        // Should wrap to back face at z=-48.0 (2.0 offset from back boundary)
-        assert_position_eq(result, Position::new(0.0, 0.0, -48.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                position.x,
+                position.y,
+                wrap_from_max_axis(position.z, boundary_min.z, boundary_max.z),
+            ),
+        );
     }
 
     #[test]
     fn test_teleport_back_face_to_front() {
         let transform = create_test_transform(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Entity exits back face (-Z) at z=-57.0 (7.0 past boundary)
         let position = Position::new(0.0, 0.0, -57.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
 
-        // Should wrap to front face at z=43.0 (7.0 offset from front boundary)
-        assert_position_eq(result, Position::new(0.0, 0.0, 43.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                position.x,
+                position.y,
+                wrap_from_min_axis(position.z, boundary_min.z, boundary_max.z),
+            ),
+        );
     }
 
     #[test]
     fn test_teleport_preserves_offset_on_other_axes() {
         let transform = create_test_transform(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Entity exits right face with Y and Z offsets
         let position = Position::new(55.0, 20.0, -10.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
 
-        // X should wrap, but Y and Z should remain unchanged
-        assert_position_eq(result, Position::new(-45.0, 20.0, -10.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                wrap_from_max_axis(position.x, boundary_min.x, boundary_max.x),
+                position.y,
+                position.z,
+            ),
+        );
     }
 
     #[test]
     fn test_teleport_edge_wrapping() {
         let transform = create_test_transform(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Entity exits both right face (+X) and top face (+Y)
         let position = Position::new(53.0, 52.0, 0.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
 
-        // Both axes should wrap independently
-        assert_position_eq(result, Position::new(-47.0, -48.0, 0.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                wrap_from_max_axis(position.x, boundary_min.x, boundary_max.x),
+                wrap_from_max_axis(position.y, boundary_min.y, boundary_max.y),
+                position.z,
+            ),
+        );
     }
 
     #[test]
     fn test_teleport_corner_wrapping() {
         let transform = create_test_transform(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Entity exits all three faces (corner case)
         let position = Position::new(55.0, 58.0, 52.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
 
-        // All three axes should wrap independently
-        assert_position_eq(result, Position::new(-45.0, -42.0, -48.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                wrap_from_max_axis(position.x, boundary_min.x, boundary_max.x),
+                wrap_from_max_axis(position.y, boundary_min.y, boundary_max.y),
+                wrap_from_max_axis(position.z, boundary_min.z, boundary_max.z),
+            ),
+        );
     }
 
     #[test]
     fn test_teleport_large_offset() {
         let transform = create_test_transform(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Entity far past boundary (offset = 150.0, larger than boundary itself)
         let position = Position::new(200.0, 0.0, 0.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
 
-        // Should maintain the full offset from opposite boundary
-        // offset = 200.0 - 50.0 = 150.0
-        // result = -50.0 + 150.0 = 100.0
-        assert_position_eq(result, Position::new(100.0, 0.0, 0.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                wrap_from_max_axis(position.x, boundary_min.x, boundary_max.x),
+                position.y,
+                position.z,
+            ),
+        );
     }
 
     #[test]
@@ -375,50 +458,88 @@ mod tests {
             scale: Vec3::new(200.0, 100.0, 50.0),
             ..default()
         };
-        // boundary_min = (0, 0, -50), boundary_max = (200, 100, 0)
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Test right face wrap
         let position = Position::new(205.0, 50.0, -25.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
-        assert_position_eq(result, Position::new(5.0, 50.0, -25.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                wrap_from_max_axis(position.x, boundary_min.x, boundary_max.x),
+                position.y,
+                position.z,
+            ),
+        );
 
         // Test top face wrap
         let position = Position::new(100.0, 103.0, -25.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
-        assert_position_eq(result, Position::new(100.0, 3.0, -25.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                position.x,
+                wrap_from_max_axis(position.y, boundary_min.y, boundary_max.y),
+                position.z,
+            ),
+        );
     }
 
     #[test]
     fn test_teleport_exactly_at_boundary() {
         let transform = create_test_transform(Vec3::new(100.0, 100.0, 100.0));
+        let (boundary_min, _) = boundary_extents(&transform);
 
         // Position exactly at boundary (should not wrap, as condition is >= not >)
         let position = Position::new(50.0, 0.0, 0.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
 
-        // At x=50.0 (boundary_max), should wrap to boundary_min
-        assert_position_eq(result, Position::new(-50.0, 0.0, 0.0));
+        assert_position_eq(
+            result,
+            Position::new(boundary_min.x, position.y, position.z),
+        );
     }
 
     #[test]
     fn test_teleport_asymmetric_boundary() {
         // Test with different dimensions on each axis
         let transform = create_test_transform(Vec3::new(200.0, 50.0, 80.0));
-        // boundary_min = (-100, -25, -40), boundary_max = (100, 25, 40)
+        let (boundary_min, boundary_max) = boundary_extents(&transform);
 
         // Test X axis (larger)
         let position = Position::new(110.0, 0.0, 0.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
-        assert_position_eq(result, Position::new(-90.0, 0.0, 0.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                wrap_from_max_axis(position.x, boundary_min.x, boundary_max.x),
+                position.y,
+                position.z,
+            ),
+        );
 
         // Test Y axis (smaller)
         let position = Position::new(0.0, 30.0, 0.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
-        assert_position_eq(result, Position::new(0.0, -20.0, 0.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                position.x,
+                wrap_from_max_axis(position.y, boundary_min.y, boundary_max.y),
+                position.z,
+            ),
+        );
 
         // Test Z axis (medium)
         let position = Position::new(0.0, 0.0, -45.0);
         let result = Boundary::calculate_teleport_position(position, &transform);
-        assert_position_eq(result, Position::new(0.0, 0.0, 35.0));
+        assert_position_eq(
+            result,
+            Position::new(
+                position.x,
+                position.y,
+                wrap_from_min_axis(position.z, boundary_min.z, boundary_max.z),
+            ),
+        );
     }
 }

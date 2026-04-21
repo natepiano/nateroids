@@ -4,6 +4,26 @@ use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 
+use super::constants::PORTAL_DIRECTION_CHANGE_FACTOR_MAX;
+use super::constants::PORTAL_DIRECTION_CHANGE_FACTOR_MIN;
+use super::constants::PORTAL_DISTANCE_MAX;
+use super::constants::PORTAL_DISTANCE_MIN;
+use super::constants::PORTAL_FADEOUT_DURATION_MAX;
+use super::constants::PORTAL_FADEOUT_DURATION_MIN;
+use super::constants::PORTAL_LINE_JOINTS_MAX;
+use super::constants::PORTAL_LINE_JOINTS_MIN;
+use super::constants::PORTAL_LINE_WIDTH_MAX;
+use super::constants::PORTAL_LINE_WIDTH_MIN;
+use super::constants::PORTAL_MINIMUM_RADIUS_MAX;
+use super::constants::PORTAL_MINIMUM_RADIUS_MIN;
+use super::constants::PORTAL_MOVEMENT_SMOOTHING_FACTOR_MAX;
+use super::constants::PORTAL_MOVEMENT_SMOOTHING_FACTOR_MIN;
+use super::constants::PORTAL_RESOLUTION_MAX;
+use super::constants::PORTAL_RESOLUTION_MIN;
+use super::constants::PORTAL_SCALE_MAX;
+use super::constants::PORTAL_SCALE_MIN;
+use super::constants::PORTAL_SMALLEST_MAX;
+use super::constants::PORTAL_SMALLEST_MIN;
 use crate::camera::RenderLayer;
 use crate::playfield::constants::PORTAL_DIRECTION_CHANGE_FACTOR;
 use crate::playfield::constants::PORTAL_DISTANCE_APPROACH;
@@ -25,27 +45,71 @@ pub struct PortalGizmo {}
 pub(super) struct PortalSettings {
     pub(super) color_approaching:         Color,
     pub(super) color_emerging:            Color,
-    #[inspector(min = 0.0, max = std::f32::consts::PI, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = PORTAL_DIRECTION_CHANGE_FACTOR_MIN,
+        max = PORTAL_DIRECTION_CHANGE_FACTOR_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub(super) direction_change_factor:   f32,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = PORTAL_DISTANCE_MIN,
+        max = PORTAL_DISTANCE_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub(super) distance_approach:         f32,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = PORTAL_DISTANCE_MIN,
+        max = PORTAL_DISTANCE_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub(super) distance_shrink:           f32,
-    #[inspector(min = 1.0, max = 30.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = PORTAL_FADEOUT_DURATION_MIN,
+        max = PORTAL_FADEOUT_DURATION_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub(super) fadeout_duration:          f32,
-    #[inspector(min = 0, max = 40, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = PORTAL_LINE_JOINTS_MIN,
+        max = PORTAL_LINE_JOINTS_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub(super) line_joints:               u32,
-    #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = PORTAL_LINE_WIDTH_MIN,
+        max = PORTAL_LINE_WIDTH_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub(super) line_width:                f32,
-    #[inspector(min = 0.001, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = PORTAL_MINIMUM_RADIUS_MIN,
+        max = PORTAL_MINIMUM_RADIUS_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub(super) minimum_radius:            f32,
-    #[inspector(min = 0.0, max = 1.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = PORTAL_MOVEMENT_SMOOTHING_FACTOR_MIN,
+        max = PORTAL_MOVEMENT_SMOOTHING_FACTOR_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub(super) movement_smoothing_factor: f32,
-    #[inspector(min = 1., max = 10., display = NumberDisplay::Slider)]
+    #[inspector(
+        min = PORTAL_SCALE_MIN,
+        max = PORTAL_SCALE_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub(super) scalar:                    f32,
-    #[inspector(min = 1., max = 10., display = NumberDisplay::Slider)]
+    #[inspector(
+        min = PORTAL_SMALLEST_MIN,
+        max = PORTAL_SMALLEST_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub(super) smallest:                  f32,
-    #[inspector(min = 3, max = 256, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = PORTAL_RESOLUTION_MIN,
+        max = PORTAL_RESOLUTION_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub(super) resolution:                u32,
 }
 

@@ -21,7 +21,6 @@ use collision_detection::CollisionDetectionPlugin;
 pub use constants::NATEROID_DEATH_ALPHA_STEP;
 use flame_gizmo::FlameGizmoPlugin;
 use missile::MissilePlugin;
-pub use missile::MissilePosition;
 pub use nateroid::Deaderoid;
 pub use nateroid::Nateroid;
 pub use nateroid::NateroidDeathMaterials;

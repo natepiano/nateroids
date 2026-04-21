@@ -47,6 +47,37 @@ pub(super) const FOCUS_GIZMO_LINE_WIDTH: f32 = 2.0;
 // Home animation
 pub(super) const HOME_ANIMATION_DURATION_MS: u64 = 1200;
 
+// Inspector slider bounds
+pub(super) const AMBIENT_LIGHT_BRIGHTNESS_MAX: f32 = 10_000.0;
+pub(super) const AMBIENT_LIGHT_BRIGHTNESS_MIN: f32 = 0.0;
+pub(super) const CAMERA_BLOOM_MAX: f32 = 1.0;
+pub(super) const CAMERA_BLOOM_MIN: f32 = 0.0;
+pub(super) const CAMERA_SMOOTHNESS_MAX: f32 = 1.0;
+pub(super) const CAMERA_SMOOTHNESS_MIN: f32 = 0.0;
+pub(super) const CAMERA_SPLASH_ANGLE_MAX: f32 = std::f32::consts::PI;
+pub(super) const CAMERA_SPLASH_ANGLE_MIN: f32 = -std::f32::consts::PI;
+pub(super) const CAMERA_SPLASH_RADIUS_MAX: f32 = 50_000.0;
+pub(super) const CAMERA_SPLASH_RADIUS_MIN: f32 = 1_000.0;
+pub(super) const DIRECTIONAL_LIGHT_ILLUMINANCE_MAX: f32 = 10_000.0;
+pub(super) const DIRECTIONAL_LIGHT_ILLUMINANCE_MIN: f32 = 0.0;
+pub(super) const ENVIRONMENT_MAP_INTENSITY_MAX: f32 = 100_000.0;
+pub(super) const ENVIRONMENT_MAP_INTENSITY_MIN: f32 = 0.0;
+pub(super) const FOCUS_GIZMO_LINE_WIDTH_MAX: f32 = 10.0;
+pub(super) const FOCUS_GIZMO_LINE_WIDTH_MIN: f32 = 0.1;
+pub(super) const FOCUS_GIZMO_SPHERE_RADIUS_MAX: f32 = 50.0;
+pub(super) const FOCUS_GIZMO_SPHERE_RADIUS_MIN: f32 = 0.1;
+pub(super) const SELECTION_OUTLINE_MAX: f32 = 30.0;
+pub(super) const SELECTION_OUTLINE_MIN: f32 = 0.0;
+pub(super) const STAR_ROTATION_CYCLE_MAX: f32 = 30.0;
+pub(super) const ZOOM_CONVERGENCE_RATE_MAX: f32 = 0.5;
+pub(super) const ZOOM_CONVERGENCE_RATE_MIN: f32 = 0.01;
+pub(super) const ZOOM_MARGIN_MAX: f32 = 0.5;
+pub(super) const ZOOM_MARGIN_MIN: f32 = 0.0;
+pub(super) const ZOOM_MARGIN_TOLERANCE_MAX: f32 = 0.01;
+pub(super) const ZOOM_MARGIN_TOLERANCE_MIN: f32 = 0.00001;
+pub(super) const ZOOM_MAX_ITERATIONS_MAX: usize = 500;
+pub(super) const ZOOM_MAX_ITERATIONS_MIN: usize = 50;
+
 // Lighting
 pub(super) const AMBIENT_LIGHT_BRIGHTNESS: f32 = 100.0;
 pub(super) const CASCADE_SHADOW_FIRST_FAR_BOUND: f32 = 50.0;
@@ -85,7 +116,8 @@ pub(super) const STAR_FIELD_DIAMETER: std::ops::Range<f32> = 200.0..400.0;
 pub(super) const STAR_RADIUS: std::ops::Range<f32> = 0.3..2.5;
 
 // Star rotation
-/// Minimum rotation cycle in minutes (1 second = 0.01667 minutes)
+/// Minimum rotation cycle in minutes (1 second = 0.01667 minutes).
+/// Also serves as the inspector slider lower bound.
 pub(super) const STAR_ROTATION_CYCLE_MINIMUM_MINUTES: f32 = 0.01667;
 pub(super) const STAR_ROTATION_CYCLE_MINUTES: f32 = 15.0;
 

@@ -1,3 +1,4 @@
+mod constants;
 mod gizmo;
 mod portal_render;
 mod teleport;
@@ -7,7 +8,17 @@ use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+use constants::BOUNDARY_EXTERIOR_LINE_WIDTH_MAX;
+use constants::BOUNDARY_EXTERIOR_LINE_WIDTH_MIN;
+use constants::BOUNDARY_EXTERIOR_SCALAR_MAX;
+use constants::BOUNDARY_EXTERIOR_SCALAR_MIN;
+use constants::BOUNDARY_GRID_LINE_WIDTH_MAX;
+use constants::BOUNDARY_GRID_LINE_WIDTH_MIN;
+use gizmo::BoundaryGizmo;
 pub use gizmo::BoundaryVolume;
+pub use gizmo::GridFlash;
+use gizmo::GridFlashAnimation;
+use gizmo::GridGizmo;
 
 use super::constants::BOUNDARY_CELL_COUNT;
 use super::constants::BOUNDARY_GRID_LINE_WIDTH;
@@ -15,10 +26,6 @@ use super::constants::BOUNDARY_OUTER_LINE_WIDTH;
 use super::constants::BOUNDARY_SCALAR;
 use super::portals::Portal;
 use super::portals::PortalGizmo;
-use super::types::BoundaryGizmo;
-use super::types::GridFlashAnimation;
-use super::types::GridGizmo;
-use super::types::PortalActorKind;
 use crate::input::InspectBoundarySwitch;
 use crate::orientation::CameraOrientation;
 use crate::state::GameState;
@@ -27,6 +34,13 @@ use crate::switches::Switch;
 use crate::switches::Switches;
 
 event!(BoundaryInspectorEvent);
+
+/// Distinguishes normal actors from deaderoids in portal rendering.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum PortalActorKind {
+    Nateroid,
+    Deaderoid,
+}
 
 pub(super) struct BoundaryPlugin;
 
@@ -76,11 +90,23 @@ pub struct Boundary {
     pub cell_count:          UVec3,
     pub grid_color:          Color,
     pub outer_color:         Color,
-    #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = BOUNDARY_GRID_LINE_WIDTH_MIN,
+        max = BOUNDARY_GRID_LINE_WIDTH_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub grid_line_width:     f32,
-    #[inspector(min = 0.1, max = 40.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = BOUNDARY_EXTERIOR_LINE_WIDTH_MIN,
+        max = BOUNDARY_EXTERIOR_LINE_WIDTH_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub exterior_line_width: f32,
-    #[inspector(min = 50., max = 300., display = NumberDisplay::Slider)]
+    #[inspector(
+        min = BOUNDARY_EXTERIOR_SCALAR_MIN,
+        max = BOUNDARY_EXTERIOR_SCALAR_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub exterior_scalar:     f32,
 }
 

@@ -1,4 +1,7 @@
+use bevy::ecs::spawn::SpawnWith;
 use bevy::prelude::*;
+use bevy_enhanced_input::condition::block_by::BlockBy;
+use bevy_enhanced_input::condition::press::Press;
 use bevy_enhanced_input::prelude::*;
 
 #[derive(Component)]
@@ -11,26 +14,26 @@ action!(ShipFire);
 action!(ShipContinuousFire);
 action!(ShipShiftModifier);
 
-pub fn ship_controls_input_bundle() -> impl Bundle {
+pub fn insert_ship_controls(commands: &mut Commands, entity: Entity) {
     let consume_input = ActionSettings {
         consume_input: true,
         ..default()
     };
     // Internal "modifier state" action used only for gating other ship actions.
     //
-    // Why non-consuming:
-    // - This action should observe Shift state, not steal it from other bindings.
+    // Why non-consuming: this action should observe Shift state, not steal it
+    // from other bindings.
     //
-    // Why require_reset:
-    // - If a ship/context is spawned while Shift is already held, we avoid treating that as a fresh
-    //   modifier activation until Shift is released and pressed again.
+    // Why require_reset: if a ship/context is spawned while Shift is already
+    // held, we avoid treating that as a fresh modifier activation until Shift
+    // is released and pressed again.
     let non_consuming_modifier = ActionSettings {
         consume_input: false,
         require_reset: true,
         ..default()
     };
 
-    (
+    commands.entity(entity).insert((
         ShipControlsContext,
         Actions::<ShipControlsContext>::spawn(SpawnWith(
             move |context: &mut ActionSpawner<ShipControlsContext>| {
@@ -70,20 +73,22 @@ pub fn ship_controls_input_bundle() -> impl Bundle {
                     // 2) Press F (Shift+F is used by a different action)
                     // 3) Release Shift while still holding F
                     //
-                    // Without these two conditions together, step (3) can produce a plain-F
-                    // Start event and incorrectly toggle continuous fire.
+                    // Without these two conditions together, step (3) can
+                    // produce a plain-F Start event and incorrectly toggle
+                    // continuous fire.
                     //
                     // - Press: fire only on a fresh press edge.
-                    // - BlockBy(shift_modifier): never fire while Shift modifier action is active.
+                    // - BlockBy(shift_modifier): never fire while the Shift modifier action is
+                    //   active.
                     //
-                    // See regression coverage:
-                    // tests/bei_chord_overlap.
-                    // rs::press_plus_blockby_shift_prevents_toggle_on_shift_release
-                    bevy_enhanced_input::condition::press::Press::default(),
+                    // Regression coverage:
+                    //   tests/bei_chord_overlap.rs
+                    //     ::press_plus_blockby_shift_prevents_toggle_on_shift_release
+                    Press::default(),
                     BlockBy::single(shift_modifier),
                     bindings![KeyCode::KeyF],
                 ));
             },
         )),
-    )
+    ));
 }

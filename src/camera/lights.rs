@@ -11,12 +11,18 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use super::RenderLayer;
 use super::constants::AMBIENT_LIGHT_BRIGHTNESS;
+use super::constants::AMBIENT_LIGHT_BRIGHTNESS_MAX;
+use super::constants::AMBIENT_LIGHT_BRIGHTNESS_MIN;
 use super::constants::CASCADE_SHADOW_FIRST_FAR_BOUND;
 use super::constants::CASCADE_SHADOW_MAX_DISTANCE;
 use super::constants::CASCADE_SHADOW_NUM_CASCADES;
 use super::constants::CASCADE_SHADOW_OVERLAP_PROPORTION;
 use super::constants::DIRECTIONAL_LIGHT_ILLUMINANCE;
+use super::constants::DIRECTIONAL_LIGHT_ILLUMINANCE_MAX;
+use super::constants::DIRECTIONAL_LIGHT_ILLUMINANCE_MIN;
 use super::constants::ENVIRONMENT_MAP_INTENSITY;
+use super::constants::ENVIRONMENT_MAP_INTENSITY_MAX;
+use super::constants::ENVIRONMENT_MAP_INTENSITY_MIN;
 use super::constants::SHADOW_DEPTH_BIAS;
 use super::constants::SHADOW_NORMAL_BIAS;
 use crate::input::InspectLightsSwitch;
@@ -66,7 +72,11 @@ pub(super) enum ShadowSwitch {
 pub(super) struct DirectionalLightSettings {
     pub color:       Color,
     pub enabled:     LightSwitch,
-    #[inspector(min = 0.0, max = 10_000.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = DIRECTIONAL_LIGHT_ILLUMINANCE_MIN,
+        max = DIRECTIONAL_LIGHT_ILLUMINANCE_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub illuminance: f32,
     pub shadows:     ShadowSwitch,
 }
@@ -88,10 +98,18 @@ impl Default for DirectionalLightSettings {
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone)]
 #[reflect(Resource, InspectorOptions)]
 pub(super) struct LightSettings {
-    #[inspector(min = 0.0, max = 10_000.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = AMBIENT_LIGHT_BRIGHTNESS_MIN,
+        max = AMBIENT_LIGHT_BRIGHTNESS_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub ambient_light_brightness:  f32,
     pub ambient_light_color:       Color,
-    #[inspector(min = 0.0, max = 100_000.0, display = NumberDisplay::Slider)]
+    #[inspector(
+        min = ENVIRONMENT_MAP_INTENSITY_MIN,
+        max = ENVIRONMENT_MAP_INTENSITY_MAX,
+        display = NumberDisplay::Slider
+    )]
     pub environment_map_intensity: f32,
     pub front:                     DirectionalLightSettings,
     pub back:                      DirectionalLightSettings,

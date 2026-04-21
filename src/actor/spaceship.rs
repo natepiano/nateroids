@@ -89,9 +89,8 @@ fn initialize_spaceship(
 ) {
     commands
         .entity(spaceship.entity)
-        .insert(spaceship_settings.transform)
-        // Ship controls now come from enhanced-input on the spaceship context entity.
-        .insert(input::ship_controls_input_bundle());
+        .insert(spaceship_settings.transform);
+    input::insert_ship_controls(&mut commands, spaceship.entity);
 
     actor_settings::insert_configured_components(
         &mut commands,

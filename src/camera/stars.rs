@@ -55,7 +55,7 @@ fn debug_stars(
     if count > 0 {
         let visible_count = stars
             .iter()
-            .filter(|(_, v)| v.is_some_and(|vv| vv.get()))
+            .filter(|(_, v)| v.copied().is_some_and(ViewVisibility::get))
             .count();
 
         if let Ok((cam_entity, camera, render_layers, visible_entities)) = stars_camera.single() {
@@ -170,12 +170,12 @@ fn get_star_position(
     Position::new(x, y, z)
 }
 
-fn get_star_color(settings: &StarSettings, rng: &mut impl Rng) -> Vec4 {
-    let end = settings.color.range.end;
-    let color_start = settings.color.range.start;
-    let white_start = end * settings.color.white_start_ratio;
+fn get_star_color(star_settings: &StarSettings, rng: &mut impl Rng) -> Vec4 {
+    let end = star_settings.color.range.end;
+    let color_start = star_settings.color.range.start;
+    let white_start = end * star_settings.color.white_start_ratio;
 
-    let start = if rng.random::<f32>() < settings.color.white_probability {
+    let start = if rng.random::<f32>() < star_settings.color.white_probability {
         white_start
     } else {
         color_start
@@ -206,22 +206,22 @@ fn get_star_color(settings: &StarSettings, rng: &mut impl Rng) -> Vec4 {
 
 fn rotate_stars(
     time: Res<Time>,
-    settings: Res<StarSettings>,
+    star_settings: Res<StarSettings>,
     mut rotation_state: ResMut<StarRotationState>,
     mut stars: Query<(&Star, &mut Transform)>,
 ) {
-    if settings.rotation_cycle_minutes < STAR_ROTATION_CYCLE_MINIMUM_MINUTES {
+    if star_settings.rotation_cycle_minutes < STAR_ROTATION_CYCLE_MINIMUM_MINUTES {
         return;
     }
 
     // Calculate rotation speed (radians per second)
-    let rotation_speed = (2.0 * PI) / (settings.rotation_cycle_minutes * 60.0);
+    let rotation_speed = (2.0 * PI) / (star_settings.rotation_cycle_minutes * 60.0);
 
     // Update current angle (negative for clockwise rotation when viewed from above)
     rotation_state.current_angle -= rotation_speed * time.delta_secs();
 
     // Apply rotation to each star around the configured axis
-    let rotation = Quat::from_axis_angle(settings.rotation_axis, rotation_state.current_angle);
+    let rotation = Quat::from_axis_angle(star_settings.rotation_axis, rotation_state.current_angle);
 
     for (star, mut transform) in &mut stars {
         transform.translation = rotation * *star.position;

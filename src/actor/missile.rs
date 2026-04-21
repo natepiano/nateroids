@@ -14,6 +14,7 @@ use super::constants::LOCKED_AXES_2D;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
 use super::teleport::TeleportStatus;
+use crate::despawn;
 use crate::input::ShipControlsContext;
 use crate::input::ShipFire;
 use crate::playfield::ActorPortals;
@@ -82,20 +83,20 @@ fn initialize_missile(
     missile: On<Add, Missile>,
     mut commands: Commands,
     boundary: Res<Boundary>,
-    mut settings: ResMut<MissileSettings>,
+    mut missile_settings: ResMut<MissileSettings>,
     transform_and_linvel: Single<(&Transform, &LinearVelocity), With<Spaceship>>,
 ) {
     let missile_position = MissilePosition::new(boundary.max_missile_distance());
 
     let (spaceship_transform, spaceship_velocity) = *transform_and_linvel;
 
-    let transform = initialize_transform(spaceship_transform, &settings);
+    let transform = initialize_transform(spaceship_transform, &missile_settings);
 
     // Calculate velocity: forward direction * base_velocity + spaceship velocity
     let (linear_velocity, angular_velocity) = calculate_missile_velocity(
         spaceship_transform,
         spaceship_velocity,
-        settings.base_velocity,
+        missile_settings.base_velocity,
     );
 
     commands
@@ -107,7 +108,7 @@ fn initialize_missile(
 
     actor_settings::insert_configured_components(
         &mut commands,
-        &mut settings.actor_settings,
+        &mut missile_settings.actor_settings,
         missile.entity,
     );
 }
@@ -182,11 +183,14 @@ fn fire_missile_continuous(
 
 /// we update `Missile` movement so that it can be despawned after it has traveled
 /// its total distance
-fn missile_movement(mut query: Query<(&Transform, &mut MissilePosition, &Teleporter)>) {
-    for (transform, mut missile, teleporter) in &mut query {
+fn missile_movement(
+    mut commands: Commands,
+    mut query: Query<(Entity, &Transform, &mut MissilePosition, &Teleporter)>,
+) {
+    for (entity, transform, mut missile_position, teleporter) in &mut query {
         let current_position = Position(transform.translation);
 
-        if let Some(last_position) = missile.last_position {
+        if let Some(last_position) = missile_position.last_position {
             // Calculate the distance traveled since the last update
             let distance_traveled = if teleporter.status == TeleportStatus::JustTeleported {
                 0.0
@@ -195,17 +199,22 @@ fn missile_movement(mut query: Query<(&Transform, &mut MissilePosition, &Telepor
             };
 
             // Update the total traveled distance
-            missile.traveled_distance += distance_traveled;
-            missile.remaining_distance = missile.total_distance - missile.traveled_distance;
+            missile_position.traveled_distance += distance_traveled;
+            missile_position.remaining_distance =
+                missile_position.total_distance - missile_position.traveled_distance;
 
             // Update the last teleport position if the missile wrapped
             if teleporter.status == TeleportStatus::JustTeleported {
-                missile.last_teleport_position = Some(current_position);
+                missile_position.last_teleport_position = Some(current_position);
             }
         }
 
         // Always update last_position
-        missile.last_position = Some(current_position);
+        missile_position.last_position = Some(current_position);
+
+        if missile_position.traveled_distance >= missile_position.total_distance {
+            despawn::despawn(&mut commands, entity);
+        }
     }
 }
 
