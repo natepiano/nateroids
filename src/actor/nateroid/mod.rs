@@ -8,11 +8,11 @@ pub use death_materials::NateroidDeathMaterials;
 pub(super) use spawn::NateroidSpawnStats;
 
 use super::Teleporter;
+use super::actor_settings;
 use super::constants::LOCKED_AXES_2D;
 use crate::asset_loader::AssetsState;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
-use super::actor_settings;
 
 pub(super) struct NateroidPlugin;
 
