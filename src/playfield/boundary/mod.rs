@@ -1,7 +1,6 @@
 mod constants;
 mod gizmo;
 mod portal_render;
-mod teleport;
 
 use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
