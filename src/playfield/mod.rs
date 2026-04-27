@@ -4,11 +4,11 @@ mod constants;
 mod portals;
 
 use bevy::prelude::*;
-pub use boundary::Boundary;
+pub(crate) use boundary::Boundary;
 use boundary::BoundaryPlugin;
-pub use boundary::BoundaryVolume;
-pub use boundary::GridFlash;
-pub use portals::ActorPortals;
+pub(crate) use boundary::BoundaryVolume;
+pub(crate) use boundary::GridFlash;
+pub(crate) use portals::ActorPortals;
 use portals::PortalPlugin;
 
 pub(crate) struct PlayfieldPlugin;

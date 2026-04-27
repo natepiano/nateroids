@@ -1,6 +1,5 @@
 use avian3d::prelude::*;
 use bevy::camera::primitives::Aabb;
-use bevy::math::Dir3;
 use bevy::prelude::*;
 use bevy_kana::Position;
 
@@ -89,27 +88,24 @@ fn handle_emerging_visual(
     boundary_transform: &Transform,
 ) {
     if teleporter.status == TeleportStatus::JustTeleported
-        && let Some(normal) = teleporter.last_teleported_normal
+        && let Some(teleported_position) = teleporter.position
     {
-        if let Some(face) = BoundaryFace::from_normal(normal)
-            && let Some(teleported_position) = teleporter.last_teleported_position
-        {
-            if is_physics_burst(teleported_position, boundary_transform) {
-                actor_portals.emerging = None;
-                return;
-            }
-
-            let (snapped_position, final_face) =
-                snap_and_get_face(teleported_position, normal, boundary_transform);
-
-            actor_portals.emerging = Some(Portal {
-                actor_distance_to_wall: 0.0,
-                face: final_face.unwrap_or(face),
-                position: snapped_position,
-                fade_out_started: Some(time.elapsed_secs()),
-                ..portal
-            });
+        if is_physics_burst(teleported_position, boundary_transform) {
+            actor_portals.emerging = None;
+            return;
         }
+
+        let initial_face = Boundary::get_face_for_position(teleported_position, boundary_transform);
+        let (snapped_position, final_face) =
+            snap_and_get_face(teleported_position, initial_face, boundary_transform);
+
+        actor_portals.emerging = Some(Portal {
+            actor_distance_to_wall: 0.0,
+            face: final_face,
+            position: snapped_position,
+            fade_out_started: Some(time.elapsed_secs()),
+            ..portal
+        });
     } else if let Some(ref mut emerging) = actor_portals.emerging
         && emerging.radius <= portal_settings.minimum_radius
     {
@@ -130,8 +126,7 @@ fn handle_approaching_visual(
         let actor_distance_to_wall = portal.position.distance(collision_point);
 
         if actor_distance_to_wall <= portal.boundary_distance_approach {
-            let normal = Boundary::get_normal_for_position(collision_point, boundary_transform);
-            let face = BoundaryFace::from_normal(normal).unwrap_or(BoundaryFace::Right);
+            let face = Boundary::get_face_for_position(collision_point, boundary_transform);
             let temp_portal = Portal {
                 position: collision_point,
                 face,
@@ -146,24 +141,22 @@ fn handle_approaching_visual(
                 .map_or(1, |approaching| approaching.face_count);
 
             let smoothed_position = if current_face_count == previous_face_count {
-                smooth_circle_position(actor_portals, collision_point, normal, portal_settings)
+                smooth_circle_position(actor_portals, collision_point, face, portal_settings)
             } else {
                 collision_point
             };
 
-            let (snapped_position, face) =
-                snap_and_get_face(smoothed_position, normal, boundary_transform);
+            let (snapped_position, snapped_face) =
+                snap_and_get_face(smoothed_position, face, boundary_transform);
 
-            if let Some(face) = face {
-                actor_portals.approaching = Some(Portal {
-                    actor_distance_to_wall,
-                    face,
-                    face_count: current_face_count,
-                    position: snapped_position,
-                    ..portal
-                });
-                return;
-            }
+            actor_portals.approaching = Some(Portal {
+                actor_distance_to_wall,
+                face: snapped_face,
+                face_count: current_face_count,
+                position: snapped_position,
+                ..portal
+            });
+            return;
         }
     }
 
@@ -185,20 +178,19 @@ fn is_physics_burst(position: Position, boundary_transform: &Transform) -> bool 
 
 fn snap_and_get_face(
     position: Position,
-    initial_normal: Dir3,
+    initial_face: BoundaryFace,
     boundary_transform: &Transform,
-) -> (Position, Option<BoundaryFace>) {
+) -> (Position, BoundaryFace) {
     let snapped_position =
-        Boundary::snap_position_to_boundary_face(position, initial_normal, boundary_transform);
-    let final_normal = Boundary::get_normal_for_position(snapped_position, boundary_transform);
-    let face = BoundaryFace::from_normal(final_normal);
-    (snapped_position, face)
+        Boundary::snap_position_to_boundary_face(position, initial_face, boundary_transform);
+    let final_face = Boundary::get_face_for_position(snapped_position, boundary_transform);
+    (snapped_position, final_face)
 }
 
 fn smooth_circle_position(
     actor_portals: &Mut<ActorPortals>,
     collision_point: Position,
-    current_boundary_wall_normal: Dir3,
+    current_boundary_wall_face: BoundaryFace,
     portal_settings: &PortalSettings,
 ) -> Position {
     if let Some(approaching) = &actor_portals.approaching {
@@ -206,7 +198,7 @@ fn smooth_circle_position(
 
         if approaching
             .normal()
-            .dot(current_boundary_wall_normal.as_vec3())
+            .dot(current_boundary_wall_face.get_normal())
             > portal_settings.direction_change_factor
         {
             approaching.position.lerp(collision_point, smoothing_factor)

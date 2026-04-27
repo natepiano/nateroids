@@ -37,18 +37,6 @@ impl BoundaryFace {
         }
     }
 
-    pub(super) fn from_normal(normal: Dir3) -> Option<Self> {
-        match normal {
-            Dir3::X => Some(Self::Right),
-            Dir3::NEG_X => Some(Self::Left),
-            Dir3::Y => Some(Self::Top),
-            Dir3::NEG_Y => Some(Self::Bottom),
-            Dir3::Z => Some(Self::Front),
-            Dir3::NEG_Z => Some(Self::Back),
-            _ => None,
-        }
-    }
-
     pub(super) const fn get_face_points(self, min: &Vec3, max: &Vec3) -> [Vec3; 4] {
         match self {
             Self::Left => [

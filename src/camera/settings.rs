@@ -152,43 +152,51 @@ pub struct SplashStart {
     pub yaw:    f32,
 }
 
+#[derive(Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
+#[reflect(InspectorOptions)]
+pub struct SmoothnessSettings {
+    #[inspector(
+        min = CAMERA_SMOOTHNESS_MIN,
+        max = CAMERA_SMOOTHNESS_MAX,
+        display = NumberDisplay::Slider
+    )]
+    pub zoom:  f32,
+    #[inspector(
+        min = CAMERA_SMOOTHNESS_MIN,
+        max = CAMERA_SMOOTHNESS_MAX,
+        display = NumberDisplay::Slider
+    )]
+    pub pan:   f32,
+    #[inspector(
+        min = CAMERA_SMOOTHNESS_MIN,
+        max = CAMERA_SMOOTHNESS_MAX,
+        display = NumberDisplay::Slider
+    )]
+    pub orbit: f32,
+}
+
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub struct CameraSettings {
-    pub bloom:            BloomSettings,
-    #[inspector(
-        min = CAMERA_SMOOTHNESS_MIN,
-        max = CAMERA_SMOOTHNESS_MAX,
-        display = NumberDisplay::Slider
-    )]
-    pub zoom_smoothness:  f32,
-    #[inspector(
-        min = CAMERA_SMOOTHNESS_MIN,
-        max = CAMERA_SMOOTHNESS_MAX,
-        display = NumberDisplay::Slider
-    )]
-    pub pan_smoothness:   f32,
-    #[inspector(
-        min = CAMERA_SMOOTHNESS_MIN,
-        max = CAMERA_SMOOTHNESS_MAX,
-        display = NumberDisplay::Slider
-    )]
-    pub orbit_smoothness: f32,
-    pub splash_start:     SplashStart,
+    pub bloom:        BloomSettings,
+    pub smoothness:   SmoothnessSettings,
+    pub splash_start: SplashStart,
 }
 
 impl Default for CameraSettings {
     fn default() -> Self {
         Self {
-            bloom:            BloomSettings {
+            bloom:        BloomSettings {
                 intensity:           CAMERA_BLOOM_INTENSITY,
                 low_frequency_boost: CAMERA_BLOOM_LOW_FREQUENCY_BOOST,
                 high_pass_frequency: CAMERA_BLOOM_HIGH_PASS_FREQUENCY,
             },
-            zoom_smoothness:  CAMERA_ZOOM_SMOOTHNESS,
-            orbit_smoothness: CAMERA_ORBIT_SMOOTHNESS,
-            pan_smoothness:   CAMERA_PAN_SMOOTHNESS,
-            splash_start:     SplashStart {
+            smoothness:   SmoothnessSettings {
+                zoom:  CAMERA_ZOOM_SMOOTHNESS,
+                pan:   CAMERA_PAN_SMOOTHNESS,
+                orbit: CAMERA_ORBIT_SMOOTHNESS,
+            },
+            splash_start: SplashStart {
                 radius: CAMERA_SPLASH_START_RADIUS,
                 focus:  CAMERA_SPLASH_START_FOCUS,
                 pitch:  CAMERA_SPLASH_START_PITCH,

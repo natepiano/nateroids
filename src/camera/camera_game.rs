@@ -19,7 +19,13 @@ use crate::asset_loader::SceneAssets;
 pub(super) struct GameCameraPlugin;
 
 impl Plugin for GameCameraPlugin {
-    fn build(&self, app: &mut App) { app.add_systems(Update, update_environment_map_intensity); }
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, update_environment_map_intensity)
+            .add_systems(
+                Update,
+                update_orbit_cam_smoothness.run_if(resource_changed::<CameraSettings>),
+            );
+    }
 }
 
 pub(super) fn spawn_game_camera(
@@ -78,5 +84,16 @@ fn update_environment_map_intensity(
 
     for mut env_light in &mut query {
         env_light.intensity = light_settings.environment_map_intensity;
+    }
+}
+
+fn update_orbit_cam_smoothness(
+    camera_settings: Res<CameraSettings>,
+    mut query: Query<&mut OrbitCam>,
+) {
+    for mut cam in &mut query {
+        cam.zoom_smoothness = camera_settings.smoothness.zoom;
+        cam.pan_smoothness = camera_settings.smoothness.pan;
+        cam.orbit_smoothness = camera_settings.smoothness.orbit;
     }
 }

@@ -48,9 +48,8 @@ pub enum TeleportStatus {
 
 #[derive(Component, Reflect, Debug, Default, Clone)]
 pub struct Teleporter {
-    pub status:                   TeleportStatus,
-    pub last_teleported_position: Option<Position>,
-    pub last_teleported_normal:   Option<Dir3>,
+    pub status:   TeleportStatus,
+    pub position: Option<Position>,
 }
 
 #[derive(EntityEvent)]
@@ -175,8 +174,7 @@ fn teleport_at_boundary(
 
         if teleported_position == original_position {
             teleporter.status = TeleportStatus::Ready;
-            teleporter.last_teleported_position = None;
-            teleporter.last_teleported_normal = None;
+            teleporter.position = None;
         } else {
             // If this is a dying nateroid, despawn it instead of teleporting
             if is_deaderoid.is_some() {
@@ -200,11 +198,7 @@ fn teleport_at_boundary(
 
             transform.translation = *teleported_position;
             teleporter.status = TeleportStatus::JustTeleported;
-            teleporter.last_teleported_position = Some(teleported_position);
-            teleporter.last_teleported_normal = Some(Boundary::get_normal_for_position(
-                teleported_position,
-                boundary_transform,
-            ));
+            teleporter.position = Some(teleported_position);
 
             // Trigger event to handle overlapping entities
             commands.trigger(Teleported {

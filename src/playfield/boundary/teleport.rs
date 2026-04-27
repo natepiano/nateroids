@@ -59,12 +59,12 @@ impl Boundary {
         Position(teleport_position)
     }
 
-    /// Snaps a position to slightly inside the boundary face based on the normal.
+    /// Snaps a position to slightly inside the given boundary face.
     /// Offsets by epsilon to prevent false-positive overextension detection that would trigger
     /// corner wrapping arcs. Clamps perpendicular axes to handle corner/edge teleportation cases.
-    pub fn snap_position_to_boundary_face(
+    pub(in crate::playfield) fn snap_position_to_boundary_face(
         position: Position,
-        normal: Dir3,
+        face: BoundaryFace,
         transform: &Transform,
     ) -> Position {
         let boundary_min = transform.translation - transform.scale / 2.0;
@@ -76,52 +76,54 @@ impl Boundary {
         let mut snapped_position = *position;
 
         // Set primary axis slightly inside boundary face and clamp perpendicular axes
-        match normal {
-            Dir3::X => {
+        match face {
+            BoundaryFace::Right => {
                 snapped_position.x = boundary_max.x - epsilon;
                 snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
                 snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
             },
-            Dir3::NEG_X => {
+            BoundaryFace::Left => {
                 snapped_position.x = boundary_min.x + epsilon;
                 snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
                 snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
             },
-            Dir3::Y => {
+            BoundaryFace::Top => {
                 snapped_position.y = boundary_max.y - epsilon;
                 snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
                 snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
             },
-            Dir3::NEG_Y => {
+            BoundaryFace::Bottom => {
                 snapped_position.y = boundary_min.y + epsilon;
                 snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
                 snapped_position.z = snapped_position.z.clamp(boundary_min.z, boundary_max.z);
             },
-            Dir3::Z => {
+            BoundaryFace::Front => {
                 snapped_position.z = boundary_max.z - epsilon;
                 snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
                 snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
             },
-            Dir3::NEG_Z => {
+            BoundaryFace::Back => {
                 snapped_position.z = boundary_min.z + epsilon;
                 snapped_position.x = snapped_position.x.clamp(boundary_min.x, boundary_max.x);
                 snapped_position.y = snapped_position.y.clamp(boundary_min.y, boundary_max.y);
             },
-            _ => {},
         }
 
         Position(snapped_position)
     }
 
-    /// Returns the normal of the closest boundary face to a position.
+    /// Returns the closest boundary face to a position.
     /// Uses distance-based matching because teleported positions have offsets (e.g., -54.97 instead
     /// of -55.0) that break simple epsilon matching.
-    pub fn get_normal_for_position(position: Position, transform: &Transform) -> Dir3 {
+    pub(in crate::playfield) fn get_face_for_position(
+        position: Position,
+        transform: &Transform,
+    ) -> BoundaryFace {
         let half_size = transform.scale / 2.0;
         let boundary_min = transform.translation - half_size;
         let boundary_max = transform.translation + half_size;
 
-        // Calculate distance to all 6 faces and return normal of closest
+        // Calculate distance to all 6 faces and return the closest
         let faces = [
             ((position.x - boundary_min.x).abs(), BoundaryFace::Left),
             ((position.x - boundary_max.x).abs(), BoundaryFace::Right),
@@ -130,10 +132,10 @@ impl Boundary {
             ((position.z - boundary_min.z).abs(), BoundaryFace::Back),
             ((position.z - boundary_max.z).abs(), BoundaryFace::Front),
         ];
-        faces
+        faces[1..]
             .iter()
-            .min_by(|a, b| a.0.total_cmp(&b.0))
-            .map_or(Dir3::Y, |(_, face)| face.to_dir3())
+            .fold(faces[0], |acc, &cur| if cur.0 < acc.0 { cur } else { acc })
+            .1
     }
 
     pub fn find_edge_point(

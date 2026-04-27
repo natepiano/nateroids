@@ -11,26 +11,26 @@ mod spaceship_control;
 mod teleport;
 
 use aabb::AabbPlugin;
-pub use aabb::max_dimension as aabb_max_dimension;
+pub(crate) use aabb::max_dimension as aabb_max_dimension;
 use actor_settings::ActorSettingsPlugin;
-pub use actor_settings::Health;
-pub use actor_template::DeathCorner;
-pub use actor_template::NateroidSettings;
+pub(crate) use actor_settings::Health;
+pub(crate) use actor_template::DeathCorner;
+pub(crate) use actor_template::NateroidSettings;
 use bevy::prelude::*;
 use collision_detection::CollisionDetectionPlugin;
-pub use constants::NATEROID_DEATH_ALPHA_STEP;
+pub(crate) use constants::NATEROID_DEATH_ALPHA_STEP;
 use flame_gizmo::FlameGizmoPlugin;
 use missile::MissilePlugin;
-pub use nateroid::Deaderoid;
-pub use nateroid::Nateroid;
-pub use nateroid::NateroidDeathMaterials;
+pub(crate) use nateroid::Deaderoid;
+pub(crate) use nateroid::Nateroid;
+pub(crate) use nateroid::NateroidDeathMaterials;
 use nateroid::NateroidPlugin;
-pub use spaceship::Spaceship;
+pub(crate) use spaceship::Spaceship;
 use spaceship::SpaceshipPlugin;
 use spaceship_control::SpaceshipControlPlugin;
 use teleport::TeleportPlugin;
-pub use teleport::TeleportStatus;
-pub use teleport::Teleporter;
+pub(crate) use teleport::TeleportStatus;
+pub(crate) use teleport::Teleporter;
 
 pub(crate) struct ActorPlugin;
 
