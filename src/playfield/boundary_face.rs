@@ -3,7 +3,7 @@ use bevy::math::Vec3;
 use bevy::prelude::Reflect;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Reflect)]
-pub(super) enum BoundaryFace {
+pub(crate) enum BoundaryFace {
     #[default]
     Left,
     Right,
