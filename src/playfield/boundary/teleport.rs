@@ -62,7 +62,7 @@ impl Boundary {
     /// Snaps a position to slightly inside the given boundary face.
     /// Offsets by epsilon to prevent false-positive overextension detection that would trigger
     /// corner wrapping arcs. Clamps perpendicular axes to handle corner/edge teleportation cases.
-    pub(in crate::playfield) fn snap_position_to_boundary_face(
+    pub(crate) fn snap_position_to_boundary_face(
         position: Position,
         face: BoundaryFace,
         transform: &Transform,
@@ -115,10 +115,7 @@ impl Boundary {
     /// Returns the closest boundary face to a position.
     /// Uses distance-based matching because teleported positions have offsets (e.g., -54.97 instead
     /// of -55.0) that break simple epsilon matching.
-    pub(in crate::playfield) fn get_face_for_position(
-        position: Position,
-        transform: &Transform,
-    ) -> BoundaryFace {
+    pub(crate) fn get_face_for_position(position: Position, transform: &Transform) -> BoundaryFace {
         let half_size = transform.scale / 2.0;
         let boundary_min = transform.translation - half_size;
         let boundary_max = transform.translation + half_size;
