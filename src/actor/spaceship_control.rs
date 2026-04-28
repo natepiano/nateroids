@@ -9,7 +9,6 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_lagrange::OrbitCam;
 
-use super::actor_template::SpaceshipSettings;
 use super::constants::SPACESHIP_ACCELERATION;
 use super::constants::SPACESHIP_ACCELERATION_MAX;
 use super::constants::SPACESHIP_ACCELERATION_MIN;
@@ -21,6 +20,7 @@ use super::constants::SPACESHIP_ROTATION_SPEED_MAX;
 use super::constants::SPACESHIP_ROTATION_SPEED_MIN;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
+use super::spaceship::SpaceshipSettings;
 use crate::input::InspectSpaceshipControlSwitch;
 use crate::input::ShipAccelerate;
 use crate::input::ShipContinuousFire;

@@ -1,19 +1,38 @@
+use std::ops::Deref;
+use std::ops::DerefMut;
+
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_enhanced_input::action::TriggerState;
 use bevy_enhanced_input::action::events as input_events;
 use bevy_enhanced_input::prelude::Action;
 use bevy_enhanced_input::prelude::ActionOf;
+use bevy_inspector_egui::InspectorOptions;
 use bevy_kana::Position;
 
 use super::Teleporter;
 use super::actor_settings;
+use super::actor_settings::ActorSettings;
+use super::actor_settings::ColliderType;
 use super::actor_settings::Spawnability;
-use super::actor_template::MissileSettings;
+use super::constants::GLTF_ROTATION_X;
 use super::constants::LOCKED_AXES_2D;
+use super::constants::MAX_MISSILE_ANGULAR_VELOCITY;
+use super::constants::MAX_MISSILE_LINEAR_VELOCITY;
+use super::constants::MISSILE_BASE_VELOCITY;
+use super::constants::MISSILE_COLLIDER_MARGIN;
+use super::constants::MISSILE_COLLISION_DAMAGE;
+use super::constants::MISSILE_FORWARD_DISTANCE_SCALAR;
+use super::constants::MISSILE_HEALTH;
+use super::constants::MISSILE_MASS;
+use super::constants::MISSILE_RESTITUTION;
+use super::constants::MISSILE_SCALE;
+use super::constants::MISSILE_SPAWN_TIMER_SECONDS;
+use super::game_layer::GameLayer;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
 use super::teleport::TeleportStatus;
+use crate::camera::RenderLayer;
 use crate::despawn;
 use crate::input::ShipControlsContext;
 use crate::input::ShipFire;
@@ -36,6 +55,63 @@ impl Plugin for MissilePlugin {
                 missile_movement.in_set(InGameSet::EntityUpdates),
             );
     }
+}
+
+#[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
+#[reflect(Resource)]
+pub(super) struct MissileSettings {
+    pub actor_settings:          ActorSettings,
+    pub forward_distance_scalar: f32,
+    pub base_velocity:           f32,
+}
+
+impl Default for MissileSettings {
+    fn default() -> Self {
+        Self {
+            actor_settings:          ActorSettings {
+                spawnability:             Spawnability::Enabled,
+                angular_damping:          None,
+                collider_margin:          MISSILE_COLLIDER_MARGIN,
+                collider_type:            ColliderType::Cuboid,
+                collision_damage:         MISSILE_COLLISION_DAMAGE,
+                collision_layers:         CollisionLayers::new(
+                    [GameLayer::Missile],
+                    [GameLayer::Asteroid],
+                ),
+                gravity_scale:            0.,
+                health:                   MISSILE_HEALTH,
+                linear_damping:           None,
+                locked_axes:              LockedAxes::new().lock_translation_z(),
+                mass:                     MISSILE_MASS,
+                max_angular_velocity:     MAX_MISSILE_ANGULAR_VELOCITY,
+                max_linear_velocity:      MAX_MISSILE_LINEAR_VELOCITY,
+                render_layer:             RenderLayer::Game,
+                restitution:              MISSILE_RESTITUTION,
+                restitution_combine_rule: CoefficientCombine::Max,
+                rigid_body:               RigidBody::Dynamic,
+                scene:                    Handle::default(),
+                spawn_timer_seconds:      Some(MISSILE_SPAWN_TIMER_SECONDS),
+                transform:                Transform::from_rotation(
+                    Quat::from_rotation_x(GLTF_ROTATION_X)
+                        * Quat::from_rotation_z(std::f32::consts::PI),
+                )
+                .with_scale(Vec3::splat(MISSILE_SCALE)),
+                spawn_timer:              None,
+            },
+            forward_distance_scalar: MISSILE_FORWARD_DISTANCE_SCALAR,
+            base_velocity:           MISSILE_BASE_VELOCITY,
+        }
+    }
+}
+
+impl Deref for MissileSettings {
+    type Target = ActorSettings;
+
+    fn deref(&self) -> &Self::Target { &self.actor_settings }
+}
+
+impl DerefMut for MissileSettings {
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_settings }
 }
 
 // todo: #rustquestion - how can i make it so that `new` has to be used and

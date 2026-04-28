@@ -9,14 +9,14 @@ use rand::Rng;
 use rand::RngExt;
 
 use super::Nateroid;
+use super::NateroidSettings;
 use crate::actor::actor_settings;
 use crate::actor::actor_settings::ColliderType;
 use crate::actor::actor_settings::Spawnability;
-use crate::actor::actor_template::GameLayer;
-use crate::actor::actor_template::NateroidSettings;
 use crate::actor::constants::NATEROID_SPAWN_MAX_ATTEMPTS;
 use crate::actor::constants::NATEROID_WARN_THROTTLE_INTERVAL_SECS;
 use crate::actor::constants::SPAWN_WINDOW;
+use crate::actor::game_layer::GameLayer;
 use crate::playfield::BoundaryVolume;
 
 #[derive(Clone, Copy, PartialEq, Eq)]

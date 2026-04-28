@@ -1,14 +1,14 @@
 mod camera_game;
 mod camera_star;
 mod camera_ui;
-mod components;
 mod constants;
 mod lights;
+mod rendering;
+mod required_camera_components;
 mod selection;
 mod settings;
 mod star_twinkling;
 mod stars;
-mod support;
 mod zoom;
 
 use bevy::picking::mesh_picking::MeshPickingPlugin;
@@ -18,12 +18,12 @@ use camera_game::GameCameraPlugin;
 use camera_star::StarCameraPlugin;
 pub(crate) use constants::ZOOM_MARGIN;
 use lights::DirectionalLightsPlugin;
+pub(crate) use rendering::RenderLayer;
 use selection::SelectionPlugin;
 pub(crate) use settings::CameraSettings;
 use settings::CameraSettingsPlugin;
 use star_twinkling::StarTwinklingPlugin;
 use stars::StarsPlugin;
-pub(crate) use support::RenderLayer;
 pub(crate) use zoom::CameraHomeEvent;
 use zoom::ZoomPlugin;
 

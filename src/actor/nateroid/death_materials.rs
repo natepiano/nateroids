@@ -4,7 +4,7 @@ use bevy_kana::ToF32;
 use bevy_kana::ToUsize;
 
 use super::Nateroid;
-use crate::actor::actor_template::NateroidSettings;
+use super::NateroidSettings;
 use crate::actor::constants::NATEROID_DEATH_ALPHA_STEP;
 use crate::asset_loader::SceneAssets;
 

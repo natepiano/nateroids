@@ -1,14 +1,32 @@
+use std::ops::Deref;
+use std::ops::DerefMut;
+
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use bevy_inspector_egui::InspectorOptions;
 
 use super::Teleporter;
 use super::actor_settings;
+use super::actor_settings::ActorSettings;
+use super::actor_settings::ColliderType;
 use super::actor_settings::Spawnability;
-use super::actor_template::SpaceshipSettings;
 use super::constants::GLTF_ROTATION_X;
 use super::constants::LOCKED_AXES_SPACESHIP;
+use super::constants::MAX_SPACESHIP_ANGULAR_VELOCITY;
+use super::constants::MAX_SPACESHIP_LINEAR_VELOCITY;
+use super::constants::SPACESHIP_ANGULAR_DAMPING;
+use super::constants::SPACESHIP_COLLIDER_MARGIN;
+use super::constants::SPACESHIP_COLLISION_DAMAGE;
 use super::constants::SPACESHIP_FORWARD_EPSILON;
+use super::constants::SPACESHIP_HEALTH;
+use super::constants::SPACESHIP_INITIAL_POSITION;
+use super::constants::SPACESHIP_LINEAR_DAMPING;
+use super::constants::SPACESHIP_MASS;
+use super::constants::SPACESHIP_RESTITUTION;
+use super::constants::SPACESHIP_SCALE;
 use super::constants::SPACESHIP_TILT_THRESHOLD;
+use super::game_layer::GameLayer;
+use crate::camera::RenderLayer;
 use crate::input;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
@@ -18,6 +36,62 @@ use crate::state::PauseState;
 
 /// Returns the default `Spaceship` rotation: model correction (90° around X)
 fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X) }
+
+#[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
+#[reflect(Resource)]
+pub(super) struct SpaceshipSettings {
+    pub actor_settings: ActorSettings,
+}
+
+impl Default for SpaceshipSettings {
+    fn default() -> Self {
+        Self {
+            actor_settings: ActorSettings {
+                spawnability:             Spawnability::Enabled,
+                angular_damping:          Some(SPACESHIP_ANGULAR_DAMPING),
+                collider_margin:          SPACESHIP_COLLIDER_MARGIN,
+                collider_type:            ColliderType::Cuboid,
+                collision_damage:         SPACESHIP_COLLISION_DAMAGE,
+                collision_layers:         CollisionLayers::new(
+                    [GameLayer::Spaceship],
+                    [GameLayer::Asteroid, GameLayer::Boundary],
+                ),
+                gravity_scale:            0.,
+                health:                   SPACESHIP_HEALTH,
+                linear_damping:           Some(SPACESHIP_LINEAR_DAMPING),
+                locked_axes:              LockedAxes::new()
+                    .lock_rotation_x()
+                    .lock_rotation_y()
+                    .lock_translation_z(),
+                mass:                     SPACESHIP_MASS,
+                max_angular_velocity:     MAX_SPACESHIP_ANGULAR_VELOCITY,
+                max_linear_velocity:      MAX_SPACESHIP_LINEAR_VELOCITY,
+                render_layer:             RenderLayer::Game,
+                restitution:              SPACESHIP_RESTITUTION,
+                restitution_combine_rule: CoefficientCombine::Max,
+                rigid_body:               RigidBody::Dynamic,
+                scene:                    Handle::default(),
+                spawn_timer_seconds:      None,
+                transform:                Transform {
+                    translation: *SPACESHIP_INITIAL_POSITION,
+                    rotation:    default_spaceship_rotation(),
+                    scale:       Vec3::splat(SPACESHIP_SCALE),
+                },
+                spawn_timer:              None,
+            },
+        }
+    }
+}
+
+impl Deref for SpaceshipSettings {
+    type Target = ActorSettings;
+
+    fn deref(&self) -> &Self::Target { &self.actor_settings }
+}
+
+impl DerefMut for SpaceshipSettings {
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_settings }
+}
 
 pub(super) struct SpaceshipPlugin;
 
