@@ -26,12 +26,17 @@ pub struct NateroidDeathMaterials {
 
 /// System that applies custom materials to `Nateroid` mesh children (donut and icing)
 pub(super) fn apply_nateroid_materials_to_children(
+    children_added: On<Add, Children>,
     mut commands: Commands,
-    nateroid_query: Query<Entity, (With<Nateroid>, Added<Children>)>,
+    nateroid_query: Query<(), With<Nateroid>>,
     mesh_query: Query<(Entity, Option<&Name>), With<Mesh3d>>,
     children_query: Query<&Children>,
     scene_assets: Res<SceneAssets>,
 ) {
+    if nateroid_query.get(children_added.entity).is_err() {
+        return;
+    }
+
     let Some(donut_material) = &scene_assets.nateroid_donut_material else {
         return;
     };
@@ -39,52 +44,51 @@ pub(super) fn apply_nateroid_materials_to_children(
         return;
     };
 
-    for nateroid_entity in nateroid_query.iter() {
-        debug!("Applying materials to nateroid {nateroid_entity:?} mesh children");
+    let nateroid_entity = children_added.entity;
+    debug!("Applying materials to nateroid {nateroid_entity:?} mesh children");
 
-        let mut donut_count = 0;
-        let mut icing_count = 0;
+    let mut donut_count = 0;
+    let mut icing_count = 0;
 
-        // Iterate over all descendants to find mesh entities
-        for descendant in children_query.iter_descendants(nateroid_entity) {
-            if let Ok((mesh_entity, name)) = mesh_query.get(descendant) {
-                // Debug: log the actual mesh name
-                if let Some(name) = name {
-                    debug!("Found mesh with name: '{}'", name.as_str());
-                } else {
-                    info!("Found mesh with no Name component");
-                }
+    // Iterate over all descendants to find mesh entities
+    for descendant in children_query.iter_descendants(nateroid_entity) {
+        if let Ok((mesh_entity, name)) = mesh_query.get(descendant) {
+            // Debug: log the actual mesh name
+            if let Some(name) = name {
+                debug!("Found mesh with name: '{}'", name.as_str());
+            } else {
+                info!("Found mesh with no Name component");
+            }
 
-                // Match mesh name to appropriate material
-                let material = if let Some(name) = name {
-                    let name_str = name.as_str().to_lowercase();
-                    if name_str.contains("donut") {
-                        debug!("  -> Matched as donut");
-                        donut_count += 1;
-                        donut_material.clone()
-                    } else if name_str.contains("icing") {
-                        debug!("  -> Matched as icing");
-                        icing_count += 1;
-                        icing_material.clone()
-                    } else {
-                        info!("  -> Unknown mesh name, defaulting to donut material");
-                        donut_count += 1;
-                        donut_material.clone()
-                    }
-                } else {
-                    info!("  -> No name, defaulting to donut material");
+            // Match mesh name to appropriate material
+            let material = if let Some(name) = name {
+                let name_str = name.as_str().to_lowercase();
+                if name_str.contains("donut") {
+                    debug!("  -> Matched as donut");
                     donut_count += 1;
                     donut_material.clone()
-                };
+                } else if name_str.contains("icing") {
+                    debug!("  -> Matched as icing");
+                    icing_count += 1;
+                    icing_material.clone()
+                } else {
+                    info!("  -> Unknown mesh name, defaulting to donut material");
+                    donut_count += 1;
+                    donut_material.clone()
+                }
+            } else {
+                info!("  -> No name, defaulting to donut material");
+                donut_count += 1;
+                donut_material.clone()
+            };
 
-                commands
-                    .entity(mesh_entity)
-                    .insert(MeshMaterial3d(material));
-            }
+            commands
+                .entity(mesh_entity)
+                .insert(MeshMaterial3d(material));
         }
-
-        debug!("Applied materials: {donut_count} donut, {icing_count} icing");
     }
+
+    debug!("Applied materials: {donut_count} donut, {icing_count} icing");
 }
 
 /// Diagnostic system to check mesh entity components

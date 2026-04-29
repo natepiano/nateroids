@@ -128,12 +128,11 @@ impl Plugin for NateroidPlugin {
                     .after(actor_settings::initialize_actors),
             )
             .add_observer(spawn::initialize_nateroid)
+            .add_observer(death_materials::apply_nateroid_materials_to_children)
             .add_systems(
                 Update,
                 (
-                    death_materials::apply_nateroid_materials_to_children,
-                    death_materials::debug_mesh_components
-                        .after(death_materials::apply_nateroid_materials_to_children),
+                    death_materials::debug_mesh_components,
                     spawn::spawn_nateroid.in_set(InGameSet::EntityUpdates),
                 ),
             );
