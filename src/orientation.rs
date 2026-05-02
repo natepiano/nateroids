@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy_kana::Displacement;
 use bevy_kana::Position;
 
+use crate::constants::CAMERA_ORIENTATION_DEFAULT_SETTINGS;
+
 pub(crate) struct OrientationPlugin;
 
 impl Plugin for OrientationPlugin {
@@ -62,16 +64,6 @@ pub(crate) struct CameraOrientation {
 }
 
 impl CameraOrientation {
-    const DEFAULT_CONFIG: OrientationSettings = OrientationSettings {
-        dimension_mode:   DimensionMode::TwoD,
-        axis_mundi:       Vec3::ZERO,
-        axis_orbis:       Vec3::ZERO,
-        axis_profundus:   Vec3::ZERO,
-        locus:            Transform::IDENTITY,
-        nexus:            Position::new(0.0, 0.0, 0.0),
-        spaceship_offset: Displacement::new(0.0, 5.0, -10.0),
-    };
-
     pub(crate) fn set_orientation(&mut self, new_orientation: OrientationType) {
         self.orientation = new_orientation;
         self.settings = match new_orientation {
@@ -79,20 +71,20 @@ impl CameraOrientation {
                 axis_mundi: Vec3::Y,
                 axis_orbis: Vec3::X,
                 axis_profundus: Vec3::Z,
-                ..Self::DEFAULT_CONFIG
+                ..CAMERA_ORIENTATION_DEFAULT_SETTINGS
             },
             OrientationType::BehindSpaceship => OrientationSettings {
                 axis_mundi: Vec3::Z,
                 axis_orbis: Vec3::X,
                 axis_profundus: -Vec3::Y,
-                ..Self::DEFAULT_CONFIG
+                ..CAMERA_ORIENTATION_DEFAULT_SETTINGS
             },
             OrientationType::BehindSpaceship3D => OrientationSettings {
                 dimension_mode: DimensionMode::ThreeD,
                 axis_mundi: Vec3::Z,
                 axis_orbis: Vec3::X,
                 axis_profundus: -Vec3::Y,
-                ..Self::DEFAULT_CONFIG
+                ..CAMERA_ORIENTATION_DEFAULT_SETTINGS
             },
         };
     }
@@ -102,7 +94,7 @@ impl Default for CameraOrientation {
     fn default() -> Self {
         let mut mode = Self {
             orientation: OrientationType::TopDown,
-            settings:    Self::DEFAULT_CONFIG,
+            settings:    CAMERA_ORIENTATION_DEFAULT_SETTINGS,
         };
         mode.set_orientation(OrientationType::TopDown);
         mode

@@ -249,8 +249,7 @@ fn calculate_teleport_position(position: Position, transform: &Transform) -> Pos
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    const FLOAT_EPSILON: f32 = 0.000_001;
+    use crate::actor::constants::TELEPORT_FLOAT_EPSILON;
 
     fn create_test_transform(size: Vec3) -> Transform {
         Transform {
@@ -278,7 +277,7 @@ mod tests {
 
     fn assert_float_eq(actual: f32, expected: f32) {
         assert!(
-            (actual - expected).abs() <= FLOAT_EPSILON,
+            (actual - expected).abs() <= TELEPORT_FLOAT_EPSILON,
             "expected {expected}, got {actual}"
         );
     }

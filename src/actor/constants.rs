@@ -30,6 +30,10 @@ pub(super) const MAX_NATEROID_LINEAR_VELOCITY: f32 = 80.0;
 pub(super) const MAX_SPACESHIP_ANGULAR_VELOCITY: f32 = 20.0;
 pub(super) const MAX_SPACESHIP_LINEAR_VELOCITY: f32 = 80.0;
 
+// Actor test constants
+#[cfg(test)]
+pub(super) const TELEPORT_FLOAT_EPSILON: f32 = 0.000_001;
+
 // Death effect constants
 pub(super) const DEATH_EFFECT_DURATION_SECS: f32 = 3.0;
 pub(super) const DEATH_EFFECT_EXPANDING_RING_START_SCALE: f32 = 0.2;
@@ -77,6 +81,8 @@ pub(super) const NATEROID_LINEAR_VELOCITY: f32 = 35.0;
 pub(super) const NATEROID_MASS: f32 = 1.0;
 pub(super) const NATEROID_RESTITUTION: f32 = 0.3;
 pub(super) const NATEROID_SCALE_UP: f32 = 100.0; // we need bigger nateroids than just donut sized ones
+/// Number of recent spawn attempts to keep for rate tracking.
+pub(super) const NATEROID_SPAWN_HISTORY_LEN: usize = 50;
 /// Maximum spawn placement attempts before giving up
 pub(super) const NATEROID_SPAWN_MAX_ATTEMPTS: u32 = 20;
 pub(super) const NATEROID_SPAWN_TIMER_SECONDS: f32 = 2.0;
@@ -133,7 +139,7 @@ pub(super) const THRUSTER_LINE_COUNT: usize = 6;
 pub(super) const THRUSTER_LINE_LENGTH_BASE: f32 = 12.0;
 pub(super) const THRUSTER_LINE_LENGTH_VARIANCE: f32 = 4.0;
 pub(super) const THRUSTER_LINE_OFFSET: f32 = 3.0;
-/// Vertical vibration runs 30% faster than lateral, creating non-repeating patterns.
-pub(super) const THRUSTER_VIBRATION_VERTICAL_SPEED_MULTIPLIER: f32 = 1.3;
 /// Vertical phase offset is 70% of lateral, making adjacent lines more in-sync vertically.
 pub(super) const THRUSTER_VIBRATION_VERTICAL_PHASE_MULTIPLIER: f32 = 0.7;
+/// Vertical vibration runs 30% faster than lateral, creating non-repeating patterns.
+pub(super) const THRUSTER_VIBRATION_VERTICAL_SPEED_MULTIPLIER: f32 = 1.3;

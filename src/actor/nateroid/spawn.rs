@@ -13,6 +13,7 @@ use super::NateroidSettings;
 use crate::actor::actor_settings;
 use crate::actor::actor_settings::ColliderType;
 use crate::actor::actor_settings::Spawnability;
+use crate::actor::constants::NATEROID_SPAWN_HISTORY_LEN;
 use crate::actor::constants::NATEROID_SPAWN_MAX_ATTEMPTS;
 use crate::actor::constants::NATEROID_WARN_THROTTLE_INTERVAL_SECS;
 use crate::actor::constants::SPAWN_WINDOW;
@@ -35,18 +36,16 @@ pub struct NateroidSpawnStats {
 impl Default for NateroidSpawnStats {
     fn default() -> Self {
         Self {
-            attempts:          VecDeque::with_capacity(Self::MAX_ATTEMPTS),
+            attempts:          VecDeque::with_capacity(NATEROID_SPAWN_HISTORY_LEN),
             last_warning_time: 0.0,
         }
     }
 }
 
 impl NateroidSpawnStats {
-    const MAX_ATTEMPTS: usize = 50;
-
     fn record_attempt(&mut self, result: SpawnResult) {
         self.attempts.push_back(result);
-        if self.attempts.len() > Self::MAX_ATTEMPTS {
+        if self.attempts.len() > NATEROID_SPAWN_HISTORY_LEN {
             self.attempts.pop_front();
         }
     }

@@ -1,7 +1,27 @@
-//! Top-level constants for standalone modules (physics, splash, despawn)
+//! Top-level constants for standalone modules.
+
+use bevy::prelude::Transform;
+use bevy::prelude::Vec3;
+use bevy_kana::Displacement;
+use bevy_kana::Position;
+
+use crate::orientation::DimensionMode;
+use crate::orientation::OrientationSettings;
+use crate::switches::Switch;
 
 // Despawn constants
 pub(crate) const DEATH_VELOCITY_EPSILON: f32 = 0.001;
+
+// Orientation constants
+pub(crate) const CAMERA_ORIENTATION_DEFAULT_SETTINGS: OrientationSettings = OrientationSettings {
+    dimension_mode:   DimensionMode::TwoD,
+    axis_mundi:       Vec3::ZERO,
+    axis_orbis:       Vec3::ZERO,
+    axis_profundus:   Vec3::ZERO,
+    locus:            Transform::IDENTITY,
+    nexus:            Position::new(0.0, 0.0, 0.0),
+    spaceship_offset: Displacement::new(0.0, 5.0, -10.0),
+};
 
 // Physics constants
 pub(crate) const MIN_NATEROIDS_FOR_MONITORING: usize = 50;
@@ -26,3 +46,20 @@ pub(crate) const SPLASH_SPIN_DURATIONS_MS: &[u64] = &[500, 400, 300, 200, 100, 5
 pub(crate) const SPLASH_TEXT_GROWTH_RATE: f32 = 1.2;
 pub(crate) const SPLASH_TEXT_TIME: f32 = 2.;
 pub(crate) const SPLASH_ZOOM_DURATION_MS: u64 = 1000;
+
+// Switches constants
+pub(crate) const INSPECTOR_SWITCHES: [Switch; 13] = [
+    Switch::InspectAabb,
+    Switch::InspectBoundary,
+    Switch::InspectCamera,
+    Switch::InspectFocus,
+    Switch::InspectLights,
+    Switch::InspectMissile,
+    Switch::InspectNateroid,
+    Switch::InspectOutline,
+    Switch::InspectPortals,
+    Switch::InspectSpaceship,
+    Switch::InspectSpaceshipControl,
+    Switch::InspectStar,
+    Switch::InspectZoom,
+];
