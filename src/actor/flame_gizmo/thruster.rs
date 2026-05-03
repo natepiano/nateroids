@@ -128,7 +128,7 @@ pub(super) fn draw_thruster_flames(
     time: Res<Time>,
     pause_state: Res<State<PauseState>>,
     mut frozen_elapsed: Local<f32>,
-    query: Query<&Transform, With<ThrusterEffect>>,
+    thruster_effect_query: Query<&Transform, With<ThrusterEffect>>,
 ) {
     let elapsed = if *pause_state.get() == PauseState::Paused {
         *frozen_elapsed
@@ -137,7 +137,7 @@ pub(super) fn draw_thruster_flames(
         time.elapsed_secs()
     };
 
-    for transform in query.iter() {
+    for transform in thruster_effect_query.iter() {
         draw_exhaust_flames(&mut gizmos, transform, elapsed);
     }
 }

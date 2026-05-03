@@ -140,10 +140,10 @@ fn spawn_after_splash_text_removed(
 fn spawn_spaceship_if_needed(
     commands: Commands,
     spaceship_settings: Res<SpaceshipSettings>,
-    query: Query<(), With<Spaceship>>,
+    spaceship_query: Query<(), With<Spaceship>>,
 ) {
     // Only spawn if no spaceship exists (e.g., coming from `GameOver`)
-    if query.is_empty() {
+    if spaceship_query.is_empty() {
         spawn_spaceship(commands, spaceship_settings);
     }
 }

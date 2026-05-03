@@ -71,7 +71,7 @@ fn monitor_physics_health(
     nateroids: Query<&LinearVelocity, With<Nateroid>>,
     time: Res<Time<Fixed>>,
     diagnostics: Res<DiagnosticsStore>,
-    mut state: ResMut<PhysicsMonitorState>,
+    mut physics_monitor_state: ResMut<PhysicsMonitorState>,
 ) {
     let nateroid_count = nateroids.iter().len();
 
@@ -96,7 +96,7 @@ fn monitor_physics_health(
 
     // Detect potential physics breakdown with hysteresis to prevent oscillation
     // Use different thresholds for entering vs exiting stress state
-    let physics_struggling = match state.stress_level {
+    let physics_struggling = match physics_monitor_state.stress_level {
         StressLevel::Stressed => {
             fps < STRESS_EXIT_FPS_THRESHOLD || avg_speed > STRESS_VELOCITY_THRESHOLD
         },
@@ -109,21 +109,22 @@ fn monitor_physics_health(
 
     if physics_struggling {
         // When stressed, log every 1 second
-        let should_log = state.stress_level != StressLevel::Stressed
-            || (current_time - state.last_stress_log >= PHYSICS_WARN_THROTTLE_INTERVAL_SECS);
+        let should_log = physics_monitor_state.stress_level != StressLevel::Stressed
+            || (current_time - physics_monitor_state.last_stress_log
+                >= PHYSICS_WARN_THROTTLE_INTERVAL_SECS);
 
         if should_log {
             warn!(
                 "⚠️  PHYSICS STRESS: {nateroid_count} nateroids | avg_speed: {avg_speed:.1} | FPS: {fps:.1} | timestep: {:.3}ms",
                 time.delta_secs() * 1000.0
             );
-            state.stress_level = StressLevel::Stressed;
-            state.last_stress_log = current_time;
+            physics_monitor_state.stress_level = StressLevel::Stressed;
+            physics_monitor_state.last_stress_log = current_time;
         }
-    } else if state.stress_level != StressLevel::Recovered {
+    } else if physics_monitor_state.stress_level != StressLevel::Recovered {
         info!(
             "Physics healthy: {nateroid_count} nateroids | avg_speed: {avg_speed:.1} | FPS: {fps:.1}"
         );
-        state.stress_level = StressLevel::Recovered;
+        physics_monitor_state.stress_level = StressLevel::Recovered;
     }
 }

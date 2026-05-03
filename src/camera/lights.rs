@@ -168,27 +168,27 @@ impl LightPosition {
     pub const fn get_rotation(self, orientation: &CameraOrientation) -> RotationInfo {
         match self {
             Self::Right => RotationInfo {
-                axis:  orientation.settings.axis_mundi,
+                axis:  orientation.orientation_settings.axis_mundi,
                 angle: FRAC_PI_2,
             },
             Self::Left => RotationInfo {
-                axis:  orientation.settings.axis_mundi,
+                axis:  orientation.orientation_settings.axis_mundi,
                 angle: -FRAC_PI_2,
             },
             Self::Front => RotationInfo {
-                axis:  orientation.settings.axis_orbis,
+                axis:  orientation.orientation_settings.axis_orbis,
                 angle: 0.,
             },
             Self::Back => RotationInfo {
-                axis:  orientation.settings.axis_orbis,
+                axis:  orientation.orientation_settings.axis_orbis,
                 angle: PI,
             },
             Self::Bottom => RotationInfo {
-                axis:  orientation.settings.axis_orbis,
+                axis:  orientation.orientation_settings.axis_orbis,
                 angle: FRAC_PI_2,
             },
             Self::Top => RotationInfo {
-                axis:  orientation.settings.axis_orbis,
+                axis:  orientation.orientation_settings.axis_orbis,
                 angle: -FRAC_PI_2,
             },
         }
@@ -251,7 +251,7 @@ fn manage_lighting(
     mut ambient_light: ResMut<GlobalAmbientLight>,
     light_settings: Res<LightSettings>,
     camera_orientation: Res<CameraOrientation>,
-    mut query: Query<(Entity, &mut DirectionalLight, &LightDirection)>,
+    mut directional_light_query: Query<(Entity, &mut DirectionalLight, &LightDirection)>,
 ) {
     if !light_settings.is_changed() && !light_settings.is_added() {
         return;
@@ -275,7 +275,9 @@ fn manage_lighting(
 
         // we always spawn a light with its current `LightDirection` - see
         // if we have the current loop's position in an already spawned entity
-        let existing_light = query.iter_mut().find(|(_, _, dir)| dir.0 == *position);
+        let existing_light = directional_light_query
+            .iter_mut()
+            .find(|(_, _, dir)| dir.0 == *position);
 
         let light_rotation = position.get_rotation(&camera_orientation);
 

@@ -261,9 +261,9 @@ fn fire_missile_continuous(
 /// its total distance
 fn missile_movement(
     mut commands: Commands,
-    mut query: Query<(Entity, &Transform, &mut MissilePosition, &Teleporter)>,
+    mut missile_position_query: Query<(Entity, &Transform, &mut MissilePosition, &Teleporter)>,
 ) {
-    for (entity, transform, mut missile_position, teleporter) in &mut query {
+    for (entity, transform, mut missile_position, teleporter) in &mut missile_position_query {
         let current_position = Position(transform.translation);
 
         if let Some(last_position) = missile_position.last_position {

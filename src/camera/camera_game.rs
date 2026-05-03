@@ -76,22 +76,22 @@ pub(super) fn spawn_game_camera(
 
 fn update_environment_map_intensity(
     light_settings: Res<LightSettings>,
-    mut query: Query<&mut EnvironmentMapLight, With<Camera3d>>,
+    mut environment_map_light_query: Query<&mut EnvironmentMapLight, With<Camera3d>>,
 ) {
     if !light_settings.is_changed() {
         return;
     }
 
-    for mut env_light in &mut query {
+    for mut env_light in &mut environment_map_light_query {
         env_light.intensity = light_settings.environment_map_intensity;
     }
 }
 
 fn update_orbit_cam_smoothness(
     camera_settings: Res<CameraSettings>,
-    mut query: Query<&mut OrbitCam>,
+    mut orbit_cam_query: Query<&mut OrbitCam>,
 ) {
-    for mut cam in &mut query {
+    for mut cam in &mut orbit_cam_query {
         cam.zoom_smoothness = camera_settings.smoothness.zoom;
         cam.pan_smoothness = camera_settings.smoothness.pan;
         cam.orbit_smoothness = camera_settings.smoothness.orbit;

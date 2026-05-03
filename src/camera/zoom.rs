@@ -233,7 +233,7 @@ fn update_focus_gizmo_state(
     camera_query: Query<&OrbitCam, With<Camera>>,
     camera_changed: Query<(), (With<Camera>, Changed<OrbitCam>)>,
     focus_settings: Res<FocusSettings>,
-    mut state: ResMut<FocusGizmoState>,
+    mut focus_gizmo_state: ResMut<FocusGizmoState>,
 ) {
     if camera_changed.is_empty() && !focus_settings.is_changed() {
         return;
@@ -243,7 +243,7 @@ fn update_focus_gizmo_state(
         let camera_radius = orbit_cam
             .radius
             .unwrap_or(FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS);
-        state.sphere_radius =
+        focus_gizmo_state.sphere_radius =
             focus_settings.sphere_radius * (camera_radius / FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS);
     }
 }
@@ -253,20 +253,20 @@ fn draw_camera_focus_gizmo(
     mut gizmos: Gizmos<FocusGizmo>,
     camera_query: Query<(&Camera, &GlobalTransform, &OrbitCam)>,
     focus_settings: Res<FocusSettings>,
-    state: Res<FocusGizmoState>,
+    focus_gizmo_state: Res<FocusGizmoState>,
     mut label_query: Query<(&mut Text, &mut Node, &mut TextColor), With<FocusDistanceLabel>>,
 ) {
     if let Ok((cam, cam_transform, orbit_cam)) = camera_query.single() {
         let focus = orbit_cam.target_focus;
 
-        gizmos.sphere(focus, state.sphere_radius, focus_settings.color);
+        gizmos.sphere(focus, focus_gizmo_state.sphere_radius, focus_settings.color);
         gizmos.arrow(Vec3::ZERO, focus, focus_settings.color);
 
         let distance = focus.length();
         let text = format!("{distance:.1}");
 
         let arrow_dir = focus.normalize_or_zero();
-        let along_arrow_offset = state.sphere_radius.mul_add(2.0, 20.0);
+        let along_arrow_offset = focus_gizmo_state.sphere_radius.mul_add(2.0, 20.0);
         let label_world_pos = focus + (arrow_dir * along_arrow_offset);
 
         if let Ok(label_screen_pos) = cam.world_to_viewport(cam_transform, label_world_pos) {

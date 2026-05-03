@@ -161,7 +161,7 @@ fn calculate_death_velocity(
 
 fn despawn_dead_entities(
     mut commands: Commands,
-    query: Query<
+    dying_entity_query: Query<
         (
             Entity,
             &Health,
@@ -182,7 +182,7 @@ fn despawn_dead_entities(
         return;
     };
 
-    for (entity, health, transform, linear_velocity, nateroid, name) in query.iter() {
+    for (entity, health, transform, linear_velocity, nateroid, name) in dying_entity_query.iter() {
         if health.0 <= 0.0 {
             if nateroid.is_some() {
                 let entity_name = name.map_or("Unknown", Name::as_str);
@@ -248,24 +248,24 @@ fn despawn_dead_entities(
     }
 }
 
-fn despawn_all_entities(mut commands: Commands, query: Query<Entity, With<Health>>) {
+fn despawn_all_entities(mut commands: Commands, health_query: Query<Entity, With<Health>>) {
     debug!("despawning game entities");
-    for entity in query.iter() {
+    for entity in health_query.iter() {
         despawn(&mut commands, entity);
     }
 }
 
 fn despawn_splash(
     mut commands: Commands,
-    query: Query<Entity, Or<(With<SplashText>, With<SplashSkipHint>)>>,
+    splash_query: Query<Entity, Or<(With<SplashText>, With<SplashSkipHint>)>>,
 ) {
-    for entity in query.iter() {
+    for entity in splash_query.iter() {
         despawn(&mut commands, entity);
     }
 }
 
 fn animate_dying_nateroids(
-    mut query: Query<(&mut Deaderoid, &mut Transform, Entity, Option<&Name>)>,
+    mut deaderoid_query: Query<(&mut Deaderoid, &mut Transform, Entity, Option<&Name>)>,
     time: Res<Time>,
     death_materials: Option<Res<NateroidDeathMaterials>>,
     children_query: Query<&Children>,
@@ -278,7 +278,7 @@ fn animate_dying_nateroids(
         return;
     };
 
-    for (mut deaderoid, mut transform, entity, name) in &mut query {
+    for (mut deaderoid, mut transform, entity, name) in &mut deaderoid_query {
         let entity_name = name.map_or("Unknown", Name::as_str);
 
         // Update elapsed time

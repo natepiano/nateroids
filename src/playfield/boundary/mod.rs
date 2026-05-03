@@ -18,6 +18,7 @@ pub use gizmo::BoundaryVolume;
 pub use gizmo::GridFlash;
 use gizmo::GridFlashAnimation;
 use gizmo::GridGizmo;
+pub(super) use portal_render::PortalActorKind;
 
 use super::constants::BOUNDARY_CELL_COUNT;
 use super::constants::BOUNDARY_GRID_LINE_WIDTH;
@@ -33,13 +34,6 @@ use crate::switches::Switch;
 use crate::switches::Switches;
 
 event!(BoundaryInspectorEvent);
-
-/// Distinguishes normal actors from deaderoids in portal rendering.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum PortalActorKind {
-    Nateroid,
-    Deaderoid,
-}
 
 pub(super) struct BoundaryPlugin;
 

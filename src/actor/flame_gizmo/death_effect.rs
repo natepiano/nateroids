@@ -155,9 +155,9 @@ struct RingDrawParams {
 pub(super) fn on_deaderoid_added(
     deaderoid: On<Add, Deaderoid>,
     mut commands: Commands,
-    query: Query<&Aabb>,
+    aabb_query: Query<&Aabb>,
 ) {
-    if let Ok(aabb) = query.get(deaderoid.entity) {
+    if let Ok(aabb) = aabb_query.get(deaderoid.entity) {
         let death_effect = DeathEffect::new(aabb::max_dimension(aabb));
         commands.entity(deaderoid.entity).insert(death_effect);
     }
@@ -192,9 +192,15 @@ pub(super) fn draw_death_effects(
 
         // Use the deaderoid's rotation so the ring follows its spin
         let isometry = Isometry3d::new(transform.translation, transform.rotation);
-        let config = death_effect.style.config();
+        let ring_effect_config = death_effect.style.config();
 
-        draw_death_effect_ring(&mut gizmos, &death_effect, &config, isometry, elapsed);
+        draw_death_effect_ring(
+            &mut gizmos,
+            &death_effect,
+            &ring_effect_config,
+            isometry,
+            elapsed,
+        );
     }
 }
 
@@ -244,16 +250,17 @@ fn draw_ring_lines(
 fn draw_death_effect_ring(
     gizmos: &mut Gizmos<FlameGizmo>,
     death_effect: &DeathEffect,
-    config: &RingEffectConfig,
+    ring_effect_config: &RingEffectConfig,
     isometry: Isometry3d,
     elapsed: f32,
 ) {
-    let line_length_base = DEATH_EFFECT_LINE_LENGTH_BASE * config.line_length_scale;
-    let line_length_variance = DEATH_EFFECT_LINE_LENGTH_VARIANCE * config.line_length_scale;
+    let line_length_base = DEATH_EFFECT_LINE_LENGTH_BASE * ring_effect_config.line_length_scale;
+    let line_length_variance =
+        DEATH_EFFECT_LINE_LENGTH_VARIANCE * ring_effect_config.line_length_scale;
 
-    for ring_idx in 0..config.ring_count {
+    for ring_idx in 0..ring_effect_config.ring_count {
         let ring_idx_f32 = ring_idx.to_f32();
-        let ring_start_time = ring_idx_f32 * config.ring_delay_secs;
+        let ring_start_time = ring_idx_f32 * ring_effect_config.ring_delay_secs;
 
         if death_effect.elapsed < ring_start_time {
             continue;
@@ -268,16 +275,16 @@ fn draw_death_effect_ring(
 
         let progress = ring_elapsed / ring_duration;
 
-        let radius = if matches!(config.expansion, RingExpansion::Expanding) {
+        let radius = if matches!(ring_effect_config.expansion, RingExpansion::Expanding) {
             let ease_out = (1.0 - progress).mul_add(-(1.0 - progress), 1.0);
             let scale = (1.0 - DEATH_EFFECT_EXPANDING_RING_START_SCALE)
                 .mul_add(ease_out, DEATH_EFFECT_EXPANDING_RING_START_SCALE);
-            death_effect.radius * config.radius_scale * scale
+            death_effect.radius * ring_effect_config.radius_scale * scale
         } else {
-            death_effect.radius * config.radius_scale
+            death_effect.radius * ring_effect_config.radius_scale
         };
 
-        let alpha = config.alpha_curve.compute(progress);
+        let alpha = ring_effect_config.alpha_curve.compute(progress);
 
         draw_ring_lines(
             gizmos,
@@ -288,7 +295,7 @@ fn draw_death_effect_ring(
                 line_length_variance,
                 color_a: Color::from(tailwind::ORANGE_500).with_alpha(alpha),
                 color_b: Color::from(tailwind::YELLOW_400).with_alpha(alpha),
-                phase_offset: ring_idx_f32 * config.ring_phase_offset,
+                phase_offset: ring_idx_f32 * ring_effect_config.ring_phase_offset,
             },
             elapsed,
         );

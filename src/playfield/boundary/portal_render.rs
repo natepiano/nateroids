@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-use super::PortalActorKind;
 use crate::orientation::CameraOrientation;
 use crate::playfield::boundary_face::BoundaryFace;
 use crate::playfield::constants::BOUNDARY_OVEREXTENSION_EPSILON;
@@ -11,6 +10,13 @@ use crate::playfield::constants::DEADEROID_APPROACHING_COLOR;
 use crate::playfield::constants::INTERSECTION_DEDUP_EPSILON;
 use crate::playfield::portals::Portal;
 use crate::playfield::portals::PortalGizmo;
+
+/// Distinguishes normal actors from deaderoids in portal rendering.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PortalActorKind {
+    Nateroid,
+    Deaderoid,
+}
 
 /// Describes the geometric configuration of a portal relative to boundary faces.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -149,7 +155,7 @@ fn render_portal_by_geometry(
         PortalGeometry::SingleFace => {
             // Draw full circle
             let rotation = Quat::from_rotation_arc(
-                context.orientation.settings.axis_profundus,
+                context.orientation.orientation_settings.axis_profundus,
                 portal.normal().as_vec3(),
             );
             let isometry = Isometry3d::new(*portal.position, rotation);
