@@ -42,6 +42,7 @@ pub(super) const FOCUS_GIZMO_COLOR: Color = Color::Srgba(bevy::color::Srgba {
     alpha: 1.0,
 });
 pub(super) const FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS: f32 = 100.0;
+pub(super) const FOCUS_GIZMO_DISTANCE_LABEL_OFFSET: f32 = 20.0;
 pub(super) const FOCUS_GIZMO_LINE_WIDTH: f32 = 2.0;
 
 // Home animation

@@ -100,8 +100,8 @@ fn size(aabb: &Aabb) -> Vec3 { Vec3::from(aabb.half_extents * 2.0) }
 
 /// Returns the largest axis dimension of the `Aabb`.
 pub fn max_dimension(aabb: &Aabb) -> f32 {
-    let he = aabb.half_extents;
-    he.x.max(he.y).max(he.z) * 2.0
+    let half_extents = aabb.half_extents;
+    half_extents.x.max(half_extents.y).max(half_extents.z) * 2.0
 }
 
 /// Draws AABB gizmos for root actor entities only. `Without<ChildOf>` excludes
