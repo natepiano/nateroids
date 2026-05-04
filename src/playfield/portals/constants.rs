@@ -1,4 +1,4 @@
-// Portal inspector bounds
+// portal inspector bounds
 pub(super) const PORTAL_DIRECTION_CHANGE_FACTOR_MAX: f32 = std::f32::consts::PI;
 pub(super) const PORTAL_DIRECTION_CHANGE_FACTOR_MIN: f32 = 0.0;
 pub(super) const PORTAL_DISTANCE_MAX: f32 = 1.0;

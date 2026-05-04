@@ -10,6 +10,29 @@ use bevy::post_process::bloom::Bloom;
 use bevy::prelude::*;
 use bevy::render::view::Hdr;
 
+// camera
+const BLOOM_CAMERA_ORDER: isize = 0;
+const CAMERA_POSITION: Vec3 = Vec3::new(0.0, 0.0, 10.0);
+const GAME_CAMERA_ORDER: isize = 1;
+const PRIMARY_CAMERA_CLEAR_COLOR: Color = Color::BLACK;
+
+// colors
+const BLOOM_SPHERE_EMISSIVE: LinearRgba = LinearRgba::rgb(50.0, 25.0, 0.0);
+const GAME_SPHERE_COLOR: Color = Color::srgb(0.0, 0.8, 0.2);
+
+// lighting
+const DIRECTIONAL_LIGHT_ILLUMINANCE: f32 = 10_000.0;
+const LIGHT_POSITION: Vec3 = Vec3::new(5.0, 5.0, 5.0);
+
+// render layers
+const BLOOM_LAYER_INDEX: usize = 1;
+const GAME_LAYER_INDEX: usize = 2;
+
+// spheres
+const BLOOM_SPHERE_POSITION: Vec3 = Vec3::new(-2.5, 0.0, 0.0);
+const GAME_SPHERE_POSITION: Vec3 = Vec3::new(2.5, 0.0, 0.0);
+const SPHERE_RADIUS: f32 = 1.5;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -22,67 +45,68 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let bloom_layer = RenderLayers::layer(1);
-    let game_layer = RenderLayers::layer(2);
-    let camera_pos = Transform::from_xyz(0.0, 0.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y);
+    let bloom_layer = RenderLayers::layer(BLOOM_LAYER_INDEX);
+    let game_layer = RenderLayers::layer(GAME_LAYER_INDEX);
+    let camera_transform =
+        Transform::from_translation(CAMERA_POSITION).looking_at(Vec3::ZERO, Vec3::Y);
 
     // Camera 1: Bloom-enabled, renders layer 1
     commands.spawn((
         Camera3d::default(),
         Camera {
-            order: 0,
-            clear_color: ClearColorConfig::Custom(Color::BLACK),
+            order: BLOOM_CAMERA_ORDER,
+            clear_color: ClearColorConfig::Custom(PRIMARY_CAMERA_CLEAR_COLOR),
             ..default()
         },
         Bloom::NATURAL,
         bloom_layer.clone(),
-        camera_pos,
+        camera_transform,
     ));
 
     // BUG: Camera 2: Bloom layer gets hidden, renders game layer only
     // commands.spawn((
     //     Camera3d::default(),
     //     Camera {
-    //         order: 1,
+    //         order: GAME_CAMERA_ORDER,
     //         clear_color: ClearColorConfig::None,
     //         ..default()
     //     },
     //     game_layer.clone(),
-    //     camera_pos,
+    //     camera_transform,
     // ));
 
     // FIX: adding Hdr works
     commands.spawn((
         Camera3d::default(),
         Camera {
-            order: 1,
+            order: GAME_CAMERA_ORDER,
             clear_color: ClearColorConfig::None,
             ..default()
         },
         game_layer.clone(),
-        camera_pos,
+        camera_transform,
         Hdr,
     ));
 
     // Bloom layer: emissive sphere - should glow orange, but invisible with BUG
     commands.spawn((
-        Mesh3d(meshes.add(Sphere::new(1.5))),
+        Mesh3d(meshes.add(Sphere::new(SPHERE_RADIUS))),
         MeshMaterial3d(materials.add(StandardMaterial {
-            emissive: LinearRgba::rgb(50.0, 25.0, 0.0),
+            emissive: BLOOM_SPHERE_EMISSIVE,
             ..default()
         })),
-        Transform::from_xyz(-2.5, 0.0, 0.0),
+        Transform::from_translation(BLOOM_SPHERE_POSITION),
         bloom_layer.clone(),
     ));
 
     // Game layer: green sphere - always visible (proves rendering works)
     commands.spawn((
-        Mesh3d(meshes.add(Sphere::new(1.5))),
+        Mesh3d(meshes.add(Sphere::new(SPHERE_RADIUS))),
         MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::srgb(0.0, 0.8, 0.2),
+            base_color: GAME_SPHERE_COLOR,
             ..default()
         })),
-        Transform::from_xyz(2.5, 0.0, 0.0),
+        Transform::from_translation(GAME_SPHERE_POSITION),
         game_layer.clone(),
     ));
 
@@ -90,10 +114,10 @@ fn setup(
     // just left it in so people can see for themselves whether it makes a difference or not
     commands.spawn((
         DirectionalLight {
-            illuminance: 10000.0,
+            illuminance: DIRECTIONAL_LIGHT_ILLUMINANCE,
             ..default()
         },
-        Transform::from_xyz(5.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_translation(LIGHT_POSITION).looking_at(Vec3::ZERO, Vec3::Y),
         bloom_layer,
     ));
 
@@ -102,10 +126,10 @@ fn setup(
     // with this light, the emissive sphere is only visible if spawned as a tuple
     commands.spawn((
         DirectionalLight {
-            illuminance: 10000.0,
+            illuminance: DIRECTIONAL_LIGHT_ILLUMINANCE,
             ..default()
         },
-        Transform::from_xyz(5.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_translation(LIGHT_POSITION).looking_at(Vec3::ZERO, Vec3::Y),
         game_layer,
     ));
 }

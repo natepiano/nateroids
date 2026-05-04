@@ -9,10 +9,10 @@ use crate::orientation::DimensionMode;
 use crate::orientation::OrientationSettings;
 use crate::switches::Switch;
 
-// Despawn constants
+// despawn constants
 pub(crate) const DEATH_VELOCITY_EPSILON: f32 = 0.001;
 
-// Orientation constants
+// orientation constants
 pub(crate) const CAMERA_ORIENTATION_DEFAULT_SETTINGS: OrientationSettings = OrientationSettings {
     dimension_mode:   DimensionMode::TwoD,
     axis_mundi:       Vec3::ZERO,
@@ -23,7 +23,7 @@ pub(crate) const CAMERA_ORIENTATION_DEFAULT_SETTINGS: OrientationSettings = Orie
     spaceship_offset: Displacement::new(0.0, 5.0, -10.0),
 };
 
-// Physics constants
+// physics constants
 pub(crate) const MIN_NATEROIDS_FOR_MONITORING: usize = 50;
 pub(crate) const PHYSICS_SUBSTEP_COUNT: u32 = 15;
 /// Minimum interval between physics-stress log messages
@@ -32,7 +32,7 @@ pub(crate) const STRESS_ENTER_FPS_THRESHOLD: f64 = 35.0;
 pub(crate) const STRESS_EXIT_FPS_THRESHOLD: f64 = 45.0;
 pub(crate) const STRESS_VELOCITY_THRESHOLD: f32 = 200.0;
 
-// Splash constants
+// splash constants
 pub(crate) const SPLASH_FAST_SPIN_COUNT: usize = 5;
 pub(crate) const SPLASH_FAST_SPIN_DURATION_MS: u64 = 25;
 pub(crate) const SPLASH_HOLD_DURATION_MS: u64 = 2500;
@@ -47,7 +47,7 @@ pub(crate) const SPLASH_TEXT_GROWTH_RATE: f32 = 1.2;
 pub(crate) const SPLASH_TEXT_TIME: f32 = 2.;
 pub(crate) const SPLASH_ZOOM_DURATION_MS: u64 = 1000;
 
-// Switches constants
+// switches constants
 pub(crate) const INSPECTOR_SWITCHES: [Switch; 13] = [
     Switch::InspectAabb,
     Switch::InspectBoundary,

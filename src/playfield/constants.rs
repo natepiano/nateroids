@@ -4,7 +4,7 @@
 use bevy::color::Color;
 use bevy::math::UVec3;
 
-// Boundary configuration
+// boundary configuration
 
 /// Default cell count for the boundary grid (X, Y, Z cells)
 pub(super) const BOUNDARY_CELL_COUNT: UVec3 = UVec3::new(3, 2, 1);
@@ -27,13 +27,13 @@ pub(super) const BOUNDARY_SCALAR: f32 = 110.0;
 /// Duration in seconds for the grid flash animation when cell count changes
 pub(super) const GRID_FLASH_DURATION: f32 = 2.0;
 
-// Boundary fade-in logging
+// boundary fade-in logging
 /// Approximate frame duration for fade-in logging throttle (seconds)
 pub(super) const FADE_LOG_FRAME_EPSILON: f32 = 0.016;
 /// Interval between boundary fade-in log messages (seconds)
 pub(super) const FADE_LOG_INTERVAL_SECS: f32 = 0.5;
 
-// Boundary position snapping
+// boundary position snapping
 
 /// Epsilon for portal overextension detection (2x snap epsilon)
 pub(super) const BOUNDARY_OVEREXTENSION_EPSILON: f32 = BOUNDARY_SNAP_EPSILON * 2.0;
@@ -41,11 +41,11 @@ pub(super) const BOUNDARY_OVEREXTENSION_EPSILON: f32 = BOUNDARY_SNAP_EPSILON * 2
 /// Epsilon for boundary position snapping to prevent false-positive overextension
 pub(super) const BOUNDARY_SNAP_EPSILON: f32 = 0.01;
 
-// Circle–line-segment intersection
+// circle–line-segment intersection
 /// Epsilon for deduplicating circle–line-segment intersection points
 pub(super) const INTERSECTION_DEDUP_EPSILON: f32 = 1e-6;
 
-// Portal colors
+// portal colors
 
 /// Color for Front/Back face corners on XY plane (Yellow)
 pub(super) const CORNER_COLOR_FRONT_BACK_XY: Color = Color::srgb(1.0, 1.0, 0.0);
@@ -59,7 +59,7 @@ pub(super) const CORNER_COLOR_TOP_BOTTOM_XZ: Color = Color::srgb(0.0, 1.0, 0.0);
 /// Color for `Deaderoid` approaching portals (Red)
 pub(super) const DEADEROID_APPROACHING_COLOR: Color = Color::srgb(1.0, 0.0, 0.0);
 
-// Portal configuration
+// portal configuration
 
 /// Threshold for considering normals "similar" during portal movement smoothing
 pub(super) const PORTAL_DIRECTION_CHANGE_FACTOR: f32 = 0.75;
