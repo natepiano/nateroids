@@ -1,3 +1,7 @@
+use std::ops::Range;
+
+use bevy::color::Srgba;
+use bevy::color::palettes::tailwind;
 use bevy::prelude::Color;
 use bevy_kana::Position;
 
@@ -35,7 +39,7 @@ pub(super) const EDGE_MARKER_FONT_SIZE: f32 = 11.0;
 pub(super) const EDGE_MARKER_SPHERE_RADIUS: f32 = 1.0;
 
 // focus gizmo
-pub(super) const FOCUS_GIZMO_COLOR: Color = Color::Srgba(bevy::color::Srgba {
+pub(super) const FOCUS_GIZMO_COLOR: Color = Color::Srgba(Srgba {
     red:   1.0,
     green: 0.0,
     blue:  0.0,
@@ -86,12 +90,13 @@ pub(super) const CASCADE_SHADOW_MAX_DISTANCE: f32 = 1500.0;
 pub(super) const CASCADE_SHADOW_NUM_CASCADES: usize = 4;
 pub(super) const CASCADE_SHADOW_OVERLAP_PROPORTION: f32 = 0.3;
 pub(super) const DIRECTIONAL_LIGHT_ILLUMINANCE: f32 = 1700.0;
+pub(super) const DIRECTIONAL_LIGHT_SETTINGS_COLOR: Color = Color::Srgba(tailwind::GRAY_50);
 pub(super) const ENVIRONMENT_MAP_INTENSITY: f32 = 25_000.0;
 pub(super) const SHADOW_DEPTH_BIAS: f32 = 0.02;
 pub(super) const SHADOW_NORMAL_BIAS: f32 = 0.6;
 
 // selection outline
-pub(super) const SELECTION_OUTLINE_COLOR: Color = Color::Srgba(bevy::color::Srgba {
+pub(super) const SELECTION_OUTLINE_COLOR: Color = Color::Srgba(Srgba {
     red:   0.0,
     green: 0.24,
     blue:  1.0,
@@ -113,8 +118,8 @@ pub(super) const STAR_COLOR_WHITE_PROBABILITY: f32 = 0.85;
 pub(super) const STAR_COLOR_WHITE_START_RATIO: f32 = 0.7;
 pub(super) const STAR_COUNT: usize = 1000;
 pub(super) const STAR_DURATION_REPLACE_TIMER: f32 = 1.0;
-pub(super) const STAR_FIELD_DIAMETER: std::ops::Range<f32> = 200.0..400.0;
-pub(super) const STAR_RADIUS: std::ops::Range<f32> = 0.3..2.5;
+pub(super) const STAR_FIELD_DIAMETER: Range<f32> = 200.0..400.0;
+pub(super) const STAR_RADIUS: Range<f32> = 0.3..2.5;
 
 // star rotation
 /// Minimum rotation cycle in minutes (1 second = 0.01667 minutes).

@@ -9,6 +9,7 @@ use bevy_enhanced_input::prelude::Action;
 use bevy_enhanced_input::prelude::ActionOf;
 use bevy_inspector_egui::InspectorOptions;
 use bevy_kana::Position;
+use input_events::Start;
 
 use super::Teleporter;
 use super::actor_settings;
@@ -209,7 +210,7 @@ fn initialize_transform(
     }
 }
 
-fn on_fire_input(_trigger: On<input_events::Start<ShipFire>>, mut commands: Commands) {
+fn on_fire_input(_trigger: On<Start<ShipFire>>, mut commands: Commands) {
     commands.run_system_cached(fire_missile_command);
 }
 

@@ -1,6 +1,12 @@
 use avian3d::prelude::LockedAxes;
+use bevy::color::Color;
+use bevy::color::palettes::tailwind;
 use bevy::prelude::Vec3;
 use bevy_kana::Position;
+
+// aabb gizmo
+pub(super) const AABB_GIZMO_COLOR: Color = Color::Srgba(tailwind::GREEN_800);
+pub(super) const AABB_GIZMO_LINE_WIDTH: f32 = 1.0;
 
 // aabb gizmo inspector bounds
 pub(super) const AABB_LINE_WIDTH_MAX: f32 = 40.0;
@@ -43,6 +49,8 @@ pub(super) const DEATH_EFFECT_RADIUS_MARGIN: f32 = 20.0;
 pub(super) const DEATH_EFFECT_LINE_COUNT: usize = 365;
 pub(super) const DEATH_EFFECT_LINE_LENGTH_BASE: f32 = 5.0;
 pub(super) const DEATH_EFFECT_LINE_LENGTH_VARIANCE: f32 = 2.0;
+pub(super) const DEATH_EFFECT_RING_COLOR_ORANGE: Color = Color::Srgba(tailwind::ORANGE_500);
+pub(super) const DEATH_EFFECT_RING_COLOR_YELLOW: Color = Color::Srgba(tailwind::YELLOW_400);
 
 // flame gizmo shared constants
 pub(super) const FLAME_COLOR_FLICKER_SPEED: f32 = 12.0;
@@ -133,6 +141,9 @@ pub(super) const SPACESHIP_TILT_THRESHOLD: f32 = 0.087;
 
 // thrust gizmo constants
 pub(super) const THRUSTER_COLOR_FLICKER_INTENSITY: f32 = 0.4;
+pub(super) const THRUSTER_COLOR_ORANGE: Color = Color::Srgba(tailwind::ORANGE_500);
+pub(super) const THRUSTER_COLOR_RED: Color = Color::Srgba(tailwind::RED_600);
+pub(super) const THRUSTER_COLOR_YELLOW: Color = Color::Srgba(tailwind::YELLOW_400);
 pub(super) const THRUSTER_COLOR_ZONE_SIZE: f32 = 1.0 / 3.0;
 pub(super) const THRUSTER_CONE_HALF_ANGLE: f32 = 0.25;
 pub(super) const THRUSTER_LINE_COUNT: usize = 6;

@@ -1,7 +1,6 @@
 use std::f32::consts::FRAC_PI_2;
 use std::f32::consts::PI;
 
-use bevy::color::palettes::tailwind;
 use bevy::light::CascadeShadowConfigBuilder;
 use bevy::light::GlobalAmbientLight;
 use bevy::prelude::*;
@@ -20,6 +19,7 @@ use super::constants::CASCADE_SHADOW_OVERLAP_PROPORTION;
 use super::constants::DIRECTIONAL_LIGHT_ILLUMINANCE;
 use super::constants::DIRECTIONAL_LIGHT_ILLUMINANCE_MAX;
 use super::constants::DIRECTIONAL_LIGHT_ILLUMINANCE_MIN;
+use super::constants::DIRECTIONAL_LIGHT_SETTINGS_COLOR;
 use super::constants::ENVIRONMENT_MAP_INTENSITY;
 use super::constants::ENVIRONMENT_MAP_INTENSITY_MAX;
 use super::constants::ENVIRONMENT_MAP_INTENSITY_MIN;
@@ -84,7 +84,7 @@ pub(super) struct DirectionalLightSettings {
 impl Default for DirectionalLightSettings {
     fn default() -> Self {
         Self {
-            color:       Color::from(tailwind::GRAY_50),
+            color:       DIRECTIONAL_LIGHT_SETTINGS_COLOR,
             enabled:     LightSwitch::Off,
             illuminance: DIRECTIONAL_LIGHT_ILLUMINANCE,
             // CRITICAL: Must start disabled. Enabling shadows at startup before the scene

@@ -6,14 +6,14 @@ use bevy_lagrange::TrackpadInput;
 use bevy_liminal::OutlineCamera;
 
 use super::RenderLayer;
-use super::camera_star::StarCamera;
 use super::constants::CAMERA_TRACKPAD_SENSITIVITY;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::lights::LightSettings;
 use super::rendering::CameraOrder;
-use super::required_camera_components::RequiredCameraComponents;
+use super::required_components::RequiredCameraComponents;
 use super::settings::CameraSettings;
+use super::star::StarCamera;
 use crate::asset_loader::SceneAssets;
 
 pub(super) struct GameCameraPlugin;

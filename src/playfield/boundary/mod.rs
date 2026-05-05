@@ -2,7 +2,6 @@ mod constants;
 mod gizmo;
 mod portal_render;
 
-use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
@@ -21,9 +20,11 @@ use gizmo::GridGizmo;
 pub(super) use portal_render::PortalActorKind;
 
 use super::constants::BOUNDARY_CELL_COUNT;
+use super::constants::BOUNDARY_COLOR;
 use super::constants::BOUNDARY_GRID_LINE_WIDTH;
 use super::constants::BOUNDARY_OUTER_LINE_WIDTH;
 use super::constants::BOUNDARY_SCALAR;
+use super::constants::BOUNDARY_START_ALPHA;
 use super::portals::Portal;
 use super::portals::PortalGizmo;
 use crate::input::InspectBoundarySwitch;
@@ -108,8 +109,8 @@ impl Default for Boundary {
         Self {
             cell_count:          BOUNDARY_CELL_COUNT,
             // Start with alpha 0 - will be faded in during splash screen
-            grid_color:          Color::from(tailwind::BLUE_500).with_alpha(0.0),
-            outer_color:         Color::from(tailwind::BLUE_500).with_alpha(0.0),
+            grid_color:          BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA),
+            outer_color:         BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA),
             grid_line_width:     BOUNDARY_GRID_LINE_WIDTH,
             exterior_line_width: BOUNDARY_OUTER_LINE_WIDTH,
             exterior_scalar:     BOUNDARY_SCALAR,

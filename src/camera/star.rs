@@ -3,7 +3,7 @@ use bevy::prelude::*;
 
 use super::RenderLayer;
 use super::rendering::CameraOrder;
-use super::required_camera_components::RequiredCameraComponents;
+use super::required_components::RequiredCameraComponents;
 use super::settings::CameraSettings;
 
 #[derive(Component, Reflect)]

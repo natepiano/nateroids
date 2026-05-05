@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use super::RenderLayer;
 use super::rendering::CameraOrder;
-use super::required_camera_components::RequiredCameraComponents;
+use super::required_components::RequiredCameraComponents;
 
 pub(super) fn spawn_ui_camera(mut commands: Commands) {
     commands.spawn((

@@ -12,10 +12,10 @@ use rand::RngExt;
 use rand::prelude::ThreadRng;
 
 use super::RenderLayer;
-use super::camera_star::StarCamera;
 use super::constants::STAR_MINIMUM_BRIGHTNESS_FRACTION;
 use super::constants::STAR_ROTATION_CYCLE_MINIMUM_MINUTES;
 use super::settings::StarSettings;
+use super::star::StarCamera;
 use crate::playfield::Boundary;
 use crate::state::GameState;
 

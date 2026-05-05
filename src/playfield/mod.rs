@@ -8,6 +8,8 @@ pub(crate) use boundary::Boundary;
 use boundary::BoundaryPlugin;
 pub(crate) use boundary::BoundaryVolume;
 pub(crate) use boundary::GridFlash;
+pub(crate) use constants::BOUNDARY_COLOR;
+pub(crate) use constants::BOUNDARY_START_ALPHA;
 pub(crate) use portals::ActorPortals;
 use portals::PortalPlugin;
 

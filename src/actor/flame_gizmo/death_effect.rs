@@ -1,5 +1,4 @@
 use bevy::camera::primitives::Aabb;
-use bevy::color::palettes::tailwind;
 use bevy::math::Isometry3d;
 use bevy::prelude::*;
 use bevy_kana::ToF32;
@@ -15,6 +14,8 @@ use crate::actor::constants::DEATH_EFFECT_LINE_COUNT;
 use crate::actor::constants::DEATH_EFFECT_LINE_LENGTH_BASE;
 use crate::actor::constants::DEATH_EFFECT_LINE_LENGTH_VARIANCE;
 use crate::actor::constants::DEATH_EFFECT_RADIUS_MARGIN;
+use crate::actor::constants::DEATH_EFFECT_RING_COLOR_ORANGE;
+use crate::actor::constants::DEATH_EFFECT_RING_COLOR_YELLOW;
 use crate::actor::constants::FLAME_PHASE_SPREAD;
 use crate::actor::constants::FLAME_VIBRATION_AMPLITUDE;
 use crate::actor::constants::FLAME_VIBRATION_SPEED;
@@ -293,8 +294,8 @@ fn draw_death_effect_ring(
                 radius,
                 line_length_base,
                 line_length_variance,
-                color_a: Color::from(tailwind::ORANGE_500).with_alpha(alpha),
-                color_b: Color::from(tailwind::YELLOW_400).with_alpha(alpha),
+                color_a: DEATH_EFFECT_RING_COLOR_ORANGE.with_alpha(alpha),
+                color_b: DEATH_EFFECT_RING_COLOR_YELLOW.with_alpha(alpha),
                 phase_offset: ring_idx_f32 * ring_effect_config.ring_phase_offset,
             },
             elapsed,

@@ -21,12 +21,15 @@ use crate::constants::SPLASH_INITIAL_FONT_SIZE;
 use crate::constants::SPLASH_LAND_HOME_DURATION_MS;
 use crate::constants::SPLASH_SKIP_HINT_ALPHA;
 use crate::constants::SPLASH_SKIP_HINT_BOTTOM_OFFSET;
+use crate::constants::SPLASH_SKIP_HINT_COLOR;
 use crate::constants::SPLASH_SKIP_HINT_FONT_SIZE;
 use crate::constants::SPLASH_SLOWDOWN_DURATIONS_MS;
 use crate::constants::SPLASH_SPIN_DURATIONS_MS;
 use crate::constants::SPLASH_TEXT_GROWTH_RATE;
 use crate::constants::SPLASH_TEXT_TIME;
 use crate::constants::SPLASH_ZOOM_DURATION_MS;
+use crate::playfield::BOUNDARY_COLOR;
+use crate::playfield::BOUNDARY_START_ALPHA;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
 use crate::playfield::GridFlash;
@@ -48,7 +51,7 @@ struct SplashZoomActive;
 
 #[derive(Resource, Debug)]
 struct SplashTextTimer {
-    pub timer: Timer,
+    timer: Timer,
 }
 
 #[derive(Default, Debug, PartialEq, Eq)]
@@ -94,8 +97,8 @@ fn reset_timer_and_boundary(
     skip_state.readiness = SkipReadiness::NotReady;
 
     // Reset boundary alpha to 0 (transparent) for fade-in animation
-    boundary.grid_color = boundary.grid_color.with_alpha(0.0);
-    boundary.outer_color = boundary.outer_color.with_alpha(0.0);
+    boundary.grid_color = BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA);
+    boundary.outer_color = BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA);
 }
 
 fn spawn_splash_text(mut commands: Commands) {
@@ -125,7 +128,7 @@ fn spawn_splash_skip_hint(mut commands: Commands) {
             ..default()
         },
         TextLayout::new_with_justify(Justify::Center),
-        TextColor(Color::srgba(1.0, 1.0, 1.0, SPLASH_SKIP_HINT_ALPHA)),
+        TextColor(SPLASH_SKIP_HINT_COLOR.with_alpha(SPLASH_SKIP_HINT_ALPHA)),
         Node {
             position_type: PositionType::Absolute,
             bottom: Val::Px(SPLASH_SKIP_HINT_BOTTOM_OFFSET),

@@ -8,6 +8,7 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_lagrange::OrbitCam;
+use input_events::Start;
 
 use super::constants::SPACESHIP_ACCELERATION;
 use super::constants::SPACESHIP_ACCELERATION_MAX;
@@ -215,7 +216,7 @@ fn apply_acceleration(
 }
 
 fn on_toggle_continuous_fire_input(
-    _trigger: On<input_events::Start<ShipContinuousFire>>,
+    _trigger: On<Start<ShipContinuousFire>>,
     mut commands: Commands,
 ) {
     commands.run_system_cached(toggle_continuous_fire_command);

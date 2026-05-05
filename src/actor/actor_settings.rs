@@ -5,7 +5,7 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
-use super::aabb;
+use super::aabb::PendingCollider;
 use super::constants::ACTOR_COLLIDER_MARGIN_MAX;
 use super::constants::ACTOR_COLLIDER_MARGIN_MIN;
 use super::constants::ACTOR_DAMPING_MAX;
@@ -218,7 +218,7 @@ pub(super) fn insert_configured_components(
 ) {
     // Insert all components on the actor entity
     commands.entity(actor_entity).insert((
-        aabb::PendingCollider {
+        PendingCollider {
             collider_type: settings.collider_type.clone(),
             margin:        settings.collider_margin,
             rigid_body:    settings.rigid_body,

@@ -22,6 +22,7 @@ pub(crate) use global_shortcuts::AabbsSwitch;
 pub(crate) use global_shortcuts::BoundaryBoxSwitch;
 pub(crate) use global_shortcuts::CameraHome;
 pub(crate) use global_shortcuts::EscapeSwitch;
+use global_shortcuts::GlobalShortcutsContext;
 pub(crate) use global_shortcuts::InspectAabbSwitch;
 pub(crate) use global_shortcuts::InspectBoundarySwitch;
 pub(crate) use global_shortcuts::InspectCameraSwitch;
@@ -53,8 +54,8 @@ pub(crate) struct EnhancedInputAppPlugin;
 impl Plugin for EnhancedInputAppPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EnhancedInputPlugin)
-            .add_input_context::<global_shortcuts::GlobalShortcutsContext>()
-            .add_input_context::<ship_controls::ShipControlsContext>()
+            .add_input_context::<GlobalShortcutsContext>()
+            .add_input_context::<ShipControlsContext>()
             .add_systems(Startup, global_shortcuts::setup_global_shortcuts);
     }
 }

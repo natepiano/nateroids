@@ -1,4 +1,3 @@
-use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_enhanced_input::action::TriggerState;
 use bevy_enhanced_input::prelude::Action;
@@ -13,6 +12,9 @@ use crate::actor::constants::FLAME_PHASE_SPREAD;
 use crate::actor::constants::FLAME_VIBRATION_AMPLITUDE;
 use crate::actor::constants::FLAME_VIBRATION_SPEED;
 use crate::actor::constants::THRUSTER_COLOR_FLICKER_INTENSITY;
+use crate::actor::constants::THRUSTER_COLOR_ORANGE;
+use crate::actor::constants::THRUSTER_COLOR_RED;
+use crate::actor::constants::THRUSTER_COLOR_YELLOW;
 use crate::actor::constants::THRUSTER_COLOR_ZONE_SIZE;
 use crate::actor::constants::THRUSTER_CONE_HALF_ANGLE;
 use crate::actor::constants::THRUSTER_LINE_COUNT;
@@ -149,10 +151,6 @@ fn draw_exhaust_flames(gizmos: &mut Gizmos<FlameGizmo>, transform: &Transform, e
 
     let base_position = transform.translation + back_direction * THRUSTER_LINE_OFFSET;
 
-    let color_yellow = Color::from(tailwind::YELLOW_400);
-    let color_orange = Color::from(tailwind::ORANGE_500);
-    let color_red = Color::from(tailwind::RED_600);
-
     let line_count_f32 = THRUSTER_LINE_COUNT.to_f32();
 
     for i in 0..THRUSTER_LINE_COUNT {
@@ -183,7 +181,13 @@ fn draw_exhaust_flames(gizmos: &mut Gizmos<FlameGizmo>, transform: &Transform, e
 
         let center_factor = 1.0 - (angle_offset.abs() / THRUSTER_CONE_HALF_ANGLE);
         let zone = FlameZone::from_center_factor(center_factor, THRUSTER_COLOR_ZONE_SIZE);
-        let color = zone.color(elapsed, phase, color_red, color_orange, color_yellow);
+        let color = zone.color(
+            elapsed,
+            phase,
+            THRUSTER_COLOR_RED,
+            THRUSTER_COLOR_ORANGE,
+            THRUSTER_COLOR_YELLOW,
+        );
 
         gizmos.line(start, end, color);
     }

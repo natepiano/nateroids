@@ -1,9 +1,10 @@
 use bevy::color::Color;
-use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 
+use super::constants::PORTAL_COLOR_APPROACHING;
+use super::constants::PORTAL_COLOR_EMERGING;
 use super::constants::PORTAL_DIRECTION_CHANGE_FACTOR_MAX;
 use super::constants::PORTAL_DIRECTION_CHANGE_FACTOR_MIN;
 use super::constants::PORTAL_DISTANCE_MAX;
@@ -116,8 +117,8 @@ pub(super) struct PortalSettings {
 impl Default for PortalSettings {
     fn default() -> Self {
         Self {
-            color_approaching:         Color::from(tailwind::BLUE_600),
-            color_emerging:            Color::from(tailwind::YELLOW_800),
+            color_approaching:         PORTAL_COLOR_APPROACHING,
+            color_emerging:            PORTAL_COLOR_EMERGING,
             direction_change_factor:   PORTAL_DIRECTION_CHANGE_FACTOR,
             distance_approach:         PORTAL_DISTANCE_APPROACH,
             distance_shrink:           PORTAL_DISTANCE_SHRINK,

@@ -2,13 +2,14 @@ use avian3d::prelude::Collider;
 use avian3d::prelude::RigidBody;
 use bevy::camera::primitives::Aabb;
 use bevy::camera::visibility::VisibilitySystems;
-use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use super::actor_settings::ColliderType;
+use super::constants::AABB_GIZMO_COLOR;
+use super::constants::AABB_GIZMO_LINE_WIDTH;
 use super::constants::AABB_LINE_WIDTH_MAX;
 use super::constants::AABB_LINE_WIDTH_MIN;
 use crate::camera::RenderLayer;
@@ -80,8 +81,8 @@ struct AabbSettings {
 impl Default for AabbSettings {
     fn default() -> Self {
         Self {
-            color:      Color::from(tailwind::GREEN_800),
-            line_width: 1.0,
+            color:      AABB_GIZMO_COLOR,
+            line_width: AABB_GIZMO_LINE_WIDTH,
         }
     }
 }

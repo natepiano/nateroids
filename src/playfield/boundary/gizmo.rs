@@ -1,9 +1,9 @@
-use bevy::color::palettes::tailwind;
 use bevy::prelude::*;
 use bevy_lagrange::CameraMoveList;
 
 use super::Boundary;
 use crate::camera::RenderLayer;
+use crate::playfield::constants::BOUNDARY_COLOR;
 use crate::playfield::constants::BOUNDARY_GRID_ALPHA;
 use crate::playfield::constants::BOUNDARY_OUTER_ALPHA;
 use crate::playfield::constants::FADE_LOG_FRAME_EPSILON;
@@ -154,8 +154,8 @@ pub(super) fn fade_boundary_in(
         let outer_alpha = BOUNDARY_OUTER_ALPHA * t;
 
         // Update boundary colors
-        boundary.grid_color = Color::from(tailwind::BLUE_500).with_alpha(grid_alpha);
-        boundary.outer_color = Color::from(tailwind::BLUE_500).with_alpha(outer_alpha);
+        boundary.grid_color = BOUNDARY_COLOR.with_alpha(grid_alpha);
+        boundary.outer_color = BOUNDARY_COLOR.with_alpha(outer_alpha);
 
         // Log progress occasionally
         if fade.0.elapsed_secs() % FADE_LOG_INTERVAL_SECS < FADE_LOG_FRAME_EPSILON {
@@ -216,10 +216,10 @@ pub(super) fn animate_grid_flash(
     let t = flash.timer.fraction();
     let alpha = 1.0 - 2.0f32.mul_add(t, -1.0).abs();
 
-    boundary.grid_color = Color::from(tailwind::BLUE_500).with_alpha(alpha);
+    boundary.grid_color = BOUNDARY_COLOR.with_alpha(alpha);
 
     if flash.timer.is_finished() {
-        boundary.grid_color = Color::from(tailwind::BLUE_500).with_alpha(BOUNDARY_GRID_ALPHA);
+        boundary.grid_color = BOUNDARY_COLOR.with_alpha(BOUNDARY_GRID_ALPHA);
         commands.remove_resource::<GridFlashAnimation>();
     }
 }

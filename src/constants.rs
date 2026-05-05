@@ -1,5 +1,6 @@
 //! Top-level constants for standalone modules.
 
+use bevy::prelude::Color;
 use bevy::prelude::Transform;
 use bevy::prelude::Vec3;
 use bevy_kana::Displacement;
@@ -40,6 +41,7 @@ pub(crate) const SPLASH_INITIAL_FONT_SIZE: f32 = 1.0;
 pub(crate) const SPLASH_LAND_HOME_DURATION_MS: u64 = 1200;
 pub(crate) const SPLASH_SKIP_HINT_ALPHA: f32 = 0.8;
 pub(crate) const SPLASH_SKIP_HINT_BOTTOM_OFFSET: f32 = 24.0;
+pub(crate) const SPLASH_SKIP_HINT_COLOR: Color = Color::WHITE;
 pub(crate) const SPLASH_SKIP_HINT_FONT_SIZE: f32 = 20.0;
 pub(crate) const SPLASH_SLOWDOWN_DURATIONS_MS: &[u64] = &[50, 100, 150, 200];
 pub(crate) const SPLASH_SPIN_DURATIONS_MS: &[u64] = &[500, 400, 300, 200, 100, 50, 25];
