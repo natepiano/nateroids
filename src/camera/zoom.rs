@@ -257,7 +257,7 @@ fn draw_camera_focus_gizmo(
     focus_gizmo_state: Res<FocusGizmoState>,
     mut label_query: Query<(&mut Text, &mut Node, &mut TextColor), With<FocusDistanceLabel>>,
 ) {
-    if let Ok((cam, cam_transform, orbit_cam)) = camera_query.single() {
+    if let Ok((camera, camera_transform, orbit_cam)) = camera_query.single() {
         let focus = orbit_cam.target_focus;
 
         gizmos.sphere(focus, focus_gizmo_state.sphere_radius, focus_settings.color);
@@ -272,7 +272,7 @@ fn draw_camera_focus_gizmo(
             .mul_add(2.0, FOCUS_GIZMO_DISTANCE_LABEL_OFFSET);
         let label_world_pos = focus + (arrow_dir * along_arrow_offset);
 
-        if let Ok(label_screen_pos) = cam.world_to_viewport(cam_transform, label_world_pos) {
+        if let Ok(label_screen_pos) = camera.world_to_viewport(camera_transform, label_world_pos) {
             if let Ok((mut label_text, mut node, mut text_color)) = label_query.single_mut() {
                 label_text.0.clone_from(&text);
                 text_color.0 = focus_settings.color;

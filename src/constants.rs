@@ -10,6 +10,29 @@ use crate::orientation::DimensionMode;
 use crate::orientation::OrientationSettings;
 use crate::switches::Switch;
 
+// asset loader constants
+pub(crate) const ENVIRONMENT_DIFFUSE_MAP_ASSET_PATH: &str =
+    "environment_maps/dikhololo_night_2k_diffuse.ktx2";
+pub(crate) const ENVIRONMENT_SPECULAR_MAP_ASSET_PATH: &str =
+    "environment_maps/dikhololo_night_2k_specular.ktx2";
+pub(crate) const MISSILE_SCENE_ASSET_PATH: &str = "models/Bullets Pickup.glb#Scene0";
+pub(crate) const NATEROID_DONUT_ALBEDO_ASSET_PATH: &str =
+    "nateroid/textures/nateroid_donut_albedo.png";
+pub(crate) const NATEROID_DONUT_AO_ASSET_PATH: &str = "nateroid/textures/nateroid_donut_ao.png";
+pub(crate) const NATEROID_DONUT_METALLIC_ROUGHNESS_ASSET_PATH: &str =
+    "nateroid/textures/nateroid_donut_metallic_roughness.png";
+pub(crate) const NATEROID_DONUT_NORMAL_ASSET_PATH: &str =
+    "nateroid/textures/nateroid_donut_normal.png";
+pub(crate) const NATEROID_ICING_ALBEDO_ASSET_PATH: &str =
+    "nateroid/textures/nateroid_icing_albedo.png";
+pub(crate) const NATEROID_ICING_AO_ASSET_PATH: &str = "nateroid/textures/nateroid_icing_ao.png";
+pub(crate) const NATEROID_ICING_METALLIC_ROUGHNESS_ASSET_PATH: &str =
+    "nateroid/textures/nateroid_icing_metallic_roughness.png";
+pub(crate) const NATEROID_ICING_NORMAL_ASSET_PATH: &str =
+    "nateroid/textures/nateroid_icing_normal.png";
+pub(crate) const NATEROID_SCENE_ASSET_PATH: &str = "nateroid/nateroid.glb#Scene0";
+pub(crate) const SPACESHIP_SCENE_ASSET_PATH: &str = "models/Spaceship.glb#Scene0";
+
 // despawn constants
 pub(crate) const DEATH_VELOCITY_EPSILON: f32 = 0.001;
 

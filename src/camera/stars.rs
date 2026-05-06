@@ -58,12 +58,13 @@ fn debug_stars(
             .filter(|(_, v)| v.copied().is_some_and(ViewVisibility::get))
             .count();
 
-        if let Ok((cam_entity, camera, render_layers, visible_entities)) = stars_camera.single() {
+        if let Ok((camera_entity, camera, render_layers, visible_entities)) = stars_camera.single()
+        {
             let mesh3d_visible = visible_entities.map_or(0, |ve| {
                 ve.entities.get(&TypeId::of::<Mesh3d>()).map_or(0, Vec::len)
             });
             debug!(
-                "Frame {frame}: Stars: {count} total, {visible_count} ViewVisible | Camera {cam_entity}: active={}, layers={render_layers:?}, VisibleEntities(Mesh3d)={mesh3d_visible}",
+                "Frame {frame}: Stars: {count} total, {visible_count} ViewVisible | Camera {camera_entity}: active={}, layers={render_layers:?}, VisibleEntities(Mesh3d)={mesh3d_visible}",
                 camera.is_active
             );
         } else {

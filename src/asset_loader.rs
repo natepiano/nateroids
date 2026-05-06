@@ -2,6 +2,20 @@ use bevy::asset::LoadState;
 // Load assets once at startup
 use bevy::prelude::*;
 
+use crate::constants::ENVIRONMENT_DIFFUSE_MAP_ASSET_PATH;
+use crate::constants::ENVIRONMENT_SPECULAR_MAP_ASSET_PATH;
+use crate::constants::MISSILE_SCENE_ASSET_PATH;
+use crate::constants::NATEROID_DONUT_ALBEDO_ASSET_PATH;
+use crate::constants::NATEROID_DONUT_AO_ASSET_PATH;
+use crate::constants::NATEROID_DONUT_METALLIC_ROUGHNESS_ASSET_PATH;
+use crate::constants::NATEROID_DONUT_NORMAL_ASSET_PATH;
+use crate::constants::NATEROID_ICING_ALBEDO_ASSET_PATH;
+use crate::constants::NATEROID_ICING_AO_ASSET_PATH;
+use crate::constants::NATEROID_ICING_METALLIC_ROUGHNESS_ASSET_PATH;
+use crate::constants::NATEROID_ICING_NORMAL_ASSET_PATH;
+use crate::constants::NATEROID_SCENE_ASSET_PATH;
+use crate::constants::SPACESHIP_SCENE_ASSET_PATH;
+
 pub(crate) struct AssetLoaderPlugin;
 
 impl Plugin for AssetLoaderPlugin {
@@ -45,15 +59,13 @@ fn load_assets(
     asset_server: Res<AssetServer>,
 ) {
     *scene_assets = SceneAssets {
-        missile:                  asset_server.load("models/Bullets Pickup.glb#Scene0"),
-        nateroid:                 asset_server.load("nateroid/nateroid.glb#Scene0"),
+        missile:                  asset_server.load(MISSILE_SCENE_ASSET_PATH),
+        nateroid:                 asset_server.load(NATEROID_SCENE_ASSET_PATH),
         nateroid_donut_material:  None,
         nateroid_icing_material:  None,
-        spaceship:                asset_server.load("models/Spaceship.glb#Scene0"),
-        environment_diffuse_map:  asset_server
-            .load("environment_maps/dikhololo_night_2k_diffuse.ktx2"),
-        environment_specular_map: asset_server
-            .load("environment_maps/dikhololo_night_2k_specular.ktx2"),
+        spaceship:                asset_server.load(SPACESHIP_SCENE_ASSET_PATH),
+        environment_diffuse_map:  asset_server.load(ENVIRONMENT_DIFFUSE_MAP_ASSET_PATH),
+        environment_specular_map: asset_server.load(ENVIRONMENT_SPECULAR_MAP_ASSET_PATH),
     };
 }
 
@@ -68,22 +80,18 @@ fn create_nateroid_material(
     }
 
     // Load the donut texture files
-    let donut_albedo: Handle<Image> =
-        asset_server.load("nateroid/textures/nateroid_donut_albedo.png");
-    let donut_normal: Handle<Image> =
-        asset_server.load("nateroid/textures/nateroid_donut_normal.png");
+    let donut_albedo: Handle<Image> = asset_server.load(NATEROID_DONUT_ALBEDO_ASSET_PATH);
+    let donut_normal: Handle<Image> = asset_server.load(NATEROID_DONUT_NORMAL_ASSET_PATH);
     let donut_metallic_roughness: Handle<Image> =
-        asset_server.load("nateroid/textures/nateroid_donut_metallic_roughness.png");
-    let donut_ao: Handle<Image> = asset_server.load("nateroid/textures/nateroid_donut_ao.png");
+        asset_server.load(NATEROID_DONUT_METALLIC_ROUGHNESS_ASSET_PATH);
+    let donut_ao: Handle<Image> = asset_server.load(NATEROID_DONUT_AO_ASSET_PATH);
 
     // Load the icing texture files
-    let icing_albedo: Handle<Image> =
-        asset_server.load("nateroid/textures/nateroid_icing_albedo.png");
-    let icing_normal: Handle<Image> =
-        asset_server.load("nateroid/textures/nateroid_icing_normal.png");
+    let icing_albedo: Handle<Image> = asset_server.load(NATEROID_ICING_ALBEDO_ASSET_PATH);
+    let icing_normal: Handle<Image> = asset_server.load(NATEROID_ICING_NORMAL_ASSET_PATH);
     let icing_metallic_roughness: Handle<Image> =
-        asset_server.load("nateroid/textures/nateroid_icing_metallic_roughness.png");
-    let icing_ao: Handle<Image> = asset_server.load("nateroid/textures/nateroid_icing_ao.png");
+        asset_server.load(NATEROID_ICING_METALLIC_ROUGHNESS_ASSET_PATH);
+    let icing_ao: Handle<Image> = asset_server.load(NATEROID_ICING_AO_ASSET_PATH);
 
     // Create donut PBR material
     let donut_material = materials.add(StandardMaterial {
@@ -131,7 +139,7 @@ fn check_asset_loading(
     .all(|&id| matches!(asset_server.get_load_state(id), Some(LoadState::Loaded)));
 
     // Check environment map images
-    let env_maps_loaded = [
+    let environment_maps_loaded = [
         scene_assets.environment_diffuse_map.id(),
         scene_assets.environment_specular_map.id(),
     ]
@@ -143,7 +151,7 @@ fn check_asset_loading(
         && scene_assets.nateroid_icing_material.is_some();
 
     // Transition to the Loaded state if all assets are loaded (including environment maps)
-    if scenes_loaded && env_maps_loaded && materials_ready {
+    if scenes_loaded && environment_maps_loaded && materials_ready {
         debug!("All assets loaded (including environment maps)!");
         next_state.set(AssetsState::Loaded);
     }

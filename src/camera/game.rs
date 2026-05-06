@@ -82,8 +82,8 @@ fn update_environment_map_intensity(
         return;
     }
 
-    for mut env_light in &mut environment_map_light_query {
-        env_light.intensity = light_settings.environment_map_intensity;
+    for mut environment_light in &mut environment_map_light_query {
+        environment_light.intensity = light_settings.environment_map_intensity;
     }
 }
 
@@ -91,9 +91,9 @@ fn update_orbit_cam_smoothness(
     camera_settings: Res<CameraSettings>,
     mut orbit_cam_query: Query<&mut OrbitCam>,
 ) {
-    for mut cam in &mut orbit_cam_query {
-        cam.zoom_smoothness = camera_settings.smoothness.zoom;
-        cam.pan_smoothness = camera_settings.smoothness.pan;
-        cam.orbit_smoothness = camera_settings.smoothness.orbit;
+    for mut camera in &mut orbit_cam_query {
+        camera.zoom_smoothness = camera_settings.smoothness.zoom;
+        camera.pan_smoothness = camera_settings.smoothness.pan;
+        camera.orbit_smoothness = camera_settings.smoothness.orbit;
     }
 }
