@@ -167,13 +167,13 @@ type ActorRenderLayersQuery<'w, 'a> =
 /// ensures that the game camera can see the spawned actor and that shadows are cast
 fn propagate_render_layers_on_spawn(
     add: On<Add, Children>,
-    q_parents: ActorRenderLayersQuery,
+    parent_render_layers_query: ActorRenderLayersQuery,
     children_query: Query<&Children>,
     mut commands: Commands,
 ) {
     // Only process if this entity has one of our actor marker components (scene
     // children added to actor parent)
-    if let Ok(parent_layers) = q_parents.get(add.entity) {
+    if let Ok(parent_layers) = parent_render_layers_query.get(add.entity) {
         // Propagate to all descendants using Bevy's built-in iterator
         for descendant in children_query.iter_descendants(add.entity) {
             commands.entity(descendant).insert(parent_layers.clone());

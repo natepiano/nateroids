@@ -23,6 +23,7 @@ use super::constants::MAX_MISSILE_LINEAR_VELOCITY;
 use super::constants::MISSILE_BASE_VELOCITY;
 use super::constants::MISSILE_COLLIDER_MARGIN;
 use super::constants::MISSILE_COLLISION_DAMAGE;
+use super::constants::MISSILE_ENTITY_NAME;
 use super::constants::MISSILE_FORWARD_DISTANCE_SCALAR;
 use super::constants::MISSILE_HEALTH;
 use super::constants::MISSILE_MASS;
@@ -228,7 +229,7 @@ fn fire_missile_command(
         return;
     }
 
-    commands.spawn((Missile, Name::new("Missile")));
+    commands.spawn((Missile, Name::new(MISSILE_ENTITY_NAME)));
 }
 
 fn fire_missile_continuous(
@@ -255,7 +256,7 @@ fn fire_missile_continuous(
         return;
     }
 
-    commands.spawn((Missile, Name::new("Missile")));
+    commands.spawn((Missile, Name::new(MISSILE_ENTITY_NAME)));
 }
 
 /// we update `Missile` movement so that it can be despawned after it has traveled

@@ -28,6 +28,10 @@ pub(super) const ACTOR_MAX_VELOCITY_MIN: f32 = 0.0;
 pub(super) const ACTOR_RESTITUTION_MAX: f32 = 1.0;
 pub(super) const ACTOR_RESTITUTION_MIN: f32 = 0.1;
 
+// actor names
+pub(super) const MISSILE_ENTITY_NAME: &str = "Missile";
+pub(super) const SPACESHIP_ENTITY_NAME: &str = "Spaceship";
+
 // actor physics velocity limits
 pub(super) const MAX_MISSILE_ANGULAR_VELOCITY: f32 = 20.0;
 pub(super) const MAX_MISSILE_LINEAR_VELOCITY: f32 = 300.0;

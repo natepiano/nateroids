@@ -10,6 +10,9 @@ use crate::orientation::DimensionMode;
 use crate::orientation::OrientationSettings;
 use crate::switches::Switch;
 
+// app metadata
+pub(crate) const APPLICATION_TITLE: &str = "nateroids";
+
 // asset loader constants
 pub(crate) const ENVIRONMENT_DIFFUSE_MAP_ASSET_PATH: &str =
     "environment_maps/dikhololo_night_2k_diffuse.ktx2";
@@ -30,11 +33,14 @@ pub(crate) const NATEROID_ICING_METALLIC_ROUGHNESS_ASSET_PATH: &str =
     "nateroid/textures/nateroid_icing_metallic_roughness.png";
 pub(crate) const NATEROID_ICING_NORMAL_ASSET_PATH: &str =
     "nateroid/textures/nateroid_icing_normal.png";
+pub(crate) const NATEROID_MATERIAL_REFLECTANCE: f32 = 1.0;
+pub(crate) const NATEROID_MATERIAL_TEXTURE_SCALAR: f32 = 1.0;
 pub(crate) const NATEROID_SCENE_ASSET_PATH: &str = "nateroid/nateroid.glb#Scene0";
 pub(crate) const SPACESHIP_SCENE_ASSET_PATH: &str = "models/Spaceship.glb#Scene0";
 
 // despawn constants
 pub(crate) const DEATH_VELOCITY_EPSILON: f32 = 0.001;
+pub(crate) const UNKNOWN_ENTITY_NAME: &str = "Unknown";
 
 // orientation constants
 pub(crate) const CAMERA_ORIENTATION_DEFAULT_SETTINGS: OrientationSettings = OrientationSettings {
@@ -66,6 +72,7 @@ pub(crate) const SPLASH_SKIP_HINT_ALPHA: f32 = 0.8;
 pub(crate) const SPLASH_SKIP_HINT_BOTTOM_OFFSET: f32 = 24.0;
 pub(crate) const SPLASH_SKIP_HINT_COLOR: Color = Color::WHITE;
 pub(crate) const SPLASH_SKIP_HINT_FONT_SIZE: f32 = 20.0;
+pub(crate) const SPLASH_SKIP_HINT_TEXT: &str = "Press any key to skip";
 pub(crate) const SPLASH_SLOWDOWN_DURATIONS_MS: &[u64] = &[50, 100, 150, 200];
 pub(crate) const SPLASH_SPIN_DURATIONS_MS: &[u64] = &[500, 400, 300, 200, 100, 50, 25];
 pub(crate) const SPLASH_TEXT_GROWTH_RATE: f32 = 1.2;

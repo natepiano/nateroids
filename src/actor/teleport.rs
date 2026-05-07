@@ -6,6 +6,7 @@ use super::Deaderoid;
 use super::Health;
 use super::Nateroid;
 use super::constants::INSTANT_DEATH_HEALTH;
+use super::constants::SPACESHIP_ENTITY_NAME;
 use super::game_layer::GameLayer;
 use super::nateroid::NateroidSettings;
 use super::nateroid::NateroidSpawnStats;
@@ -183,7 +184,7 @@ fn teleport_at_boundary(
 
             // Only log spaceship teleports
             if is_spaceship.is_some() {
-                let entity_name = name.map_or("Spaceship", Name::as_str);
+                let entity_name = name.map_or(SPACESHIP_ENTITY_NAME, Name::as_str);
                 debug!(
                     "🔄 {entity_name} teleporting: from ({:.1}, {:.1}, {:.1}) to ({:.1}, {:.1}, {:.1})",
                     original_position.x,

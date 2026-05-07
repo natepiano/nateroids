@@ -14,6 +14,7 @@ use crate::camera::CameraHomeEvent;
 use crate::camera::CameraSettings;
 use crate::camera::RenderLayer;
 use crate::camera::ZOOM_MARGIN;
+use crate::constants::APPLICATION_TITLE;
 use crate::constants::SPLASH_FAST_SPIN_COUNT;
 use crate::constants::SPLASH_FAST_SPIN_DURATION_MS;
 use crate::constants::SPLASH_HOLD_DURATION_MS;
@@ -23,6 +24,7 @@ use crate::constants::SPLASH_SKIP_HINT_ALPHA;
 use crate::constants::SPLASH_SKIP_HINT_BOTTOM_OFFSET;
 use crate::constants::SPLASH_SKIP_HINT_COLOR;
 use crate::constants::SPLASH_SKIP_HINT_FONT_SIZE;
+use crate::constants::SPLASH_SKIP_HINT_TEXT;
 use crate::constants::SPLASH_SLOWDOWN_DURATIONS_MS;
 use crate::constants::SPLASH_SPIN_DURATIONS_MS;
 use crate::constants::SPLASH_TEXT_GROWTH_RATE;
@@ -104,7 +106,7 @@ fn reset_timer_and_boundary(
 fn spawn_splash_text(mut commands: Commands) {
     commands.spawn((
         SplashText,
-        Text::new("nateroids"),
+        Text::new(APPLICATION_TITLE),
         TextFont {
             font_size: SPLASH_INITIAL_FONT_SIZE,
             ..default()
@@ -122,7 +124,7 @@ fn spawn_splash_text(mut commands: Commands) {
 fn spawn_splash_skip_hint(mut commands: Commands) {
     commands.spawn((
         SplashSkipHint,
-        Text::new("Press any key to skip"),
+        Text::new(SPLASH_SKIP_HINT_TEXT),
         TextFont {
             font_size: SPLASH_SKIP_HINT_FONT_SIZE,
             ..default()

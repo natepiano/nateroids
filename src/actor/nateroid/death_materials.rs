@@ -5,6 +5,8 @@ use bevy_kana::ToUsize;
 
 use super::Nateroid;
 use super::NateroidSettings;
+use super::constants::DONUT_MESH_NAME;
+use super::constants::ICING_MESH_NAME;
 use crate::actor::constants::NATEROID_DEATH_ALPHA_STEP;
 use crate::asset_loader::SceneAssets;
 
@@ -63,11 +65,11 @@ pub(super) fn apply_nateroid_materials_to_children(
             // Match mesh name to appropriate material
             let material = if let Some(name) = name {
                 let name_str = name.as_str().to_lowercase();
-                if name_str.contains("donut") {
+                if name_str.contains(DONUT_MESH_NAME) {
                     debug!("  -> Matched as donut");
                     donut_count += 1;
                     donut_material.clone()
-                } else if name_str.contains("icing") {
+                } else if name_str.contains(ICING_MESH_NAME) {
                     debug!("  -> Matched as icing");
                     icing_count += 1;
                     icing_material.clone()
@@ -158,7 +160,7 @@ pub(super) fn precompute_death_materials(
     let initial_alpha = nateroid_settings.initial_alpha;
     let target_alpha = nateroid_settings.target_alpha;
     // Safe: alpha values are 0.0-1.0, result is small positive integer (~30-40)
-    let num_levels =
+    let level_count =
         ((initial_alpha - target_alpha) * (1.0 / NATEROID_DEATH_ALPHA_STEP)).to_usize() + 1;
 
     // Collect material handles from the scene's world using try_query
@@ -183,8 +185,8 @@ pub(super) fn precompute_death_materials(
     );
 
     // Precompute materials for each alpha level
-    let mut precomputed_materials = Vec::with_capacity(num_levels);
-    for level in 0..num_levels {
+    let mut precomputed_materials = Vec::with_capacity(level_count);
+    for level in 0..level_count {
         // FMA optimization (faster + more precise): initial_alpha - (level as f32 * step)
         let alpha = level
             .to_f32()
@@ -203,8 +205,8 @@ pub(super) fn precompute_death_materials(
         precomputed_materials.push(level_materials);
     }
 
-    let num_material_sets = precomputed_materials.len();
-    let num_materials_per_set = material_handles.len();
+    let material_set_count = precomputed_materials.len();
+    let materials_per_set_count = material_handles.len();
 
     // Insert the resource
     commands.insert_resource(NateroidDeathMaterials {
@@ -212,6 +214,6 @@ pub(super) fn precompute_death_materials(
     });
 
     debug!(
-        "Precomputed {num_material_sets} material sets with {num_materials_per_set} materials each"
+        "Precomputed {material_set_count} material sets with {materials_per_set_count} materials each"
     );
 }

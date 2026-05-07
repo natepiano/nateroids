@@ -268,7 +268,7 @@ fn find_edge_point(origin: Position, direction: Vec3, transform: &Transform) -> 
     let boundary_min = transform.translation - transform.scale / 2.0;
     let boundary_max = transform.translation + transform.scale / 2.0;
 
-    let mut t_min: Option<f32> = None;
+    let mut closest_hit_time: Option<f32> = None;
 
     for (start, dir, pos_bound, neg_bound) in [
         (origin.x, direction.x, boundary_max.x, boundary_min.x),
@@ -276,23 +276,23 @@ fn find_edge_point(origin: Position, direction: Vec3, transform: &Transform) -> 
         (origin.z, direction.z, boundary_max.z, boundary_min.z),
     ] {
         if dir != 0.0 {
-            let mut update_t_min = |boundary: f32| {
+            let mut update_closest_hit_time = |boundary: f32| {
                 let t = (boundary - start) / dir;
                 let point = origin + direction * t;
                 if t > 0.0
-                    && t_min.is_none_or(|current| t < current)
+                    && closest_hit_time.is_none_or(|current| t < current)
                     && is_in_bounds(point, start, origin, boundary_min, boundary_max)
                 {
-                    t_min = Some(t);
+                    closest_hit_time = Some(t);
                 }
             };
 
-            update_t_min(pos_bound);
-            update_t_min(neg_bound);
+            update_closest_hit_time(pos_bound);
+            update_closest_hit_time(neg_bound);
         }
     }
 
-    t_min.map(|t| origin + direction * t)
+    closest_hit_time.map(|t| origin + direction * t)
 }
 
 fn is_in_bounds(

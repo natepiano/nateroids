@@ -17,6 +17,7 @@ use super::constants::MAX_SPACESHIP_LINEAR_VELOCITY;
 use super::constants::SPACESHIP_ANGULAR_DAMPING;
 use super::constants::SPACESHIP_COLLIDER_MARGIN;
 use super::constants::SPACESHIP_COLLISION_DAMAGE;
+use super::constants::SPACESHIP_ENTITY_NAME;
 use super::constants::SPACESHIP_FORWARD_EPSILON;
 use super::constants::SPACESHIP_HEALTH;
 use super::constants::SPACESHIP_INITIAL_POSITION;
@@ -153,7 +154,7 @@ fn spawn_spaceship(mut commands: Commands, spaceship_settings: Res<SpaceshipSett
         return;
     }
 
-    commands.spawn((Spaceship, ContinuousFire, Name::new("Spaceship")));
+    commands.spawn((Spaceship, ContinuousFire, Name::new(SPACESHIP_ENTITY_NAME)));
 }
 
 fn initialize_spaceship(

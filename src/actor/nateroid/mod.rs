@@ -1,3 +1,4 @@
+mod constants;
 mod death_materials;
 mod settings;
 mod spawn;

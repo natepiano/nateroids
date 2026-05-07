@@ -10,6 +10,7 @@ use rand::RngExt;
 
 use super::Nateroid;
 use super::NateroidSettings;
+use super::constants::NATEROID_ENTITY_NAME;
 use crate::actor::actor_settings;
 use crate::actor::actor_settings::ColliderType;
 use crate::actor::actor_settings::Spawnability;
@@ -136,7 +137,7 @@ pub(super) fn spawn_nateroid(
         spawn_stats.last_warning_time = current_time;
     }
 
-    commands.spawn((Nateroid, Name::new("Nateroid"), transform));
+    commands.spawn((Nateroid, Name::new(NATEROID_ENTITY_NAME), transform));
 }
 
 pub(super) fn initialize_nateroid(

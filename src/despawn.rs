@@ -14,6 +14,7 @@ use crate::actor::Nateroid;
 use crate::actor::NateroidDeathMaterials;
 use crate::actor::NateroidSettings;
 use crate::constants::DEATH_VELOCITY_EPSILON;
+use crate::constants::UNKNOWN_ENTITY_NAME;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
 use crate::splash::SplashSkipHint;
@@ -185,7 +186,7 @@ fn despawn_dead_entities(
     for (entity, health, transform, linear_velocity, nateroid, name) in dying_entity_query.iter() {
         if health.0 <= 0.0 {
             if nateroid.is_some() {
-                let entity_name = name.map_or("Unknown", Name::as_str);
+                let entity_name = name.map_or(UNKNOWN_ENTITY_NAME, Name::as_str);
                 debug!(
                     "☠️ despawn_dead_entities: Adding Deaderoid to {entity_name} (health: {})",
                     health.0
@@ -279,7 +280,7 @@ fn animate_dying_nateroids(
     };
 
     for (mut deaderoid, mut transform, entity, name) in &mut deaderoid_query {
-        let entity_name = name.map_or("Unknown", Name::as_str);
+        let entity_name = name.map_or(UNKNOWN_ENTITY_NAME, Name::as_str);
 
         // Update elapsed time
         deaderoid.elapsed_time += time.delta_secs();

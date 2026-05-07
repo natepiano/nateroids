@@ -32,6 +32,7 @@ use bevy_window_manager::WindowManagerPlugin;
 use crate::actor::ActorPlugin;
 use crate::asset_loader::AssetLoaderPlugin;
 use crate::camera::CameraPlugin;
+use crate::constants::APPLICATION_TITLE;
 use crate::despawn::DespawnPlugin;
 use crate::input::EnhancedInputAppPlugin;
 use crate::orientation::OrientationPlugin;
@@ -49,9 +50,9 @@ fn main() {
     let brp_plugin = BrpExtrasPlugin::default();
     let (effective_port, _) = brp_plugin.get_effective_port();
     let window_title = if effective_port == bevy_brp_extras::DEFAULT_REMOTE_PORT {
-        "nateroids".to_string()
+        APPLICATION_TITLE.to_string()
     } else {
-        format!("nateroids - {effective_port}")
+        format!("{APPLICATION_TITLE} - {effective_port}")
     };
 
     app.add_plugins(

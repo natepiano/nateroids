@@ -13,6 +13,8 @@ use crate::constants::NATEROID_ICING_ALBEDO_ASSET_PATH;
 use crate::constants::NATEROID_ICING_AO_ASSET_PATH;
 use crate::constants::NATEROID_ICING_METALLIC_ROUGHNESS_ASSET_PATH;
 use crate::constants::NATEROID_ICING_NORMAL_ASSET_PATH;
+use crate::constants::NATEROID_MATERIAL_REFLECTANCE;
+use crate::constants::NATEROID_MATERIAL_TEXTURE_SCALAR;
 use crate::constants::NATEROID_SCENE_ASSET_PATH;
 use crate::constants::SPACESHIP_SCENE_ASSET_PATH;
 
@@ -100,8 +102,8 @@ fn create_nateroid_material(
         metallic_roughness_texture: Some(donut_metallic_roughness),
         occlusion_texture: Some(donut_ao),
         // Set scalars to 1.0 so texture values are used directly
-        metallic: 1.0,
-        perceptual_roughness: 1.0,
+        metallic: NATEROID_MATERIAL_TEXTURE_SCALAR,
+        perceptual_roughness: NATEROID_MATERIAL_TEXTURE_SCALAR,
         cull_mode: None,
         ..default()
     });
@@ -113,9 +115,9 @@ fn create_nateroid_material(
         metallic_roughness_texture: Some(icing_metallic_roughness),
         occlusion_texture: Some(icing_ao),
         // Set scalars to 1.0 so texture values are used directly
-        metallic: 1.0,
-        perceptual_roughness: 1.0,
-        reflectance: 1.0,
+        metallic: NATEROID_MATERIAL_TEXTURE_SCALAR,
+        perceptual_roughness: NATEROID_MATERIAL_TEXTURE_SCALAR,
+        reflectance: NATEROID_MATERIAL_REFLECTANCE,
         cull_mode: None,
         ..default()
     });
