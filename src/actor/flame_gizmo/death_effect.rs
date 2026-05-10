@@ -100,45 +100,45 @@ enum RingExpansion {
 /// Configuration for ring-based death effects.
 #[derive(Clone, Copy)]
 struct RingEffectConfig {
-    ring_count:        usize,
+    rings:             usize,
     expansion:         RingExpansion,
     radius_scale:      f32,
     line_length_scale: f32,
-    ring_delay_secs:   f32,
-    ring_phase_offset: f32,
+    delay_secs:        f32,
+    phase_offset:      f32,
     alpha_curve:       AlphaCurve,
 }
 
 impl RingEffectConfig {
     const EXPANDING_RING: Self = Self {
-        ring_count:        1,
+        rings:             1,
         expansion:         RingExpansion::Expanding,
         radius_scale:      1.0,
         line_length_scale: 0.5,
-        ring_delay_secs:   0.0,
-        ring_phase_offset: 0.0,
+        delay_secs:        0.0,
+        phase_offset:      0.0,
         alpha_curve:       AlphaCurve::LinearFade,
     };
 
     const STATIC_FLASH: Self = Self {
-        ring_count:        1,
+        rings:             1,
         expansion:         RingExpansion::Static,
         radius_scale:      0.4,
         line_length_scale: 0.5,
-        ring_delay_secs:   0.0,
-        ring_phase_offset: 0.0,
+        delay_secs:        0.0,
+        phase_offset:      0.0,
         alpha_curve:       AlphaCurve::FlashInFadeOut {
             flash_in_fraction: 0.2,
         },
     };
 
     const MULTIPLE_RINGS: Self = Self {
-        ring_count:        3,
+        rings:             3,
         expansion:         RingExpansion::Expanding,
         radius_scale:      1.0,
         line_length_scale: 1.0 / 3.0,
-        ring_delay_secs:   0.4,
-        ring_phase_offset: 2.0,
+        delay_secs:        0.4,
+        phase_offset:      2.0,
         alpha_curve:       AlphaCurve::LinearFade,
     };
 }
@@ -259,9 +259,9 @@ fn draw_death_effect_ring(
     let line_length_variance =
         DEATH_EFFECT_LINE_LENGTH_VARIANCE * ring_effect_config.line_length_scale;
 
-    for ring_idx in 0..ring_effect_config.ring_count {
+    for ring_idx in 0..ring_effect_config.rings {
         let ring_idx_f32 = ring_idx.to_f32();
-        let ring_start_time = ring_idx_f32 * ring_effect_config.ring_delay_secs;
+        let ring_start_time = ring_idx_f32 * ring_effect_config.delay_secs;
 
         if death_effect.elapsed < ring_start_time {
             continue;
@@ -296,7 +296,7 @@ fn draw_death_effect_ring(
                 line_length_variance,
                 color_a: DEATH_EFFECT_RING_COLOR_ORANGE.with_alpha(alpha),
                 color_b: DEATH_EFFECT_RING_COLOR_YELLOW.with_alpha(alpha),
-                phase_offset: ring_idx_f32 * ring_effect_config.ring_phase_offset,
+                phase_offset: ring_idx_f32 * ring_effect_config.phase_offset,
             },
             elapsed,
         );

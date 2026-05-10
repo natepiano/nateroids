@@ -103,8 +103,8 @@ pub(super) struct LightSettings {
         max = AMBIENT_LIGHT_BRIGHTNESS_MAX,
         display = NumberDisplay::Slider
     )]
-    pub ambient_light_brightness:  f32,
-    pub ambient_light_color:       Color,
+    pub ambient_brightness:        f32,
+    pub ambient_color:             Color,
     #[inspector(
         min = ENVIRONMENT_MAP_INTENSITY_MIN,
         max = ENVIRONMENT_MAP_INTENSITY_MAX,
@@ -122,8 +122,8 @@ pub(super) struct LightSettings {
 impl Default for LightSettings {
     fn default() -> Self {
         Self {
-            ambient_light_brightness:  AMBIENT_LIGHT_BRIGHTNESS,
-            ambient_light_color:       Color::WHITE,
+            ambient_brightness:        AMBIENT_LIGHT_BRIGHTNESS,
+            ambient_color:             Color::WHITE,
             environment_map_intensity: ENVIRONMENT_MAP_INTENSITY,
             front:                     DirectionalLightSettings {
                 enabled: LightSwitch::On,
@@ -257,8 +257,8 @@ fn manage_lighting(
         return;
     }
 
-    ambient_light.brightness = light_settings.ambient_light_brightness;
-    ambient_light.color = light_settings.ambient_light_color;
+    ambient_light.brightness = light_settings.ambient_brightness;
+    ambient_light.color = light_settings.ambient_color;
 
     // iterate through all possible positions to see if any of them exist...
     // if it's been enabled and it doesn't exist then spawn it

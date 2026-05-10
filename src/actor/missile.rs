@@ -131,11 +131,10 @@ pub(super) struct Missile;
 #[derive(Component, Reflect, Copy, Clone, Debug, Default)]
 #[reflect(Component)]
 pub struct MissilePosition {
-    pub total_distance:     f32,
-    pub traveled_distance:  f32,
-    remaining_distance:     f32,
-    pub last_position:      Option<Position>,
-    last_teleport_position: Option<Position>,
+    pub total_distance:    f32,
+    pub traveled_distance: f32,
+    remaining_distance:    f32,
+    pub last_position:     Option<Position>,
 }
 
 impl MissilePosition {
@@ -145,7 +144,6 @@ impl MissilePosition {
             traveled_distance: 0.,
             remaining_distance: 0.,
             last_position: None,
-            last_teleport_position: None,
         }
     }
 }
@@ -280,14 +278,9 @@ fn missile_movement(
             missile_position.traveled_distance += distance_traveled;
             missile_position.remaining_distance =
                 missile_position.total_distance - missile_position.traveled_distance;
-
-            // Update the last teleport position if the missile wrapped
-            if teleporter.status == TeleportStatus::JustTeleported {
-                missile_position.last_teleport_position = Some(current_position);
-            }
         }
 
-        // Always update last_position
+        // Always update the last position.
         missile_position.last_position = Some(current_position);
 
         if missile_position.traveled_distance >= missile_position.total_distance {
