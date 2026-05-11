@@ -1,5 +1,5 @@
-use avian3d::prelude::*;
 use avian3d::PhysicsPlugins;
+use avian3d::prelude::*;
 use bevy::diagnostic::Diagnostic;
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;

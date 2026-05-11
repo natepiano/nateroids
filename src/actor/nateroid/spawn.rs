@@ -6,9 +6,9 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_kana::Position;
 use bevy_kana::ToF32;
-use rand::rng;
 use rand::Rng;
 use rand::RngExt;
+use rand::rng;
 
 use super::Nateroid;
 use super::NateroidSettings;

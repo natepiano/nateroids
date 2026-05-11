@@ -7,10 +7,10 @@ use bevy::diagnostic::FrameCount;
 use bevy::mesh::Mesh3d;
 use bevy::prelude::*;
 use bevy_kana::Position;
-use rand::rng;
 use rand::Rng;
 use rand::RngExt;
 use rand::prelude::ThreadRng;
+use rand::rng;
 
 use super::RenderLayer;
 use super::constants::STAR_MINIMUM_BRIGHTNESS_FRACTION;

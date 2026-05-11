@@ -4,8 +4,8 @@ use bevy_kana::Position;
 use bevy_kana::ToF32;
 use bevy_kana::ToUsize;
 use bevy_kana::Velocity;
-use rand::rng;
 use rand::RngExt;
+use rand::rng;
 
 use crate::actor::Deaderoid;
 use crate::actor::DeathCorner;

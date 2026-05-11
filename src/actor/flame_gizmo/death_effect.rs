@@ -4,8 +4,8 @@ use bevy::camera::primitives::Aabb;
 use bevy::math::Isometry3d;
 use bevy::prelude::*;
 use bevy_kana::ToF32;
-use rand::rng;
 use rand::RngExt;
+use rand::rng;
 
 use super::FlameGizmo;
 use super::flicker;

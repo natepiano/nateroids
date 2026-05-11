@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
 use bevy::prelude::*;
-use rand::rng;
 use rand::RngExt;
+use rand::rng;
 
 use super::constants::STAR_TWINKLE_HALF_SCALE;
 use super::constants::STAR_TWINKLE_MIDPOINT;

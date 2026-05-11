@@ -95,8 +95,7 @@ impl Default for MissileSettings {
                 scene:                    Handle::default(),
                 spawn_timer_seconds:      Some(MISSILE_SPAWN_TIMER_SECONDS),
                 transform:                Transform::from_rotation(
-                    Quat::from_rotation_x(GLTF_ROTATION_X)
-                        * Quat::from_rotation_z(PI),
+                    Quat::from_rotation_x(GLTF_ROTATION_X) * Quat::from_rotation_z(PI),
                 )
                 .with_scale(Vec3::splat(MISSILE_SCALE)),
                 spawn_timer:              None,
