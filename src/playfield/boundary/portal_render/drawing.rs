@@ -1,3 +1,5 @@
+use std::f32::consts::TAU;
+
 use bevy::prelude::*;
 
 use super::geometry;
@@ -182,7 +184,7 @@ fn draw_primary_face_arc(
     let is_clockwise = cross_product.dot(arc.normal) < 0.0;
 
     // Invert the angle for arc_3d rendering logic
-    angle = std::f32::consts::TAU - angle;
+    angle = TAU - angle;
 
     // Calculate the rotation to align the arc with the boundary face
     let face_rotation = Quat::from_rotation_arc(Vec3::Y, arc.normal);

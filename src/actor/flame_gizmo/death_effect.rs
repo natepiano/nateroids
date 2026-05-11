@@ -1,7 +1,10 @@
+use std::f32::consts::TAU;
+
 use bevy::camera::primitives::Aabb;
 use bevy::math::Isometry3d;
 use bevy::prelude::*;
 use bevy_kana::ToF32;
+use rand::rng;
 use rand::RngExt;
 
 use super::FlameGizmo;
@@ -32,7 +35,7 @@ impl DeathStyle {
     const ALL: [Self; 3] = [Self::ExpandingRing, Self::StaticFlash, Self::MultipleRings];
 
     fn random() -> Self {
-        let mut rng = rand::rng();
+        let mut rng = rng();
         Self::ALL[rng.random_range(0..Self::ALL.len())]
     }
 
@@ -220,7 +223,7 @@ fn draw_ring_lines(
     for i in 0..DEATH_EFFECT_LINE_COUNT {
         let line_index = i.to_f32();
 
-        let angle = std::f32::consts::TAU * line_index / line_count_f32;
+        let angle = TAU * line_index / line_count_f32;
 
         // Ring in XZ plane (Y normal) to align with deaderoid's spin axis
         let radial_local = Vec3::new(angle.cos(), 0.0, angle.sin());

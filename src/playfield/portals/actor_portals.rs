@@ -25,6 +25,18 @@ pub struct ActorPortals {
     emerging:    Option<Portal>,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum PhysicsBurst {
+    Active,
+    Inactive,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum BoundsContainment {
+    Inside,
+    Outside,
+}
+
 pub(super) fn init_portals(
     mut actor_query: Query<(
         &Aabb,
@@ -91,7 +103,7 @@ fn handle_emerging_visual(
     if teleporter.status == TeleportStatus::JustTeleported
         && let Some(teleported_position) = teleporter.position
     {
-        if is_physics_burst(teleported_position, boundary_transform) {
+        if physics_burst(teleported_position, boundary_transform) == PhysicsBurst::Active {
             actor_portals.emerging = None;
             return;
         }
@@ -162,7 +174,7 @@ fn handle_approaching_visual(
     }
 
     if let Some(approaching) = &mut actor_portals.approaching {
-        if is_physics_burst(portal.position, boundary_transform) {
+        if physics_burst(portal.position, boundary_transform) == PhysicsBurst::Active {
             actor_portals.approaching = None;
         } else if approaching.fade_out_started.is_none() {
             approaching.fade_out_started = Some(time.elapsed_secs());
@@ -170,11 +182,15 @@ fn handle_approaching_visual(
     }
 }
 
-fn is_physics_burst(position: Position, boundary_transform: &Transform) -> bool {
+fn physics_burst(position: Position, boundary_transform: &Transform) -> PhysicsBurst {
     let boundary_half_size = boundary_transform.scale / 2.0;
     let max_distance_from_center = position.distance(boundary_transform.translation);
     let boundary_diagonal = boundary_half_size.length();
-    max_distance_from_center > boundary_diagonal * PORTAL_PHYSICS_BURST_MULTIPLIER
+    if max_distance_from_center > boundary_diagonal * PORTAL_PHYSICS_BURST_MULTIPLIER {
+        PhysicsBurst::Active
+    } else {
+        PhysicsBurst::Inactive
+    }
 }
 
 fn snap_and_get_face(
@@ -281,7 +297,8 @@ fn find_edge_point(origin: Position, direction: Vec3, transform: &Transform) -> 
                 let point = origin + direction * t;
                 if t > 0.0
                     && closest_hit_time.is_none_or(|current| t < current)
-                    && is_in_bounds(point, start, origin, boundary_min, boundary_max)
+                    && bounds_containment(point, start, origin, boundary_min, boundary_max)
+                        == BoundsContainment::Inside
                 {
                     closest_hit_time = Some(t);
                 }
@@ -295,28 +312,41 @@ fn find_edge_point(origin: Position, direction: Vec3, transform: &Transform) -> 
     closest_hit_time.map(|t| origin + direction * t)
 }
 
-fn is_in_bounds(
+fn bounds_containment(
     point: Position,
     start: f32,
     origin: Position,
     boundary_min: Vec3,
     boundary_max: Vec3,
-) -> bool {
+) -> BoundsContainment {
     if (start - origin.x).abs() < BOUNDARY_SNAP_EPSILON {
-        point.y >= boundary_min.y
+        if point.y >= boundary_min.y
             && point.y <= boundary_max.y
             && point.z >= boundary_min.z
             && point.z <= boundary_max.z
+        {
+            BoundsContainment::Inside
+        } else {
+            BoundsContainment::Outside
+        }
     } else if (start - origin.y).abs() < BOUNDARY_SNAP_EPSILON {
-        point.x >= boundary_min.x
+        if point.x >= boundary_min.x
             && point.x <= boundary_max.x
             && point.z >= boundary_min.z
             && point.z <= boundary_max.z
+        {
+            BoundsContainment::Inside
+        } else {
+            BoundsContainment::Outside
+        }
+    } else if point.x >= boundary_min.x
+        && point.x <= boundary_max.x
+        && point.y >= boundary_min.y
+        && point.y <= boundary_max.y
+    {
+        BoundsContainment::Inside
     } else {
-        point.x >= boundary_min.x
-            && point.x <= boundary_max.x
-            && point.y >= boundary_min.y
-            && point.y <= boundary_max.y
+        BoundsContainment::Outside
     }
 }
 

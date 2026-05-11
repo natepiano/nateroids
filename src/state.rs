@@ -5,6 +5,7 @@ use bevy::prelude::*;
 use crate::input::EscapeSwitch;
 use crate::input::RestartGameShortcut;
 use crate::input::RestartWithSplashShortcut;
+use crate::switches::InspectorCloseResult;
 use crate::switches::Switches;
 
 event!(EscapeEvent);
@@ -72,7 +73,7 @@ fn escape_command(
     pause_state: Option<Res<State<PauseState>>>,
     mut switches: ResMut<Switches>,
 ) {
-    if switches.close_all_active_inspectors() {
+    if switches.close_all_active_inspectors() == InspectorCloseResult::Closed {
         return;
     }
 

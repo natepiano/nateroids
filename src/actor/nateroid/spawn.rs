@@ -1,10 +1,12 @@
 use std::collections::VecDeque;
+use std::f32::consts::PI;
 use std::ops::Range;
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_kana::Position;
 use bevy_kana::ToF32;
+use rand::rng;
 use rand::Rng;
 use rand::RngExt;
 
@@ -209,7 +211,7 @@ fn initialize_transform(
 }
 
 fn get_random_position_within_bounds(bounds: &Transform) -> Position {
-    let mut rng = rand::rng();
+    let mut rng = rng();
     let half_scale = bounds.scale.abs() / 2.0; // Use absolute value to ensure positive scale
     let min = bounds.translation - half_scale;
     let max = bounds.translation + half_scale;
@@ -230,17 +232,17 @@ fn get_random_component(min: f32, max: f32, rng: &mut impl Rng) -> f32 {
 }
 
 fn get_random_rotation() -> Quat {
-    let mut rng = rand::rng();
+    let mut rng = rng();
     Quat::from_euler(
         EulerRot::XYZ,
-        rng.random_range(-std::f32::consts::PI..std::f32::consts::PI),
-        rng.random_range(-std::f32::consts::PI..std::f32::consts::PI),
-        rng.random_range(-std::f32::consts::PI..std::f32::consts::PI),
+        rng.random_range(-PI..PI),
+        rng.random_range(-PI..PI),
+        rng.random_range(-PI..PI),
     )
 }
 
 fn random_vec3(range_x: Range<f32>, range_y: Range<f32>, range_z: Range<f32>) -> Vec3 {
-    let mut rng = rand::rng();
+    let mut rng = rng();
     let x = if range_x.start < range_x.end {
         rng.random_range(range_x)
     } else {

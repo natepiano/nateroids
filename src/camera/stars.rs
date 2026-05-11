@@ -7,6 +7,7 @@ use bevy::diagnostic::FrameCount;
 use bevy::mesh::Mesh3d;
 use bevy::prelude::*;
 use bevy_kana::Position;
+use rand::rng;
 use rand::Rng;
 use rand::RngExt;
 use rand::prelude::ThreadRng;
@@ -119,7 +120,7 @@ fn spawn_stars(
     let outer_sphere_radius = inner_sphere_radius + star_settings.field_diameter.end;
 
     let mesh = meshes.add(Sphere::new(1.));
-    let mut rng = rand::rng();
+    let mut rng = rng();
 
     for _ in 0..star_settings.count {
         let position = get_star_position(inner_sphere_radius, outer_sphere_radius, &mut rng);
@@ -158,7 +159,7 @@ fn get_star_position(
     let azimuth_norm: f32 = rng.random_range(0.0..1.0); // normalized azimuthal angle
     let polar_norm: f32 = rng.random_range(0.0..1.0); // normalized polar angle
 
-    let theta = azimuth_norm * std::f32::consts::PI * 2.0; // azimuthal: 0 to 2π
+    let theta = azimuth_norm * PI * 2.0; // azimuthal: 0 to 2π
     // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
     let phi = 2.0f32.mul_add(polar_norm, -1.0).acos(); // polar angle
     let radius = rng.random_range(inner_sphere_radius..outer_sphere_radius);

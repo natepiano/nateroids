@@ -1,3 +1,5 @@
+use std::f32::consts::FRAC_PI_2;
+use std::f32::consts::PI;
 use std::ops::Range;
 
 use bevy::color::Srgba;
@@ -22,9 +24,9 @@ pub(super) const CAMERA_ZOOM_SMOOTHNESS: f32 = 0.10;
 /// Initial camera distance for splash screen animation.
 /// Camera spawns at this distance to appear stationary during the opening text.
 pub(super) const CAMERA_SPLASH_START_FOCUS: Position = Position::new(0.0, 0.0, 0.0);
-pub(super) const CAMERA_SPLASH_START_PITCH: f32 = std::f32::consts::FRAC_PI_2;
+pub(super) const CAMERA_SPLASH_START_PITCH: f32 = FRAC_PI_2;
 pub(super) const CAMERA_SPLASH_START_RADIUS: f32 = 3000.0;
-pub(super) const CAMERA_SPLASH_START_YAW: f32 = -std::f32::consts::PI;
+pub(super) const CAMERA_SPLASH_START_YAW: f32 = -PI;
 
 // camera trackpad
 pub(super) const CAMERA_TRACKPAD_SENSITIVITY: f32 = 0.8;
@@ -59,8 +61,8 @@ pub(super) const CAMERA_BLOOM_MAX: f32 = 1.0;
 pub(super) const CAMERA_BLOOM_MIN: f32 = 0.0;
 pub(super) const CAMERA_SMOOTHNESS_MAX: f32 = 1.0;
 pub(super) const CAMERA_SMOOTHNESS_MIN: f32 = 0.0;
-pub(super) const CAMERA_SPLASH_ANGLE_MAX: f32 = std::f32::consts::PI;
-pub(super) const CAMERA_SPLASH_ANGLE_MIN: f32 = -std::f32::consts::PI;
+pub(super) const CAMERA_SPLASH_ANGLE_MAX: f32 = PI;
+pub(super) const CAMERA_SPLASH_ANGLE_MIN: f32 = -PI;
 pub(super) const CAMERA_SPLASH_RADIUS_MAX: f32 = 50_000.0;
 pub(super) const CAMERA_SPLASH_RADIUS_MIN: f32 = 1_000.0;
 pub(super) const DIRECTIONAL_LIGHT_ILLUMINANCE_MAX: f32 = 10_000.0;

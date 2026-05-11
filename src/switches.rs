@@ -52,9 +52,23 @@ pub(crate) enum ToggleState {
     Off,
 }
 
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum InspectorActivity {
+    Active,
+    #[default]
+    Inactive,
+}
+
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum InspectorCloseResult {
+    Closed,
+    #[default]
+    NoActiveInspectors,
+}
+
 impl Switches {
-    fn is_on(&self, switch: Switch) -> bool {
-        matches!(self.map.get(&switch), Some(ToggleState::On))
+    pub(crate) fn switch_state(&self, switch: Switch) -> ToggleState {
+        self.map.get(&switch).copied().unwrap_or_default()
     }
 
     fn toggle(&mut self, switch: Switch) {
@@ -65,26 +79,31 @@ impl Switches {
         self.map.insert(switch, toggle_state);
     }
 
-    fn is_any_inspector_active(&self) -> bool {
-        INSPECTOR_SWITCHES.iter().any(|switch| self.is_on(*switch))
+    fn inspector_activity(&self) -> InspectorActivity {
+        if INSPECTOR_SWITCHES
+            .iter()
+            .any(|switch| self.switch_state(*switch) == ToggleState::On)
+        {
+            InspectorActivity::Active
+        } else {
+            InspectorActivity::Inactive
+        }
     }
 
-    /// Turn off every active inspector. Returns `true` if any were closed.
-    pub(crate) fn close_all_active_inspectors(&mut self) -> bool {
-        if !self.is_any_inspector_active() {
-            return false;
+    /// Turn off every active inspector.
+    pub(crate) fn close_all_active_inspectors(&mut self) -> InspectorCloseResult {
+        if self.inspector_activity() == InspectorActivity::Inactive {
+            return InspectorCloseResult::NoActiveInspectors;
         }
         for inspector_switch in &INSPECTOR_SWITCHES {
-            if self.is_on(*inspector_switch) {
+            if self.switch_state(*inspector_switch) == ToggleState::On {
                 self.toggle(*inspector_switch);
             }
         }
-        true
+        InspectorCloseResult::Closed
     }
 
     pub(crate) fn toggle_switch(&mut self, switch: Switch) { self.toggle(switch); }
-
-    pub(crate) fn is_switch_on(&self, switch: Switch) -> bool { self.is_on(switch) }
 }
 
 #[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -109,9 +128,9 @@ pub(crate) enum Switch {
 }
 
 pub(crate) fn is_switch_on(switch: Switch) -> impl Fn(Res<Switches>) -> bool + Clone {
-    move |switches: Res<Switches>| switches.is_on(switch)
+    move |switches: Res<Switches>| switches.switch_state(switch) == ToggleState::On
 }
 
 pub(crate) fn is_switch_off(switch: Switch) -> impl Fn(Res<Switches>) -> bool + Clone {
-    move |switches: Res<Switches>| !switches.is_on(switch)
+    move |switches: Res<Switches>| switches.switch_state(switch) == ToggleState::Off
 }

@@ -1,4 +1,5 @@
 use avian3d::prelude::*;
+use avian3d::PhysicsPlugins;
 use bevy::diagnostic::Diagnostic;
 use bevy::diagnostic::DiagnosticsStore;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
@@ -16,6 +17,7 @@ use crate::constants::STRESS_VELOCITY_THRESHOLD;
 use crate::input::PhysicsAabbSwitch;
 use crate::switches::Switch;
 use crate::switches::Switches;
+use crate::switches::ToggleState;
 
 event!(PhysicsAabbEvent);
 
@@ -23,7 +25,7 @@ pub(crate) struct PhysicsPlugin;
 
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(avian3d::PhysicsPlugins::default())
+        app.add_plugins(PhysicsPlugins::default())
             .add_plugins(PhysicsDebugPlugin)
             .insert_resource(SubstepCount(PHYSICS_SUBSTEP_COUNT))
             .init_resource::<PhysicsMonitorState>()
@@ -64,7 +66,7 @@ fn init_physics_debug_aabb(mut config_store: ResMut<GizmoConfigStore>) {
 
 fn sync_physics_debug_gizmos(switches: Res<Switches>, mut config_store: ResMut<GizmoConfigStore>) {
     let (config, _) = config_store.config_mut::<PhysicsGizmos>();
-    config.enabled = switches.is_switch_on(Switch::ShowPhysicsDebug);
+    config.enabled = switches.switch_state(Switch::ShowPhysicsDebug) == ToggleState::On;
 }
 
 fn monitor_physics_health(

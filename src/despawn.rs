@@ -4,6 +4,7 @@ use bevy_kana::Position;
 use bevy_kana::ToF32;
 use bevy_kana::ToUsize;
 use bevy_kana::Velocity;
+use rand::rng;
 use rand::RngExt;
 
 use crate::actor::Deaderoid;
@@ -114,7 +115,7 @@ fn calculate_death_velocity(
         },
         DeathCorner::Random => {
             // Randomly select one corner
-            let mut rng = rand::rng();
+            let mut rng = rng();
             corners[rng.random_range(0..corners.len())]
         },
         DeathCorner::Directional => {
@@ -147,7 +148,7 @@ fn calculate_death_velocity(
 
             // If multiple corners equally aligned, randomly pick one
             if best_corners.len() > 1 {
-                let mut rng = rand::rng();
+                let mut rng = rng();
                 best_corners[rng.random_range(0..best_corners.len())]
             } else {
                 best_corners.first().copied().unwrap_or(corners[0])

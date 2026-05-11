@@ -1,3 +1,5 @@
+use std::f32::consts::FRAC_PI_2;
+
 use avian3d::prelude::LockedAxes;
 use bevy::color::Color;
 use bevy::color::palettes::tailwind;
@@ -104,7 +106,7 @@ pub(super) const NATEROID_WARN_THROTTLE_INTERVAL_SECS: f32 = 1.0;
 
 // shared actor configuration
 /// `Spaceship` model orientation correction: rotates the model so nose points +Y
-pub(super) const GLTF_ROTATION_X: f32 = std::f32::consts::FRAC_PI_2; // +90°
+pub(super) const GLTF_ROTATION_X: f32 = FRAC_PI_2; // +90°
 pub(super) const LOCKED_AXES_2D: LockedAxes = LockedAxes::new().lock_translation_z();
 pub(super) const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
     .lock_rotation_x()

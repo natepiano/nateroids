@@ -1,3 +1,5 @@
+use std::f32::consts::FRAC_PI_2;
+
 use bevy::prelude::*;
 
 use crate::playfield::boundary_face::BoundaryFace;
@@ -39,7 +41,7 @@ pub(super) fn rotate_portal_center_to_target_face(
         find_closest_point_on_edge(position, current_normal, target_normal, transform);
 
     // Create a rotation quaternion (90 degrees around the rotation axis)
-    let rotation = Quat::from_axis_angle(rotation_axis, std::f32::consts::FRAC_PI_2);
+    let rotation = Quat::from_axis_angle(rotation_axis, FRAC_PI_2);
 
     // Apply the rotation to the position relative to the rotation point
     let relative_pos = position - rotation_point;

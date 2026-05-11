@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::color::Color;
 use bevy::color::palettes::tailwind;
 
@@ -6,7 +8,7 @@ pub(super) const PORTAL_COLOR_APPROACHING: Color = Color::Srgba(tailwind::BLUE_6
 pub(super) const PORTAL_COLOR_EMERGING: Color = Color::Srgba(tailwind::YELLOW_800);
 
 // portal inspector bounds
-pub(super) const PORTAL_DIRECTION_CHANGE_FACTOR_MAX: f32 = std::f32::consts::PI;
+pub(super) const PORTAL_DIRECTION_CHANGE_FACTOR_MAX: f32 = PI;
 pub(super) const PORTAL_DIRECTION_CHANGE_FACTOR_MIN: f32 = 0.0;
 pub(super) const PORTAL_DISTANCE_MAX: f32 = 1.0;
 pub(super) const PORTAL_DISTANCE_MIN: f32 = 0.0;

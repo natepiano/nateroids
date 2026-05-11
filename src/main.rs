@@ -26,6 +26,7 @@ use bevy::gltf::GltfPlugin;
 use bevy::gltf::convert_coordinates::GltfConvertCoordinates;
 use bevy::prelude::*;
 use bevy_brp_extras::BrpExtrasPlugin;
+use bevy_brp_extras::DEFAULT_REMOTE_PORT;
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
 use bevy_window_manager::WindowManagerPlugin;
 
@@ -49,7 +50,7 @@ fn main() {
     // Get effective port from `BrpExtrasPlugin` to include in window title if non-default
     let brp_plugin = BrpExtrasPlugin::default();
     let (effective_port, _) = brp_plugin.get_effective_port();
-    let window_title = if effective_port == bevy_brp_extras::DEFAULT_REMOTE_PORT {
+    let window_title = if effective_port == DEFAULT_REMOTE_PORT {
         APPLICATION_TITLE.to_string()
     } else {
         format!("{APPLICATION_TITLE} - {effective_port}")

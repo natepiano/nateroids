@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use bevy::prelude::*;
+use rand::rng;
 use rand::RngExt;
 
 use super::constants::STAR_TWINKLE_HALF_SCALE;
@@ -32,13 +33,23 @@ struct StartTwinklingTimer {
     timer: Timer,
 }
 
-fn should_start_twinkling(start_timer: &mut StartTwinklingTimer, time: &Time) -> bool {
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum TwinkleReadiness {
+    Ready,
+    Waiting,
+}
+
+fn twinkle_readiness(start_timer: &mut StartTwinklingTimer, time: &Time) -> TwinkleReadiness {
     start_timer.timer.tick(time.delta());
-    start_timer.timer.just_finished()
+    if start_timer.timer.just_finished() {
+        TwinkleReadiness::Ready
+    } else {
+        TwinkleReadiness::Waiting
+    }
 }
 
 fn get_random_indices(count: usize, range: usize) -> Vec<usize> {
-    let mut rng = rand::rng();
+    let mut rng = rng();
     let mut numbers = HashSet::with_capacity(count);
     while numbers.len() < count {
         numbers.insert(rng.random_range(0..range));
@@ -62,7 +73,7 @@ fn start_twinkling(
     mut start_timer: ResMut<StartTwinklingTimer>,
     time: Res<Time>,
 ) {
-    if !should_start_twinkling(&mut start_timer, &time) {
+    if twinkle_readiness(&mut start_timer, &time) == TwinkleReadiness::Waiting {
         return;
     }
 
@@ -76,7 +87,7 @@ fn start_twinkling(
     // Snapshot the untwinkling stars once so we can sample a bounded subset by index.
     let filtered_stars = extract_elements_at_indices(&all_stars, &indices);
 
-    let mut rng = rand::rng();
+    let mut rng = rng();
 
     for (entity, material_handle) in filtered_stars {
         if let Some(material) = materials.get(material_handle) {

@@ -1,3 +1,4 @@
+use std::f32::consts::FRAC_PI_2;
 use std::ops::Deref;
 use std::ops::DerefMut;
 
@@ -230,8 +231,7 @@ fn enforce_spaceship_2d_rotation(
                 let forward_2d_normalized = forward_2d / forward_len_sq.sqrt();
 
                 // Calculate angle in XY plane (from +Y axis)
-                let z_angle = forward_2d_normalized.y.atan2(forward_2d_normalized.x)
-                    - std::f32::consts::FRAC_PI_2;
+                let z_angle = forward_2d_normalized.y.atan2(forward_2d_normalized.x) - FRAC_PI_2;
 
                 // Guard against NaN from atan2
                 if z_angle.is_finite() {
