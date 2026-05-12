@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use bevy::prelude::*;
+pub(crate) use bevy_enhanced_input::action::events::Start as InputStart;
 
 use crate::constants::INSPECTOR_SWITCHES;
 
@@ -21,7 +22,7 @@ use crate::constants::INSPECTOR_SWITCHES;
 macro_rules! bind_action_switch {
     ($app:expr, $action:ty, $event:ty, $switch:expr) => {
         $app.add_observer(
-            |_: On<bevy_enhanced_input::action::events::Start<$action>>, mut commands: Commands| {
+            |_: On<$crate::switches::InputStart<$action>>, mut commands: Commands| {
                 commands.trigger(<$event>::default());
             },
         );
