@@ -3,6 +3,7 @@
 use bevy::input::InputPlugin;
 use bevy::prelude::*;
 use bevy_enhanced_input::action::events;
+use bevy_enhanced_input::condition::press::Press;
 use bevy_enhanced_input::prelude::*;
 
 #[derive(Component)]
@@ -280,7 +281,7 @@ fn press_plus_blockby_shift_prevents_toggle_on_shift_release() {
                     consume_input: true,
                     ..default()
                 },
-                bevy_enhanced_input::condition::press::Press::default(),
+                Press::default(),
                 BlockBy::single(shift),
                 bindings![KeyCode::KeyF],
             ));
