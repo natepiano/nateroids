@@ -1,6 +1,4 @@
 use std::f32::consts::FRAC_PI_2;
-use std::ops::Deref;
-use std::ops::DerefMut;
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -39,7 +37,7 @@ use crate::state::PauseState;
 /// Returns the default `Spaceship` rotation: model correction (90° around X)
 fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X) }
 
-#[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
+#[derive(Resource, Reflect, InspectorOptions, Debug, Clone, Deref, DerefMut)]
 #[reflect(Resource)]
 pub(super) struct SpaceshipSettings {
     pub actor_settings: ActorSettings,
@@ -83,16 +81,6 @@ impl Default for SpaceshipSettings {
             },
         }
     }
-}
-
-impl Deref for SpaceshipSettings {
-    type Target = ActorSettings;
-
-    fn deref(&self) -> &Self::Target { &self.actor_settings }
-}
-
-impl DerefMut for SpaceshipSettings {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_settings }
 }
 
 pub(super) struct SpaceshipPlugin;
