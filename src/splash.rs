@@ -65,7 +65,7 @@ enum SkipReadiness {
 
 #[derive(Resource, Debug, Default)]
 struct SplashSkipState {
-    readiness: SkipReadiness,
+    skip_readiness: SkipReadiness,
 }
 
 impl Plugin for SplashPlugin {
@@ -96,7 +96,7 @@ fn reset_timer_and_boundary(
 ) {
     debug!("Resetting timer and boundary");
     splash_timer.timer.reset();
-    skip_state.readiness = SkipReadiness::NotReady;
+    skip_state.skip_readiness = SkipReadiness::NotReady;
 
     // Reset boundary alpha to 0 (transparent) for fade-in animation
     boundary.grid_color = BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA);
@@ -160,11 +160,11 @@ fn run_splash(
         ),
     >,
 ) {
-    if skip_state.readiness == SkipReadiness::NotReady {
+    if skip_state.skip_readiness == SkipReadiness::NotReady {
         // Avoid instant skip from keys held during the transition into Splash
         // (e.g. Cmd+Shift+R restart shortcut).
         if key_input.get_pressed().next().is_none() {
-            skip_state.readiness = SkipReadiness::Armed;
+            skip_state.skip_readiness = SkipReadiness::Armed;
         }
     } else if key_input.get_just_pressed().next().is_some() {
         // Immediate splash skip: clear splash-only UI and stop in-flight splash camera sequence.

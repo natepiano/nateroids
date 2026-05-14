@@ -23,11 +23,24 @@ use super::constants::FOCUS_GIZMO_LINE_WIDTH_MIN;
 use super::constants::FOCUS_GIZMO_SPHERE_RADIUS_MAX;
 use super::constants::FOCUS_GIZMO_SPHERE_RADIUS_MIN;
 use super::constants::HOME_ANIMATION_DURATION_MS;
+use super::constants::ZOOM_CONVERGENCE_RATE;
+use super::constants::ZOOM_CONVERGENCE_RATE_MAX;
+use super::constants::ZOOM_CONVERGENCE_RATE_MIN;
 use super::constants::ZOOM_MARGIN;
+use super::constants::ZOOM_MARGIN_MAX;
+use super::constants::ZOOM_MARGIN_MIN;
+use super::constants::ZOOM_MARGIN_TOLERANCE;
+use super::constants::ZOOM_MARGIN_TOLERANCE_MAX;
+use super::constants::ZOOM_MARGIN_TOLERANCE_MIN;
+use super::constants::ZOOM_MAX_ITERATIONS;
+use super::constants::ZOOM_MAX_ITERATIONS_MAX;
+use super::constants::ZOOM_MAX_ITERATIONS_MIN;
+use super::constants::ZOOM_SETTINGS_MARGIN;
 use super::constants::ZOOM_TO_FIT_DURATION_MS;
 use crate::input::BoundaryBoxSwitch;
 use crate::input::CameraHome as CameraHomeShortcut;
 use crate::input::InspectFocusSwitch;
+use crate::input::InspectZoomSwitch;
 use crate::input::ShowFocusSwitch;
 use crate::input::ZoomToFitShortcut;
 use crate::playfield::BoundaryVolume;
@@ -42,9 +55,51 @@ pub(super) struct ZoomTarget(pub Option<Entity>);
 
 event!(CameraHomeEvent);
 event!(FocusInspectorEvent);
+event!(InspectZoomEvent);
 event!(ShowFocusEvent);
 event!(ToggleFitTargetDebugEvent);
 event!(ZoomToFitEvent);
+
+#[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
+#[reflect(Resource, InspectorOptions)]
+pub(super) struct ZoomSettings {
+    /// Maximum iterations before giving up.
+    #[inspector(min = ZOOM_MAX_ITERATIONS_MIN, max = ZOOM_MAX_ITERATIONS_MAX)]
+    pub max_iterations:   usize,
+    #[inspector(
+        min = ZOOM_MARGIN_MIN,
+        max = ZOOM_MARGIN_MAX,
+        display = NumberDisplay::Slider
+    )]
+    pub margin:           f32,
+    /// Margin tolerance for convergence detection (0.001 = 0.1% tolerance).
+    /// Used for both balance and fit checks.
+    #[inspector(
+        min = ZOOM_MARGIN_TOLERANCE_MIN,
+        max = ZOOM_MARGIN_TOLERANCE_MAX,
+        display = NumberDisplay::Slider
+    )]
+    pub margin_tolerance: f32,
+    // Zoom-to-fit convergence parameters
+    /// Convergence rate for zoom-to-fit adjustments (0.18 = 18% per frame).
+    #[inspector(
+        min = ZOOM_CONVERGENCE_RATE_MIN,
+        max = ZOOM_CONVERGENCE_RATE_MAX,
+        display = NumberDisplay::Slider
+    )]
+    pub convergence_rate: f32,
+}
+
+impl Default for ZoomSettings {
+    fn default() -> Self {
+        Self {
+            max_iterations:   ZOOM_MAX_ITERATIONS,
+            margin:           ZOOM_SETTINGS_MARGIN,
+            margin_tolerance: ZOOM_MARGIN_TOLERANCE,
+            convergence_rate: ZOOM_CONVERGENCE_RATE,
+        }
+    }
+}
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
 struct FocusGizmo {}
@@ -97,9 +152,14 @@ impl Plugin for ZoomPlugin {
             .init_resource::<ZoomTarget>()
             .init_resource::<FocusSettings>()
             .init_resource::<FocusGizmoState>()
+            .init_resource::<ZoomSettings>()
             .add_plugins(
                 ResourceInspectorPlugin::<FocusSettings>::default()
                     .run_if(switches::is_switch_on(Switch::InspectFocus)),
+            )
+            .add_plugins(
+                ResourceInspectorPlugin::<ZoomSettings>::default()
+                    .run_if(switches::is_switch_on(Switch::InspectZoom)),
             )
             .add_systems(Startup, set_fit_target_debug);
         bind_action_system!(app, ZoomToFitShortcut, ZoomToFitEvent, zoom_to_fit_command);
@@ -122,6 +182,12 @@ impl Plugin for ZoomPlugin {
             Switch::InspectFocus
         );
         bind_action_switch!(app, ShowFocusSwitch, ShowFocusEvent, Switch::ShowFocus);
+        bind_action_switch!(
+            app,
+            InspectZoomSwitch,
+            InspectZoomEvent,
+            Switch::InspectZoom
+        );
         app.add_systems(
             Update,
             apply_focus_settings.run_if(resource_changed::<FocusSettings>),

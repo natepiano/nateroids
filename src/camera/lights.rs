@@ -70,27 +70,27 @@ pub(super) enum ShadowSwitch {
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub(super) struct DirectionalLightSettings {
-    pub color:       Color,
-    pub enabled:     LightSwitch,
+    pub color:         Color,
+    pub light_switch:  LightSwitch,
     #[inspector(
         min = DIRECTIONAL_LIGHT_ILLUMINANCE_MIN,
         max = DIRECTIONAL_LIGHT_ILLUMINANCE_MAX,
         display = NumberDisplay::Slider
     )]
-    pub illuminance: f32,
-    pub shadows:     ShadowSwitch,
+    pub illuminance:   f32,
+    pub shadow_switch: ShadowSwitch,
 }
 
 impl Default for DirectionalLightSettings {
     fn default() -> Self {
         Self {
-            color:       DIRECTIONAL_LIGHT_SETTINGS_COLOR,
-            enabled:     LightSwitch::Off,
-            illuminance: DIRECTIONAL_LIGHT_ILLUMINANCE,
+            color:         DIRECTIONAL_LIGHT_SETTINGS_COLOR,
+            light_switch:  LightSwitch::Off,
+            illuminance:   DIRECTIONAL_LIGHT_ILLUMINANCE,
             // CRITICAL: Must start disabled. Enabling shadows at startup before the scene
             // is fully initialized breaks rendering (causes stars to disappear). Shadows
             // can be safely enabled at runtime via inspector or code.
-            shadows:     ShadowSwitch::Off,
+            shadow_switch: ShadowSwitch::Off,
         }
     }
 }
@@ -126,11 +126,11 @@ impl Default for LightSettings {
             ambient_color:             Color::WHITE,
             environment_map_intensity: ENVIRONMENT_MAP_INTENSITY,
             front:                     DirectionalLightSettings {
-                enabled: LightSwitch::On,
+                light_switch: LightSwitch::On,
                 ..Default::default()
             },
             back:                      DirectionalLightSettings {
-                enabled: LightSwitch::On,
+                light_switch: LightSwitch::On,
                 ..Default::default()
             },
             top:                       DirectionalLightSettings::default(),
@@ -223,7 +223,7 @@ fn spawn_directional_light(
         .spawn(DirectionalLight {
             color: directional_light_settings.color,
             illuminance: directional_light_settings.illuminance,
-            shadows_enabled: matches!(directional_light_settings.shadows, ShadowSwitch::On),
+            shadows_enabled: matches!(directional_light_settings.shadow_switch, ShadowSwitch::On),
             shadow_depth_bias: SHADOW_DEPTH_BIAS,
             shadow_normal_bias: SHADOW_NORMAL_BIAS,
             ..default()
@@ -281,13 +281,13 @@ fn manage_lighting(
 
         let light_rotation = position.get_rotation(&camera_orientation);
 
-        match (existing_light, directional_light_settings.enabled) {
+        match (existing_light, directional_light_settings.light_switch) {
             (Some((_, mut light, _)), LightSwitch::On) => {
                 // Update existing light
                 light.color = directional_light_settings.color;
                 light.illuminance = directional_light_settings.illuminance;
                 light.shadows_enabled =
-                    matches!(directional_light_settings.shadows, ShadowSwitch::On);
+                    matches!(directional_light_settings.shadow_switch, ShadowSwitch::On);
             },
             (Some((entity, _, _)), LightSwitch::Off) => {
                 // Remove disabled light

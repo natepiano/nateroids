@@ -268,7 +268,8 @@ fn missile_movement(
 
         if let Some(last_position) = missile_position.last_position {
             // Calculate the distance traveled since the last update
-            let distance_traveled = if teleporter.status == TeleportStatus::JustTeleported {
+            let distance_traveled = if teleporter.teleport_status == TeleportStatus::JustTeleported
+            {
                 0.0
             } else {
                 last_position.distance(current_position)

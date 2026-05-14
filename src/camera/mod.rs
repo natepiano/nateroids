@@ -4,7 +4,6 @@ mod lights;
 mod rendering;
 mod required_components;
 mod selection;
-mod settings;
 mod star;
 mod star_twinkling;
 mod stars;
@@ -16,12 +15,11 @@ use bevy::prelude::*;
 use bevy_lagrange::LagrangePlugin;
 use bevy_liminal::MeshOutlinePlugin;
 pub(crate) use constants::ZOOM_MARGIN;
+pub(crate) use game::CameraSettings;
 use game::GameCameraPlugin;
 use lights::DirectionalLightsPlugin;
 pub(crate) use rendering::RenderLayer;
 use selection::SelectionPlugin;
-pub(crate) use settings::CameraSettings;
-use settings::CameraSettingsPlugin;
 use star::StarCameraPlugin;
 use star_twinkling::StarTwinklingPlugin;
 use stars::StarsPlugin;
@@ -39,7 +37,6 @@ impl Plugin for CameraPlugin {
             .add_plugins(GameCameraPlugin)
             .add_plugins(StarCameraPlugin)
             .add_plugins(ZoomPlugin)
-            .add_plugins(CameraSettingsPlugin)
             .add_plugins(DirectionalLightsPlugin)
             .add_plugins(SelectionPlugin)
             .add_plugins(StarTwinklingPlugin)

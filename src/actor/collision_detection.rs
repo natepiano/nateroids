@@ -29,7 +29,12 @@ fn handle_collision_events(
     // Check if spaceship just teleported
     let spaceship_just_teleported = spaceship_query
         .single()
-        .map(|(entity, teleporter)| (entity, teleporter.status == TeleportStatus::JustTeleported))
+        .map(|(entity, teleporter)| {
+            (
+                entity,
+                teleporter.teleport_status == TeleportStatus::JustTeleported,
+            )
+        })
         .ok();
 
     for event in collision_events.read() {

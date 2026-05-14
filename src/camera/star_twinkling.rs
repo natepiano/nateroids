@@ -6,8 +6,8 @@ use rand::rng;
 
 use super::constants::STAR_TWINKLE_HALF_SCALE;
 use super::constants::STAR_TWINKLE_MIDPOINT;
-use super::settings::StarSettings;
 use super::stars::Star;
+use super::stars::StarSettings;
 
 pub(super) struct StarTwinklingPlugin;
 

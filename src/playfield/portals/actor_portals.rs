@@ -100,7 +100,7 @@ fn handle_emerging_visual(
     actor_portals: &mut Mut<ActorPortals>,
     boundary_transform: &Transform,
 ) {
-    if teleporter.status == TeleportStatus::JustTeleported
+    if teleporter.teleport_status == TeleportStatus::JustTeleported
         && let Some(teleported_position) = teleporter.position
     {
         if physics_burst(teleported_position, boundary_transform) == PhysicsBurst::Active {
