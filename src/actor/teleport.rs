@@ -40,14 +40,14 @@ struct TeleportCollisionState {
 }
 
 #[derive(Reflect, Clone, Debug, Default, PartialEq, Eq)]
-pub enum TeleportStatus {
+pub(crate) enum TeleportStatus {
     #[default]
     Ready,
     JustTeleported,
 }
 
 #[derive(Component, Reflect, Debug, Default, Clone)]
-pub struct Teleporter {
+pub(crate) struct Teleporter {
     pub teleport_status: TeleportStatus,
     pub position:        Option<Position>,
 }

@@ -31,7 +31,7 @@ impl CameraOrder {
 // without bloom, clears with transparent color (preserves stars but prevents
 // motion trails)
 #[derive(Reflect, Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RenderLayer {
+pub(crate) enum RenderLayer {
     Game,
     Stars,
     UI,

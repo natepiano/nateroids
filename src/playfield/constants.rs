@@ -9,7 +9,7 @@ use bevy::math::UVec3;
 
 /// Default cell count for the boundary grid (X, Y, Z cells)
 pub(super) const BOUNDARY_CELL_COUNT: UVec3 = UVec3::new(3, 2, 1);
-pub const BOUNDARY_COLOR: Color = Color::Srgba(tailwind::BLUE_500);
+pub(crate) const BOUNDARY_COLOR: Color = Color::Srgba(tailwind::BLUE_500);
 
 /// Target alpha value for grid color
 pub(super) const BOUNDARY_GRID_ALPHA: f32 = 0.0;
@@ -25,7 +25,7 @@ pub(super) const BOUNDARY_OUTER_LINE_WIDTH: f32 = 4.0;
 
 /// Scalar multiplier for boundary dimensions
 pub(super) const BOUNDARY_SCALAR: f32 = 110.0;
-pub const BOUNDARY_START_ALPHA: f32 = 0.0;
+pub(crate) const BOUNDARY_START_ALPHA: f32 = 0.0;
 
 /// Duration in seconds for the grid flash animation when cell count changes
 pub(super) const GRID_FLASH_DURATION: f32 = 2.0;

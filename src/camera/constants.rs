@@ -144,7 +144,7 @@ pub(super) const STAR_TWINKLING_DELAY: f32 = 0.5;
 // zoom
 pub(super) const ZOOM_CONVERGENCE_RATE: f32 = 0.30;
 /// Default margin for zoom-to-fit operations (0.1 = 10% margin on each side)
-pub const ZOOM_MARGIN: f32 = 0.1;
+pub(crate) const ZOOM_MARGIN: f32 = 0.1;
 pub(super) const ZOOM_MARGIN_TOLERANCE: f32 = 0.00001;
 pub(super) const ZOOM_MAX_ITERATIONS: usize = 200;
 pub(super) const ZOOM_SETTINGS_MARGIN: f32 = 0.1;

@@ -5,10 +5,10 @@ mod spawn;
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
-pub use death_materials::Deaderoid;
-pub use death_materials::NateroidDeathMaterials;
-pub use settings::DeathCorner;
-pub use settings::NateroidSettings;
+pub(crate) use death_materials::Deaderoid;
+pub(crate) use death_materials::NateroidDeathMaterials;
+pub(crate) use settings::DeathCorner;
+pub(crate) use settings::NateroidSettings;
 pub(super) use spawn::NateroidSpawnStats;
 
 use super::Teleporter;
@@ -48,4 +48,4 @@ impl Plugin for NateroidPlugin {
     CollisionEventsEnabled,
     LockedAxes = LOCKED_AXES_2D
 )]
-pub struct Nateroid;
+pub(crate) struct Nateroid;

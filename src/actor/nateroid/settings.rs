@@ -38,7 +38,7 @@ pub enum DeathCorner {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
 #[reflect(Resource)]
-pub struct NateroidSettings {
+pub(crate) struct NateroidSettings {
     pub actor_settings:            ActorSettings,
     pub linear_velocity:           f32,
     pub angular_velocity:          f32,

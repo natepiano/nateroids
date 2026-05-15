@@ -100,7 +100,7 @@ fn apply_aabb_settings(
 fn size(aabb: &Aabb) -> Vec3 { Vec3::from(aabb.half_extents * 2.0) }
 
 /// Returns the largest axis dimension of the `Aabb`.
-pub fn max_dimension(aabb: &Aabb) -> f32 {
+pub(crate) fn max_dimension(aabb: &Aabb) -> f32 {
     let half_extents = aabb.half_extents;
     half_extents.x.max(half_extents.y).max(half_extents.z) * 2.0
 }

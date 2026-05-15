@@ -138,7 +138,7 @@ pub struct SmoothnessSettings {
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
-pub struct CameraSettings {
+pub(crate) struct CameraSettings {
     pub bloom:        BloomSettings,
     pub smoothness:   SmoothnessSettings,
     pub splash_start: SplashStart,

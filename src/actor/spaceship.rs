@@ -115,7 +115,7 @@ pub(super) struct ContinuousFire;
     LinearVelocity::ZERO,
     AngularVelocity::ZERO,
 )]
-pub struct Spaceship;
+pub(crate) struct Spaceship;
 
 /// Observer that spawns the `Spaceship` when `SplashText` is removed
 fn spawn_after_splash_text_removed(

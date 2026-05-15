@@ -5,7 +5,7 @@ use bevy_enhanced_input::condition::press::Press;
 use bevy_enhanced_input::prelude::*;
 
 #[derive(Component)]
-pub struct ShipControlsContext;
+pub(crate) struct ShipControlsContext;
 
 action!(ShipAccelerate);
 action!(ShipTurnLeft);
@@ -14,7 +14,7 @@ action!(ShipFire);
 action!(ShipContinuousFire);
 action!(ShipShiftModifier);
 
-pub fn insert_ship_controls(commands: &mut Commands, entity: Entity) {
+pub(crate) fn insert_ship_controls(commands: &mut Commands, entity: Entity) {
     let consume_input = ActionSettings {
         consume_input: true,
         ..default()

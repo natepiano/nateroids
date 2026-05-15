@@ -86,7 +86,7 @@ pub enum Spawnability {
 
 #[derive(Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(InspectorOptions)]
-pub struct ActorSettings {
+pub(crate) struct ActorSettings {
     pub spawnability:             Spawnability,
     #[inspector(
         min = ACTOR_DAMPING_MIN,
@@ -149,7 +149,7 @@ pub struct ActorSettings {
 
 #[derive(Reflect, Component, Clone, Debug)]
 #[reflect(Component)]
-pub struct Health(pub f32);
+pub(crate) struct Health(pub f32);
 
 #[derive(Reflect, Component, Clone, Debug)]
 #[reflect(Component)]

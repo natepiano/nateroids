@@ -84,7 +84,7 @@ pub(super) const NATEROID_ANGULAR_VELOCITY: f32 = 4.5;
 pub(super) const NATEROID_COLLIDER_MARGIN: f32 = 1.0 / 3.0;
 pub(super) const NATEROID_COLLISION_DAMAGE: f32 = 10.0;
 /// Alpha decrement per death animation material level
-pub const NATEROID_DEATH_ALPHA_STEP: f32 = 0.01;
+pub(crate) const NATEROID_DEATH_ALPHA_STEP: f32 = 0.01;
 pub(super) const NATEROID_DEATH_DURATION_SECS: f32 = 3.0;
 pub(super) const NATEROID_DEATH_SHRINK_PERCENTAGE: f32 = 0.3;
 pub(super) const NATEROID_DENSITY_CULLING_THRESHOLD: f32 = 0.01;
