@@ -5,9 +5,6 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
 
-use crate::actor::actor_settings::ActorSettings;
-use crate::actor::actor_settings::ColliderType;
-use crate::actor::actor_settings::Spawnability;
 use crate::actor::constants::MAX_NATEROID_ANGULAR_VELOCITY;
 use crate::actor::constants::MAX_NATEROID_LINEAR_VELOCITY;
 use crate::actor::constants::NATEROID_ANGULAR_DAMPING;
@@ -27,10 +24,13 @@ use crate::actor::constants::NATEROID_SCALE_UP;
 use crate::actor::constants::NATEROID_SPAWN_TIMER_SECONDS;
 use crate::actor::constants::NATEROID_TARGET_ALPHA;
 use crate::actor::game_layer::GameLayer;
+use crate::actor::settings::ActorSettings;
+use crate::actor::settings::ColliderType;
+use crate::actor::settings::Spawnability;
 use crate::camera::RenderLayer;
 
 #[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DeathCorner {
+pub(crate) enum DeathCorner {
     Nearest,
     Random,
     Directional,

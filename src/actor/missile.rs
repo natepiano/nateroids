@@ -13,10 +13,6 @@ use bevy_kana::Position;
 use input_events::Start;
 
 use super::Teleporter;
-use super::actor_settings;
-use super::actor_settings::ActorSettings;
-use super::actor_settings::ColliderType;
-use super::actor_settings::Spawnability;
 use super::constants::GLTF_ROTATION_X;
 use super::constants::LOCKED_AXES_2D;
 use super::constants::MAX_MISSILE_ANGULAR_VELOCITY;
@@ -32,6 +28,10 @@ use super::constants::MISSILE_RESTITUTION;
 use super::constants::MISSILE_SCALE;
 use super::constants::MISSILE_SPAWN_TIMER_SECONDS;
 use super::game_layer::GameLayer;
+use super::settings;
+use super::settings::ActorSettings;
+use super::settings::ColliderType;
+use super::settings::Spawnability;
 use super::spaceship::ContinuousFire;
 use super::spaceship::Spaceship;
 use super::teleport::TeleportStatus;
@@ -182,7 +182,7 @@ fn initialize_missile(
         .insert(linear_velocity)
         .insert(angular_velocity);
 
-    actor_settings::insert_configured_components(
+    settings::insert_configured_components(
         &mut commands,
         &mut missile_settings.actor_settings,
         missile.entity,

@@ -1,14 +1,14 @@
 mod actor_portals;
 mod constants;
 mod portal;
-mod portal_settings;
+mod settings;
 
 pub use actor_portals::ActorPortals;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 pub(super) use portal::Portal;
-pub(super) use portal_settings::PortalGizmo;
-use portal_settings::PortalSettings;
+pub(super) use settings::PortalGizmo;
+use settings::PortalSettings;
 
 use crate::input::InspectPortalSwitch;
 use crate::state::GameState;
@@ -32,7 +32,7 @@ impl Plugin for PortalPlugin {
             .add_systems(
                 Update,
                 (
-                    portal_settings::apply_portal_settings.run_if(in_state(GameState::InGame)),
+                    settings::apply_portal_settings.run_if(in_state(GameState::InGame)),
                     actor_portals::init_portals.run_if(in_state(PauseState::Playing)),
                     actor_portals::update_approaching_portals.run_if(in_state(PauseState::Playing)),
                     actor_portals::update_emerging_portals.run_if(in_state(PauseState::Playing)),

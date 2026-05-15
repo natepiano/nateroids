@@ -5,10 +5,6 @@ use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
 
 use super::Teleporter;
-use super::actor_settings;
-use super::actor_settings::ActorSettings;
-use super::actor_settings::ColliderType;
-use super::actor_settings::Spawnability;
 use super::constants::GLTF_ROTATION_X;
 use super::constants::LOCKED_AXES_SPACESHIP;
 use super::constants::MAX_SPACESHIP_ANGULAR_VELOCITY;
@@ -26,6 +22,10 @@ use super::constants::SPACESHIP_RESTITUTION;
 use super::constants::SPACESHIP_SCALE;
 use super::constants::SPACESHIP_TILT_THRESHOLD;
 use super::game_layer::GameLayer;
+use super::settings;
+use super::settings::ActorSettings;
+use super::settings::ColliderType;
+use super::settings::Spawnability;
 use crate::camera::RenderLayer;
 use crate::input;
 use crate::playfield::ActorPortals;
@@ -156,7 +156,7 @@ fn initialize_spaceship(
         .insert(spaceship_settings.transform);
     input::insert_ship_controls(&mut commands, spaceship.entity);
 
-    actor_settings::insert_configured_components(
+    settings::insert_configured_components(
         &mut commands,
         &mut spaceship_settings.actor_settings,
         spaceship.entity,

@@ -7,11 +7,11 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
-use super::actor_settings::ColliderType;
 use super::constants::AABB_GIZMO_COLOR;
 use super::constants::AABB_GIZMO_LINE_WIDTH;
 use super::constants::AABB_LINE_WIDTH_MAX;
 use super::constants::AABB_LINE_WIDTH_MIN;
+use super::settings::ColliderType;
 use crate::camera::RenderLayer;
 use crate::input::AabbsSwitch;
 use crate::input::InspectAabbSwitch;

@@ -12,8 +12,8 @@ pub(crate) use settings::NateroidSettings;
 pub(super) use spawn::NateroidSpawnStats;
 
 use super::Teleporter;
-use super::actor_settings;
 use super::constants::LOCKED_AXES_2D;
+use super::settings::initialize_actors;
 use crate::asset_loader::AssetsState;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
@@ -25,8 +25,7 @@ impl Plugin for NateroidPlugin {
         app.init_resource::<NateroidSpawnStats>()
             .add_systems(
                 OnEnter(AssetsState::Loaded),
-                death_materials::precompute_death_materials
-                    .after(actor_settings::initialize_actors),
+                death_materials::precompute_death_materials.after(initialize_actors),
             )
             .add_observer(spawn::initialize_nateroid)
             .add_observer(death_materials::apply_nateroid_materials_to_children)

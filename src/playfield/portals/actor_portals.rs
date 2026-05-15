@@ -5,7 +5,7 @@ use bevy_kana::Position;
 
 use super::Portal;
 use super::PortalGizmo;
-use super::portal_settings::PortalSettings;
+use super::settings::PortalSettings;
 use crate::actor;
 use crate::actor::Deaderoid;
 use crate::actor::TeleportStatus;

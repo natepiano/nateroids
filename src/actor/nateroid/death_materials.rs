@@ -11,7 +11,7 @@ use crate::actor::constants::NATEROID_DEATH_ALPHA_STEP;
 use crate::asset_loader::SceneAssets;
 
 #[derive(Component, Debug)]
-pub struct Deaderoid {
+pub(crate) struct Deaderoid {
     pub initial_scale:          Vec3,
     pub target_shrink:          f32,
     pub shrink_duration:        f32,
@@ -22,7 +22,7 @@ pub struct Deaderoid {
 
 /// Precomputed materials for `Nateroid` death animation at different transparency levels
 #[derive(Resource)]
-pub struct NateroidDeathMaterials {
+pub(crate) struct NateroidDeathMaterials {
     pub materials: Vec<Vec<Handle<StandardMaterial>>>,
 }
 
