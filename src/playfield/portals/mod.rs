@@ -1,9 +1,9 @@
-mod actor_portals;
+mod actor;
 mod constants;
 mod portal;
 mod settings;
 
-pub use actor_portals::ActorPortals;
+pub use actor::ActorPortals;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 pub(super) use portal::Portal;
@@ -33,11 +33,11 @@ impl Plugin for PortalPlugin {
                 Update,
                 (
                     settings::apply_portal_settings.run_if(in_state(GameState::InGame)),
-                    actor_portals::init_portals.run_if(in_state(PauseState::Playing)),
-                    actor_portals::update_approaching_portals.run_if(in_state(PauseState::Playing)),
-                    actor_portals::update_emerging_portals.run_if(in_state(PauseState::Playing)),
-                    actor_portals::draw_approaching_portals.run_if(in_state(GameState::InGame)),
-                    actor_portals::draw_emerging_portals.run_if(in_state(GameState::InGame)),
+                    actor::init_portals.run_if(in_state(PauseState::Playing)),
+                    actor::update_approaching_portals.run_if(in_state(PauseState::Playing)),
+                    actor::update_emerging_portals.run_if(in_state(PauseState::Playing)),
+                    actor::draw_approaching_portals.run_if(in_state(GameState::InGame)),
+                    actor::draw_emerging_portals.run_if(in_state(GameState::InGame)),
                 )
                     .chain(),
             );

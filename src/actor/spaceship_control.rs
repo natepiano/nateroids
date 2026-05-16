@@ -145,7 +145,7 @@ fn spaceship_movement_controls(
         // dynamically update from inspector while game is running to change size
         spaceship_transform.scale = spaceship_settings.transform.scale;
 
-        let delta_seconds = time.delta_secs();
+        let delta_secs = time.delta_secs();
         let rotation_speed = movement_settings.rotation_speed;
 
         // Set angular velocity based on input
@@ -182,7 +182,7 @@ fn spaceship_movement_controls(
                 spaceship_transform.forward().as_vec3(),
                 acceleration,
                 max_speed,
-                delta_seconds,
+                delta_secs,
                 &orientation_mode,
             );
         }
@@ -194,10 +194,10 @@ fn apply_acceleration(
     direction: Vec3,
     acceleration: f32,
     max_speed: f32,
-    delta_seconds: f32,
+    delta_secs: f32,
     orientation: &CameraOrientation,
 ) {
-    let proposed_velocity = **linear_velocity + direction * (acceleration * delta_seconds);
+    let proposed_velocity = **linear_velocity + direction * (acceleration * delta_secs);
     let proposed_speed = proposed_velocity.length();
 
     // Ensure we're not exceeding max velocity
