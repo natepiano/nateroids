@@ -165,30 +165,30 @@ pub(super) enum LightPosition {
 }
 
 impl LightPosition {
-    pub const fn get_rotation(self, orientation: &CameraOrientation) -> RotationInfo {
+    pub const fn get_rotation(self, camera_orientation: &CameraOrientation) -> RotationInfo {
         match self {
             Self::Right => RotationInfo {
-                axis:  orientation.orientation_settings.axis_mundi,
+                axis:  camera_orientation.orientation_settings.axis_mundi,
                 angle: FRAC_PI_2,
             },
             Self::Left => RotationInfo {
-                axis:  orientation.orientation_settings.axis_mundi,
+                axis:  camera_orientation.orientation_settings.axis_mundi,
                 angle: -FRAC_PI_2,
             },
             Self::Front => RotationInfo {
-                axis:  orientation.orientation_settings.axis_orbis,
+                axis:  camera_orientation.orientation_settings.axis_orbis,
                 angle: 0.,
             },
             Self::Back => RotationInfo {
-                axis:  orientation.orientation_settings.axis_orbis,
+                axis:  camera_orientation.orientation_settings.axis_orbis,
                 angle: PI,
             },
             Self::Bottom => RotationInfo {
-                axis:  orientation.orientation_settings.axis_orbis,
+                axis:  camera_orientation.orientation_settings.axis_orbis,
                 angle: FRAC_PI_2,
             },
             Self::Top => RotationInfo {
-                axis:  orientation.orientation_settings.axis_orbis,
+                axis:  camera_orientation.orientation_settings.axis_orbis,
                 angle: -FRAC_PI_2,
             },
         }

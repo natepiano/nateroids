@@ -92,11 +92,11 @@ impl CameraOrientation {
 
 impl Default for CameraOrientation {
     fn default() -> Self {
-        let mut mode = Self {
+        let mut camera_orientation = Self {
             orientation:          OrientationType::TopDown,
             orientation_settings: CAMERA_ORIENTATION_DEFAULT_SETTINGS,
         };
-        mode.set_orientation(OrientationType::TopDown);
-        mode
+        camera_orientation.set_orientation(OrientationType::TopDown);
+        camera_orientation
     }
 }

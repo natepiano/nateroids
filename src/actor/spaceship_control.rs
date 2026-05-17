@@ -133,9 +133,9 @@ fn spaceship_movement_controls(
     turn_left_state: ShipTurnLeftStateQuery,
     turn_right_state: ShipTurnRightStateQuery,
     spaceship_settings: Res<SpaceshipSettings>,
-    movement_settings: Res<SpaceshipControlSettings>,
+    spaceship_control_settings: Res<SpaceshipControlSettings>,
     time: Res<Time>,
-    orientation_mode: Res<CameraOrientation>,
+    camera_orientation: Res<CameraOrientation>,
 ) {
     // we can use this because there is only exactly one spaceship - so we're not
     // looping over the query
@@ -146,7 +146,7 @@ fn spaceship_movement_controls(
         spaceship_transform.scale = spaceship_settings.transform.scale;
 
         let delta_secs = time.delta_secs();
-        let rotation_speed = movement_settings.rotation_speed;
+        let rotation_speed = spaceship_control_settings.rotation_speed;
 
         // Set angular velocity based on input
         let turn_right = **turn_right_state != TriggerState::None;
@@ -173,8 +173,8 @@ fn spaceship_movement_controls(
         angular_velocity.y = 0.0;
         angular_velocity.z = target_angular_velocity;
 
-        let max_speed = movement_settings.max_speed;
-        let acceleration = movement_settings.acceleration;
+        let max_speed = spaceship_control_settings.max_speed;
+        let acceleration = spaceship_control_settings.acceleration;
 
         if accelerate {
             apply_acceleration(
@@ -183,7 +183,7 @@ fn spaceship_movement_controls(
                 acceleration,
                 max_speed,
                 delta_secs,
-                &orientation_mode,
+                &camera_orientation,
             );
         }
     }
@@ -195,7 +195,7 @@ fn apply_acceleration(
     acceleration: f32,
     max_speed: f32,
     delta_secs: f32,
-    orientation: &CameraOrientation,
+    camera_orientation: &CameraOrientation,
 ) {
     let proposed_velocity = **linear_velocity + direction * (acceleration * delta_secs);
     let proposed_speed = proposed_velocity.length();
@@ -208,7 +208,7 @@ fn apply_acceleration(
     }
 
     //todo: #handl3d
-    match orientation.orientation {
+    match camera_orientation.orientation {
         // in 3d we can accelerate in all dirs
         OrientationType::BehindSpaceship3D => (),
         _ => linear_velocity.z = 0.0, // Force the `z` value of linear_velocity to be 0

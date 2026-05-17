@@ -39,7 +39,7 @@ use crate::playfield::constants::PORTAL_SCALAR;
 use crate::playfield::constants::PORTAL_SMALLEST;
 
 #[derive(Debug, Default, Reflect, GizmoConfigGroup)]
-pub struct PortalGizmo {}
+pub(crate) struct PortalGizmo {}
 
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]

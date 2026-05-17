@@ -6,16 +6,16 @@ use bevy_kana::Position;
 use crate::playfield::boundary_face::BoundaryFace;
 
 #[derive(Resource, Clone, Debug)]
-pub struct Portal {
-    pub actor_direction:            Vec3,
-    pub actor_distance_to_wall:     f32,
-    pub boundary_distance_approach: f32,
-    pub boundary_distance_shrink:   f32,
-    pub face:                       BoundaryFace,
-    pub face_count:                 usize,
-    pub fade_out_started:           Option<f32>,
-    pub position:                   Position,
-    pub radius:                     f32,
+pub(crate) struct Portal {
+    pub(crate) actor_direction:            Vec3,
+    pub(crate) actor_distance_to_wall:     f32,
+    pub(crate) boundary_distance_approach: f32,
+    pub(crate) boundary_distance_shrink:   f32,
+    pub(crate) face:                       BoundaryFace,
+    pub(crate) face_count:                 usize,
+    pub(crate) fade_out_started:           Option<f32>,
+    pub(crate) position:                   Position,
+    pub(crate) radius:                     f32,
 }
 
 impl Portal {

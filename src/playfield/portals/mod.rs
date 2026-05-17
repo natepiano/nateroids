@@ -3,11 +3,11 @@ mod constants;
 mod portal;
 mod settings;
 
-pub use actor::ActorPortals;
+pub(crate) use actor::ActorPortals;
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
-pub(super) use portal::Portal;
-pub(super) use settings::PortalGizmo;
+pub(crate) use portal::Portal;
+pub(crate) use settings::PortalGizmo;
 use settings::PortalSettings;
 
 use crate::input::InspectPortalSwitch;

@@ -68,7 +68,7 @@ impl Plugin for GameCameraPlugin {
 
 #[derive(Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(InspectorOptions)]
-pub struct BloomSettings {
+pub(crate) struct BloomSettings {
     #[inspector(
         min = CAMERA_BLOOM_MIN,
         max = CAMERA_BLOOM_MAX,
@@ -91,7 +91,7 @@ pub struct BloomSettings {
 
 #[derive(Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(InspectorOptions)]
-pub struct SplashStart {
+pub(crate) struct SplashStart {
     /// Camera starting distance for splash screen animation.
     #[inspector(min = CAMERA_SPLASH_RADIUS_MIN, max = CAMERA_SPLASH_RADIUS_MAX)]
     pub radius: f32,
@@ -115,7 +115,7 @@ pub struct SplashStart {
 
 #[derive(Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(InspectorOptions)]
-pub struct SmoothnessSettings {
+pub(crate) struct SmoothnessSettings {
     #[inspector(
         min = CAMERA_SMOOTHNESS_MIN,
         max = CAMERA_SMOOTHNESS_MAX,

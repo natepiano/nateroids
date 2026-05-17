@@ -16,7 +16,7 @@ pub(super) struct GridGizmo {}
 
 /// Trigger event to start a grid flash animation.
 #[derive(Event)]
-pub struct GridFlash;
+pub(crate) struct GridFlash;
 
 /// Active grid flash animation timer.
 #[derive(Resource)]
@@ -32,7 +32,7 @@ pub(super) struct BoundaryGizmo {}
 /// Syncs with `Boundary` resource configuration via `Transform` scale.
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-pub struct BoundaryVolume;
+pub(crate) struct BoundaryVolume;
 
 /// Component that triggers a fade-in animation for the `Boundary` gizmo
 /// Lerps the `Boundary` resource's color alphas from 0.0 to target values over time

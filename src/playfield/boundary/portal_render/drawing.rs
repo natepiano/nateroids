@@ -18,25 +18,25 @@ use crate::playfield::portals::PortalGizmo;
 
 /// Distinguishes normal actors from deaderoids in portal rendering.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PortalActorKind {
+pub(crate) enum PortalActorKind {
     Nateroid,
     Deaderoid,
 }
 
 struct PortalRenderContext<'a> {
-    color:       Color,
-    resolution:  u32,
-    orientation: &'a CameraOrientation,
-    actor_kind:  PortalActorKind,
-    transform:   &'a Transform,
+    color:              Color,
+    resolution:         u32,
+    camera_orientation: &'a CameraOrientation,
+    actor_kind:         PortalActorKind,
+    transform:          &'a Transform,
 }
 
-pub fn draw_portal(
+pub(crate) fn draw_portal(
     gizmos: &mut Gizmos<PortalGizmo>,
     portal: &Portal,
     color: Color,
     resolution: u32,
-    orientation: &CameraOrientation,
+    camera_orientation: &CameraOrientation,
     actor_kind: PortalActorKind,
     transform: &Transform,
 ) {
@@ -44,7 +44,7 @@ pub fn draw_portal(
     let context = PortalRenderContext {
         color,
         resolution,
-        orientation,
+        camera_orientation,
         actor_kind,
         transform,
     };
@@ -61,7 +61,10 @@ fn render_portal_by_geometry(
         PortalGeometry::SingleFace => {
             // Draw full circle
             let rotation = Quat::from_rotation_arc(
-                context.orientation.orientation_settings.axis_profundus,
+                context
+                    .camera_orientation
+                    .orientation_settings
+                    .axis_profundus,
                 portal.normal().as_vec3(),
             );
             let isometry = Isometry3d::new(*portal.position, rotation);

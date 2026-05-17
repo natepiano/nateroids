@@ -130,11 +130,11 @@ pub(super) struct Missile;
 
 #[derive(Component, Reflect, Copy, Clone, Debug, Default)]
 #[reflect(Component)]
-pub struct MissilePosition {
-    pub total_distance:    f32,
-    pub traveled_distance: f32,
-    remaining_distance:    f32,
-    pub last_position:     Option<Position>,
+pub(super) struct MissilePosition {
+    pub(super) total_distance:    f32,
+    pub(super) traveled_distance: f32,
+    remaining_distance:           f32,
+    pub(super) last_position:     Option<Position>,
 }
 
 impl MissilePosition {

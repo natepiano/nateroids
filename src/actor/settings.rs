@@ -78,7 +78,7 @@ impl Plugin for ActorSettingsPlugin {
 }
 
 #[derive(Reflect, InspectorOptions, Clone, Debug, Default, PartialEq, Eq)]
-pub enum Spawnability {
+pub(crate) enum Spawnability {
     #[default]
     Enabled,
     Disabled,
@@ -156,7 +156,7 @@ pub(crate) struct Health(pub f32);
 pub(super) struct CollisionDamage(pub f32);
 
 #[derive(Reflect, Debug, Clone, PartialEq, Eq)]
-pub enum ColliderType {
+pub(crate) enum ColliderType {
     Ball,
     Cuboid,
 }

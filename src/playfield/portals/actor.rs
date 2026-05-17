@@ -20,7 +20,7 @@ use crate::playfield::constants::PORTAL_MIN_RADIUS_FRACTION;
 use crate::playfield::constants::PORTAL_PHYSICS_BURST_MULTIPLIER;
 
 #[derive(Component, Default)]
-pub struct ActorPortals {
+pub(crate) struct ActorPortals {
     approaching: Option<Portal>,
     emerging:    Option<Portal>,
 }
@@ -403,7 +403,7 @@ pub(super) fn update_approaching_portals(
 pub(super) fn draw_approaching_portals(
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     portal_settings: Res<PortalSettings>,
-    orientation: Res<CameraOrientation>,
+    camera_orientation: Res<CameraOrientation>,
     portals_query: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
 ) {
@@ -418,7 +418,7 @@ pub(super) fn draw_approaching_portals(
                 approaching,
                 portal_settings.color_approaching,
                 portal_settings.resolution,
-                &orientation,
+                &camera_orientation,
                 actor_kind.map_or(PortalActorKind::Nateroid, |_| PortalActorKind::Deaderoid),
                 boundary_transform,
             );
@@ -469,7 +469,7 @@ pub(super) fn update_emerging_portals(
 pub(super) fn draw_emerging_portals(
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     portal_settings: Res<PortalSettings>,
-    orientation: Res<CameraOrientation>,
+    camera_orientation: Res<CameraOrientation>,
     portals_query: Query<(&ActorPortals, Option<&Deaderoid>)>,
     mut gizmos: Gizmos<PortalGizmo>,
 ) {
@@ -484,7 +484,7 @@ pub(super) fn draw_emerging_portals(
                 emerging,
                 portal_settings.color_emerging,
                 portal_settings.resolution,
-                &orientation,
+                &camera_orientation,
                 actor_kind.map_or(PortalActorKind::Nateroid, |_| PortalActorKind::Deaderoid),
                 boundary_transform,
             );

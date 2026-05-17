@@ -13,11 +13,13 @@ use constants::BOUNDARY_EXTERIOR_SCALAR_MIN;
 use constants::BOUNDARY_GRID_LINE_WIDTH_MAX;
 use constants::BOUNDARY_GRID_LINE_WIDTH_MIN;
 use gizmo::BoundaryGizmo;
-pub use gizmo::BoundaryVolume;
-pub use gizmo::GridFlash;
+pub(crate) use gizmo::BoundaryVolume;
+pub(crate) use gizmo::GridFlash;
 use gizmo::GridFlashAnimation;
 use gizmo::GridGizmo;
-pub(super) use portal_render::PortalActorKind;
+pub(crate) use portal_render::PortalActorKind;
+pub(crate) use portal_render::calculate_portal_face_count;
+pub(crate) use portal_render::draw_portal;
 
 use super::constants::BOUNDARY_CELL_COUNT;
 use super::constants::BOUNDARY_COLOR;
@@ -140,22 +142,22 @@ impl Boundary {
         portal: &Portal,
         color: Color,
         resolution: u32,
-        orientation: &CameraOrientation,
+        camera_orientation: &CameraOrientation,
         actor_kind: PortalActorKind,
         transform: &Transform,
     ) {
-        portal_render::draw_portal(
+        draw_portal(
             gizmos,
             portal,
             color,
             resolution,
-            orientation,
+            camera_orientation,
             actor_kind,
             transform,
         );
     }
 
     pub(super) fn calculate_portal_face_count(portal: &Portal, transform: &Transform) -> usize {
-        portal_render::calculate_portal_face_count(portal, transform)
+        calculate_portal_face_count(portal, transform)
     }
 }
