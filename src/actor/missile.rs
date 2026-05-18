@@ -1,6 +1,4 @@
 use std::f32::consts::PI;
-use std::ops::Deref;
-use std::ops::DerefMut;
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -60,10 +58,11 @@ impl Plugin for MissilePlugin {
     }
 }
 
-#[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
+#[derive(Resource, Reflect, InspectorOptions, Debug, Clone, Deref, DerefMut)]
 #[reflect(Resource)]
 pub(super) struct MissileSettings {
-    pub actor_settings:          ActorSettings,
+    #[deref]
+    pub actor:                   ActorSettings,
     pub forward_distance_scalar: f32,
     pub base_velocity:           f32,
 }
@@ -71,7 +70,7 @@ pub(super) struct MissileSettings {
 impl Default for MissileSettings {
     fn default() -> Self {
         Self {
-            actor_settings:          ActorSettings {
+            actor:                   ActorSettings {
                 spawnability:             Spawnability::Enabled,
                 angular_damping:          None,
                 collider_margin:          MISSILE_COLLIDER_MARGIN,
@@ -106,16 +105,6 @@ impl Default for MissileSettings {
     }
 }
 
-impl Deref for MissileSettings {
-    type Target = ActorSettings;
-
-    fn deref(&self) -> &Self::Target { &self.actor_settings }
-}
-
-impl DerefMut for MissileSettings {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_settings }
-}
-
 // todo: #rustquestion - how can i make it so that `new` has to be used and
 // `DrawDirection` isn't constructed directly - i still need the fields visible
 #[derive(Component, Reflect, Copy, Clone, Debug)]
@@ -134,7 +123,7 @@ pub(super) struct MissilePosition {
     pub(super) total_distance:    f32,
     pub(super) traveled_distance: f32,
     remaining_distance:           f32,
-    pub(super) last_position:     Option<Position>,
+    pub(super) last:              Option<Position>,
 }
 
 impl MissilePosition {
@@ -143,7 +132,7 @@ impl MissilePosition {
             total_distance,
             traveled_distance: 0.,
             remaining_distance: 0.,
-            last_position: None,
+            last: None,
         }
     }
 }
@@ -184,7 +173,7 @@ fn initialize_missile(
 
     settings::insert_configured_components(
         &mut commands,
-        &mut missile_settings.actor_settings,
+        &mut missile_settings.actor,
         missile.entity,
     );
 }
@@ -200,12 +189,12 @@ fn initialize_transform(
 
     // Combine rotations: spaceship rotation * missile settings rotation
     let combined_rotation =
-        spaceship_transform.rotation * missile_settings.actor_settings.transform.rotation;
+        spaceship_transform.rotation * missile_settings.actor.transform.rotation;
 
     Transform {
         translation: spawn_position,
         rotation:    combined_rotation,
-        scale:       missile_settings.actor_settings.transform.scale,
+        scale:       missile_settings.actor.transform.scale,
     }
 }
 
@@ -266,13 +255,13 @@ fn missile_movement(
     for (entity, transform, mut missile_position, teleporter) in &mut missile_position_query {
         let current_position = Position(transform.translation);
 
-        if let Some(last_position) = missile_position.last_position {
+        if let Some(last) = missile_position.last {
             // Calculate the distance traveled since the last update
             let distance_traveled = if teleporter.teleport_status == TeleportStatus::JustTeleported
             {
                 0.0
             } else {
-                last_position.distance(current_position)
+                last.distance(current_position)
             };
 
             // Update the total traveled distance
@@ -282,7 +271,7 @@ fn missile_movement(
         }
 
         // Always update the last position.
-        missile_position.last_position = Some(current_position);
+        missile_position.last = Some(current_position);
 
         if missile_position.traveled_distance >= missile_position.total_distance {
             despawn::despawn(&mut commands, entity);

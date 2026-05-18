@@ -183,21 +183,15 @@ fn propagate_render_layers_on_spawn(
 
 pub(super) fn initialize_actors(mut commands: Commands, scene_assets: Res<SceneAssets>) {
     let mut nateroid_defaults = NateroidSettings::default();
-    initialize_actor_settings(
-        &mut nateroid_defaults.actor_settings,
-        &scene_assets.nateroid,
-    );
+    initialize_actor_settings(&mut nateroid_defaults.actor, &scene_assets.nateroid);
     commands.insert_resource(nateroid_defaults);
 
     let mut missile_defaults = MissileSettings::default();
-    initialize_actor_settings(&mut missile_defaults.actor_settings, &scene_assets.missile);
+    initialize_actor_settings(&mut missile_defaults.actor, &scene_assets.missile);
     commands.insert_resource(missile_defaults);
 
     let mut spaceship_defaults = SpaceshipSettings::default();
-    initialize_actor_settings(
-        &mut spaceship_defaults.actor_settings,
-        &scene_assets.spaceship,
-    );
+    initialize_actor_settings(&mut spaceship_defaults.actor, &scene_assets.spaceship);
     commands.insert_resource(spaceship_defaults);
 }
 
@@ -219,9 +213,9 @@ pub(super) fn insert_configured_components(
     // Insert all components on the actor entity
     commands.entity(actor_entity).insert((
         PendingCollider {
-            collider_type: settings.collider_type.clone(),
-            margin:        settings.collider_margin,
-            rigid_body:    settings.rigid_body,
+            kind:       settings.collider_type.clone(),
+            margin:     settings.collider_margin,
+            rigid_body: settings.rigid_body,
         },
         CollisionDamage(settings.collision_damage),
         settings.collision_layers,

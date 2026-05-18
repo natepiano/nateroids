@@ -1,6 +1,3 @@
-use std::ops::Deref;
-use std::ops::DerefMut;
-
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_inspector_egui::InspectorOptions;
@@ -36,10 +33,11 @@ pub(crate) enum DeathCorner {
     Directional,
 }
 
-#[derive(Resource, Reflect, InspectorOptions, Debug, Clone)]
+#[derive(Resource, Reflect, InspectorOptions, Debug, Clone, Deref, DerefMut)]
 #[reflect(Resource)]
 pub(crate) struct NateroidSettings {
-    pub actor_settings:            ActorSettings,
+    #[deref]
+    pub actor:                     ActorSettings,
     pub linear_velocity:           f32,
     pub angular_velocity:          f32,
     pub death_duration_secs:       f32,
@@ -53,7 +51,7 @@ pub(crate) struct NateroidSettings {
 impl Default for NateroidSettings {
     fn default() -> Self {
         Self {
-            actor_settings:            ActorSettings {
+            actor:                     ActorSettings {
                 spawnability:             Spawnability::Enabled,
                 angular_damping:          Some(NATEROID_ANGULAR_DAMPING),
                 collider_margin:          NATEROID_COLLIDER_MARGIN,
@@ -93,14 +91,4 @@ impl Default for NateroidSettings {
             density_culling_threshold: NATEROID_DENSITY_CULLING_THRESHOLD,
         }
     }
-}
-
-impl Deref for NateroidSettings {
-    type Target = ActorSettings;
-
-    fn deref(&self) -> &Self::Target { &self.actor_settings }
-}
-
-impl DerefMut for NateroidSettings {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.actor_settings }
 }

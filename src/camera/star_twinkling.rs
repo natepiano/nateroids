@@ -14,9 +14,10 @@ pub(super) struct StarTwinklingPlugin;
 impl Plugin for StarTwinklingPlugin {
     fn build(&self, app: &mut App) {
         let start_twinkling_timer_duration = StarSettings::default().twinkle.delay;
-        app.insert_resource(StartTwinklingTimer {
-            timer: Timer::from_seconds(start_twinkling_timer_duration, TimerMode::Repeating),
-        })
+        app.insert_resource(StartTwinklingTimer(Timer::from_seconds(
+            start_twinkling_timer_duration,
+            TimerMode::Repeating,
+        )))
         .add_systems(Update, (start_twinkling, update_twinkling));
     }
 }
@@ -29,9 +30,7 @@ struct Twinkling {
 }
 
 #[derive(Resource)]
-struct StartTwinklingTimer {
-    timer: Timer,
-}
+struct StartTwinklingTimer(Timer);
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum TwinkleReadiness {
@@ -40,8 +39,8 @@ enum TwinkleReadiness {
 }
 
 fn twinkle_readiness(start_timer: &mut StartTwinklingTimer, time: &Time) -> TwinkleReadiness {
-    start_timer.timer.tick(time.delta());
-    if start_timer.timer.just_finished() {
+    start_timer.0.tick(time.delta());
+    if start_timer.0.just_finished() {
         TwinkleReadiness::Ready
     } else {
         TwinkleReadiness::Waiting

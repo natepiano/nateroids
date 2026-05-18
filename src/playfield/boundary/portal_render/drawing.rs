@@ -61,10 +61,7 @@ fn render_portal_by_geometry(
         PortalGeometry::SingleFace => {
             // Draw full circle
             let rotation = Quat::from_rotation_arc(
-                context
-                    .camera_orientation
-                    .orientation_settings
-                    .axis_profundus,
+                context.camera_orientation.settings.axis_profundus,
                 portal.normal().as_vec3(),
             );
             let isometry = Isometry3d::new(*portal.position, rotation);

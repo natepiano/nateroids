@@ -58,9 +58,9 @@ impl Plugin for AabbPlugin {
 /// `calculate_bounds`.
 #[derive(Component)]
 pub(super) struct PendingCollider {
-    pub collider_type: ColliderType,
-    pub margin:        f32,
-    pub rigid_body:    RigidBody,
+    pub kind:       ColliderType,
+    pub margin:     f32,
+    pub rigid_body: RigidBody,
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -158,7 +158,7 @@ fn compute_actor_aabb(
         };
         let aabb_size = size(&aabb);
 
-        let collider = match pending.collider_type {
+        let collider = match pending.kind {
             ColliderType::Ball => {
                 let radius = aabb_size.length() * pending.margin;
                 Collider::sphere(radius)
