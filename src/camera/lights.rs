@@ -29,7 +29,6 @@ use crate::input::InspectLightsSwitch;
 use crate::orientation::CameraOrientation;
 use crate::switches;
 use crate::switches::Switch;
-use crate::switches::Switches;
 
 event!(LightsInspectorEvent);
 

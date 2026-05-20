@@ -30,7 +30,6 @@ use crate::input::InspectNateroidSwitch;
 use crate::input::InspectSpaceshipSwitch;
 use crate::switches;
 use crate::switches::Switch;
-use crate::switches::Switches;
 
 event!(MissileInspectorEvent);
 event!(NateroidInspectorEvent);

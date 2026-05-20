@@ -13,6 +13,7 @@ use crate::actor::NATEROID_DEATH_ALPHA_STEP;
 use crate::actor::Nateroid;
 use crate::actor::NateroidDeathMaterials;
 use crate::actor::NateroidSettings;
+use crate::actor::Spaceship;
 use crate::constants::DEATH_VELOCITY_EPSILON;
 use crate::constants::UNKNOWN_ENTITY_NAME;
 use crate::playfield::BoundaryVolume;
@@ -179,6 +180,7 @@ fn despawn_dead_entities(
             &Transform,
             &LinearVelocity,
             Option<&Nateroid>,
+            Option<&Spaceship>,
             Option<&Name>,
         ),
         (Without<Deaderoid>, Changed<Health>),
@@ -188,12 +190,15 @@ fn despawn_dead_entities(
     death_materials: Option<Res<NateroidDeathMaterials>>,
     children_query: Query<&Children>,
     material_query: Query<&MeshMaterial3d<StandardMaterial>>,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     let Ok(boundary_transform) = boundary_volume_query.single() else {
         return;
     };
 
-    for (entity, health, transform, linear_velocity, nateroid, name) in dying_entity_query.iter() {
+    for (entity, health, transform, linear_velocity, nateroid, spaceship, name) in
+        dying_entity_query.iter()
+    {
         if health.0 <= 0.0 {
             if nateroid.is_some() {
                 let entity_name = name.map_or(UNKNOWN_ENTITY_NAME, Name::as_str);
@@ -252,6 +257,10 @@ fn despawn_dead_entities(
                     );
                 }
             } else {
+                if spaceship.is_some() {
+                    info!("spaceship destroyed: entity {:?}", entity);
+                    next_state.set(GameState::GameOver);
+                }
                 // Other entities - despawn immediately
                 despawn(&mut commands, entity);
             }

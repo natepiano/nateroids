@@ -17,7 +17,6 @@ use crate::input::AabbsSwitch;
 use crate::input::InspectAabbSwitch;
 use crate::switches;
 use crate::switches::Switch;
-use crate::switches::Switches;
 
 event!(AabbInspectorEvent);
 event!(AabbsEvent);

@@ -34,7 +34,6 @@ use crate::orientation::CameraOrientation;
 use crate::state::GameState;
 use crate::switches;
 use crate::switches::Switch;
-use crate::switches::Switches;
 
 event!(BoundaryInspectorEvent);
 

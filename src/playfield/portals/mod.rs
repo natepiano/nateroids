@@ -15,7 +15,6 @@ use crate::state::GameState;
 use crate::state::PauseState;
 use crate::switches;
 use crate::switches::Switch;
-use crate::switches::Switches;
 
 event!(PortalInspectorEvent);
 

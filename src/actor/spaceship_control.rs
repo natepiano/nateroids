@@ -33,7 +33,6 @@ use crate::orientation::OrientationType;
 use crate::schedule::InGameSet;
 use crate::switches;
 use crate::switches::Switch;
-use crate::switches::Switches;
 
 event!(SpaceshipControlInspectorEvent);
 

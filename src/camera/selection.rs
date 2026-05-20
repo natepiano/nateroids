@@ -21,7 +21,6 @@ use crate::input::InspectOutlineSwitch;
 use crate::playfield::BoundaryVolume;
 use crate::switches;
 use crate::switches::Switch;
-use crate::switches::Switches;
 
 event!(OutlineInspectorEvent);
 

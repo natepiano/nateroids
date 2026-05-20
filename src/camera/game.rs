@@ -39,7 +39,6 @@ use crate::asset_loader::SceneAssets;
 use crate::input::InspectCameraSwitch;
 use crate::switches;
 use crate::switches::Switch;
-use crate::switches::Switches;
 
 event!(InspectCameraEvent);
 

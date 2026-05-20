@@ -27,9 +27,11 @@ macro_rules! bind_action_switch {
             },
         );
         let switch = $switch;
-        $app.add_observer(move |_: On<$event>, mut switches: ResMut<Switches>| {
-            switches.toggle_switch(switch);
-        });
+        $app.add_observer(
+            move |_: On<$event>, mut switches: ResMut<$crate::switches::Switches>| {
+                switches.toggle_switch(switch);
+            },
+        );
     };
 }
 

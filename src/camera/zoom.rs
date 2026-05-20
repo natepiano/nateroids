@@ -33,7 +33,6 @@ use crate::input::ZoomToFitShortcut;
 use crate::playfield::BoundaryVolume;
 use crate::switches;
 use crate::switches::Switch;
-use crate::switches::Switches;
 
 /// Resource tracking the currently selected entity for zoom-to-fit.
 /// When `None`, Z zooms to boundary.

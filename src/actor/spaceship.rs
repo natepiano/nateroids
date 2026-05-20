@@ -91,8 +91,8 @@ impl Plugin for SpaceshipPlugin {
         // Spawn `Spaceship` when entering `PauseState::Playing` (game start or unpause)
         app.add_observer(initialize_spaceship)
             .add_observer(spawn_after_splash_text_removed)
-            .add_observer(on_spaceship_removed)
             .add_systems(OnEnter(PauseState::Playing), spawn_spaceship_if_needed)
+            .add_systems(OnEnter(GameState::InGame), attach_controls_if_spawned)
             .add_systems(
                 FixedUpdate,
                 enforce_spaceship_2d_rotation
@@ -150,11 +150,19 @@ fn initialize_spaceship(
     spaceship: On<Add, Spaceship>,
     mut commands: Commands,
     mut spaceship_settings: ResMut<SpaceshipSettings>,
+    game_state: Res<State<GameState>>,
 ) {
     commands
         .entity(spaceship.entity)
         .insert(spaceship_settings.transform);
-    input::insert_ship_controls(&mut commands, spaceship.entity);
+
+    // Controls are only attached while in `InGame`. When the ship spawns
+    // mid-splash (via `spawn_after_splash_text_removed`), it has no controls,
+    // so the skip key can't fire a ship action. `attach_controls_if_spawned`
+    // wires them up on entering `InGame`.
+    if *game_state.get() == GameState::InGame {
+        input::insert_ship_controls(&mut commands, spaceship.entity);
+    }
 
     settings::insert_configured_components(
         &mut commands,
@@ -163,12 +171,14 @@ fn initialize_spaceship(
     );
 }
 
-fn on_spaceship_removed(
-    trigger: On<Remove, Spaceship>,
-    mut next_state: ResMut<NextState<GameState>>,
-) {
-    info!("spaceship destroyed: entity {:?}", trigger.entity);
-    next_state.set(GameState::GameOver);
+/// Attaches ship controls to a spaceship that was spawned during `Splash`.
+/// No-op when the ship hasn't spawned yet (quick restart path) — the
+/// `initialize_spaceship` observer handles that case when the ship spawns
+/// later under `PauseState::Playing`.
+fn attach_controls_if_spawned(mut commands: Commands, spaceships: Query<Entity, With<Spaceship>>) {
+    for entity in &spaceships {
+        input::insert_ship_controls(&mut commands, entity);
+    }
 }
 
 /// Enforce strict 2D rotation by zeroing X/Y angular velocity and correcting transform if tilted

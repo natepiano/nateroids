@@ -15,8 +15,13 @@ action!(ShipContinuousFire);
 action!(ShipShiftModifier);
 
 pub(crate) fn insert_ship_controls(commands: &mut Commands, entity: Entity) {
+    // `require_reset` swallows any key already held when controls attach (e.g.
+    // the player held Space to skip the splash and is still holding it as the
+    // ship's context comes alive on entering `InGame`). The first activation is
+    // ignored until the binding reads zero; subsequent presses fire normally.
     let consume_input = ActionSettings {
         consume_input: true,
+        require_reset: true,
         ..default()
     };
     // Internal "modifier state" action used only for gating other ship actions.
