@@ -5,7 +5,6 @@ mod spawn;
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
-pub(crate) use death_materials::Deaderoid;
 pub(crate) use death_materials::NateroidDeathMaterials;
 pub(crate) use settings::DeathCorner;
 pub(crate) use settings::NateroidSettings;

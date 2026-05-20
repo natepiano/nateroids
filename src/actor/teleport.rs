@@ -2,7 +2,6 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_kana::Position;
 
-use super::Deaderoid;
 use super::Health;
 use super::Nateroid;
 use super::constants::INSTANT_DEATH_HEALTH;
@@ -12,6 +11,7 @@ use super::nateroid::NateroidSettings;
 use super::nateroid::NateroidSpawnStats;
 use super::spaceship::Spaceship;
 use crate::despawn;
+use crate::despawn::Deaderoid;
 use crate::playfield::BoundaryVolume;
 use crate::schedule::InGameSet;
 

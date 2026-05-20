@@ -1,4 +1,5 @@
 mod constants;
+mod focus_gizmo;
 mod game;
 mod lights;
 mod rendering;
@@ -15,6 +16,7 @@ use bevy::prelude::*;
 use bevy_lagrange::LagrangePlugin;
 use bevy_liminal::MeshOutlinePlugin;
 pub(crate) use constants::ZOOM_MARGIN;
+use focus_gizmo::FocusGizmoPlugin;
 pub(crate) use game::CameraSettings;
 use game::GameCameraPlugin;
 use lights::DirectionalLightsPlugin;
@@ -37,6 +39,7 @@ impl Plugin for CameraPlugin {
             .add_plugins(GameCameraPlugin)
             .add_plugins(StarCameraPlugin)
             .add_plugins(ZoomPlugin)
+            .add_plugins(FocusGizmoPlugin)
             .add_plugins(DirectionalLightsPlugin)
             .add_plugins(SelectionPlugin)
             .add_plugins(StarTwinklingPlugin)

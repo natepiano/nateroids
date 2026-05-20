@@ -7,7 +7,6 @@ use bevy_kana::Velocity;
 use rand::RngExt;
 use rand::rng;
 
-use crate::actor::Deaderoid;
 use crate::actor::DeathCorner;
 use crate::actor::Health;
 use crate::actor::NATEROID_DEATH_ALPHA_STEP;
@@ -23,6 +22,16 @@ use crate::splash::SplashText;
 use crate::state::GameState;
 
 pub(crate) struct DespawnPlugin;
+
+#[derive(Component, Debug)]
+pub(crate) struct Deaderoid {
+    pub initial_scale:          Vec3,
+    pub target_shrink:          f32,
+    pub shrink_duration:        f32,
+    pub elapsed_time:           f32,
+    pub current_shrink:         f32,
+    pub current_material_index: usize,
+}
 
 impl Plugin for DespawnPlugin {
     fn build(&self, app: &mut App) {

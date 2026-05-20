@@ -9,7 +9,6 @@ use rand::rng;
 
 use super::FlameGizmo;
 use super::flicker;
-use crate::actor::Deaderoid;
 use crate::actor::aabb;
 use crate::actor::constants::DEATH_EFFECT_DURATION_SECS;
 use crate::actor::constants::DEATH_EFFECT_EXPANDING_RING_START_SCALE;
@@ -22,6 +21,7 @@ use crate::actor::constants::DEATH_EFFECT_RING_COLOR_YELLOW;
 use crate::actor::constants::FLAME_PHASE_SPREAD;
 use crate::actor::constants::FLAME_VIBRATION_AMPLITUDE;
 use crate::actor::constants::FLAME_VIBRATION_SPEED;
+use crate::despawn::Deaderoid;
 use crate::state::PauseState;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]

@@ -17,7 +17,6 @@ use collision_detection::CollisionDetectionPlugin;
 pub(crate) use constants::NATEROID_DEATH_ALPHA_STEP;
 use flame_gizmo::FlameGizmoPlugin;
 use missile::MissilePlugin;
-pub(crate) use nateroid::Deaderoid;
 pub(crate) use nateroid::DeathCorner;
 pub(crate) use nateroid::Nateroid;
 pub(crate) use nateroid::NateroidDeathMaterials;

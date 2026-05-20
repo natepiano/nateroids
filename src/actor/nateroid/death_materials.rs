@@ -10,16 +10,6 @@ use super::constants::ICING_MESH_NAME;
 use crate::actor::constants::NATEROID_DEATH_ALPHA_STEP;
 use crate::asset_loader::SceneAssets;
 
-#[derive(Component, Debug)]
-pub(crate) struct Deaderoid {
-    pub initial_scale:          Vec3,
-    pub target_shrink:          f32,
-    pub shrink_duration:        f32,
-    pub elapsed_time:           f32,
-    pub current_shrink:         f32,
-    pub current_material_index: usize,
-}
-
 /// Precomputed materials for `Nateroid` death animation at different transparency levels
 #[derive(Resource)]
 pub(crate) struct NateroidDeathMaterials {
