@@ -8,6 +8,7 @@ mod nateroid;
 mod settings;
 mod spaceship;
 mod spaceship_control;
+mod spawn_stats;
 mod teleport;
 
 use aabb::AabbPlugin;

@@ -48,8 +48,8 @@ fn main() {
     let mut app = App::new();
 
     // Get effective port from `BrpExtrasPlugin` to include in window title if non-default
-    let brp_plugin = BrpExtrasPlugin::default();
-    let (effective_port, _) = brp_plugin.get_effective_port();
+    let brp_extras_plugin = BrpExtrasPlugin::default();
+    let (effective_port, _) = brp_extras_plugin.get_effective_port();
     let window_title = if effective_port == DEFAULT_REMOTE_PORT {
         APPLICATION_TITLE.to_string()
     } else {
@@ -80,7 +80,7 @@ fn main() {
             EnhancedInputAppPlugin,
             ActorPlugin,
             AssetLoaderPlugin,
-            brp_plugin,
+            brp_extras_plugin,
             PlayfieldPlugin,
             CameraPlugin,
             DespawnPlugin,

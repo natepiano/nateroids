@@ -1,11 +1,9 @@
-use std::collections::VecDeque;
 use std::f32::consts::PI;
 use std::ops::Range;
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_kana::Position;
-use bevy_kana::ToF32;
 use rand::Rng;
 use rand::RngExt;
 use rand::rng;
@@ -13,7 +11,6 @@ use rand::rng;
 use super::Nateroid;
 use super::NateroidSettings;
 use super::constants::NATEROID_ENTITY_NAME;
-use crate::actor::constants::NATEROID_SPAWN_HISTORY_LEN;
 use crate::actor::constants::NATEROID_SPAWN_MAX_ATTEMPTS;
 use crate::actor::constants::NATEROID_WARN_THROTTLE_INTERVAL_SECS;
 use crate::actor::constants::SPAWN_WINDOW;
@@ -21,60 +18,9 @@ use crate::actor::game_layer::GameLayer;
 use crate::actor::settings;
 use crate::actor::settings::ColliderType;
 use crate::actor::settings::Spawnability;
+use crate::actor::spawn_stats::NateroidSpawnStats;
+use crate::actor::spawn_stats::SpawnResult;
 use crate::playfield::BoundaryVolume;
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum SpawnResult {
-    Success,
-    Failure,
-}
-
-#[derive(Resource)]
-pub struct NateroidSpawnStats {
-    /// Ring buffer tracking last N spawn attempts
-    attempts:          VecDeque<SpawnResult>,
-    last_warning_time: f32,
-}
-
-impl Default for NateroidSpawnStats {
-    fn default() -> Self {
-        Self {
-            attempts:          VecDeque::with_capacity(NATEROID_SPAWN_HISTORY_LEN),
-            last_warning_time: 0.0,
-        }
-    }
-}
-
-impl NateroidSpawnStats {
-    fn record_attempt(&mut self, result: SpawnResult) {
-        self.attempts.push_back(result);
-        if self.attempts.len() > NATEROID_SPAWN_HISTORY_LEN {
-            self.attempts.pop_front();
-        }
-    }
-
-    pub fn success_rate(&self) -> f32 {
-        if self.attempts.is_empty() {
-            1.0 // No data - assume field is not crowded
-        } else {
-            let successes = self
-                .attempts
-                .iter()
-                .filter(|&&result| result == SpawnResult::Success)
-                .count();
-            successes.to_f32() / self.attempts.len().to_f32()
-        }
-    }
-
-    pub fn attempts_count(&self) -> usize { self.attempts.len() }
-
-    pub fn successes_count(&self) -> usize {
-        self.attempts
-            .iter()
-            .filter(|&&result| result == SpawnResult::Success)
-            .count()
-    }
-}
 
 pub(super) fn spawn_nateroid(
     mut commands: Commands,

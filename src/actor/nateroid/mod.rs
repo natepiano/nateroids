@@ -8,11 +8,11 @@ use bevy::prelude::*;
 pub(crate) use death_materials::NateroidDeathMaterials;
 pub(crate) use settings::DeathCorner;
 pub(crate) use settings::NateroidSettings;
-pub(super) use spawn::NateroidSpawnStats;
 
 use super::Teleporter;
 use super::constants::LOCKED_AXES_2D;
 use super::settings::initialize_actors;
+use super::spawn_stats::NateroidSpawnStats;
 use crate::asset_loader::AssetsState;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
