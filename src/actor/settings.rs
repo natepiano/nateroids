@@ -181,17 +181,17 @@ fn propagate_render_layers_on_spawn(
 }
 
 pub(super) fn initialize_actors(mut commands: Commands, scene_assets: Res<SceneAssets>) {
-    let mut nateroid_defaults = NateroidSettings::default();
-    initialize_actor_settings(&mut nateroid_defaults.actor, &scene_assets.nateroid);
-    commands.insert_resource(nateroid_defaults);
+    let mut nateroid_settings = NateroidSettings::default();
+    initialize_actor_settings(&mut nateroid_settings.actor, &scene_assets.nateroid);
+    commands.insert_resource(nateroid_settings);
 
-    let mut missile_defaults = MissileSettings::default();
-    initialize_actor_settings(&mut missile_defaults.actor, &scene_assets.missile);
-    commands.insert_resource(missile_defaults);
+    let mut missile_settings = MissileSettings::default();
+    initialize_actor_settings(&mut missile_settings.actor, &scene_assets.missile);
+    commands.insert_resource(missile_settings);
 
-    let mut spaceship_defaults = SpaceshipSettings::default();
-    initialize_actor_settings(&mut spaceship_defaults.actor, &scene_assets.spaceship);
-    commands.insert_resource(spaceship_defaults);
+    let mut spaceship_settings = SpaceshipSettings::default();
+    initialize_actor_settings(&mut spaceship_settings.actor, &scene_assets.spaceship);
+    commands.insert_resource(spaceship_settings);
 }
 
 fn create_spawn_timer(spawn_timer_seconds: Option<f32>) -> Option<Timer> {

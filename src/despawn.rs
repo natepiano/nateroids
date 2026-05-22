@@ -130,14 +130,14 @@ fn calculate_death_velocity(
         },
         DeathCorner::Directional => {
             // Find corner most aligned with current velocity direction
-            let velocity_dir = current_velocity.normalize_or_zero();
+            let velocity_direction = current_velocity.normalize_or_zero();
 
             // Calculate dot product for each corner (how aligned it is with velocity)
             let corner_scores: Vec<(Vec3, f32)> = corners
                 .iter()
                 .map(|&corner| {
                     let to_corner = (corner - position).normalize_or_zero();
-                    let dot = velocity_dir.dot(to_corner);
+                    let dot = velocity_direction.dot(to_corner);
                     (corner, dot)
                 })
                 .collect();

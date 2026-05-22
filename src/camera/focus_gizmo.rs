@@ -144,18 +144,20 @@ fn draw_camera_focus_gizmo(
         let distance = focus.length();
         let text = format!("{distance:.1}");
 
-        let arrow_dir = focus.normalize_or_zero();
+        let arrow_direction = focus.normalize_or_zero();
         let along_arrow_offset = focus_gizmo_state
             .sphere_radius
             .mul_add(2.0, FOCUS_GIZMO_DISTANCE_LABEL_OFFSET);
-        let label_world_pos = focus + (arrow_dir * along_arrow_offset);
+        let label_world_position = focus + (arrow_direction * along_arrow_offset);
 
-        if let Ok(label_screen_pos) = camera.world_to_viewport(camera_transform, label_world_pos) {
+        if let Ok(label_screen_position) =
+            camera.world_to_viewport(camera_transform, label_world_position)
+        {
             if let Ok((mut label_text, mut node, mut text_color)) = label_query.single_mut() {
                 label_text.0.clone_from(&text);
                 text_color.0 = focus_settings.color;
-                node.left = Val::Px(label_screen_pos.x);
-                node.top = Val::Px(label_screen_pos.y);
+                node.left = Val::Px(label_screen_position.x);
+                node.top = Val::Px(label_screen_position.y);
             } else {
                 commands.spawn((
                     Text::new(text),
@@ -166,8 +168,8 @@ fn draw_camera_focus_gizmo(
                     TextColor(focus_settings.color),
                     Node {
                         position_type: PositionType::Absolute,
-                        left: Val::Px(label_screen_pos.x),
-                        top: Val::Px(label_screen_pos.y),
+                        left: Val::Px(label_screen_position.x),
+                        top: Val::Px(label_screen_position.y),
                         ..default()
                     },
                     RenderLayer::UI.layers(),

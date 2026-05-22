@@ -44,10 +44,10 @@ pub(super) fn rotate_portal_center_to_target_face(
     let rotation = Quat::from_axis_angle(rotation_axis, FRAC_PI_2);
 
     // Apply the rotation to the position relative to the rotation point
-    let relative_pos = position - rotation_point;
-    let rotated_pos = rotation * relative_pos;
+    let relative_position = position - rotation_point;
+    let rotated_position = rotation * relative_position;
 
-    let mut result = rotation_point + rotated_pos;
+    let mut result = rotation_point + rotated_position;
 
     // Rotation math at corners can produce off-plane positions - force result onto target
     // face's plane

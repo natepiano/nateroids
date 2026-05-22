@@ -139,13 +139,13 @@ fn add_selection_outline_command(
     mesh_query: Query<Entity, With<Mesh3d>>,
     selection_outline_settings: Res<SelectionOutlineSettings>,
 ) {
-    let outline = MeshOutline::new(selection_outline_settings.width)
+    let mesh_outline = MeshOutline::new(selection_outline_settings.width)
         .with_color(selection_outline_settings.color)
         .with_intensity(selection_outline_settings.intensity);
 
     for descendant in children_query.iter_descendants(entity) {
         if mesh_query.get(descendant).is_ok() {
-            commands.entity(descendant).insert(outline.clone());
+            commands.entity(descendant).insert(mesh_outline.clone());
         }
     }
 }

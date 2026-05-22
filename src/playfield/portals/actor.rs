@@ -140,14 +140,14 @@ fn handle_approaching_visual(
 
         if actor_distance_to_wall <= portal.boundary_distance_approach {
             let face = get_face_for_position(collision_point, boundary_transform);
-            let temp_portal = Portal {
+            let temporary_portal = Portal {
                 position: collision_point,
                 face,
                 radius: portal.radius,
                 ..portal
             };
             let current_face_count =
-                Boundary::calculate_portal_face_count(&temp_portal, boundary_transform);
+                Boundary::calculate_portal_face_count(&temporary_portal, boundary_transform);
             let previous_face_count = actor_portals
                 .approaching
                 .as_ref()
@@ -286,14 +286,14 @@ fn find_edge_point(origin: Position, direction: Vec3, transform: &Transform) -> 
 
     let mut closest_hit_time: Option<f32> = None;
 
-    for (start, dir, pos_bound, neg_bound) in [
+    for (start, axis_direction, positive_boundary, negative_boundary) in [
         (origin.x, direction.x, boundary_max.x, boundary_min.x),
         (origin.y, direction.y, boundary_max.y, boundary_min.y),
         (origin.z, direction.z, boundary_max.z, boundary_min.z),
     ] {
-        if dir != 0.0 {
+        if axis_direction != 0.0 {
             let mut update_closest_hit_time = |boundary: f32| {
-                let t = (boundary - start) / dir;
+                let t = (boundary - start) / axis_direction;
                 let point = origin + direction * t;
                 if t > 0.0
                     && closest_hit_time.is_none_or(|current| t < current)
@@ -304,8 +304,8 @@ fn find_edge_point(origin: Position, direction: Vec3, transform: &Transform) -> 
                 }
             };
 
-            update_closest_hit_time(pos_bound);
-            update_closest_hit_time(neg_bound);
+            update_closest_hit_time(positive_boundary);
+            update_closest_hit_time(negative_boundary);
         }
     }
 

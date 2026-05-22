@@ -276,7 +276,7 @@ fn manage_lighting(
         // if we have the current loop's position in an already spawned entity
         let existing_light = directional_light_query
             .iter_mut()
-            .find(|(_, _, dir)| dir.0 == *position);
+            .find(|(_, _, direction)| direction.0 == *position);
 
         let light_rotation = position.get_rotation(&camera_orientation);
 
