@@ -9,6 +9,7 @@ use super::constants::GLTF_ROTATION_X;
 use super::constants::LOCKED_AXES_SPACESHIP;
 use super::constants::MAX_SPACESHIP_ANGULAR_VELOCITY;
 use super::constants::MAX_SPACESHIP_LINEAR_VELOCITY;
+use super::constants::NO_GRAVITY_SCALE;
 use super::constants::SPACESHIP_ANGULAR_DAMPING;
 use super::constants::SPACESHIP_COLLIDER_MARGIN;
 use super::constants::SPACESHIP_COLLISION_DAMAGE;
@@ -56,7 +57,7 @@ impl Default for SpaceshipSettings {
                     [GameLayer::Spaceship],
                     [GameLayer::Asteroid, GameLayer::Boundary],
                 ),
-                gravity_scale:            0.,
+                gravity_scale:            NO_GRAVITY_SCALE,
                 health:                   SPACESHIP_HEALTH,
                 linear_damping:           Some(SPACESHIP_LINEAR_DAMPING),
                 locked_axes:              LockedAxes::new()

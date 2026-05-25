@@ -20,6 +20,7 @@ use crate::actor::constants::NATEROID_RESTITUTION;
 use crate::actor::constants::NATEROID_SCALE_UP;
 use crate::actor::constants::NATEROID_SPAWN_TIMER_SECONDS;
 use crate::actor::constants::NATEROID_TARGET_ALPHA;
+use crate::actor::constants::NO_GRAVITY_SCALE;
 use crate::actor::game_layer::GameLayer;
 use crate::actor::settings::ActorSettings;
 use crate::actor::settings::ColliderType;
@@ -65,7 +66,7 @@ impl Default for NateroidSettings {
                         GameLayer::Spaceship,
                     ],
                 ),
-                gravity_scale:            0.,
+                gravity_scale:            NO_GRAVITY_SCALE,
                 health:                   NATEROID_HEALTH,
                 linear_damping:           Some(NATEROID_LINEAR_DAMPING),
                 locked_axes:              LockedAxes::new().lock_translation_z(),

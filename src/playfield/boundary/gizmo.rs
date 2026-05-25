@@ -3,6 +3,7 @@ use bevy_lagrange::CameraMoveList;
 
 use super::Boundary;
 use crate::camera::RenderLayer;
+use crate::constants::MILLISECONDS_PER_SECOND;
 use crate::playfield::constants::BOUNDARY_COLOR;
 use crate::playfield::constants::BOUNDARY_GRID_ALPHA;
 use crate::playfield::constants::BOUNDARY_OUTER_ALPHA;
@@ -127,7 +128,7 @@ pub(super) fn start_boundary_fade(
         .map_or(0.0, CameraMoveList::remaining_time_ms);
 
     // Convert milliseconds to seconds for Timer
-    let duration_secs = remaining_time_ms / 1000.0;
+    let duration_secs = remaining_time_ms / MILLISECONDS_PER_SECOND;
 
     // Spawn entity with fade timer
     commands.spawn(BoundaryFadeIn(Timer::from_seconds(

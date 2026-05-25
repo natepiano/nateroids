@@ -95,3 +95,6 @@ pub(crate) const INSPECTOR_SWITCHES: [Switch; 13] = [
     Switch::InspectStar,
     Switch::InspectZoom,
 ];
+
+// time conversions
+pub(crate) const MILLISECONDS_PER_SECOND: f32 = 1000.0;

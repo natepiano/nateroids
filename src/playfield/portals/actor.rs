@@ -5,6 +5,7 @@ use bevy_kana::Position;
 
 use super::Portal;
 use super::PortalGizmo;
+use super::constants::DEFAULT_PORTAL_FACE_COUNT;
 use super::settings::PortalSettings;
 use crate::actor;
 use crate::actor::TeleportStatus;
@@ -151,7 +152,9 @@ fn handle_approaching_visual(
             let previous_face_count = actor_portals
                 .approaching
                 .as_ref()
-                .map_or(1, |approaching| approaching.face_count);
+                .map_or(DEFAULT_PORTAL_FACE_COUNT, |approaching| {
+                    approaching.face_count
+                });
 
             let smoothed_position = if current_face_count == previous_face_count {
                 smooth_circle_position(actor_portals, collision_point, face, portal_settings)

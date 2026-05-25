@@ -88,6 +88,9 @@ pub(crate) const NATEROID_DEATH_ALPHA_STEP: f32 = 0.01;
 pub(super) const NATEROID_DEATH_DURATION_SECS: f32 = 3.0;
 pub(super) const NATEROID_DEATH_SHRINK_PERCENTAGE: f32 = 0.3;
 pub(super) const NATEROID_DENSITY_CULLING_THRESHOLD: f32 = 0.01;
+/// Success rate assumed when no spawn history exists yet (treat the field as
+/// uncrowded).
+pub(super) const NATEROID_EMPTY_SPAWN_SUCCESS_RATE: f32 = 1.0;
 pub(super) const NATEROID_HEALTH: f32 = 200.0;
 pub(super) const NATEROID_INITIAL_ALPHA: f32 = 0.35;
 pub(super) const NATEROID_LINEAR_DAMPING: f32 = 0.001;
@@ -112,6 +115,8 @@ pub(super) const LOCKED_AXES_SPACESHIP: LockedAxes = LockedAxes::new()
     .lock_rotation_x()
     .lock_rotation_y()
     .lock_translation_z();
+/// Gravity multiplier applied to every actor — the game runs gravity-free.
+pub(super) const NO_GRAVITY_SCALE: f32 = 0.;
 /// Half the size of the boundary and only in the x,y plane
 pub(super) const SPAWN_WINDOW: Vec3 = Vec3::new(0.5, 0.5, 0.0);
 

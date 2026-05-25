@@ -17,6 +17,7 @@ use rand::prelude::ThreadRng;
 use rand::rng;
 
 use super::RenderLayer;
+use super::constants::SECONDS_PER_MINUTE;
 use super::constants::STAR_BATCH_SIZE_REPLACE;
 use super::constants::STAR_COLOR_RANGE_MAX;
 use super::constants::STAR_COLOR_RANGE_MIN;
@@ -314,7 +315,7 @@ fn rotate_stars(
     }
 
     // Calculate rotation speed (radians per second)
-    let rotation_speed = (2.0 * PI) / (star_settings.rotation_cycle_minutes * 60.0);
+    let rotation_speed = (2.0 * PI) / (star_settings.rotation_cycle_minutes * SECONDS_PER_MINUTE);
 
     // Update current angle (negative for clockwise rotation when viewed from above)
     rotation_state.current_angle -= rotation_speed * time.delta_secs();

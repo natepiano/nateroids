@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use bevy::prelude::*;
 use bevy_kana::ToF32;
 
+use super::constants::NATEROID_EMPTY_SPAWN_SUCCESS_RATE;
 use super::constants::NATEROID_SPAWN_HISTORY_LEN;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -37,7 +38,7 @@ impl NateroidSpawnStats {
 
     pub(super) fn success_rate(&self) -> f32 {
         if self.attempts.is_empty() {
-            1.0 // No data - assume field is not crowded
+            NATEROID_EMPTY_SPAWN_SUCCESS_RATE // No data - assume field is not crowded
         } else {
             let successes = self
                 .attempts

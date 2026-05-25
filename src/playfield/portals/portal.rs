@@ -3,6 +3,7 @@ use bevy::math::Vec3;
 use bevy::prelude::*;
 use bevy_kana::Position;
 
+use super::constants::DEFAULT_PORTAL_FACE_COUNT;
 use crate::playfield::boundary_face::BoundaryFace;
 
 #[derive(Resource, Clone, Debug)]
@@ -31,7 +32,7 @@ impl Default for Portal {
             boundary_distance_approach: 0.,
             boundary_distance_shrink:   0.,
             face:                       BoundaryFace::Right,
-            face_count:                 1,
+            face_count:                 DEFAULT_PORTAL_FACE_COUNT,
             fade_out_started:           None,
             position:                   Position::new(0.0, 0.0, 0.0),
             radius:                     0.,

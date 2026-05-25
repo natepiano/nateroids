@@ -8,6 +8,7 @@ use bevy_kana::ToF32;
 
 use crate::actor::Nateroid;
 use crate::camera::RenderLayer;
+use crate::constants::MILLISECONDS_PER_SECOND;
 use crate::constants::MIN_NATEROIDS_FOR_MONITORING;
 use crate::constants::PHYSICS_SUBSTEP_COUNT;
 use crate::constants::PHYSICS_WARN_THROTTLE_INTERVAL_SECS;
@@ -118,7 +119,7 @@ fn monitor_physics_health(
         if should_log {
             warn!(
                 "⚠️  PHYSICS STRESS: {nateroid_count} nateroids | avg_speed: {avg_speed:.1} | FPS: {fps:.1} | timestep: {:.3}ms",
-                time.delta_secs() * 1000.0
+                time.delta_secs() * MILLISECONDS_PER_SECOND
             );
             physics_monitor_state.stress_level = StressLevel::Stressed;
             physics_monitor_state.last_stress_log = current_time;

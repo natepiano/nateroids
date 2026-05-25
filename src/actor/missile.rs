@@ -25,6 +25,7 @@ use super::constants::MISSILE_MASS;
 use super::constants::MISSILE_RESTITUTION;
 use super::constants::MISSILE_SCALE;
 use super::constants::MISSILE_SPAWN_TIMER_SECONDS;
+use super::constants::NO_GRAVITY_SCALE;
 use super::game_layer::GameLayer;
 use super::settings;
 use super::settings::ActorSettings;
@@ -80,7 +81,7 @@ impl Default for MissileSettings {
                     [GameLayer::Missile],
                     [GameLayer::Asteroid],
                 ),
-                gravity_scale:            0.,
+                gravity_scale:            NO_GRAVITY_SCALE,
                 health:                   MISSILE_HEALTH,
                 linear_damping:           None,
                 locked_axes:              LockedAxes::new().lock_translation_z(),

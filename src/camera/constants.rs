@@ -141,6 +141,10 @@ pub(super) const STAR_TWINKLE_INTENSITY_MIN: f32 = 10.0;
 pub(super) const STAR_TWINKLE_MIDPOINT: f32 = 0.5;
 pub(super) const STAR_TWINKLING_DELAY: f32 = 0.5;
 
+// time conversions
+/// Seconds in one minute, for converting a rotation cycle in minutes to seconds.
+pub(super) const SECONDS_PER_MINUTE: f32 = 60.0;
+
 // zoom
 pub(super) const ZOOM_CONVERGENCE_RATE: f32 = 0.30;
 /// Default margin for zoom-to-fit operations (0.1 = 10% margin on each side)
