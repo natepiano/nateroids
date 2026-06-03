@@ -164,7 +164,7 @@ fn intersect_circle_with_line_segment(portal: &Portal, start: Vec3, end: Vec3) -
         .radius
         .mul_add(-portal.radius, center_to_start.dot(center_to_start));
 
-    let discriminant = b * b - 4.0 * a * c;
+    let discriminant = (4.0 * a).mul_add(-c, b * b);
 
     if discriminant < 0.0 {
         return Intersection::NoneFound;

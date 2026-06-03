@@ -141,7 +141,7 @@ impl Default for LightSettings {
 }
 
 impl LightSettings {
-    pub const fn get_light_settings(&self, position: LightPosition) -> &DirectionalLightSettings {
+    const fn get_light_settings(&self, position: LightPosition) -> &DirectionalLightSettings {
         match position {
             LightPosition::Front => &self.front,
             LightPosition::Back => &self.back,
@@ -164,30 +164,30 @@ pub(super) enum LightPosition {
 }
 
 impl LightPosition {
-    pub const fn get_rotation(self, camera_orientation: &CameraOrientation) -> RotationInfo {
+    const fn get_rotation(self, camera_orientation: &CameraOrientation) -> RotationInfo {
         match self {
             Self::Right => RotationInfo {
-                axis:  camera_orientation.settings.axis_mundi,
+                axis:  camera_orientation.orientation_settings.axis_mundi,
                 angle: FRAC_PI_2,
             },
             Self::Left => RotationInfo {
-                axis:  camera_orientation.settings.axis_mundi,
+                axis:  camera_orientation.orientation_settings.axis_mundi,
                 angle: -FRAC_PI_2,
             },
             Self::Front => RotationInfo {
-                axis:  camera_orientation.settings.axis_orbis,
+                axis:  camera_orientation.orientation_settings.axis_orbis,
                 angle: 0.,
             },
             Self::Back => RotationInfo {
-                axis:  camera_orientation.settings.axis_orbis,
+                axis:  camera_orientation.orientation_settings.axis_orbis,
                 angle: PI,
             },
             Self::Bottom => RotationInfo {
-                axis:  camera_orientation.settings.axis_orbis,
+                axis:  camera_orientation.orientation_settings.axis_orbis,
                 angle: FRAC_PI_2,
             },
             Self::Top => RotationInfo {
-                axis:  camera_orientation.settings.axis_orbis,
+                axis:  camera_orientation.orientation_settings.axis_orbis,
                 angle: -FRAC_PI_2,
             },
         }

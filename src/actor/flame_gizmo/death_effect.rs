@@ -53,19 +53,19 @@ impl DeathStyle {
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 pub(super) struct DeathEffect {
-    style:    DeathStyle,
-    radius:   f32,
-    duration: f32,
-    elapsed:  f32,
+    death_style: DeathStyle,
+    radius:      f32,
+    duration:    f32,
+    elapsed:     f32,
 }
 
 impl DeathEffect {
     fn new(radius: f32) -> Self {
         Self {
-            style:    DeathStyle::random(),
-            radius:   radius + DEATH_EFFECT_RADIUS_MARGIN,
-            duration: DEATH_EFFECT_DURATION_SECS,
-            elapsed:  0.0,
+            death_style: DeathStyle::random(),
+            radius:      radius + DEATH_EFFECT_RADIUS_MARGIN,
+            duration:    DEATH_EFFECT_DURATION_SECS,
+            elapsed:     0.0,
         }
     }
 }
@@ -104,7 +104,7 @@ enum RingExpansion {
 #[derive(Clone, Copy)]
 struct RingEffectConfig {
     rings:             usize,
-    expansion:         RingExpansion,
+    ring_expansion:    RingExpansion,
     radius_scale:      f32,
     line_length_scale: f32,
     delay_secs:        f32,
@@ -115,7 +115,7 @@ struct RingEffectConfig {
 impl RingEffectConfig {
     const EXPANDING_RING: Self = Self {
         rings:             1,
-        expansion:         RingExpansion::Expanding,
+        ring_expansion:    RingExpansion::Expanding,
         radius_scale:      1.0,
         line_length_scale: 0.5,
         delay_secs:        0.0,
@@ -125,7 +125,7 @@ impl RingEffectConfig {
 
     const STATIC_FLASH: Self = Self {
         rings:             1,
-        expansion:         RingExpansion::Static,
+        ring_expansion:    RingExpansion::Static,
         radius_scale:      0.4,
         line_length_scale: 0.5,
         delay_secs:        0.0,
@@ -137,7 +137,7 @@ impl RingEffectConfig {
 
     const MULTIPLE_RINGS: Self = Self {
         rings:             3,
-        expansion:         RingExpansion::Expanding,
+        ring_expansion:    RingExpansion::Expanding,
         radius_scale:      1.0,
         line_length_scale: 1.0 / 3.0,
         delay_secs:        0.4,
@@ -196,7 +196,7 @@ pub(super) fn draw_death_effects(
 
         // Use the deaderoid's rotation so the ring follows its spin
         let isometry = Isometry3d::new(transform.translation, transform.rotation);
-        let ring_effect_config = death_effect.style.config();
+        let ring_effect_config = death_effect.death_style.config();
 
         draw_death_effect_ring(
             &mut gizmos,
@@ -279,7 +279,7 @@ fn draw_death_effect_ring(
 
         let progress = ring_elapsed / ring_duration;
 
-        let radius = if matches!(ring_effect_config.expansion, RingExpansion::Expanding) {
+        let radius = if matches!(ring_effect_config.ring_expansion, RingExpansion::Expanding) {
             let ease_out = (1.0 - progress).mul_add(-(1.0 - progress), 1.0);
             let scale = (1.0 - DEATH_EFFECT_EXPANDING_RING_START_SCALE)
                 .mul_add(ease_out, DEATH_EFFECT_EXPANDING_RING_START_SCALE);

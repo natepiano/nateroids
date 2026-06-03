@@ -207,7 +207,7 @@ fn apply_acceleration(
     }
 
     //todo: #handl3d
-    match camera_orientation.kind {
+    match camera_orientation.orientation_type {
         // in 3d we can accelerate in all dirs
         OrientationType::BehindSpaceship3D => (),
         _ => linear_velocity.z = 0.0, // Force the `z` value of linear_velocity to be 0

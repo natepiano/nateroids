@@ -212,9 +212,9 @@ pub(super) fn insert_configured_components(
     // Insert all components on the actor entity
     commands.entity(actor_entity).insert((
         PendingCollider {
-            kind:       settings.collider_type.clone(),
-            margin:     settings.collider_margin,
-            rigid_body: settings.rigid_body,
+            collider_type: settings.collider_type.clone(),
+            margin:        settings.collider_margin,
+            rigid_body:    settings.rigid_body,
         },
         CollisionDamage(settings.collision_damage),
         settings.collision_layers,

@@ -115,7 +115,7 @@ fn handle_emerging_visual(
 
         actor_portals.emerging = Some(Portal {
             actor_distance_to_wall: 0.0,
-            face: final_face,
+            boundary_face: final_face,
             position: snapped_position,
             fade_out_started: Some(time.elapsed_secs()),
             ..portal
@@ -143,7 +143,7 @@ fn handle_approaching_visual(
             let face = get_face_for_position(collision_point, boundary_transform);
             let temporary_portal = Portal {
                 position: collision_point,
-                face,
+                boundary_face: face,
                 radius: portal.radius,
                 ..portal
             };
@@ -167,7 +167,7 @@ fn handle_approaching_visual(
 
             actor_portals.approaching = Some(Portal {
                 actor_distance_to_wall,
-                face: snapped_face,
+                boundary_face: snapped_face,
                 face_count: current_face_count,
                 position: snapped_position,
                 ..portal

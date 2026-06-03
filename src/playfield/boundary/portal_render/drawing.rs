@@ -61,7 +61,10 @@ fn render_portal_by_geometry(
         PortalGeometry::SingleFace => {
             // Draw full circle
             let rotation = Quat::from_rotation_arc(
-                context.camera_orientation.settings.axis_profundus,
+                context
+                    .camera_orientation
+                    .orientation_settings
+                    .axis_profundus,
                 portal.normal().as_vec3(),
             );
             let isometry = Isometry3d::new(*portal.position, rotation);
@@ -92,8 +95,8 @@ fn draw_multiface_portal(
     geometry: &MultiFaceGeometry,
     transform: &Transform,
 ) {
-    // Extract overextended faces from geometry (primary is always portal.face)
-    let primary_face = portal.face;
+    // Extract overextended faces from geometry (primary is always portal.boundary_face)
+    let primary_face = portal.boundary_face;
     let overextended_faces = match geometry {
         MultiFaceGeometry::Edge { overextended } => vec![*overextended],
         MultiFaceGeometry::Corner { overextended } => overextended.clone(),

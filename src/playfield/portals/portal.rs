@@ -12,7 +12,7 @@ pub(crate) struct Portal {
     pub(crate) actor_distance_to_wall:     f32,
     pub(crate) boundary_distance_approach: f32,
     pub(crate) boundary_distance_shrink:   f32,
-    pub(crate) face:                       BoundaryFace,
+    pub(crate) boundary_face:              BoundaryFace,
     pub(crate) face_count:                 usize,
     pub(crate) fade_out_started:           Option<f32>,
     pub(crate) position:                   Position,
@@ -21,7 +21,7 @@ pub(crate) struct Portal {
 
 impl Portal {
     /// Returns the normal direction for this portal's face.
-    pub const fn normal(&self) -> Dir3 { self.face.to_dir3() }
+    pub const fn normal(&self) -> Dir3 { self.boundary_face.to_dir3() }
 }
 
 impl Default for Portal {
@@ -31,7 +31,7 @@ impl Default for Portal {
             actor_distance_to_wall:     0.,
             boundary_distance_approach: 0.,
             boundary_distance_shrink:   0.,
-            face:                       BoundaryFace::Right,
+            boundary_face:              BoundaryFace::Right,
             face_count:                 DEFAULT_PORTAL_FACE_COUNT,
             fade_out_started:           None,
             position:                   Position::new(0.0, 0.0, 0.0),

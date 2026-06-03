@@ -63,11 +63,11 @@ fn count_faces_with_valid_arcs(
     let min = transform.translation - half_size;
     let max = transform.translation + half_size;
 
-    // Collect all faces from the geometry (primary from portal.face + overextended)
+    // Collect all faces from the geometry (primary from portal.boundary_face + overextended)
     let all_faces_in_corner = match multiface {
-        MultiFaceGeometry::Edge { overextended } => vec![portal.face, *overextended],
+        MultiFaceGeometry::Edge { overextended } => vec![portal.boundary_face, *overextended],
         MultiFaceGeometry::Corner { overextended } => {
-            let mut faces = vec![portal.face];
+            let mut faces = vec![portal.boundary_face];
             faces.extend(overextended);
             faces
         },
@@ -123,6 +123,6 @@ fn get_overextended_faces_for(portal: &Portal, transform: &Transform) -> Vec<Bou
     }
 
     // Remove the face the portal is on from the overextended faces
-    overextended_faces.retain(|&face| face != portal.face);
+    overextended_faces.retain(|&face| face != portal.boundary_face);
     overextended_faces
 }
