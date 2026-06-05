@@ -138,8 +138,8 @@ pub(super) fn apply_portal_settings(
     mut config_store: ResMut<GizmoConfigStore>,
     portal_settings: Res<PortalSettings>,
 ) {
-    let (config, _) = config_store.config_mut::<PortalGizmo>();
-    config.line.width = portal_settings.line_width;
-    config.line.joints = GizmoLineJoint::Round(portal_settings.line_joints);
-    config.render_layers = RenderLayer::Game.layers();
+    let (gizmo_config, _) = config_store.config_mut::<PortalGizmo>();
+    gizmo_config.line.width = portal_settings.line_width;
+    gizmo_config.line.joints = GizmoLineJoint::Round(portal_settings.line_joints);
+    gizmo_config.render_layers = RenderLayer::Game.layers();
 }

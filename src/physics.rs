@@ -60,14 +60,14 @@ struct PhysicsMonitorState {
 }
 
 fn init_physics_debug_aabb(mut config_store: ResMut<GizmoConfigStore>) {
-    let (config, _) = config_store.config_mut::<PhysicsGizmos>();
-    config.enabled = false;
-    config.render_layers = RenderLayer::Game.layers();
+    let (gizmo_config, _) = config_store.config_mut::<PhysicsGizmos>();
+    gizmo_config.enabled = false;
+    gizmo_config.render_layers = RenderLayer::Game.layers();
 }
 
 fn sync_physics_debug_gizmos(switches: Res<Switches>, mut config_store: ResMut<GizmoConfigStore>) {
-    let (config, _) = config_store.config_mut::<PhysicsGizmos>();
-    config.enabled = switches.switch_state(Switch::ShowPhysicsDebug) == ToggleState::On;
+    let (gizmo_config, _) = config_store.config_mut::<PhysicsGizmos>();
+    gizmo_config.enabled = switches.switch_state(Switch::ShowPhysicsDebug) == ToggleState::On;
 }
 
 fn monitor_physics_health(

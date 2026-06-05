@@ -2,6 +2,7 @@ use std::f32::consts::FRAC_PI_2;
 use std::f32::consts::PI;
 use std::ops::Range;
 
+use bevy::camera::visibility::Layer;
 use bevy::color::Srgba;
 use bevy::color::palettes::tailwind;
 use bevy::prelude::Color;
@@ -11,6 +12,16 @@ use bevy_kana::Position;
 pub(super) const CAMERA_BLOOM_HIGH_PASS_FREQUENCY: f32 = 0.5;
 pub(super) const CAMERA_BLOOM_INTENSITY: f32 = 0.5;
 pub(super) const CAMERA_BLOOM_LOW_FREQUENCY_BOOST: f32 = 0.5;
+
+// camera order
+pub(super) const CAMERA_ORDER_GAME: isize = 1;
+pub(super) const CAMERA_ORDER_STARS: isize = 0;
+pub(super) const CAMERA_ORDER_UI: isize = 2;
+
+// camera render layers
+pub(super) const RENDER_LAYER_GAME: Layer = 1;
+pub(super) const RENDER_LAYER_STARS: Layer = 0;
+pub(super) const RENDER_LAYER_UI: Layer = 2;
 
 // camera smoothness
 /// Default orbit smoothness (0.02 = 2% per frame)

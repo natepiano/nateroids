@@ -41,13 +41,13 @@ fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X)
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone, Deref, DerefMut)]
 #[reflect(Resource)]
 pub(super) struct SpaceshipSettings {
-    pub(super) actor: ActorSettings,
+    pub(super) actor_settings: ActorSettings,
 }
 
 impl Default for SpaceshipSettings {
     fn default() -> Self {
         Self {
-            actor: ActorSettings {
+            actor_settings: ActorSettings {
                 spawnability:             Spawnability::Enabled,
                 angular_damping:          Some(SPACESHIP_ANGULAR_DAMPING),
                 collider_margin:          SPACESHIP_COLLIDER_MARGIN,
@@ -167,7 +167,7 @@ fn initialize_spaceship(
 
     settings::insert_configured_components(
         &mut commands,
-        &mut spaceship_settings.actor,
+        &mut spaceship_settings.actor_settings,
         spaceship.entity,
     );
 }

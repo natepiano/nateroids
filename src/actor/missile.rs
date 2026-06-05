@@ -63,7 +63,7 @@ impl Plugin for MissilePlugin {
 #[reflect(Resource)]
 pub(super) struct MissileSettings {
     #[deref]
-    pub(super) actor:                   ActorSettings,
+    pub(super) actor_settings:          ActorSettings,
     pub(super) forward_distance_scalar: f32,
     pub(super) base_velocity:           f32,
 }
@@ -71,7 +71,7 @@ pub(super) struct MissileSettings {
 impl Default for MissileSettings {
     fn default() -> Self {
         Self {
-            actor:                   ActorSettings {
+            actor_settings:          ActorSettings {
                 spawnability:             Spawnability::Enabled,
                 angular_damping:          None,
                 collider_margin:          MISSILE_COLLIDER_MARGIN,
@@ -174,7 +174,7 @@ fn initialize_missile(
 
     settings::insert_configured_components(
         &mut commands,
-        &mut missile_settings.actor,
+        &mut missile_settings.actor_settings,
         missile.entity,
     );
 }
@@ -190,12 +190,12 @@ fn initialize_transform(
 
     // Combine rotations: spaceship rotation * missile settings rotation
     let combined_rotation =
-        spaceship_transform.rotation * missile_settings.actor.transform.rotation;
+        spaceship_transform.rotation * missile_settings.actor_settings.transform.rotation;
 
     Transform {
         translation: spawn_position,
         rotation:    combined_rotation,
-        scale:       missile_settings.actor.transform.scale,
+        scale:       missile_settings.actor_settings.transform.scale,
     }
 }
 

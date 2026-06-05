@@ -2,6 +2,13 @@ use bevy::camera::visibility::Layer;
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
 
+use super::constants::CAMERA_ORDER_GAME;
+use super::constants::CAMERA_ORDER_STARS;
+use super::constants::CAMERA_ORDER_UI;
+use super::constants::RENDER_LAYER_GAME;
+use super::constants::RENDER_LAYER_STARS;
+use super::constants::RENDER_LAYER_UI;
+
 /// Camera rendering order. Higher order values render later (on top).
 ///
 /// Render sequence:
@@ -18,9 +25,9 @@ pub(super) enum CameraOrder {
 impl CameraOrder {
     pub(super) const fn order(self) -> isize {
         match self {
-            Self::Stars => 0,
-            Self::Game => 1,
-            Self::Ui => 2,
+            Self::Stars => CAMERA_ORDER_STARS,
+            Self::Game => CAMERA_ORDER_GAME,
+            Self::Ui => CAMERA_ORDER_UI,
         }
     }
 }
@@ -42,9 +49,9 @@ pub(crate) enum RenderLayer {
 impl RenderLayer {
     pub(crate) const fn layer_ids(self) -> &'static [Layer] {
         match self {
-            Self::UI => &[2],
-            Self::Game => &[1],
-            Self::Stars => &[0],
+            Self::UI => &[RENDER_LAYER_UI],
+            Self::Game => &[RENDER_LAYER_GAME],
+            Self::Stars => &[RENDER_LAYER_STARS],
         }
     }
 

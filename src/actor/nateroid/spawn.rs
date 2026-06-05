@@ -106,7 +106,7 @@ pub(super) fn initialize_nateroid(
 
     settings::insert_configured_components(
         &mut commands,
-        &mut nateroid_settings.actor,
+        &mut nateroid_settings.actor_settings,
         nateroid.entity,
     );
 }
@@ -122,7 +122,7 @@ fn initialize_transform(
         ..default()
     };
 
-    let scale = nateroid_settings.actor.transform.scale;
+    let scale = nateroid_settings.actor_settings.transform.scale;
     let filter =
         SpatialQueryFilter::from_mask(LayerMask::from([GameLayer::Spaceship, GameLayer::Asteroid]));
 
@@ -132,10 +132,12 @@ fn initialize_transform(
 
         // Approximate collider for spawn overlap check — the real collider is
         // computed from child AABBs after the entity spawns.
-        let spawn_collider = match nateroid_settings.actor.collider_type {
-            ColliderType::Ball => Collider::sphere(nateroid_settings.actor.collider_margin),
+        let spawn_collider = match nateroid_settings.actor_settings.collider_type {
+            ColliderType::Ball => {
+                Collider::sphere(nateroid_settings.actor_settings.collider_margin)
+            },
             ColliderType::Cuboid => {
-                let margin = nateroid_settings.actor.collider_margin;
+                let margin = nateroid_settings.actor_settings.collider_margin;
                 Collider::cuboid(margin, margin, margin)
             },
         };

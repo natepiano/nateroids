@@ -38,7 +38,7 @@ pub(crate) enum DeathCorner {
 #[reflect(Resource)]
 pub(crate) struct NateroidSettings {
     #[deref]
-    pub(crate) actor:                     ActorSettings,
+    pub(crate) actor_settings:            ActorSettings,
     pub(crate) linear_velocity:           f32,
     pub(crate) angular_velocity:          f32,
     pub(crate) death_duration_secs:       f32,
@@ -52,7 +52,7 @@ pub(crate) struct NateroidSettings {
 impl Default for NateroidSettings {
     fn default() -> Self {
         Self {
-            actor:                     ActorSettings {
+            actor_settings:            ActorSettings {
                 spawnability:             Spawnability::Enabled,
                 angular_damping:          Some(NATEROID_ANGULAR_DAMPING),
                 collider_margin:          NATEROID_COLLIDER_MARGIN,

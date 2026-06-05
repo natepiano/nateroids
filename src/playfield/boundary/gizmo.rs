@@ -44,9 +44,9 @@ pub(super) fn apply_boundary_settings(
     mut config_store: ResMut<GizmoConfigStore>,
     boundary: Res<Boundary>,
 ) {
-    let (config, _) = config_store.config_mut::<GridGizmo>();
-    config.line.width = boundary.grid_line_width;
-    config.render_layers = RenderLayer::Game.layers();
+    let (gizmo_config, _) = config_store.config_mut::<GridGizmo>();
+    gizmo_config.line.width = boundary.grid_line_width;
+    gizmo_config.render_layers = RenderLayer::Game.layers();
 
     let (outer_config, _) = config_store.config_mut::<BoundaryGizmo>();
     outer_config.line.width = boundary.exterior_line_width;
