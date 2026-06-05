@@ -6,8 +6,8 @@ use crate::actor::constants::FLAME_LENGTH_FLICKER_SPEED;
 use crate::actor::constants::FLAME_PHASE_SPREAD;
 
 pub(super) struct FlickerValues {
-    pub length: f32,
-    pub color:  f32,
+    pub(super) length: f32,
+    pub(super) color:  f32,
 }
 
 pub(super) fn compute_flicker(elapsed: f32, line_index: f32, phase_offset: f32) -> FlickerValues {

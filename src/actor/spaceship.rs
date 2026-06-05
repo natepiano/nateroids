@@ -41,7 +41,7 @@ fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X)
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone, Deref, DerefMut)]
 #[reflect(Resource)]
 pub(super) struct SpaceshipSettings {
-    pub actor: ActorSettings,
+    pub(super) actor: ActorSettings,
 }
 
 impl Default for SpaceshipSettings {

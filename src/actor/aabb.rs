@@ -57,9 +57,9 @@ impl Plugin for AabbPlugin {
 /// `calculate_bounds`.
 #[derive(Component)]
 pub(super) struct PendingCollider {
-    pub collider_type: ColliderType,
-    pub margin:        f32,
-    pub rigid_body:    RigidBody,
+    pub(super) collider_type: ColliderType,
+    pub(super) margin:        f32,
+    pub(super) rigid_body:    RigidBody,
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]

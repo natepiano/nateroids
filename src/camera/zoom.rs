@@ -49,13 +49,13 @@ event!(ZoomToFitEvent);
 pub(super) struct ZoomSettings {
     /// Maximum iterations before giving up.
     #[inspector(min = ZOOM_MAX_ITERATIONS_MIN, max = ZOOM_MAX_ITERATIONS_MAX)]
-    pub max_iterations:   usize,
+    pub(super) max_iterations:   usize,
     #[inspector(
         min = ZOOM_MARGIN_MIN,
         max = ZOOM_MARGIN_MAX,
         display = NumberDisplay::Slider
     )]
-    pub margin:           f32,
+    pub(super) margin:           f32,
     /// Margin tolerance for convergence detection (0.001 = 0.1% tolerance).
     /// Used for both balance and fit checks.
     #[inspector(
@@ -63,7 +63,7 @@ pub(super) struct ZoomSettings {
         max = ZOOM_MARGIN_TOLERANCE_MAX,
         display = NumberDisplay::Slider
     )]
-    pub margin_tolerance: f32,
+    pub(super) margin_tolerance: f32,
     // Zoom-to-fit convergence parameters
     /// Convergence rate for zoom-to-fit adjustments (0.18 = 18% per frame).
     #[inspector(
@@ -71,7 +71,7 @@ pub(super) struct ZoomSettings {
         max = ZOOM_CONVERGENCE_RATE_MAX,
         display = NumberDisplay::Slider
     )]
-    pub convergence_rate: f32,
+    pub(super) convergence_rate: f32,
 }
 
 impl Default for ZoomSettings {

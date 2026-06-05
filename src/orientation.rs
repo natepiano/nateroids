@@ -47,20 +47,20 @@ pub(crate) enum DimensionMode {
 
 #[derive(Debug, Clone, Reflect)]
 pub(crate) struct OrientationSettings {
-    pub dimension_mode:   DimensionMode,
-    pub axis_mundi:       Vec3,
-    pub axis_orbis:       Vec3,
-    pub axis_profundus:   Vec3,
-    pub locus:            Transform,
-    pub nexus:            Position,
-    pub spaceship_offset: Displacement,
+    pub(crate) dimension_mode:   DimensionMode,
+    pub(crate) axis_mundi:       Vec3,
+    pub(crate) axis_orbis:       Vec3,
+    pub(crate) axis_profundus:   Vec3,
+    pub(crate) locus:            Transform,
+    pub(crate) nexus:            Position,
+    pub(crate) spaceship_offset: Displacement,
 }
 
 #[derive(Resource, Debug, Clone, Reflect)]
 #[reflect(Resource)]
 pub(crate) struct CameraOrientation {
-    pub orientation_type:     OrientationType,
-    pub orientation_settings: OrientationSettings,
+    pub(crate) orientation_type:     OrientationType,
+    pub(crate) orientation_settings: OrientationSettings,
 }
 
 impl CameraOrientation {

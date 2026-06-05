@@ -82,27 +82,27 @@ impl Plugin for BoundaryPlugin {
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 pub(crate) struct Boundary {
-    pub cell_count:          UVec3,
-    pub grid_color:          Color,
-    pub outer_color:         Color,
+    pub(crate) cell_count:          UVec3,
+    pub(crate) grid_color:          Color,
+    pub(crate) outer_color:         Color,
     #[inspector(
         min = BOUNDARY_GRID_LINE_WIDTH_MIN,
         max = BOUNDARY_GRID_LINE_WIDTH_MAX,
         display = NumberDisplay::Slider
     )]
-    pub grid_line_width:     f32,
+    pub(crate) grid_line_width:     f32,
     #[inspector(
         min = BOUNDARY_EXTERIOR_LINE_WIDTH_MIN,
         max = BOUNDARY_EXTERIOR_LINE_WIDTH_MAX,
         display = NumberDisplay::Slider
     )]
-    pub exterior_line_width: f32,
+    pub(crate) exterior_line_width: f32,
     #[inspector(
         min = BOUNDARY_EXTERIOR_SCALAR_MIN,
         max = BOUNDARY_EXTERIOR_SCALAR_MAX,
         display = NumberDisplay::Slider
     )]
-    pub exterior_scalar:     f32,
+    pub(crate) exterior_scalar:     f32,
 }
 
 impl Default for Boundary {
@@ -120,7 +120,7 @@ impl Default for Boundary {
 }
 
 impl Boundary {
-    pub fn longest_diagonal(&self) -> f32 {
+    pub(crate) fn longest_diagonal(&self) -> f32 {
         let boundary_scale = self.scale();
         let x = boundary_scale.x;
         let y = boundary_scale.y;
@@ -129,12 +129,12 @@ impl Boundary {
         z.mul_add(z, y.mul_add(y, x.mul_add(x, 0.0))).sqrt()
     }
 
-    pub fn max_missile_distance(&self) -> f32 {
+    pub(crate) fn max_missile_distance(&self) -> f32 {
         let boundary_scale = self.scale();
         boundary_scale.x.max(boundary_scale.y).max(boundary_scale.z)
     }
 
-    pub fn scale(&self) -> Vec3 { self.exterior_scalar * self.cell_count.as_vec3() }
+    pub(crate) fn scale(&self) -> Vec3 { self.exterior_scalar * self.cell_count.as_vec3() }
 
     pub(super) fn draw_portal(
         gizmos: &mut Gizmos<PortalGizmo>,

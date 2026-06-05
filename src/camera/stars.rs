@@ -78,37 +78,37 @@ impl Plugin for StarsPlugin {
 #[derive(Debug, Clone, Reflect, InspectorOptions)]
 #[reflect(InspectorOptions)]
 pub(super) struct StarColorSettings {
-    pub range:             Range<f32>,
-    pub white_probability: f32,
-    pub white_start_ratio: f32,
+    pub(super) range:             Range<f32>,
+    pub(super) white_probability: f32,
+    pub(super) white_start_ratio: f32,
 }
 
 #[derive(Debug, Clone, Reflect, InspectorOptions)]
 #[reflect(InspectorOptions)]
 pub(super) struct StarTwinkleSettings {
-    pub delay:                 f32,
-    pub duration:              Range<f32>,
-    pub intensity:             Range<f32>,
-    pub choose_multiple_count: usize,
+    pub(super) delay:                 f32,
+    pub(super) duration:              Range<f32>,
+    pub(super) intensity:             Range<f32>,
+    pub(super) choose_multiple_count: usize,
 }
 
 #[derive(Debug, Clone, Reflect, Resource, InspectorOptions)]
 #[reflect(Resource, InspectorOptions)]
 pub(super) struct StarSettings {
-    pub batch_size_replace:     usize,
-    pub duration_replace_timer: f32,
-    pub color:                  StarColorSettings,
-    pub count:                  usize,
-    pub radius:                 Range<f32>,
-    pub field_diameter:         Range<f32>,
-    pub twinkle:                StarTwinkleSettings,
+    pub(super) batch_size_replace:     usize,
+    pub(super) duration_replace_timer: f32,
+    pub(super) color:                  StarColorSettings,
+    pub(super) count:                  usize,
+    pub(super) radius:                 Range<f32>,
+    pub(super) field_diameter:         Range<f32>,
+    pub(super) twinkle:                StarTwinkleSettings,
     #[inspector(
         min = STAR_ROTATION_CYCLE_MINIMUM_MINUTES,
         max = STAR_ROTATION_CYCLE_MAX,
         display = NumberDisplay::Slider
     )]
-    pub rotation_cycle_minutes: f32,
-    pub rotation_axis:          Vec3,
+    pub(super) rotation_cycle_minutes: f32,
+    pub(super) rotation_axis:          Vec3,
 }
 
 impl Default for StarSettings {
@@ -176,9 +176,9 @@ fn debug_stars(
 
 #[derive(Reflect, Component, Default)]
 pub(super) struct Star {
-    position:     Position,
-    radius:       f32,
-    pub emissive: Vec4,
+    position:            Position,
+    radius:              f32,
+    pub(super) emissive: Vec4,
 }
 
 #[derive(Resource)]

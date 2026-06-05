@@ -46,13 +46,13 @@ pub(crate) enum AssetsState {
 // can have multiple elements and scene makes all that possible
 #[derive(Resource, Clone, Debug, Default)]
 pub(crate) struct SceneAssets {
-    pub missile:                  Handle<Scene>,
-    pub nateroid:                 Handle<Scene>,
-    pub nateroid_donut_material:  Option<Handle<StandardMaterial>>,
-    pub nateroid_icing_material:  Option<Handle<StandardMaterial>>,
-    pub spaceship:                Handle<Scene>,
-    pub environment_diffuse_map:  Handle<Image>,
-    pub environment_specular_map: Handle<Image>,
+    pub(crate) missile:                  Handle<Scene>,
+    pub(crate) nateroid:                 Handle<Scene>,
+    pub(crate) nateroid_donut_material:  Option<Handle<StandardMaterial>>,
+    pub(crate) nateroid_icing_material:  Option<Handle<StandardMaterial>>,
+    pub(crate) spaceship:                Handle<Scene>,
+    pub(crate) environment_diffuse_map:  Handle<Image>,
+    pub(crate) environment_specular_map: Handle<Image>,
 }
 
 fn load_assets(

@@ -279,7 +279,12 @@ fn get_face_for_position(position: Position, transform: &Transform) -> BoundaryF
     ];
     faces[1..]
         .iter()
-        .fold(faces[0], |acc, &cur| if cur.0 < acc.0 { cur } else { acc })
+        .fold(
+            faces[0],
+            |acc, &current| {
+                if current.0 < acc.0 { current } else { acc }
+            },
+        )
         .1
 }
 

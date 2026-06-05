@@ -38,15 +38,15 @@ pub(crate) enum DeathCorner {
 #[reflect(Resource)]
 pub(crate) struct NateroidSettings {
     #[deref]
-    pub actor:                     ActorSettings,
-    pub linear_velocity:           f32,
-    pub angular_velocity:          f32,
-    pub death_duration_secs:       f32,
-    pub death_shrink_percentage:   f32,
-    pub death_corner:              DeathCorner,
-    pub initial_alpha:             f32,
-    pub target_alpha:              f32,
-    pub density_culling_threshold: f32,
+    pub(crate) actor:                     ActorSettings,
+    pub(crate) linear_velocity:           f32,
+    pub(crate) angular_velocity:          f32,
+    pub(crate) death_duration_secs:       f32,
+    pub(crate) death_shrink_percentage:   f32,
+    pub(crate) death_corner:              DeathCorner,
+    pub(crate) initial_alpha:             f32,
+    pub(crate) target_alpha:              f32,
+    pub(crate) density_culling_threshold: f32,
 }
 
 impl Default for NateroidSettings {

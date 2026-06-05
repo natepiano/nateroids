@@ -13,7 +13,7 @@ use crate::asset_loader::SceneAssets;
 /// Precomputed materials for `Nateroid` death animation at different transparency levels
 #[derive(Resource)]
 pub(crate) struct NateroidDeathMaterials {
-    pub materials: Vec<Vec<Handle<StandardMaterial>>>,
+    pub(crate) materials: Vec<Vec<Handle<StandardMaterial>>>,
 }
 
 /// System that applies custom materials to `Nateroid` mesh children (donut and icing)
@@ -118,7 +118,7 @@ pub(super) fn debug_mesh_components(
                 let vertex_count = mesh_data.map_or(0, Mesh::count_vertices);
 
                 debug!(
-                    "Mesh entity {entity:?}: has_material={}, visible={:?}, vertices={vertex_count}, render_layers={render_layers:?}, scale={:?}, global_pos={:?}",
+                    "Mesh entity {entity:?}: has_material={}, visible={:?}, vertices={vertex_count}, render_layers={render_layers:?}, scale={:?}, global_position={:?}",
                     material.is_some(),
                     visibility.copied().map(ViewVisibility::get),
                     transform.map(|t| t.scale),

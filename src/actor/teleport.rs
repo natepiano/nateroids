@@ -48,8 +48,8 @@ pub(crate) enum TeleportStatus {
 
 #[derive(Component, Reflect, Debug, Default, Clone)]
 pub(crate) struct Teleporter {
-    pub teleport_status: TeleportStatus,
-    pub position:        Option<Position>,
+    pub(crate) teleport_status: TeleportStatus,
+    pub(crate) position:        Option<Position>,
 }
 
 #[derive(EntityEvent)]
@@ -301,9 +301,9 @@ mod tests {
             Position::new(-10.0, -20.0, -30.0),
         ];
 
-        for pos in inside_positions {
-            let result = calculate_teleport_position(pos, &transform);
-            assert_position_eq(result, pos);
+        for position in inside_positions {
+            let result = calculate_teleport_position(position, &transform);
+            assert_position_eq(result, position);
         }
     }
 

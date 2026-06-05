@@ -67,19 +67,19 @@ pub(super) struct SpaceshipControlSettings {
         max = SPACESHIP_ACCELERATION_MAX,
         display = NumberDisplay::Slider
     )]
-    pub acceleration:   f32,
+    pub(super) acceleration:   f32,
     #[inspector(
         min = SPACESHIP_MAX_SPEED_MIN,
         max = SPACESHIP_MAX_SPEED_MAX,
         display = NumberDisplay::Slider
     )]
-    pub max_speed:      f32,
+    pub(super) max_speed:      f32,
     #[inspector(
         min = SPACESHIP_ROTATION_SPEED_MIN,
         max = SPACESHIP_ROTATION_SPEED_MAX,
         display = NumberDisplay::Slider
     )]
-    pub rotation_speed: f32,
+    pub(super) rotation_speed: f32,
 }
 
 impl Default for SpaceshipControlSettings {

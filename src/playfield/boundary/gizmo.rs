@@ -22,7 +22,7 @@ pub(crate) struct GridFlash;
 /// Active grid flash animation timer.
 #[derive(Resource)]
 pub(super) struct GridFlashAnimation {
-    pub timer: Timer,
+    pub(super) timer: Timer,
 }
 
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -194,7 +194,7 @@ pub(super) fn detect_cell_count_change(
     let current = boundary.cell_count;
 
     match *previous_cells {
-        Some(prev) if prev == current => {},
+        Some(previous) if previous == current => {},
         _ => {
             // Skip the very first change (resource initialization)
             if previous_cells.is_some() {

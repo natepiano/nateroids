@@ -26,12 +26,12 @@ pub(crate) struct DespawnPlugin;
 
 #[derive(Component, Debug)]
 pub(crate) struct Deaderoid {
-    pub initial_scale:          Vec3,
-    pub target_shrink:          f32,
-    pub shrink_duration:        f32,
-    pub elapsed_time:           f32,
-    pub current_shrink:         f32,
-    pub current_material_index: usize,
+    pub(crate) initial_scale:          Vec3,
+    pub(crate) target_shrink:          f32,
+    pub(crate) shrink_duration:        f32,
+    pub(crate) elapsed_time:           f32,
+    pub(crate) current_shrink:         f32,
+    pub(crate) current_material_index: usize,
 }
 
 impl Plugin for DespawnPlugin {

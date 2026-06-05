@@ -21,7 +21,7 @@ pub(crate) struct Portal {
 
 impl Portal {
     /// Returns the normal direction for this portal's face.
-    pub const fn normal(&self) -> Dir3 { self.boundary_face.to_dir3() }
+    pub(super) const fn normal(&self) -> Dir3 { self.boundary_face.to_dir3() }
 }
 
 impl Default for Portal {

@@ -40,7 +40,7 @@ pub(crate) enum RenderLayer {
 // returning the array rather than just one in case we have more complex
 // situations in the future that require overlapping layers
 impl RenderLayer {
-    pub const fn layer_ids(self) -> &'static [Layer] {
+    pub(crate) const fn layer_ids(self) -> &'static [Layer] {
         match self {
             Self::UI => &[2],
             Self::Game => &[1],
@@ -48,5 +48,5 @@ impl RenderLayer {
         }
     }
 
-    pub fn layers(self) -> RenderLayers { RenderLayers::from_layers(self.layer_ids()) }
+    pub(crate) fn layers(self) -> RenderLayers { RenderLayers::from_layers(self.layer_ids()) }
 }

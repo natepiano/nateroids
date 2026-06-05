@@ -69,15 +69,15 @@ pub(super) enum ShadowSwitch {
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub(super) struct DirectionalLightSettings {
-    pub color:         Color,
-    pub light_switch:  LightSwitch,
+    pub(super) color:         Color,
+    pub(super) light_switch:  LightSwitch,
     #[inspector(
         min = DIRECTIONAL_LIGHT_ILLUMINANCE_MIN,
         max = DIRECTIONAL_LIGHT_ILLUMINANCE_MAX,
         display = NumberDisplay::Slider
     )]
-    pub illuminance:   f32,
-    pub shadow_switch: ShadowSwitch,
+    pub(super) illuminance:   f32,
+    pub(super) shadow_switch: ShadowSwitch,
 }
 
 impl Default for DirectionalLightSettings {
@@ -102,20 +102,20 @@ pub(super) struct LightSettings {
         max = AMBIENT_LIGHT_BRIGHTNESS_MAX,
         display = NumberDisplay::Slider
     )]
-    pub ambient_brightness:        f32,
-    pub ambient_color:             Color,
+    pub(super) ambient_brightness:        f32,
+    pub(super) ambient_color:             Color,
     #[inspector(
         min = ENVIRONMENT_MAP_INTENSITY_MIN,
         max = ENVIRONMENT_MAP_INTENSITY_MAX,
         display = NumberDisplay::Slider
     )]
-    pub environment_map_intensity: f32,
-    pub front:                     DirectionalLightSettings,
-    pub back:                      DirectionalLightSettings,
-    pub top:                       DirectionalLightSettings,
-    pub bottom:                    DirectionalLightSettings,
-    pub left:                      DirectionalLightSettings,
-    pub right:                     DirectionalLightSettings,
+    pub(super) environment_map_intensity: f32,
+    pub(super) front:                     DirectionalLightSettings,
+    pub(super) back:                      DirectionalLightSettings,
+    pub(super) top:                       DirectionalLightSettings,
+    pub(super) bottom:                    DirectionalLightSettings,
+    pub(super) left:                      DirectionalLightSettings,
+    pub(super) right:                     DirectionalLightSettings,
 }
 
 impl Default for LightSettings {
@@ -196,8 +196,8 @@ impl LightPosition {
 
 #[derive(Debug, Clone, Copy)]
 pub(super) struct RotationInfo {
-    pub axis:  Vec3,
-    pub angle: f32,
+    pub(super) axis:  Vec3,
+    pub(super) angle: f32,
 }
 
 // looked this up on github - so it doesn't really matter where it's placed...

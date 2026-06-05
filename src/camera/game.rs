@@ -73,19 +73,19 @@ pub(crate) struct BloomSettings {
         max = CAMERA_BLOOM_MAX,
         display = NumberDisplay::Slider
     )]
-    pub intensity:           f32,
+    pub(crate) intensity:           f32,
     #[inspector(
         min = CAMERA_BLOOM_MIN,
         max = CAMERA_BLOOM_MAX,
         display = NumberDisplay::Slider
     )]
-    pub low_frequency_boost: f32,
+    pub(crate) low_frequency_boost: f32,
     #[inspector(
         min = CAMERA_BLOOM_MIN,
         max = CAMERA_BLOOM_MAX,
         display = NumberDisplay::Slider
     )]
-    pub high_pass_frequency: f32,
+    pub(crate) high_pass_frequency: f32,
 }
 
 #[derive(Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
@@ -93,23 +93,23 @@ pub(crate) struct BloomSettings {
 pub(crate) struct SplashStart {
     /// Camera starting distance for splash screen animation.
     #[inspector(min = CAMERA_SPLASH_RADIUS_MIN, max = CAMERA_SPLASH_RADIUS_MAX)]
-    pub radius: f32,
+    pub(crate) radius: f32,
     /// Camera starting focus point for splash screen animation.
-    pub focus:  Position,
+    pub(crate) focus:  Position,
     /// Camera starting pitch angle for splash screen animation.
     #[inspector(
         min = CAMERA_SPLASH_ANGLE_MIN,
         max = CAMERA_SPLASH_ANGLE_MAX,
         display = NumberDisplay::Slider
     )]
-    pub pitch:  f32,
+    pub(crate) pitch:  f32,
     /// Camera starting yaw angle for splash screen animation.
     #[inspector(
         min = CAMERA_SPLASH_ANGLE_MIN,
         max = CAMERA_SPLASH_ANGLE_MAX,
         display = NumberDisplay::Slider
     )]
-    pub yaw:    f32,
+    pub(crate) yaw:    f32,
 }
 
 #[derive(Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
@@ -120,27 +120,27 @@ pub(crate) struct SmoothnessSettings {
         max = CAMERA_SMOOTHNESS_MAX,
         display = NumberDisplay::Slider
     )]
-    pub zoom:  f32,
+    pub(crate) zoom:  f32,
     #[inspector(
         min = CAMERA_SMOOTHNESS_MIN,
         max = CAMERA_SMOOTHNESS_MAX,
         display = NumberDisplay::Slider
     )]
-    pub pan:   f32,
+    pub(crate) pan:   f32,
     #[inspector(
         min = CAMERA_SMOOTHNESS_MIN,
         max = CAMERA_SMOOTHNESS_MAX,
         display = NumberDisplay::Slider
     )]
-    pub orbit: f32,
+    pub(crate) orbit: f32,
 }
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub(crate) struct CameraSettings {
-    pub bloom:        BloomSettings,
-    pub smoothness:   SmoothnessSettings,
-    pub splash_start: SplashStart,
+    pub(crate) bloom:        BloomSettings,
+    pub(crate) smoothness:   SmoothnessSettings,
+    pub(crate) splash_start: SplashStart,
 }
 
 impl Default for CameraSettings {

@@ -63,9 +63,9 @@ impl Plugin for MissilePlugin {
 #[reflect(Resource)]
 pub(super) struct MissileSettings {
     #[deref]
-    pub actor:                   ActorSettings,
-    pub forward_distance_scalar: f32,
-    pub base_velocity:           f32,
+    pub(super) actor:                   ActorSettings,
+    pub(super) forward_distance_scalar: f32,
+    pub(super) base_velocity:           f32,
 }
 
 impl Default for MissileSettings {
@@ -150,11 +150,11 @@ fn initialize_missile(
     mut commands: Commands,
     boundary: Res<Boundary>,
     mut missile_settings: ResMut<MissileSettings>,
-    transform_and_linvel: Single<(&Transform, &LinearVelocity), With<Spaceship>>,
+    transform_and_linear_velocity: Single<(&Transform, &LinearVelocity), With<Spaceship>>,
 ) {
     let missile_position = MissilePosition::new(boundary.max_missile_distance());
 
-    let (spaceship_transform, spaceship_velocity) = *transform_and_linvel;
+    let (spaceship_transform, spaceship_velocity) = *transform_and_linear_velocity;
 
     let transform = initialize_transform(spaceship_transform, &missile_settings);
 

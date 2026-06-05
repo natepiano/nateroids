@@ -86,64 +86,64 @@ pub(crate) enum Spawnability {
 #[derive(Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(InspectorOptions)]
 pub(crate) struct ActorSettings {
-    pub spawnability:             Spawnability,
+    pub(crate) spawnability:             Spawnability,
     #[inspector(
         min = ACTOR_DAMPING_MIN,
         max = ACTOR_DAMPING_MAX,
         display = NumberDisplay::Slider
     )]
-    pub angular_damping:          Option<f32>,
+    pub(crate) angular_damping:          Option<f32>,
     #[inspector(
         min = ACTOR_COLLIDER_MARGIN_MIN,
         max = ACTOR_COLLIDER_MARGIN_MAX,
         display = NumberDisplay::Slider
     )]
-    pub collider_margin:          f32,
-    pub collider_type:            ColliderType,
-    pub collision_damage:         f32,
-    pub collision_layers:         CollisionLayers,
-    pub gravity_scale:            f32,
-    pub health:                   f32,
+    pub(crate) collider_margin:          f32,
+    pub(crate) collider_type:            ColliderType,
+    pub(crate) collision_damage:         f32,
+    pub(crate) collision_layers:         CollisionLayers,
+    pub(crate) gravity_scale:            f32,
+    pub(crate) health:                   f32,
     #[inspector(
         min = ACTOR_DAMPING_MIN,
         max = ACTOR_DAMPING_MAX,
         display = NumberDisplay::Slider
     )]
-    pub linear_damping:           Option<f32>,
-    pub locked_axes:              LockedAxes,
+    pub(crate) linear_damping:           Option<f32>,
+    pub(crate) locked_axes:              LockedAxes,
     #[inspector(
         min = ACTOR_MASS_MIN,
         max = ACTOR_MASS_MAX,
         display = NumberDisplay::Slider
     )]
-    pub mass:                     f32,
+    pub(crate) mass:                     f32,
     #[inspector(
         min = ACTOR_MAX_VELOCITY_MIN,
         max = ACTOR_MAX_VELOCITY_MAX,
         display = NumberDisplay::Slider
     )]
-    pub max_angular_velocity:     f32,
+    pub(crate) max_angular_velocity:     f32,
     #[inspector(
         min = ACTOR_MAX_VELOCITY_MIN,
         max = ACTOR_MAX_VELOCITY_MAX,
         display = NumberDisplay::Slider
     )]
-    pub max_linear_velocity:      f32,
-    pub render_layer:             RenderLayer,
+    pub(crate) max_linear_velocity:      f32,
+    pub(crate) render_layer:             RenderLayer,
     #[inspector(
         min = ACTOR_RESTITUTION_MIN,
         max = ACTOR_RESTITUTION_MAX,
         display = NumberDisplay::Slider
     )]
-    pub restitution:              f32,
-    pub restitution_combine_rule: CoefficientCombine,
-    pub rigid_body:               RigidBody,
+    pub(crate) restitution:              f32,
+    pub(crate) restitution_combine_rule: CoefficientCombine,
+    pub(crate) rigid_body:               RigidBody,
     #[reflect(ignore)]
-    pub scene:                    Handle<Scene>,
-    pub spawn_timer_seconds:      Option<f32>,
-    pub transform:                Transform,
+    pub(crate) scene:                    Handle<Scene>,
+    pub(crate) spawn_timer_seconds:      Option<f32>,
+    pub(crate) transform:                Transform,
     #[reflect(ignore)]
-    pub spawn_timer:              Option<Timer>,
+    pub(crate) spawn_timer:              Option<Timer>,
 }
 
 #[derive(Reflect, Component, Clone, Debug)]

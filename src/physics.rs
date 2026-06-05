@@ -84,7 +84,7 @@ fn monitor_physics_health(
     }
 
     // Calculate average velocity magnitude
-    let total_speed: f32 = nateroids.iter().map(|vel| vel.length()).sum();
+    let total_speed: f32 = nateroids.iter().map(|velocity| velocity.length()).sum();
     let avg_speed = if nateroid_count > 0 {
         total_speed / nateroid_count.to_f32()
     } else {

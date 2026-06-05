@@ -65,7 +65,7 @@ fn render_portal_by_geometry(
                     .camera_orientation
                     .orientation_settings
                     .axis_profundus,
-                portal.normal().as_vec3(),
+                portal.boundary_face.to_dir3().as_vec3(),
             );
             let isometry = Isometry3d::new(*portal.position, rotation);
             gizmos
@@ -139,7 +139,7 @@ fn draw_multiface_portal(
                     &ArcGeometry {
                         center: *portal.position,
                         radius: portal.radius,
-                        normal: portal.normal().as_vec3(),
+                        normal: portal.boundary_face.to_dir3().as_vec3(),
                         from:   points[0],
                         to:     points[1],
                     },
@@ -151,7 +151,7 @@ fn draw_multiface_portal(
                 // The single Edge overextended face
                 let center = intersection::rotate_portal_center_to_target_face(
                     *portal.position,
-                    portal.normal(),
+                    portal.boundary_face.to_dir3(),
                     face,
                     transform,
                 );

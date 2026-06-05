@@ -37,14 +37,14 @@ pub(super) struct SelectionOutlineSettings {
         max = SELECTION_OUTLINE_MAX,
         display = NumberDisplay::Slider
     )]
-    pub width:     f32,
+    pub(super) width:     f32,
     #[inspector(
         min = SELECTION_OUTLINE_MIN,
         max = SELECTION_OUTLINE_MAX,
         display = NumberDisplay::Slider
     )]
-    pub intensity: f32,
-    pub color:     Color,
+    pub(super) intensity: f32,
+    pub(super) color:     Color,
 }
 
 impl Default for SelectionOutlineSettings {
@@ -110,9 +110,9 @@ fn select_actor_command(
     camera: Single<Entity, With<OrbitCam>>,
 ) {
     // Deselect previous
-    for prev in previously_selected.iter() {
-        if prev != actor {
-            commands.entity(prev).remove::<Selected>();
+    for previous in previously_selected.iter() {
+        if previous != actor {
+            commands.entity(previous).remove::<Selected>();
         }
     }
 

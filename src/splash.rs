@@ -265,8 +265,8 @@ fn create_spin_sequence(radius: f32, durations: &[u64]) -> Vec<CameraMove> {
     positions
         .iter()
         .zip(durations.iter().cycle())
-        .map(|(pos, &duration)| CameraMove::ToPosition {
-            translation: *pos,
+        .map(|(position, &duration)| CameraMove::ToPosition {
+            translation: *position,
             focus:       Vec3::ZERO,
             duration:    Duration::from_millis(duration),
             easing:      EaseFunction::Linear,
