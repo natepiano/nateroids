@@ -192,10 +192,10 @@ fn camera_home_command(
 fn toggle_fit_target_debug_command(
     mut commands: Commands,
     camera_entity: Single<Entity, With<OrbitCam>>,
-    viz_query: Query<(), With<FitOverlay>>,
+    fit_overlay_query: Query<(), With<FitOverlay>>,
 ) {
     let camera_entity = *camera_entity;
-    if viz_query.get(camera_entity).is_ok() {
+    if fit_overlay_query.get(camera_entity).is_ok() {
         commands.entity(camera_entity).remove::<FitOverlay>();
     } else {
         commands.entity(camera_entity).insert(FitOverlay);

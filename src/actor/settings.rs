@@ -209,7 +209,8 @@ fn initialize_actor_settings(actor_settings: &mut ActorSettings, scene_handle: &
     actor_settings.scene = scene_handle.clone();
 }
 
-/// use settings values so inspectors can provide new defaults
+/// Applies `ActorSettings` values so inspectors can update component defaults
+/// before spawn.
 pub(super) fn insert_configured_components(
     commands: &mut Commands,
     settings: &mut ActorSettings,

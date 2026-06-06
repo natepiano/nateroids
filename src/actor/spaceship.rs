@@ -224,10 +224,10 @@ fn enforce_spaceship_2d_rotation(
             }
 
             let forward_2d = Vec3::new(forward.x, forward.y, 0.0);
-            let forward_len_sq = forward_2d.length_squared();
+            let forward_length_squared = forward_2d.length_squared();
 
-            if forward_len_sq > SPACESHIP_FORWARD_EPSILON {
-                let forward_2d_normalized = forward_2d / forward_len_sq.sqrt();
+            if forward_length_squared > SPACESHIP_FORWARD_EPSILON {
+                let forward_2d_normalized = forward_2d / forward_length_squared.sqrt();
 
                 // Calculate angle in XY plane (from +Y axis)
                 let z_angle = forward_2d_normalized.y.atan2(forward_2d_normalized.x) - FRAC_PI_2;

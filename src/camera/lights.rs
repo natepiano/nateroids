@@ -200,14 +200,12 @@ pub(super) struct RotationInfo {
     pub(super) angle: f32,
 }
 
-// looked this up on github - so it doesn't really matter where it's placed...
-//
-// Directional light sources are modelled to be at infinity and have parallel
-// rays. As such they do not have a position in practical terms and only the
-// rotation matters. The direction of the light is defined by the forward
-// direction and by default the -z axis is forwards (right-handed, y-up, z
-// points backwards and -z is forwards). Rotations are then applied to a `Vec3` of
-// (0,0,-1) to calculate the transform’s forward direction.
+// `DirectionalLight` uses rotation only: Bevy models directional light sources
+// at infinity with parallel rays, so light placement has no practical effect.
+// The direction of the light is defined by the forward direction and by default
+// the -z axis is forwards (right-handed, y-up, z points backwards and -z is
+// forwards). Rotations are then applied to a `Vec3` of (0,0,-1) to calculate the
+// transform’s forward direction.
 
 #[derive(Component)]
 struct LightDirection(LightPosition);

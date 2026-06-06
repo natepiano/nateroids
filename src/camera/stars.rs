@@ -195,12 +195,10 @@ fn despawn_stars(
     for entity in stars.iter() {
         commands.entity(entity).despawn();
     }
-    // Reset rotation angle so new stars start from 0 (prevents jump on reset)
-    // This was a nasty bug - we couldn't tell why the `Splash` animation would land smoothly
-    // but when we manally re-invoked this, it looked like the spaceship jumped with
-    // respect to the star background at the end - thinking this was a camera movement but
-    // but it was actually that we needed to reset the rotation angle so we wouldn't be using the
-    // previous rotation state when spawning a new set of stars. dang!
+    // Reset `StarRotationState::current_angle` before regenerating `Star`
+    // entities. Without the reset, re-running the `Splash` animation keeps the
+    // previous rotation state and the spaceship appears to jump relative to the
+    // star background.
     rotation_state.current_angle = 0.0;
 }
 

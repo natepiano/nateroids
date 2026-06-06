@@ -136,8 +136,8 @@ fn spaceship_movement_controls(
     time: Res<Time>,
     camera_orientation: Res<CameraOrientation>,
 ) {
-    // we can use this because there is only exactly one spaceship - so we're not
-    // looping over the query
+    // `spaceship_query.single_mut()` is valid because the scene has exactly one
+    // `Spaceship`; the system does not need to iterate the query.
     if let Ok((mut spaceship_transform, mut linear_velocity, mut angular_velocity)) =
         spaceship_query.single_mut()
     {

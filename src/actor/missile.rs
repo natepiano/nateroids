@@ -247,8 +247,8 @@ fn fire_missile_continuous(
     commands.spawn((Missile, Name::new(MISSILE_ENTITY_NAME)));
 }
 
-/// we update `Missile` movement so that it can be despawned after it has traveled
-/// its total distance
+/// Updates `MissilePosition` from `Missile` movement so missiles despawn after
+/// reaching `MissilePosition::total_distance`.
 fn missile_movement(
     mut commands: Commands,
     mut missile_position_query: Query<(Entity, &Transform, &mut MissilePosition, &Teleporter)>,

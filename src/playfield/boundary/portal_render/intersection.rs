@@ -20,10 +20,9 @@ pub(super) struct ArcGeometry {
     pub(super) to:     Vec3,
 }
 
-// when we rotate this to the target face we get a new center
-// for the arc that is drawn outside the boundary
-// wrapped to a point that provide a center that gives
-// the illusion of having the circle wrap around the edge
+// `position` is the portal arc center on `normal`; rotating it toward
+// `target_face` returns the `ArcGeometry::center` used for the wrapped arc
+// outside the boundary.
 pub(super) fn rotate_portal_center_to_target_face(
     position: Vec3,
     normal: Dir3,

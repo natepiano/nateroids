@@ -1,5 +1,4 @@
 use bevy::asset::LoadState;
-// Load assets once at startup
 use bevy::prelude::*;
 
 use crate::constants::ENVIRONMENT_DIFFUSE_MAP_ASSET_PATH;
@@ -22,10 +21,11 @@ pub(crate) struct AssetLoaderPlugin;
 
 impl Plugin for AssetLoaderPlugin {
     fn build(&self, app: &mut App) {
-        app.init_state::<AssetsState>() // necessary to tell if they've finished loading
+        // `AssetsState` reports when handles in `SceneAssets` have finished loading.
+        app.init_state::<AssetsState>()
             .init_resource::<SceneAssets>()
-            // make sure this loads before the spaceship uses it - right now that is
-            // handled by running this `PreStartup` and spaceship in `Startup`
+            // Run `load_assets` in `PreStartup` before spaceship setup reads
+            // `SceneAssets` during `Startup`.
             .add_systems(PreStartup, load_assets)
             .add_systems(
                 Update,

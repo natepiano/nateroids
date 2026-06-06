@@ -116,9 +116,9 @@ fn calculate_death_velocity(
             corners
                 .iter()
                 .min_by(|a, b| {
-                    let dist_a = position.distance_squared(**a);
-                    let dist_b = position.distance_squared(**b);
-                    dist_a.total_cmp(&dist_b)
+                    let distance_a = position.distance_squared(**a);
+                    let distance_b = position.distance_squared(**b);
+                    distance_a.total_cmp(&distance_b)
                 })
                 .copied()
                 .unwrap_or(corners[0])

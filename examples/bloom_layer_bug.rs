@@ -1,7 +1,7 @@
 //! Bloom + `RenderLayers` bug: objects disappear when second camera uses sequential `.insert()`.
 //!
-//! See <https://github.com/bevyengine/bevy/issues/22000> - you need to have `Hdr` on all cameras
-//! or at least apparently this seems to be the problem.
+//! See <https://github.com/bevyengine/bevy/issues/22000> - every camera in the
+//! bloom and `RenderLayers` reproduction needs the `Hdr` component.
 //!
 //! Run: `cargo run --example bloom_layer_bug`
 
@@ -110,8 +110,8 @@ fn setup(
         game_layer.clone(),
     ));
 
-    // bloom layer light - doesn't make a difference if this light here or not
-    // just left it in so people can see for themselves whether it makes a difference or not
+    // Bloom-layer `DirectionalLight`; removing the bloom-layer light does not
+    // change the Bevy issue 22000 reproduction.
     commands.spawn((
         DirectionalLight {
             illuminance: DIRECTIONAL_LIGHT_ILLUMINANCE,
@@ -121,9 +121,9 @@ fn setup(
         bloom_layer,
     ));
 
-    // Light for game layer (required to trigger bug)
-    // without this light both objects are visible however you spawn them
-    // with this light, the emissive sphere is only visible if spawned as a tuple
+    // Game-layer `DirectionalLight` is required to trigger Bevy issue 22000.
+    // With the game-layer light, the emissive sphere is only visible when
+    // spawned as a tuple.
     commands.spawn((
         DirectionalLight {
             illuminance: DIRECTIONAL_LIGHT_ILLUMINANCE,
