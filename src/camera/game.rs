@@ -138,25 +138,25 @@ pub(crate) struct SmoothnessSettings {
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
 pub(crate) struct CameraSettings {
-    pub(crate) bloom:        BloomSettings,
-    pub(crate) smoothness:   SmoothnessSettings,
-    pub(crate) splash_start: SplashStart,
+    pub(crate) bloom_settings:      BloomSettings,
+    pub(crate) smoothness_settings: SmoothnessSettings,
+    pub(crate) splash_start:        SplashStart,
 }
 
 impl Default for CameraSettings {
     fn default() -> Self {
         Self {
-            bloom:        BloomSettings {
+            bloom_settings:      BloomSettings {
                 intensity:           CAMERA_BLOOM_INTENSITY,
                 low_frequency_boost: CAMERA_BLOOM_LOW_FREQUENCY_BOOST,
                 high_pass_frequency: CAMERA_BLOOM_HIGH_PASS_FREQUENCY,
             },
-            smoothness:   SmoothnessSettings {
+            smoothness_settings: SmoothnessSettings {
                 zoom:  CAMERA_ZOOM_SMOOTHNESS,
                 pan:   CAMERA_PAN_SMOOTHNESS,
                 orbit: CAMERA_ORBIT_SMOOTHNESS,
             },
-            splash_start: SplashStart {
+            splash_start:        SplashStart {
                 radius: CAMERA_SPLASH_START_RADIUS,
                 focus:  CAMERA_SPLASH_START_FOCUS,
                 pitch:  CAMERA_SPLASH_START_PITCH,
@@ -230,8 +230,8 @@ fn update_orbit_cam_smoothness(
     mut orbit_cam_query: Query<&mut OrbitCam>,
 ) {
     for mut camera in &mut orbit_cam_query {
-        camera.zoom_smoothness = camera_settings.smoothness.zoom;
-        camera.pan_smoothness = camera_settings.smoothness.pan;
-        camera.orbit_smoothness = camera_settings.smoothness.orbit;
+        camera.zoom_smoothness = camera_settings.smoothness_settings.zoom;
+        camera.pan_smoothness = camera_settings.smoothness_settings.pan;
+        camera.orbit_smoothness = camera_settings.smoothness_settings.orbit;
     }
 }
