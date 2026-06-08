@@ -75,7 +75,8 @@ fn setup(
     //     camera_transform,
     // ));
 
-    // FIX: adding Hdr works
+    // Bevy issue 22000 requires the bloom `Camera3d` path to include the `Hdr`
+    // component when the camera renders an emissive `RenderLayers` target.
     commands.spawn((
         Camera3d::default(),
         Camera {
@@ -99,7 +100,8 @@ fn setup(
         bloom_layer.clone(),
     ));
 
-    // Game layer: green sphere - always visible (proves rendering works)
+    // The green sphere verifies the non-bloom `Camera3d` and `Game`
+    // `RenderLayers` path.
     commands.spawn((
         Mesh3d(meshes.add(Sphere::new(SPHERE_RADIUS))),
         MeshMaterial3d(materials.add(StandardMaterial {

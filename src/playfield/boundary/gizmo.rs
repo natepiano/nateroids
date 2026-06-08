@@ -85,8 +85,8 @@ pub(super) fn sync_boundary_volume(
     transform.scale = boundary.exterior_scalar * boundary.cell_count.as_vec3();
 }
 
-/// draw the grid and then slightly outside the grid, draw the boundary around the whole grid
-/// transform
+/// Draws the `Boundary` grid with `GridGizmo` and the exterior
+/// `BoundaryVolume` box with `BoundaryGizmo` at the queried `Transform`.
 pub(super) fn draw_boundary(
     boundary: Res<Boundary>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,

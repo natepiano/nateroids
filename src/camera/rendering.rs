@@ -44,8 +44,8 @@ pub(crate) enum RenderLayer {
     UI,
 }
 
-// returning the array rather than just one in case we have more complex
-// situations in the future that require overlapping layers
+// `RenderLayer::layer_ids` returns a slice so `RenderLayers::from_layers` can
+// represent future overlapping `Layer` sets.
 impl RenderLayer {
     pub(crate) const fn layer_ids(self) -> &'static [Layer] {
         match self {

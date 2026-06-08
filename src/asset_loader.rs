@@ -42,8 +42,8 @@ pub(crate) enum AssetsState {
     Loaded,
 }
 
-// all the models are loaded via `SceneBundle` - the models
-// can have multiple elements and scene makes all that possible
+// `SceneAssets` stores GLTF `Handle<Scene>` values whose scene graphs can spawn
+// multiple child meshes from a single actor asset.
 #[derive(Resource, Clone, Debug, Default)]
 pub(crate) struct SceneAssets {
     pub(crate) missile:                  Handle<Scene>,

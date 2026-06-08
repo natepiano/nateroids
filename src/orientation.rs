@@ -10,27 +10,12 @@ impl Plugin for OrientationPlugin {
     fn build(&self, app: &mut App) { app.init_resource::<CameraOrientation>(); }
 }
 
-// centralize orientation defaults for a quick change-up
-// Y-axis (vertical): Axis Mundi
-// This represents the central axis of the world, connecting the heavens, earth,
-// and underworld.
-//
-// X-axis (horizontal):
-// Axis Orbis: Latin for "axis of the circle" or "axis of the world"
-// This could represent the east-west movement of the sun or the horizon line.
-//
-// Z-axis (depth):
-// Axis Profundus: Latin for "deep axis" or "profound axis"
-// This could represent the concept of depth or the path between the observer
-// and the horizon.
-//
-// nexus is the center of the game - It suggests a central point where all game
-// elements connect or interact, which fits well with the concept of a game's
-// core or hub.
-//
-// locus is the home position of the camera - It implies a specific, fixed point
-// of reference, which aligns well with the idea of a camera's home or default
-// position.
+// `OrientationType` selects the `OrientationSettings` basis used by
+// `CameraOrientation`.
+// `axis_mundi` is the local up axis, `axis_orbis` is the local horizontal axis,
+// and `axis_profundus` is the local depth axis.
+// `nexus: Position` stores the world-space center, and `locus: Transform`
+// stores the camera home transform.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]
 pub(crate) enum OrientationType {
     TopDown,

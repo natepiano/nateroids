@@ -35,8 +35,9 @@ event!(MissileInspectorEvent);
 event!(NateroidInspectorEvent);
 event!(SpaceshipInspectorEvent);
 
-// call flow is to initialize the ensemble settings which has the defaults
-// for an actor
+// `ActorSettingsPlugin` initializes the actor setting resources when
+// `AssetsState::Loaded` starts: `ActorSettings`, `MissileSettings`,
+// `NateroidSettings`, and `SpaceshipSettings`.
 pub(super) struct ActorSettingsPlugin;
 
 impl Plugin for ActorSettingsPlugin {
@@ -163,17 +164,18 @@ pub(crate) enum ColliderType {
 type ActorRenderLayersQuery<'w, 'a> =
     Query<'w, 'a, &'static RenderLayers, Or<(With<Missile>, With<Nateroid>, With<Spaceship>)>>;
 
-/// ensures that the game camera can see the spawned actor and that shadows are cast
+/// Copies parent actor `RenderLayers` onto spawned scene descendants.
 fn propagate_render_layers_on_spawn(
     add: On<Add, Children>,
     parent_render_layers_query: ActorRenderLayersQuery,
     children_query: Query<&Children>,
     mut commands: Commands,
 ) {
-    // Only process if this entity has one of our actor marker components (scene
-    // children added to actor parent)
+    // `add.entity` is an actor parent with `Missile`, `Nateroid`, or
+    // `Spaceship`; its `Children` were added by scene spawning.
     if let Ok(parent_layers) = parent_render_layers_query.get(add.entity) {
-        // Propagate to all descendants using Bevy's built-in iterator
+        // `iter_descendants` reaches the GLTF child meshes that need matching
+        // `RenderLayers` for the game camera and shadow pass.
         for descendant in children_query.iter_descendants(add.entity) {
             commands.entity(descendant).insert(parent_layers.clone());
         }

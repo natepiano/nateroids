@@ -78,7 +78,7 @@ impl Plugin for BoundaryPlugin {
     }
 }
 
-/// defines
+/// Inspector-controlled `Boundary` resource for grid and exterior dimensions.
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
 pub(crate) struct Boundary {

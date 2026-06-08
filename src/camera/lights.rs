@@ -257,9 +257,8 @@ fn manage_lighting(
     ambient_light.brightness = light_settings.ambient_brightness;
     ambient_light.color = light_settings.ambient_color;
 
-    // iterate through all possible positions to see if any of them exist...
-    // if it's been enabled and it doesn't exist then spawn it
-    // if it has changed then update it to what it's changed to
+    // Reconcile each `LightPosition` with its `DirectionalLightSettings` and
+    // any spawned `DirectionalLight` tagged by `LightDirection`.
     for position in &[
         LightPosition::Right,
         LightPosition::Left,
@@ -270,8 +269,8 @@ fn manage_lighting(
     ] {
         let directional_light_settings = light_settings.get_light_settings(*position);
 
-        // we always spawn a light with its current `LightDirection` - see
-        // if we have the current loop's position in an already spawned entity
+        // `directional_light_query` stores spawned lights by `LightDirection`;
+        // match the current `LightPosition` before updating or spawning.
         let existing_light = directional_light_query
             .iter_mut()
             .find(|(_, _, direction)| direction.0 == *position);
@@ -280,18 +279,18 @@ fn manage_lighting(
 
         match (existing_light, directional_light_settings.light_switch) {
             (Some((_, mut light, _)), LightSwitch::On) => {
-                // Update existing light
+                // Update the existing `DirectionalLight`.
                 light.color = directional_light_settings.color;
                 light.illuminance = directional_light_settings.illuminance;
                 light.shadows_enabled =
                     matches!(directional_light_settings.shadow_switch, ShadowSwitch::On);
             },
             (Some((entity, _, _)), LightSwitch::Off) => {
-                // Remove disabled light
+                // Despawn the disabled `DirectionalLight` entity.
                 commands.entity(entity).despawn();
             },
             (None, LightSwitch::On) => {
-                // Spawn new light
+                // Spawn the missing `DirectionalLight`.
                 spawn_directional_light(
                     &mut commands,
                     directional_light_settings,
@@ -299,7 +298,8 @@ fn manage_lighting(
                     &light_rotation,
                 );
             },
-            (None, LightSwitch::Off) => {}, // Do nothing for disabled lights that don't exist
+            (None, LightSwitch::Off) => {}, /* No `DirectionalLight` exists for the disabled
+                                             * setting. */
         }
     }
 }

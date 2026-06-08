@@ -78,47 +78,51 @@ fn monitor_physics_health(
 ) {
     let nateroid_count = nateroids.iter().len();
 
-    // Only monitor when there are enough entities to potentially cause issues
+    // Start monitoring when the `Nateroid` count reaches
+    // `MIN_NATEROIDS_FOR_MONITORING`, the minimum used by the physics-stress
+    // thresholds.
     if nateroid_count < MIN_NATEROIDS_FOR_MONITORING {
         return;
     }
 
-    // Calculate average velocity magnitude
+    // Average the `LinearVelocity` magnitude across monitored `Nateroid`s.
     let total_speed: f32 = nateroids.iter().map(|velocity| velocity.length()).sum();
-    let avg_speed = if nateroid_count > 0 {
+    let average_speed = if nateroid_count > 0 {
         total_speed / nateroid_count.to_f32()
     } else {
         0.0
     };
 
-    // Get FPS from diagnostics
+    // Read smoothed FPS from `FrameTimeDiagnosticsPlugin`.
     let fps = diagnostics
         .get(&FrameTimeDiagnosticsPlugin::FPS)
         .and_then(Diagnostic::smoothed)
         .unwrap_or(0.0);
 
-    // Detect potential physics breakdown with hysteresis to prevent oscillation
-    // Use different thresholds for entering vs exiting stress state
+    // `PhysicsMonitorState::stress_level` enters `StressLevel::Stressed` at
+    // `STRESS_ENTER_FPS_THRESHOLD` and recovers after the looser
+    // `STRESS_EXIT_FPS_THRESHOLD`; `STRESS_VELOCITY_THRESHOLD` can keep either
+    // transition in the stressed state.
     let physics_struggling = match physics_monitor_state.stress_level {
         StressLevel::Stressed => {
-            fps < STRESS_EXIT_FPS_THRESHOLD || avg_speed > STRESS_VELOCITY_THRESHOLD
+            fps < STRESS_EXIT_FPS_THRESHOLD || average_speed > STRESS_VELOCITY_THRESHOLD
         },
         StressLevel::Monitoring | StressLevel::Recovered => {
-            fps < STRESS_ENTER_FPS_THRESHOLD || avg_speed > STRESS_VELOCITY_THRESHOLD
+            fps < STRESS_ENTER_FPS_THRESHOLD || average_speed > STRESS_VELOCITY_THRESHOLD
         },
     };
 
     let current_time = time.elapsed_secs_f64();
 
     if physics_struggling {
-        // When stressed, log every 1 second
+        // Throttle repeated `StressLevel::Stressed` logs.
         let should_log = physics_monitor_state.stress_level != StressLevel::Stressed
             || (current_time - physics_monitor_state.last_stress_log
                 >= PHYSICS_WARN_THROTTLE_INTERVAL_SECS);
 
         if should_log {
             warn!(
-                "⚠️  PHYSICS STRESS: {nateroid_count} nateroids | avg_speed: {avg_speed:.1} | FPS: {fps:.1} | timestep: {:.3}ms",
+                "⚠️  PHYSICS STRESS: {nateroid_count} nateroids | average_speed: {average_speed:.1} | FPS: {fps:.1} | timestep: {:.3}ms",
                 time.delta_secs() * MILLISECONDS_PER_SECOND
             );
             physics_monitor_state.stress_level = StressLevel::Stressed;
@@ -126,7 +130,7 @@ fn monitor_physics_health(
         }
     } else if physics_monitor_state.stress_level != StressLevel::Recovered {
         info!(
-            "Physics healthy: {nateroid_count} nateroids | avg_speed: {avg_speed:.1} | FPS: {fps:.1}"
+            "Physics healthy: {nateroid_count} nateroids | average_speed: {average_speed:.1} | FPS: {fps:.1}"
         );
         physics_monitor_state.stress_level = StressLevel::Recovered;
     }

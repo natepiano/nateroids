@@ -109,18 +109,18 @@ fn select_actor_command(
     previously_selected: Query<Entity, With<Selected>>,
     camera: Single<Entity, With<OrbitCam>>,
 ) {
-    // Deselect previous
+    // Remove `Selected` from previously selected actor entities.
     for previous in previously_selected.iter() {
         if previous != actor {
             commands.entity(previous).remove::<Selected>();
         }
     }
 
-    // Select this actor
+    // Add `Selected` to the new actor entity and update `ZoomTarget`.
     commands.entity(actor).insert(Selected);
     zoom_target.0 = Some(actor);
 
-    // Update the fit-target visualization to track this entity
+    // Trigger `SetFitTarget` so the fit-target visualization tracks the selected actor.
     commands.trigger(SetFitTarget::new(*camera, actor));
 
     debug!("Selected actor {actor:?}");
