@@ -29,8 +29,8 @@ pub(crate) fn calculate_portal_face_count(portal: &Portal, transform: &Transform
 
     match geometry {
         PortalGeometry::SingleFace => 1,
-        PortalGeometry::MultiFace(multiface) => {
-            count_faces_with_valid_arcs(portal, &multiface, transform)
+        PortalGeometry::MultiFace(multi_face_geometry) => {
+            count_faces_with_valid_arcs(portal, &multi_face_geometry, transform)
         },
     }
 }
@@ -55,7 +55,7 @@ pub(super) fn classify_portal_geometry(portal: &Portal, transform: &Transform) -
 /// Counts how many faces have valid arc intersections for a multi-face portal
 fn count_faces_with_valid_arcs(
     portal: &Portal,
-    multiface: &MultiFaceGeometry,
+    multi_face_geometry: &MultiFaceGeometry,
     transform: &Transform,
 ) -> usize {
     // Calculate boundary extents for constraint checking
@@ -64,7 +64,7 @@ fn count_faces_with_valid_arcs(
     let max = transform.translation + half_size;
 
     // Collect all faces from the geometry (primary from portal.boundary_face + overextended)
-    let all_faces_in_corner = match multiface {
+    let all_faces_in_corner = match multi_face_geometry {
         MultiFaceGeometry::Edge { overextended } => vec![portal.boundary_face, *overextended],
         MultiFaceGeometry::Corner { overextended } => {
             let mut faces = vec![portal.boundary_face];

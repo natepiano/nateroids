@@ -193,8 +193,8 @@ fn draw_exhaust_flames(gizmos: &mut Gizmos<FlameGizmo>, transform: &Transform, e
     }
 }
 
-pub(super) fn configure_flame_gizmo(mut config_store: ResMut<GizmoConfigStore>) {
-    let (gizmo_config, _) = config_store.config_mut::<FlameGizmo>();
+pub(super) fn configure_flame_gizmo(mut gizmo_config_store: ResMut<GizmoConfigStore>) {
+    let (gizmo_config, _) = gizmo_config_store.config_mut::<FlameGizmo>();
     gizmo_config.line.width = FLAME_GIZMO_LINE_WIDTH;
     gizmo_config.render_layers = RenderLayer::Game.layers();
 }

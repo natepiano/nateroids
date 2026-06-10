@@ -212,7 +212,7 @@ pub(super) fn draw_death_effects(
 fn draw_ring_lines(
     gizmos: &mut Gizmos<FlameGizmo>,
     isometry: Isometry3d,
-    params: &RingDrawParams,
+    ring_draw_params: &RingDrawParams,
     elapsed: f32,
 ) {
     let position = Vec3::from(isometry.translation);
@@ -232,19 +232,24 @@ fn draw_ring_lines(
         let radial = rotation * radial_local;
         let tangent = rotation * tangent_local;
 
-        let phase = line_index.mul_add(FLAME_PHASE_SPREAD, params.phase_offset);
+        let phase = line_index.mul_add(FLAME_PHASE_SPREAD, ring_draw_params.phase_offset);
         let vibration =
             elapsed.mul_add(FLAME_VIBRATION_SPEED, phase).sin() * FLAME_VIBRATION_AMPLITUDE;
 
-        let flicker = flicker::compute_flicker(elapsed, line_index, params.phase_offset);
-        let line_length = flicker
-            .length
-            .mul_add(params.line_length_variance, params.line_length_base);
+        let flicker = flicker::compute_flicker(elapsed, line_index, ring_draw_params.phase_offset);
+        let line_length = flicker.length.mul_add(
+            ring_draw_params.line_length_variance,
+            ring_draw_params.line_length_base,
+        );
 
-        let start = position + radial * params.radius + tangent * vibration;
+        let start = position + radial * ring_draw_params.radius + tangent * vibration;
         let end = start + radial * line_length;
 
-        let color = flicker::lerp_color(params.color_a, params.color_b, flicker.color);
+        let color = flicker::lerp_color(
+            ring_draw_params.color_a,
+            ring_draw_params.color_b,
+            flicker.color,
+        );
 
         gizmos.line(start, end, color);
     }

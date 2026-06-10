@@ -41,14 +41,14 @@ pub(crate) struct BoundaryVolume;
 pub(super) struct BoundaryFadeIn(Timer);
 
 pub(super) fn apply_boundary_settings(
-    mut config_store: ResMut<GizmoConfigStore>,
+    mut gizmo_config_store: ResMut<GizmoConfigStore>,
     boundary: Res<Boundary>,
 ) {
-    let (gizmo_config, _) = config_store.config_mut::<GridGizmo>();
+    let (gizmo_config, _) = gizmo_config_store.config_mut::<GridGizmo>();
     gizmo_config.line.width = boundary.grid_line_width;
     gizmo_config.render_layers = RenderLayer::Game.layers();
 
-    let (outer_config, _) = config_store.config_mut::<BoundaryGizmo>();
+    let (outer_config, _) = gizmo_config_store.config_mut::<BoundaryGizmo>();
     outer_config.line.width = boundary.exterior_line_width;
     outer_config.render_layers = RenderLayer::Game.layers();
 }
@@ -209,17 +209,17 @@ pub(super) fn detect_cell_count_change(
 pub(super) fn animate_grid_flash(
     mut commands: Commands,
     time: Res<Time>,
-    mut flash: ResMut<GridFlashAnimation>,
+    mut grid_flash_animation: ResMut<GridFlashAnimation>,
     mut boundary: ResMut<Boundary>,
 ) {
-    flash.timer.tick(time.delta());
+    grid_flash_animation.timer.tick(time.delta());
 
-    let t = flash.timer.fraction();
+    let t = grid_flash_animation.timer.fraction();
     let alpha = 1.0 - 2.0f32.mul_add(t, -1.0).abs();
 
     boundary.grid_color = BOUNDARY_COLOR.with_alpha(alpha);
 
-    if flash.timer.is_finished() {
+    if grid_flash_animation.timer.is_finished() {
         boundary.grid_color = BOUNDARY_COLOR.with_alpha(BOUNDARY_GRID_ALPHA);
         commands.remove_resource::<GridFlashAnimation>();
     }

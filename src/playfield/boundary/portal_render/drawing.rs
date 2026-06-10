@@ -27,7 +27,7 @@ struct PortalRenderContext<'a> {
     color:              Color,
     resolution:         u32,
     camera_orientation: &'a CameraOrientation,
-    actor_kind:         PortalActorKind,
+    portal_actor_kind:  PortalActorKind,
     transform:          &'a Transform,
 }
 
@@ -37,31 +37,31 @@ pub(crate) fn draw_portal(
     color: Color,
     resolution: u32,
     camera_orientation: &CameraOrientation,
-    actor_kind: PortalActorKind,
+    portal_actor_kind: PortalActorKind,
     transform: &Transform,
 ) {
     let geometry = geometry::classify_portal_geometry(portal, transform);
-    let context = PortalRenderContext {
+    let portal_render_context = PortalRenderContext {
         color,
         resolution,
         camera_orientation,
-        actor_kind,
+        portal_actor_kind,
         transform,
     };
-    render_portal_by_geometry(gizmos, portal, &context, &geometry);
+    render_portal_by_geometry(gizmos, portal, &portal_render_context, &geometry);
 }
 
 fn render_portal_by_geometry(
     gizmos: &mut Gizmos<PortalGizmo>,
     portal: &Portal,
-    context: &PortalRenderContext<'_>,
+    portal_render_context: &PortalRenderContext<'_>,
     geometry: &PortalGeometry,
 ) {
     match geometry {
         PortalGeometry::SingleFace => {
             // Draw full circle
             let rotation = Quat::from_rotation_arc(
-                context
+                portal_render_context
                     .camera_orientation
                     .orientation_settings
                     .axis_profundus,
@@ -69,18 +69,18 @@ fn render_portal_by_geometry(
             );
             let isometry = Isometry3d::new(*portal.position, rotation);
             gizmos
-                .circle(isometry, portal.radius, context.color)
-                .resolution(context.resolution);
+                .circle(isometry, portal.radius, portal_render_context.color)
+                .resolution(portal_render_context.resolution);
         },
-        PortalGeometry::MultiFace(multiface) => {
+        PortalGeometry::MultiFace(multi_face_geometry) => {
             draw_multiface_portal(
                 gizmos,
                 portal,
-                context.color,
-                context.resolution,
-                context.actor_kind,
-                multiface,
-                context.transform,
+                portal_render_context.color,
+                portal_render_context.resolution,
+                portal_render_context.portal_actor_kind,
+                multi_face_geometry,
+                portal_render_context.transform,
             );
         },
     }
@@ -91,7 +91,7 @@ fn draw_multiface_portal(
     portal: &Portal,
     color: Color,
     resolution: u32,
-    actor_kind: PortalActorKind,
+    portal_actor_kind: PortalActorKind,
     geometry: &MultiFaceGeometry,
     transform: &Transform,
 ) {
@@ -128,7 +128,7 @@ fn draw_multiface_portal(
 
     // Draw all arcs
     for (face, points) in face_arcs {
-        let face_color = get_portal_color(actor_kind, geometry, face, color);
+        let face_color = get_portal_color(portal_actor_kind, geometry, face, color);
 
         match geometry {
             MultiFaceGeometry::Edge { .. } if face == primary_face => {
@@ -173,24 +173,24 @@ fn draw_multiface_portal(
 // Used for primary face arcs - inverts the angle for proper rendering
 fn draw_primary_face_arc(
     gizmos: &mut Gizmos<PortalGizmo>,
-    arc: &ArcGeometry,
+    arc_geometry: &ArcGeometry,
     color: Color,
     resolution: u32,
 ) {
     // Calculate vectors from center to intersection points
-    let vec_from = (arc.from - arc.center).normalize();
-    let vec_to = (arc.to - arc.center).normalize();
+    let vec_from = (arc_geometry.from - arc_geometry.center).normalize();
+    let vec_to = (arc_geometry.to - arc_geometry.center).normalize();
 
     // Calculate the angle and determine direction
     let mut angle = vec_from.angle_between(vec_to);
     let cross_product = vec_from.cross(vec_to);
-    let is_clockwise = cross_product.dot(arc.normal) < 0.0;
+    let is_clockwise = cross_product.dot(arc_geometry.normal) < 0.0;
 
     // Invert the angle for arc_3d rendering logic
     angle = TAU - angle;
 
     // Calculate the rotation to align the arc with the boundary face
-    let face_rotation = Quat::from_rotation_arc(Vec3::Y, arc.normal);
+    let face_rotation = Quat::from_rotation_arc(Vec3::Y, arc_geometry.normal);
 
     // Determine the start vector based on clockwise/counterclockwise
     let start_vec = if is_clockwise { vec_from } else { vec_to };
@@ -203,20 +203,20 @@ fn draw_primary_face_arc(
     gizmos
         .arc_3d(
             angle,
-            arc.radius,
-            Isometry3d::new(arc.center, final_rotation),
+            arc_geometry.radius,
+            Isometry3d::new(arc_geometry.center, final_rotation),
             color,
         )
         .resolution(resolution);
 }
 
 const fn get_portal_color(
-    actor_kind: PortalActorKind,
+    portal_actor_kind: PortalActorKind,
     geometry: &MultiFaceGeometry,
     face: BoundaryFace,
     default_color: Color,
 ) -> Color {
-    match actor_kind {
+    match portal_actor_kind {
         PortalActorKind::Deaderoid => match geometry {
             MultiFaceGeometry::Corner { .. } => {
                 // Corner: use 3-color diagnostic scheme

@@ -135,10 +135,10 @@ impl Default for PortalSettings {
 }
 
 pub(super) fn apply_portal_settings(
-    mut config_store: ResMut<GizmoConfigStore>,
+    mut gizmo_config_store: ResMut<GizmoConfigStore>,
     portal_settings: Res<PortalSettings>,
 ) {
-    let (gizmo_config, _) = config_store.config_mut::<PortalGizmo>();
+    let (gizmo_config, _) = gizmo_config_store.config_mut::<PortalGizmo>();
     gizmo_config.line.width = portal_settings.line_width;
     gizmo_config.line.joints = GizmoLineJoint::Round(portal_settings.line_joints);
     gizmo_config.render_layers = RenderLayer::Game.layers();

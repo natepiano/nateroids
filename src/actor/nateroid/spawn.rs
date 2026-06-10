@@ -28,7 +28,7 @@ pub(super) fn spawn_nateroid(
     time: Res<Time>,
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     spatial_query: SpatialQuery,
-    mut spawn_stats: ResMut<NateroidSpawnStats>,
+    mut nateroid_spawn_stats: ResMut<NateroidSpawnStats>,
 ) {
     if nateroid_settings.spawnability == Spawnability::Disabled {
         return;
@@ -52,29 +52,32 @@ pub(super) fn spawn_nateroid(
     let Some(transform) =
         initialize_transform(boundary_transform, &nateroid_settings, &spatial_query)
     else {
-        spawn_stats.record_attempt(SpawnResult::Failure);
+        nateroid_spawn_stats.record_attempt(SpawnResult::Failure);
 
         // Check if we should output warning (once per second)
-        if current_time - spawn_stats.last_warning_time >= NATEROID_WARN_THROTTLE_INTERVAL_SECS {
-            let success_rate = spawn_stats.success_rate() * 100.0;
+        if current_time - nateroid_spawn_stats.last_warning_time
+            >= NATEROID_WARN_THROTTLE_INTERVAL_SECS
+        {
+            let success_rate = nateroid_spawn_stats.success_rate() * 100.0;
             warn!(
                 "Nateroid spawn: {} / {} attempts ({success_rate:.0}%) in the last {} spawns",
-                spawn_stats.successes_count(),
-                spawn_stats.attempts_count(),
-                spawn_stats.attempts_count()
+                nateroid_spawn_stats.successes_count(),
+                nateroid_spawn_stats.attempts_count(),
+                nateroid_spawn_stats.attempts_count()
             );
-            spawn_stats.last_warning_time = current_time;
+            nateroid_spawn_stats.last_warning_time = current_time;
         }
         return;
     };
 
-    spawn_stats.record_attempt(SpawnResult::Success);
+    nateroid_spawn_stats.record_attempt(SpawnResult::Success);
 
     // Check if we should output stats (once per second, even on success)
-    if current_time - spawn_stats.last_warning_time >= NATEROID_WARN_THROTTLE_INTERVAL_SECS {
-        let success_rate = spawn_stats.success_rate() * 100.0;
-        let successes = spawn_stats.successes_count();
-        let attempts = spawn_stats.attempts_count();
+    if current_time - nateroid_spawn_stats.last_warning_time >= NATEROID_WARN_THROTTLE_INTERVAL_SECS
+    {
+        let success_rate = nateroid_spawn_stats.success_rate() * 100.0;
+        let successes = nateroid_spawn_stats.successes_count();
+        let attempts = nateroid_spawn_stats.attempts_count();
 
         // Only warn if there were failures
         if successes < attempts {
@@ -82,7 +85,7 @@ pub(super) fn spawn_nateroid(
                 "Nateroid spawn: {successes} / {attempts} attempts ({success_rate:.0}%) in the last {attempts} spawns"
             );
         }
-        spawn_stats.last_warning_time = current_time;
+        nateroid_spawn_stats.last_warning_time = current_time;
     }
 
     commands.spawn((Nateroid, Name::new(NATEROID_ENTITY_NAME), transform));

@@ -62,9 +62,9 @@ struct Teleported {
 
 fn on_teleported(
     event: On<Teleported>,
-    mut params: ParamSet<(SpatialQuery, Query<&mut Health, With<Nateroid>>)>,
+    mut param_set: ParamSet<(SpatialQuery, Query<&mut Health, With<Nateroid>>)>,
     mut commands: Commands,
-    spawn_stats: Res<NateroidSpawnStats>,
+    nateroid_spawn_stats: Res<NateroidSpawnStats>,
     nateroid_settings: Res<NateroidSettings>,
     mut collision_state: ResMut<TeleportCollisionState>,
 ) {
@@ -72,14 +72,14 @@ fn on_teleported(
     let asteroid_filter = SpatialQueryFilter::from_mask(LayerMask::from([GameLayer::Asteroid]));
     let spaceship_filter = SpatialQueryFilter::from_mask(LayerMask::from([GameLayer::Spaceship]));
 
-    let overlapping_asteroids = params.p0().shape_intersections(
+    let overlapping_asteroids = param_set.p0().shape_intersections(
         &event.collider,
         event.position,
         event.rotation,
         &asteroid_filter,
     );
 
-    let overlapping_spaceship = params.p0().shape_intersections(
+    let overlapping_spaceship = param_set.p0().shape_intersections(
         &event.collider,
         event.position,
         event.rotation,
@@ -87,11 +87,11 @@ fn on_teleported(
     );
 
     // Then, mutate nateroid health/collision layers
-    let mut nateroid_query = params.p1();
+    let mut nateroid_query = param_set.p1();
 
     // Check if we should be aggressive based on spawn success rate
     // Lower spawn success rate = field is crowded = be more aggressive
-    let spawn_success_rate = spawn_stats.success_rate();
+    let spawn_success_rate = nateroid_spawn_stats.success_rate();
     let field_density = if spawn_success_rate < nateroid_settings.density_culling_threshold {
         FieldDensity::Crowded
     } else {
@@ -108,8 +108,8 @@ fn on_teleported(
     {
         info!(
             "🔍 Teleport collision detected - attempts: {}, successes: {}, rate: {:.1}%, threshold: {:.1}%, density: {field_density:?}, is_nateroid: {is_teleporting_nateroid}",
-            spawn_stats.attempts_count(),
-            spawn_stats.successes_count(),
+            nateroid_spawn_stats.attempts_count(),
+            nateroid_spawn_stats.successes_count(),
             spawn_success_rate * 100.0,
             nateroid_settings.density_culling_threshold * 100.0,
         );

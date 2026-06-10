@@ -142,7 +142,7 @@ impl Boundary {
         color: Color,
         resolution: u32,
         camera_orientation: &CameraOrientation,
-        actor_kind: PortalActorKind,
+        portal_actor_kind: PortalActorKind,
         transform: &Transform,
     ) {
         draw_portal(
@@ -151,7 +151,7 @@ impl Boundary {
             color,
             resolution,
             camera_orientation,
-            actor_kind,
+            portal_actor_kind,
             transform,
         );
     }

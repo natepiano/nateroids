@@ -87,10 +87,10 @@ impl Default for AabbSettings {
 }
 
 fn apply_aabb_settings(
-    mut config_store: ResMut<GizmoConfigStore>,
+    mut gizmo_config_store: ResMut<GizmoConfigStore>,
     aabb_settings: Res<AabbSettings>,
 ) {
-    let (gizmo_config, _) = config_store.config_mut::<AabbGizmo>();
+    let (gizmo_config, _) = gizmo_config_store.config_mut::<AabbGizmo>();
     gizmo_config.line.width = aabb_settings.line_width;
     gizmo_config.render_layers = RenderLayer::Game.layers();
 }

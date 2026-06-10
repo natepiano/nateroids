@@ -59,21 +59,24 @@ struct PhysicsMonitorState {
     last_stress_log: f64,
 }
 
-fn init_physics_debug_aabb(mut config_store: ResMut<GizmoConfigStore>) {
-    let (gizmo_config, _) = config_store.config_mut::<PhysicsGizmos>();
+fn init_physics_debug_aabb(mut gizmo_config_store: ResMut<GizmoConfigStore>) {
+    let (gizmo_config, _) = gizmo_config_store.config_mut::<PhysicsGizmos>();
     gizmo_config.enabled = false;
     gizmo_config.render_layers = RenderLayer::Game.layers();
 }
 
-fn sync_physics_debug_gizmos(switches: Res<Switches>, mut config_store: ResMut<GizmoConfigStore>) {
-    let (gizmo_config, _) = config_store.config_mut::<PhysicsGizmos>();
+fn sync_physics_debug_gizmos(
+    switches: Res<Switches>,
+    mut gizmo_config_store: ResMut<GizmoConfigStore>,
+) {
+    let (gizmo_config, _) = gizmo_config_store.config_mut::<PhysicsGizmos>();
     gizmo_config.enabled = switches.switch_state(Switch::ShowPhysicsDebug) == ToggleState::On;
 }
 
 fn monitor_physics_health(
     nateroids: Query<&LinearVelocity, With<Nateroid>>,
     time: Res<Time<Fixed>>,
-    diagnostics: Res<DiagnosticsStore>,
+    diagnostics_store: Res<DiagnosticsStore>,
     mut physics_monitor_state: ResMut<PhysicsMonitorState>,
 ) {
     let nateroid_count = nateroids.iter().len();
@@ -94,7 +97,7 @@ fn monitor_physics_health(
     };
 
     // Read smoothed FPS from `FrameTimeDiagnosticsPlugin`.
-    let fps = diagnostics
+    let fps = diagnostics_store
         .get(&FrameTimeDiagnosticsPlugin::FPS)
         .and_then(Diagnostic::smoothed)
         .unwrap_or(0.0);

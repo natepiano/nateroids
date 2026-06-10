@@ -245,7 +245,7 @@ fn spawn_directional_light(
 
 fn manage_lighting(
     mut commands: Commands,
-    mut ambient_light: ResMut<GlobalAmbientLight>,
+    mut global_ambient_light: ResMut<GlobalAmbientLight>,
     light_settings: Res<LightSettings>,
     camera_orientation: Res<CameraOrientation>,
     mut directional_light_query: Query<(Entity, &mut DirectionalLight, &LightDirection)>,
@@ -254,8 +254,8 @@ fn manage_lighting(
         return;
     }
 
-    ambient_light.brightness = light_settings.ambient_brightness;
-    ambient_light.color = light_settings.ambient_color;
+    global_ambient_light.brightness = light_settings.ambient_brightness;
+    global_ambient_light.color = light_settings.ambient_color;
 
     // Reconcile each `LightPosition` with its `DirectionalLightSettings` and
     // any spawned `DirectionalLight` tagged by `LightDirection`.

@@ -100,10 +100,10 @@ impl Plugin for FocusGizmoPlugin {
 }
 
 fn apply_focus_settings(
-    mut config_store: ResMut<GizmoConfigStore>,
+    mut gizmo_config_store: ResMut<GizmoConfigStore>,
     focus_settings: Res<FocusSettings>,
 ) {
-    let (gizmo_config, _) = config_store.config_mut::<FocusGizmo>();
+    let (gizmo_config, _) = gizmo_config_store.config_mut::<FocusGizmo>();
     gizmo_config.line.width = focus_settings.line_width;
     gizmo_config.render_layers = RenderLayer::Game.layers();
 }
