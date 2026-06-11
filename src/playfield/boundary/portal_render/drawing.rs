@@ -40,7 +40,7 @@ pub(crate) fn draw_portal(
     portal_actor_kind: PortalActorKind,
     transform: &Transform,
 ) {
-    let geometry = geometry::classify_portal_geometry(portal, transform);
+    let portal_geometry = geometry::classify_portal_geometry(portal, transform);
     let portal_render_context = PortalRenderContext {
         color,
         resolution,
@@ -48,16 +48,16 @@ pub(crate) fn draw_portal(
         portal_actor_kind,
         transform,
     };
-    render_portal_by_geometry(gizmos, portal, &portal_render_context, &geometry);
+    render_portal_by_geometry(gizmos, portal, &portal_render_context, &portal_geometry);
 }
 
 fn render_portal_by_geometry(
     gizmos: &mut Gizmos<PortalGizmo>,
     portal: &Portal,
     portal_render_context: &PortalRenderContext<'_>,
-    geometry: &PortalGeometry,
+    portal_geometry: &PortalGeometry,
 ) {
-    match geometry {
+    match portal_geometry {
         PortalGeometry::SingleFace => {
             // Draw full circle
             let rotation = Quat::from_rotation_arc(
@@ -92,12 +92,13 @@ fn draw_multiface_portal(
     color: Color,
     resolution: u32,
     portal_actor_kind: PortalActorKind,
-    geometry: &MultiFaceGeometry,
+    multi_face_geometry: &MultiFaceGeometry,
     transform: &Transform,
 ) {
-    // Extract overextended faces from geometry (primary is always portal.boundary_face)
+    // Extract overextended faces from `multi_face_geometry`; the primary face
+    // remains `Portal::boundary_face`.
     let primary_face = portal.boundary_face;
-    let overextended_faces = match geometry {
+    let overextended_faces = match multi_face_geometry {
         MultiFaceGeometry::Edge { overextended } => vec![*overextended],
         MultiFaceGeometry::Corner { overextended } => overextended.clone(),
     };
@@ -128,9 +129,9 @@ fn draw_multiface_portal(
 
     // Draw all arcs
     for (face, points) in face_arcs {
-        let face_color = get_portal_color(portal_actor_kind, geometry, face, color);
+        let face_color = get_portal_color(portal_actor_kind, multi_face_geometry, face, color);
 
-        match geometry {
+        match multi_face_geometry {
             MultiFaceGeometry::Edge { .. } if face == primary_face => {
                 // Primary face (contains actual portal.position) at edge uses complex arc logic
                 // with TAU angle inversion
@@ -212,12 +213,12 @@ fn draw_primary_face_arc(
 
 const fn get_portal_color(
     portal_actor_kind: PortalActorKind,
-    geometry: &MultiFaceGeometry,
+    multi_face_geometry: &MultiFaceGeometry,
     face: BoundaryFace,
     default_color: Color,
 ) -> Color {
     match portal_actor_kind {
-        PortalActorKind::Deaderoid => match geometry {
+        PortalActorKind::Deaderoid => match multi_face_geometry {
             MultiFaceGeometry::Corner { .. } => {
                 // Corner: use 3-color diagnostic scheme
                 match face {

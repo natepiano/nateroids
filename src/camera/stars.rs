@@ -206,12 +206,12 @@ fn despawn_stars(
 fn spawn_stars(
     mut commands: Commands,
     star_settings: Res<StarSettings>,
-    boundary_settings: Res<Boundary>,
+    boundary: Res<Boundary>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     debug!("spawning stars");
-    let longest_diagonal = boundary_settings.longest_diagonal();
+    let longest_diagonal = boundary.longest_diagonal();
     let inner_sphere_radius = longest_diagonal + star_settings.field_diameter.start;
     let outer_sphere_radius = inner_sphere_radius + star_settings.field_diameter.end;
 

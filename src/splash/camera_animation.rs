@@ -129,7 +129,8 @@ fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
     // Add slowdown spin with increasing durations
     camera_moves.extend(create_spin_sequence(radius, SPLASH_SLOWDOWN_DURATIONS_MS));
 
-    // Land at home with smooth easing
+    // Append the final `CameraMove::ToPosition` using
+    // `SPLASH_LAND_HOME_DURATION_MS` and `EaseFunction::QuadraticOut`.
     camera_moves.push(CameraMove::ToPosition {
         translation: Vec3::new(0.0, 0.0, radius),
         focus:       Vec3::ZERO,

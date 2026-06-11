@@ -15,10 +15,10 @@ action!(ShipContinuousFire);
 action!(ShipShiftModifier);
 
 pub(crate) fn insert_ship_controls(commands: &mut Commands, entity: Entity) {
-    // `require_reset` swallows any key already held when controls attach (e.g.
-    // the player held Space to skip the splash and is still holding it as the
-    // ship's context comes alive on entering `InGame`). The first activation is
-    // ignored until the binding reads zero; subsequent presses fire normally.
+    // `ActionSettings::require_reset` ignores keys already held when
+    // `ShipControlsContext` is inserted on entering `InGame`. A held Space key
+    // from the splash screen does not emit `Start<ShipFire>` until Space is
+    // released and pressed again.
     let consume_input = ActionSettings {
         consume_input: true,
         require_reset: true,

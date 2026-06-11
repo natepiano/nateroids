@@ -90,8 +90,9 @@ pub(super) fn setup_global_shortcuts(mut commands: Commands) {
 
     commands.spawn((
         GlobalShortcutsContext,
-        // Evaluate global shortcuts before entity-scoped contexts so Shift+<key>
-        // chords can win over ship controls bound to the base key.
+        // `GLOBAL_SHORTCUTS_PRIORITY` gives `GlobalShortcutsContext` a higher
+        // `ContextPriority` than `ShipControlsContext`, so Shift bindings are
+        // evaluated first and consume input before base-key ship bindings.
         ContextPriority::<GlobalShortcutsContext>::new(GLOBAL_SHORTCUTS_PRIORITY),
         Actions::<GlobalShortcutsContext>::spawn(SpawnWith(
             move |spawner: &mut ActionSpawner<GlobalShortcutsContext>| {

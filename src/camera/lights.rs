@@ -141,8 +141,8 @@ impl Default for LightSettings {
 }
 
 impl LightSettings {
-    const fn get_light_settings(&self, position: LightPosition) -> &DirectionalLightSettings {
-        match position {
+    const fn get_light_settings(&self, light_position: LightPosition) -> &DirectionalLightSettings {
+        match light_position {
             LightPosition::Front => &self.front,
             LightPosition::Back => &self.back,
             LightPosition::Top => &self.top,
@@ -213,7 +213,7 @@ struct LightDirection(LightPosition);
 fn spawn_directional_light(
     commands: &mut Commands,
     directional_light_settings: &DirectionalLightSettings,
-    position: LightPosition,
+    light_position: LightPosition,
     light_rotation: &RotationInfo,
 ) {
     commands
@@ -240,7 +240,7 @@ fn spawn_directional_light(
             light_rotation.angle,
         )))
         .insert(RenderLayer::Game.layers())
-        .insert(LightDirection(position));
+        .insert(LightDirection(light_position));
 }
 
 fn manage_lighting(
@@ -259,7 +259,7 @@ fn manage_lighting(
 
     // Reconcile each `LightPosition` with its `DirectionalLightSettings` and
     // any spawned `DirectionalLight` tagged by `LightDirection`.
-    for position in &[
+    for light_position in &[
         LightPosition::Right,
         LightPosition::Left,
         LightPosition::Front,
@@ -267,15 +267,15 @@ fn manage_lighting(
         LightPosition::Bottom,
         LightPosition::Top,
     ] {
-        let directional_light_settings = light_settings.get_light_settings(*position);
+        let directional_light_settings = light_settings.get_light_settings(*light_position);
 
         // `directional_light_query` stores spawned lights by `LightDirection`;
         // match the current `LightPosition` before updating or spawning.
         let existing_light = directional_light_query
             .iter_mut()
-            .find(|(_, _, direction)| direction.0 == *position);
+            .find(|(_, _, direction)| direction.0 == *light_position);
 
-        let light_rotation = position.get_rotation(&camera_orientation);
+        let light_rotation = light_position.get_rotation(&camera_orientation);
 
         match (existing_light, directional_light_settings.light_switch) {
             (Some((_, mut light, _)), LightSwitch::On) => {
@@ -294,7 +294,7 @@ fn manage_lighting(
                 spawn_directional_light(
                     &mut commands,
                     directional_light_settings,
-                    *position,
+                    *light_position,
                     &light_rotation,
                 );
             },

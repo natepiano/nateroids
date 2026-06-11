@@ -63,7 +63,6 @@ fn extract_elements_at_indices<T: Clone>(vec: &[T], indices: &[usize]) -> Vec<T>
         .collect()
 }
 
-// yeah - but how can the query below be much simpler?
 fn start_twinkling(
     mut commands: Commands,
     star_settings: Res<StarSettings>,
@@ -76,6 +75,9 @@ fn start_twinkling(
         return;
     }
 
+    // `all_stars` stores the current `Star` material handles so
+    // `choose_multiple` can sample stable indices before `commands.entity`
+    // inserts `Twinkling`.
     let all_stars: Vec<(Entity, &MeshMaterial3d<StandardMaterial>)> = stars.iter().collect();
     let twinkle_count = star_settings
         .twinkle

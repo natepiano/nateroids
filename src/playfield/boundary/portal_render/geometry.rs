@@ -25,9 +25,9 @@ pub(super) enum MultiFaceGeometry {
 
 /// Calculates how many faces a portal spans at a given position
 pub(crate) fn calculate_portal_face_count(portal: &Portal, transform: &Transform) -> usize {
-    let geometry = classify_portal_geometry(portal, transform);
+    let portal_geometry = classify_portal_geometry(portal, transform);
 
-    match geometry {
+    match portal_geometry {
         PortalGeometry::SingleFace => 1,
         PortalGeometry::MultiFace(multi_face_geometry) => {
             count_faces_with_valid_arcs(portal, &multi_face_geometry, transform)
