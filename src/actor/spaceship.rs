@@ -35,9 +35,6 @@ use crate::splash::SplashText;
 use crate::state::GameState;
 use crate::state::PauseState;
 
-/// Returns the default `Spaceship` rotation: model correction (90° around X)
-fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X) }
-
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone, Deref, DerefMut)]
 #[reflect(Resource)]
 pub(super) struct SpaceshipSettings {
@@ -117,6 +114,9 @@ pub(super) struct ContinuousFire;
     AngularVelocity::ZERO,
 )]
 pub(crate) struct Spaceship;
+
+/// Returns the default `Spaceship` rotation: model correction (90° around X)
+fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X) }
 
 /// Observer that spawns the `Spaceship` when `SplashText` is removed
 fn spawn_after_splash_text_removed(

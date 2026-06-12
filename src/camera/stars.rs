@@ -136,6 +136,18 @@ impl Default for StarSettings {
     }
 }
 
+#[derive(Reflect, Component, Default)]
+pub(super) struct Star {
+    position:            Position,
+    radius:              f32,
+    pub(super) emissive: Vec4,
+}
+
+#[derive(Resource)]
+struct StarRotationState {
+    current_angle: f32,
+}
+
 fn debug_stars(
     frame_count: Res<FrameCount>,
     stars: Query<(Entity, Option<&ViewVisibility>), With<Star>>,
@@ -172,18 +184,6 @@ fn debug_stars(
             );
         }
     }
-}
-
-#[derive(Reflect, Component, Default)]
-pub(super) struct Star {
-    position:            Position,
-    radius:              f32,
-    pub(super) emissive: Vec4,
-}
-
-#[derive(Resource)]
-struct StarRotationState {
-    current_angle: f32,
 }
 
 fn despawn_stars(

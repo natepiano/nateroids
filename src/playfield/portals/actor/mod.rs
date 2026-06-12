@@ -1,9 +1,8 @@
 mod boundary_geometry;
-mod state;
 mod visual_lifecycle;
 
 use bevy::prelude::*;
-pub(crate) use state::ActorPortals;
+pub(crate) use visual_lifecycle::ActorPortals;
 
 use super::settings;
 use crate::state::GameState;

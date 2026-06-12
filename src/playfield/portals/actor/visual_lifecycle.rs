@@ -3,7 +3,6 @@ use bevy::camera::primitives::Aabb;
 use bevy::prelude::*;
 use bevy_kana::Position;
 
-use super::ActorPortals;
 use super::boundary_geometry;
 use super::boundary_geometry::PhysicsBurst;
 use crate::actor;
@@ -19,6 +18,12 @@ use crate::playfield::portals::Portal;
 use crate::playfield::portals::PortalGizmo;
 use crate::playfield::portals::constants::DEFAULT_PORTAL_FACE_COUNT;
 use crate::playfield::portals::settings::PortalSettings;
+
+#[derive(Component, Default)]
+pub(crate) struct ActorPortals {
+    pub(super) approaching: Option<Portal>,
+    pub(super) emerging:    Option<Portal>,
+}
 
 pub(super) fn init_portals(
     mut actor_query: Query<(
