@@ -7,20 +7,8 @@ use super::constants::INSTANT_DEATH_HEALTH;
 use super::settings::CollisionDamage;
 use super::spaceship::Spaceship;
 use super::teleport::TeleportStatus;
-use crate::schedule::InGameSet;
 
-pub(super) struct CollisionDetectionPlugin;
-
-impl Plugin for CollisionDetectionPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(
-            FixedUpdate,
-            handle_collision_events.in_set(InGameSet::CollisionDetection),
-        );
-    }
-}
-
-fn handle_collision_events(
+pub(super) fn handle_collision_events(
     mut collision_events: MessageReader<CollisionStart>,
     mut health_query: Query<&mut Health>,
     collision_damage_query: Query<&CollisionDamage>,

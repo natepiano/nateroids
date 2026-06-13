@@ -22,7 +22,6 @@ use game::GameCameraPlugin;
 use lights::DirectionalLightsPlugin;
 pub(crate) use rendering::RenderLayer;
 use selection::SelectionPlugin;
-use star::StarCameraPlugin;
 use star_twinkling::StarTwinklingPlugin;
 use stars::StarsPlugin;
 use ui::spawn_ui_camera;
@@ -37,7 +36,6 @@ impl Plugin for CameraPlugin {
             .add_plugins(LagrangePlugin)
             .add_plugins(MeshOutlinePlugin)
             .add_plugins(GameCameraPlugin)
-            .add_plugins(StarCameraPlugin)
             .add_plugins(ZoomPlugin)
             .add_plugins(FocusGizmoPlugin)
             .add_plugins(DirectionalLightsPlugin)
@@ -52,6 +50,7 @@ impl Plugin for CameraPlugin {
                     game::spawn_game_camera,
                 )
                     .chain(),
-            );
+            )
+            .add_systems(Update, star::update_bloom_settings);
     }
 }

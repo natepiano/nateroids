@@ -14,7 +14,6 @@ mod teleport;
 use aabb::AabbPlugin;
 pub(crate) use aabb::max_dimension as aabb_max_dimension;
 use bevy::prelude::*;
-use collision_detection::CollisionDetectionPlugin;
 pub(crate) use constants::NATEROID_DEATH_ALPHA_STEP;
 use flame_gizmo::FlameGizmoPlugin;
 use missile::MissilePlugin;
@@ -32,18 +31,23 @@ use teleport::TeleportPlugin;
 pub(crate) use teleport::TeleportStatus;
 pub(crate) use teleport::Teleporter;
 
+use crate::schedule::InGameSet;
+
 pub(crate) struct ActorPlugin;
 
 impl Plugin for ActorPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(AabbPlugin)
             .add_plugins(ActorSettingsPlugin)
-            .add_plugins(CollisionDetectionPlugin)
             .add_plugins(FlameGizmoPlugin)
             .add_plugins(MissilePlugin)
             .add_plugins(NateroidPlugin)
             .add_plugins(SpaceshipPlugin)
             .add_plugins(SpaceshipControlPlugin)
-            .add_plugins(TeleportPlugin);
+            .add_plugins(TeleportPlugin)
+            .add_systems(
+                FixedUpdate,
+                collision_detection::handle_collision_events.in_set(InGameSet::CollisionDetection),
+            );
     }
 }

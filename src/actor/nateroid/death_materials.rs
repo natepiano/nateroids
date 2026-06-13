@@ -16,6 +16,24 @@ pub(crate) struct NateroidDeathMaterials {
     pub(crate) materials: Vec<Vec<Handle<StandardMaterial>>>,
 }
 
+#[derive(Clone, Copy)]
+enum NateroidMesh {
+    Donut,
+    Icing,
+}
+
+impl NateroidMesh {
+    fn classify(name: &str) -> Option<Self> {
+        let name = name.to_lowercase();
+        [
+            (Self::Donut, DONUT_MESH_NAME),
+            (Self::Icing, ICING_MESH_NAME),
+        ]
+        .into_iter()
+        .find_map(|(mesh, mesh_name)| name.contains(mesh_name).then_some(mesh))
+    }
+}
+
 /// System that applies custom materials to `Nateroid` mesh children (donut and icing)
 pub(super) fn apply_nateroid_materials_to_children(
     children_added: On<Add, Children>,
@@ -54,19 +72,22 @@ pub(super) fn apply_nateroid_materials_to_children(
 
             // Match mesh name to appropriate material
             let material = if let Some(name) = name {
-                let name_str = name.as_str().to_lowercase();
-                if name_str.contains(DONUT_MESH_NAME) {
-                    debug!("  -> Matched as donut");
-                    donut_count += 1;
-                    donut_material.clone()
-                } else if name_str.contains(ICING_MESH_NAME) {
-                    debug!("  -> Matched as icing");
-                    icing_count += 1;
-                    icing_material.clone()
-                } else {
-                    info!("  -> Unknown mesh name, defaulting to donut material");
-                    donut_count += 1;
-                    donut_material.clone()
+                match NateroidMesh::classify(name.as_str()) {
+                    Some(NateroidMesh::Donut) => {
+                        debug!("  -> Matched as donut");
+                        donut_count += 1;
+                        donut_material.clone()
+                    },
+                    Some(NateroidMesh::Icing) => {
+                        debug!("  -> Matched as icing");
+                        icing_count += 1;
+                        icing_material.clone()
+                    },
+                    None => {
+                        info!("  -> Unknown mesh name, defaulting to donut material");
+                        donut_count += 1;
+                        donut_material.clone()
+                    },
                 }
             } else {
                 info!("  -> No name, defaulting to donut material");

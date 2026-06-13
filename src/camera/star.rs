@@ -9,12 +9,6 @@ use super::required_components::RequiredCameraComponents;
 #[derive(Component, Reflect)]
 pub(super) struct StarCamera;
 
-pub(super) struct StarCameraPlugin;
-
-impl Plugin for StarCameraPlugin {
-    fn build(&self, app: &mut App) { app.add_systems(Update, update_bloom_settings); }
-}
-
 pub(super) fn spawn_star_camera(mut commands: Commands, camera_settings: Res<CameraSettings>) {
     commands.spawn((
         RequiredCameraComponents,
@@ -30,7 +24,7 @@ pub(super) fn spawn_star_camera(mut commands: Commands, camera_settings: Res<Cam
     ));
 }
 
-fn update_bloom_settings(
+pub(super) fn update_bloom_settings(
     camera_settings: Res<CameraSettings>,
     mut bloom_query: Query<&mut Bloom, With<StarCamera>>,
 ) {
