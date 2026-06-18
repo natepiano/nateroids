@@ -4,7 +4,7 @@ use std::ops::Range;
 
 use bevy::camera::visibility::Layer;
 use bevy::color::Srgba;
-use bevy::color::palettes::tailwind;
+use bevy::color::palettes::tailwind::GRAY_50;
 use bevy::prelude::Color;
 use bevy_kana::Position;
 
@@ -103,7 +103,7 @@ pub(super) const CASCADE_SHADOW_MAX_DISTANCE: f32 = 1500.0;
 pub(super) const CASCADE_SHADOW_NUM_CASCADES: usize = 4;
 pub(super) const CASCADE_SHADOW_OVERLAP_PROPORTION: f32 = 0.3;
 pub(super) const DIRECTIONAL_LIGHT_ILLUMINANCE: f32 = 1700.0;
-pub(super) const DIRECTIONAL_LIGHT_SETTINGS_COLOR: Color = Color::Srgba(tailwind::GRAY_50);
+pub(super) const DIRECTIONAL_LIGHT_SETTINGS_COLOR: Color = Color::Srgba(GRAY_50);
 pub(super) const ENVIRONMENT_MAP_INTENSITY: f32 = 25_000.0;
 pub(super) const SHADOW_DEPTH_BIAS: f32 = 0.02;
 pub(super) const SHADOW_NORMAL_BIAS: f32 = 0.6;

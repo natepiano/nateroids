@@ -1,11 +1,12 @@
 use std::f32::consts::PI;
 
 use bevy::color::Color;
-use bevy::color::palettes::tailwind;
+use bevy::color::palettes::tailwind::BLUE_600;
+use bevy::color::palettes::tailwind::YELLOW_800;
 
 // portal colors
-pub(super) const PORTAL_COLOR_APPROACHING: Color = Color::Srgba(tailwind::BLUE_600);
-pub(super) const PORTAL_COLOR_EMERGING: Color = Color::Srgba(tailwind::YELLOW_800);
+pub(super) const PORTAL_COLOR_APPROACHING: Color = Color::Srgba(BLUE_600);
+pub(super) const PORTAL_COLOR_EMERGING: Color = Color::Srgba(YELLOW_800);
 
 // portal defaults
 /// Default face count for a portal that does not straddle a boundary edge.

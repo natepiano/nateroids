@@ -2,14 +2,14 @@
 //! All magic numbers and configuration values used within playfield/
 
 use bevy::color::Color;
-use bevy::color::palettes::tailwind;
+use bevy::color::palettes::tailwind::BLUE_500;
 use bevy::math::UVec3;
 
 // boundary configuration
 
 /// Default cell count for the boundary grid (X, Y, Z cells)
 pub(super) const BOUNDARY_CELL_COUNT: UVec3 = UVec3::new(3, 2, 1);
-pub(crate) const BOUNDARY_COLOR: Color = Color::Srgba(tailwind::BLUE_500);
+pub(crate) const BOUNDARY_COLOR: Color = Color::Srgba(BLUE_500);
 
 /// Target alpha value for grid color
 pub(super) const BOUNDARY_GRID_ALPHA: f32 = 0.0;
