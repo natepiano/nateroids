@@ -12,17 +12,9 @@ pub(super) enum Intersection {
     Two(Vec3, Vec3),
 }
 
-pub(super) struct ArcGeometry {
-    pub(super) center: Vec3,
-    pub(super) radius: f32,
-    pub(super) normal: Vec3,
-    pub(super) from:   Vec3,
-    pub(super) to:     Vec3,
-}
-
 // `position` is the portal arc center on `normal`; rotating it toward
-// `target_face` returns the `ArcGeometry::center` used for the wrapped arc
-// outside the boundary.
+// `target_face` returns the center used to draw the wrapped arc outside the
+// boundary.
 pub(super) fn rotate_portal_center_to_target_face(
     position: Vec3,
     normal: Dir3,

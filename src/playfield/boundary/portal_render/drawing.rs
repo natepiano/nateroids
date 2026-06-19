@@ -6,7 +6,6 @@ use super::geometry;
 use super::geometry::MultiFaceGeometry;
 use super::geometry::PortalGeometry;
 use super::intersection;
-use super::intersection::ArcGeometry;
 use crate::orientation::CameraOrientation;
 use crate::playfield::boundary_face::BoundaryFace;
 use crate::playfield::constants::CORNER_COLOR_FRONT_BACK_XY;
@@ -168,6 +167,14 @@ fn draw_multiface_portal(
             },
         }
     }
+}
+
+struct ArcGeometry {
+    center: Vec3,
+    radius: f32,
+    normal: Vec3,
+    from:   Vec3,
+    to:     Vec3,
 }
 
 // Helper function to draw an arc with explicit center, radius, and normal
