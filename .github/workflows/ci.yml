@@ -169,7 +169,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Install cargo-mend
-        run: cargo install cargo-mend
+        run: cargo install --git https://github.com/natepiano/cargo-mend --tag v0.15.5 cargo-mend
         env:
           RUSTC_BOOTSTRAP: 1
 
