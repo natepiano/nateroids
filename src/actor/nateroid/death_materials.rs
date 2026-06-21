@@ -10,10 +10,46 @@ use super::constants::ICING_MESH_NAME;
 use crate::actor::constants::NATEROID_DEATH_ALPHA_STEP;
 use crate::asset_loader::SceneAssets;
 
-/// Precomputed materials for `Nateroid` death animation at different transparency levels
+/// Precomputed `Nateroid` death-animation materials: one faded donut+icing set
+/// per transparency level. Fades the donut/icing materials the meshes actually
+/// use (applied by `apply_nateroid_materials_to_children`), matched per mesh.
 #[derive(Resource)]
 pub(crate) struct NateroidDeathMaterials {
-    pub(crate) materials: Vec<Vec<Handle<StandardMaterial>>>,
+    levels: Vec<NateroidDeathLevel>,
+}
+
+/// Faded donut and icing materials for a single transparency level.
+struct NateroidDeathLevel {
+    donut: Handle<StandardMaterial>,
+    icing: Handle<StandardMaterial>,
+}
+
+impl NateroidDeathLevel {
+    const fn handle(&self, mesh: NateroidMesh) -> &Handle<StandardMaterial> {
+        match mesh {
+            NateroidMesh::Donut => &self.donut,
+            NateroidMesh::Icing => &self.icing,
+        }
+    }
+}
+
+impl NateroidDeathMaterials {
+    /// Number of precomputed transparency levels.
+    pub const fn level_count(&self) -> usize { self.levels.len() }
+
+    /// Faded material for the given alpha `level`, matched to `mesh_name`
+    /// (donut/icing). Unknown mesh names fall back to the donut material.
+    pub fn material_for(
+        &self,
+        level: usize,
+        mesh_name: Option<&str>,
+    ) -> Option<Handle<StandardMaterial>> {
+        let level = self.levels.get(level)?;
+        let mesh = mesh_name
+            .and_then(NateroidMesh::classify)
+            .unwrap_or(NateroidMesh::Donut);
+        Some(level.handle(mesh).clone())
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -154,17 +190,28 @@ pub(super) fn debug_mesh_components(
     }
 }
 
-/// System that precomputes death materials when assets are loaded
+/// Precomputes faded donut/icing materials for the death animation once assets
+/// are loaded. Fades the custom materials the meshes use rather than the GLTF
+/// originals (the GLTF scene's embedded `World` is no longer queryable in 0.19).
 pub(super) fn precompute_death_materials(
     mut commands: Commands,
     scene_assets: Res<SceneAssets>,
-    scenes: Res<Assets<Scene>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     nateroid_settings: Res<NateroidSettings>,
 ) {
-    // Get the nateroid scene
-    let Some(nateroid_scene) = scenes.get(&scene_assets.nateroid) else {
-        warn!("Nateroid scene not loaded yet");
+    let Some(donut_handle) = scene_assets.nateroid_donut_material.clone() else {
+        warn!("Nateroid donut material not created yet");
+        return;
+    };
+    let Some(icing_handle) = scene_assets.nateroid_icing_material.clone() else {
+        warn!("Nateroid icing material not created yet");
+        return;
+    };
+    let (Some(donut_base), Some(icing_base)) = (
+        materials.get(&donut_handle).cloned(),
+        materials.get(&icing_handle).cloned(),
+    ) else {
+        warn!("Nateroid base materials not loaded yet");
         return;
     };
 
@@ -174,57 +221,27 @@ pub(super) fn precompute_death_materials(
     let level_count =
         ((initial_alpha - target_alpha) * (1.0 / NATEROID_DEATH_ALPHA_STEP)).to_usize() + 1;
 
-    // Collect material handles from the scene's world using try_query
-    let mut material_handles = Vec::new();
-    if let Some(mut query_state) = nateroid_scene
-        .world
-        .try_query::<&MeshMaterial3d<StandardMaterial>>()
-    {
-        for mesh_material in query_state.iter(&nateroid_scene.world) {
-            material_handles.push(mesh_material.0.clone());
-        }
-    }
-
-    if material_handles.is_empty() {
-        warn!("No materials found in nateroid scene");
-        return;
-    }
-
-    debug!(
-        "Collected {} material handles from nateroid scene",
-        material_handles.len()
-    );
-
-    // Precompute materials for each alpha level
-    let mut precomputed_materials = Vec::with_capacity(level_count);
+    let mut levels = Vec::with_capacity(level_count);
     for level in 0..level_count {
         // FMA optimization (faster + more precise): initial_alpha - (level as f32 * step)
         let alpha = level
             .to_f32()
             .mul_add(-NATEROID_DEATH_ALPHA_STEP, initial_alpha);
-        let mut level_materials = Vec::with_capacity(material_handles.len());
-
-        for material_handle in &material_handles {
-            if let Some(original_material) = materials.get(material_handle) {
-                let mut cloned_material = original_material.clone();
-                cloned_material.base_color.set_alpha(alpha);
-                cloned_material.alpha_mode = AlphaMode::Blend;
-                level_materials.push(materials.add(cloned_material));
-            }
-        }
-
-        precomputed_materials.push(level_materials);
+        levels.push(NateroidDeathLevel {
+            donut: materials.add(faded_material(&donut_base, alpha)),
+            icing: materials.add(faded_material(&icing_base, alpha)),
+        });
     }
 
-    let material_set_count = precomputed_materials.len();
-    let materials_per_set_count = material_handles.len();
+    let level_count = levels.len();
+    commands.insert_resource(NateroidDeathMaterials { levels });
+    debug!("Precomputed {level_count} nateroid death-material levels (donut + icing)");
+}
 
-    // Insert the resource
-    commands.insert_resource(NateroidDeathMaterials {
-        materials: precomputed_materials,
-    });
-
-    debug!(
-        "Precomputed {material_set_count} material sets with {materials_per_set_count} materials each"
-    );
+/// Clones `base` into a translucent material at the given `alpha`.
+fn faded_material(base: &StandardMaterial, alpha: f32) -> StandardMaterial {
+    let mut material = base.clone();
+    material.base_color.set_alpha(alpha);
+    material.alpha_mode = AlphaMode::Blend;
+    material
 }

@@ -1,6 +1,8 @@
 use avian3d::prelude::*;
 use bevy::camera::visibility::RenderLayers;
 use bevy::prelude::*;
+use bevy::world_serialization::WorldAsset;
+use bevy::world_serialization::WorldAssetRoot;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
@@ -140,7 +142,7 @@ pub(crate) struct ActorSettings {
     pub(crate) restitution_combine_rule: CoefficientCombine,
     pub(crate) rigid_body:               RigidBody,
     #[reflect(ignore)]
-    pub(crate) scene:                    Handle<Scene>,
+    pub(crate) scene:                    Handle<WorldAsset>,
     pub(crate) spawn_timer_seconds:      Option<f32>,
     pub(crate) transform:                Transform,
     #[reflect(ignore)]
@@ -206,7 +208,10 @@ fn create_spawn_timer(spawn_timer_seconds: Option<f32>) -> Option<Timer> {
     spawn_timer_seconds.map(|seconds| Timer::from_seconds(seconds, TimerMode::Repeating))
 }
 
-fn initialize_actor_settings(actor_settings: &mut ActorSettings, scene_handle: &Handle<Scene>) {
+fn initialize_actor_settings(
+    actor_settings: &mut ActorSettings,
+    scene_handle: &Handle<WorldAsset>,
+) {
     actor_settings.spawn_timer = create_spawn_timer(actor_settings.spawn_timer_seconds);
     actor_settings.scene = scene_handle.clone();
 }
@@ -237,7 +242,7 @@ pub(super) fn insert_configured_components(
         MaxAngularSpeed(settings.max_angular_velocity),
         MaxLinearSpeed(settings.max_linear_velocity),
         settings.render_layer.layers(),
-        SceneRoot(settings.scene.clone()),
+        WorldAssetRoot(settings.scene.clone()),
     ));
 
     // Apply damping if configured

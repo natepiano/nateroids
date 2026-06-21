@@ -1,5 +1,5 @@
+use bevy::camera::Hdr;
 use bevy::prelude::*;
-use bevy::render::view::Hdr;
 
 /// Required components shared across all cameras.
 ///

@@ -189,7 +189,7 @@ fn despawn_dead_entities(
     boundary_volume_query: Query<&Transform, With<BoundaryVolume>>,
     death_materials: Option<Res<NateroidDeathMaterials>>,
     children_query: Query<&Children>,
-    material_query: Query<&MeshMaterial3d<StandardMaterial>>,
+    mesh_query: Query<Option<&Name>, With<Mesh3d>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     let Ok(boundary_transform) = boundary_volume_query.single() else {
@@ -235,18 +235,16 @@ fn despawn_dead_entities(
 
                 // Apply initial materials (index 0, alpha 0.25) immediately
                 if let Some(death_materials) = &death_materials
-                    && !death_materials.materials.is_empty()
+                    && death_materials.level_count() > 0
                 {
-                    let materials_for_level = &death_materials.materials[0];
                     let mut material_index = 0;
 
                     for descendant in children_query.iter_descendants(entity) {
-                        if material_query.get(descendant).is_ok()
-                            && material_index < materials_for_level.len()
+                        if let Ok(mesh_name) = mesh_query.get(descendant)
+                            && let Some(material) =
+                                death_materials.material_for(0, mesh_name.map(Name::as_str))
                         {
-                            commands.entity(descendant).insert(MeshMaterial3d(
-                                materials_for_level[material_index].clone(),
-                            ));
+                            commands.entity(descendant).insert(MeshMaterial3d(material));
                             material_index += 1;
                         }
                     }
@@ -289,7 +287,7 @@ fn animate_dying_nateroids(
     time: Res<Time>,
     death_materials: Option<Res<NateroidDeathMaterials>>,
     children_query: Query<&Children>,
-    material_query: Query<&MeshMaterial3d<StandardMaterial>>,
+    mesh_query: Query<Option<&Name>, With<Mesh3d>>,
     nateroid_settings: Res<NateroidSettings>,
     mut commands: Commands,
 ) {
@@ -319,8 +317,7 @@ fn animate_dying_nateroids(
         // then slows down (exponential decay)
         let eased_progress = 1.0 - (1.0 - progress).powi(3);
         // Safe: eased_progress is 0.0-1.0, bounded by array size, result is valid index
-        let new_index =
-            (eased_progress * (death_materials.materials.len() - 1).to_f32()).to_usize();
+        let new_index = (eased_progress * (death_materials.level_count() - 1).to_f32()).to_usize();
 
         // Only swap materials when index changes
         if new_index != deaderoid.current_material_index {
@@ -337,18 +334,14 @@ fn animate_dying_nateroids(
                 "💀 {entity_name}: Material swap {old_index} → {new_index} | progress: {progress:.3} → {eased_progress:.3} | alpha: {alpha:.2}"
             );
 
-            // Get the precomputed materials for this transparency level
-            let materials_for_level = &death_materials.materials[new_index];
-
-            // Swap material handles for all descendants
+            // Swap each descendant mesh to its faded material for this level
             let mut material_index = 0;
             for descendant in children_query.iter_descendants(entity) {
-                if material_query.get(descendant).is_ok()
-                    && material_index < materials_for_level.len()
+                if let Ok(mesh_name) = mesh_query.get(descendant)
+                    && let Some(material) =
+                        death_materials.material_for(new_index, mesh_name.map(Name::as_str))
                 {
-                    commands
-                        .entity(descendant)
-                        .insert(MeshMaterial3d(materials_for_level[material_index].clone()));
+                    commands.entity(descendant).insert(MeshMaterial3d(material));
                     material_index += 1;
                 }
             }

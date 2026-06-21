@@ -90,8 +90,10 @@ pub(super) fn run_splash(
             // Text timer done - remove the text (triggers On<Remove, SplashText> observer)
             commands.entity(text_entity).despawn();
         } else {
-            // Still animating
-            text.font_size += SPLASH_TEXT_GROWTH_RATE;
+            // Still animating — grow the pixel size in place.
+            if let FontSize::Px(px) = &mut text.font_size {
+                *px += SPLASH_TEXT_GROWTH_RATE;
+            }
         }
     }
 

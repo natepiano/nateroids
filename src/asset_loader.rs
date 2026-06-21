@@ -1,5 +1,6 @@
 use bevy::asset::LoadState;
 use bevy::prelude::*;
+use bevy::world_serialization::WorldAsset;
 
 use crate::constants::ENVIRONMENT_DIFFUSE_MAP_ASSET_PATH;
 use crate::constants::ENVIRONMENT_SPECULAR_MAP_ASSET_PATH;
@@ -42,15 +43,15 @@ pub(crate) enum AssetsState {
     Loaded,
 }
 
-// `SceneAssets` stores GLTF `Handle<Scene>` values whose scene graphs can spawn
-// multiple child meshes from a single actor asset.
+// `SceneAssets` stores GLTF `Handle<WorldAsset>` values whose scene graphs can
+// spawn multiple child meshes from a single actor asset.
 #[derive(Resource, Clone, Debug, Default)]
 pub(crate) struct SceneAssets {
-    pub(crate) missile:                  Handle<Scene>,
-    pub(crate) nateroid:                 Handle<Scene>,
+    pub(crate) missile:                  Handle<WorldAsset>,
+    pub(crate) nateroid:                 Handle<WorldAsset>,
     pub(crate) nateroid_donut_material:  Option<Handle<StandardMaterial>>,
     pub(crate) nateroid_icing_material:  Option<Handle<StandardMaterial>>,
-    pub(crate) spaceship:                Handle<Scene>,
+    pub(crate) spaceship:                Handle<WorldAsset>,
     pub(crate) environment_diffuse_map:  Handle<Image>,
     pub(crate) environment_specular_map: Handle<Image>,
 }

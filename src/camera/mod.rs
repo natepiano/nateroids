@@ -14,7 +14,7 @@ mod zoom;
 use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::prelude::*;
 use bevy_lagrange::LagrangePlugin;
-use bevy_liminal::MeshOutlinePlugin;
+use bevy_liminal::LiminalPlugin;
 pub(crate) use constants::ZOOM_MARGIN;
 use focus_gizmo::FocusGizmoPlugin;
 pub(crate) use game::CameraSettings;
@@ -34,7 +34,7 @@ impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(MeshPickingPlugin)
             .add_plugins(LagrangePlugin)
-            .add_plugins(MeshOutlinePlugin)
+            .add_plugins(LiminalPlugin)
             .add_plugins(GameCameraPlugin)
             .add_plugins(ZoomPlugin)
             .add_plugins(FocusGizmoPlugin)

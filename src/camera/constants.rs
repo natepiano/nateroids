@@ -39,9 +39,6 @@ pub(super) const CAMERA_SPLASH_START_PITCH: f32 = FRAC_PI_2;
 pub(super) const CAMERA_SPLASH_START_RADIUS: f32 = 3000.0;
 pub(super) const CAMERA_SPLASH_START_YAW: f32 = -PI;
 
-// camera trackpad
-pub(super) const CAMERA_TRACKPAD_SENSITIVITY: f32 = 0.8;
-
 // camera zoom
 /// Minimum zoom distance (allows zoom-to-fit to get very close)
 pub(super) const CAMERA_ZOOM_LOWER_LIMIT: f32 = 0.001;

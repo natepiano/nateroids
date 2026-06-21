@@ -4,9 +4,9 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_kana::Position;
-use bevy_lagrange::InputControl;
 use bevy_lagrange::OrbitCam;
-use bevy_lagrange::TrackpadInput;
+use bevy_lagrange::OrbitCamInputMode;
+use bevy_lagrange::OrbitCamPreset;
 use bevy_liminal::OutlineCamera;
 
 use super::RenderLayer;
@@ -27,7 +27,6 @@ use super::constants::CAMERA_SPLASH_START_FOCUS;
 use super::constants::CAMERA_SPLASH_START_PITCH;
 use super::constants::CAMERA_SPLASH_START_RADIUS;
 use super::constants::CAMERA_SPLASH_START_YAW;
-use super::constants::CAMERA_TRACKPAD_SENSITIVITY;
 use super::constants::CAMERA_ZOOM_LOWER_LIMIT;
 use super::constants::CAMERA_ZOOM_SENSITIVITY;
 use super::constants::CAMERA_ZOOM_SMOOTHNESS;
@@ -180,20 +179,12 @@ pub(super) fn spawn_game_camera(
             OrbitCam {
                 focus: Vec3::ZERO,
                 target_radius: camera_settings.splash_start.radius,
-                button_orbit: MouseButton::Middle,
-                button_pan: MouseButton::Middle,
-                modifier_pan: Some(KeyCode::ShiftLeft),
                 zoom_sensitivity: CAMERA_ZOOM_SENSITIVITY,
                 zoom_lower_limit: CAMERA_ZOOM_LOWER_LIMIT,
-                input_control: Some(InputControl {
-                    trackpad: Some(TrackpadInput {
-                        sensitivity: CAMERA_TRACKPAD_SENSITIVITY,
-                        ..TrackpadInput::blender_default()
-                    }),
-                    ..default()
-                }),
                 ..default()
             },
+            // Middle-drag orbit, Shift+middle-drag pan, Blender-style trackpad.
+            OrbitCamInputMode::Preset(OrbitCamPreset::BlenderLike),
             Camera {
                 order: CameraOrder::Game.order(),
                 // can't obscure the star camera with this on

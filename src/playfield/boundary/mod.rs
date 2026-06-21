@@ -54,7 +54,7 @@ impl Plugin for BoundaryPlugin {
             .add_systems(
                 Update,
                 gizmo::draw_boundary
-                    .run_if(in_state(GameState::Splash).or(in_state(GameState::InGame))),
+                    .run_if(in_state(GameState::Splash).or_else(in_state(GameState::InGame))),
             )
             .add_systems(Update, gizmo::fade_boundary_in)
             .add_systems(

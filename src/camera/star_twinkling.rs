@@ -125,7 +125,7 @@ fn update_twinkling(
     for (entity, material_handle, mut twinkling) in &mut stars {
         twinkling.twinkle_timer.tick(time.delta());
 
-        if let Some(material) = materials.get_mut(material_handle) {
+        if let Some(mut material) = materials.get_mut(material_handle) {
             let progress = twinkling.twinkle_timer.elapsed_secs()
                 / twinkling.twinkle_timer.duration().as_secs_f32();
             let new_emissive = if progress < STAR_TWINKLE_MIDPOINT {

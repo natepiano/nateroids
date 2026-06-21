@@ -21,7 +21,7 @@ pub(super) fn spawn_splash_text(mut commands: Commands) {
         SplashText,
         Text::new(APPLICATION_TITLE),
         TextFont {
-            font_size: SPLASH_INITIAL_FONT_SIZE,
+            font_size: FontSize::Px(SPLASH_INITIAL_FONT_SIZE),
             ..default()
         },
         Node {
@@ -39,10 +39,10 @@ pub(super) fn spawn_splash_skip_hint(mut commands: Commands) {
         SplashSkipHint,
         Text::new(SPLASH_SKIP_HINT_TEXT),
         TextFont {
-            font_size: SPLASH_SKIP_HINT_FONT_SIZE,
+            font_size: FontSize::Px(SPLASH_SKIP_HINT_FONT_SIZE),
             ..default()
         },
-        TextLayout::new_with_justify(Justify::Center),
+        TextLayout::justify(Justify::Center),
         TextColor(SPLASH_SKIP_HINT_COLOR.with_alpha(SPLASH_SKIP_HINT_ALPHA)),
         Node {
             position_type: PositionType::Absolute,

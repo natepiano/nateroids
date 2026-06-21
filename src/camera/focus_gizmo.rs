@@ -162,7 +162,7 @@ fn draw_camera_focus_gizmo(
                 commands.spawn((
                     Text::new(text),
                     TextFont {
-                        font_size: EDGE_MARKER_FONT_SIZE,
+                        font_size: FontSize::Px(EDGE_MARKER_FONT_SIZE),
                         ..default()
                     },
                     TextColor(focus_settings.color),

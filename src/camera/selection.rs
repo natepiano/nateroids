@@ -7,7 +7,7 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_lagrange::OrbitCam;
 use bevy_lagrange::SetFitTarget;
-use bevy_liminal::MeshOutline;
+use bevy_liminal::Outline;
 
 use super::constants::SELECTION_OUTLINE_COLOR;
 use super::constants::SELECTION_OUTLINE_INTENSITY;
@@ -139,13 +139,14 @@ fn add_selection_outline_command(
     mesh_query: Query<Entity, With<Mesh3d>>,
     selection_outline_settings: Res<SelectionOutlineSettings>,
 ) {
-    let mesh_outline = MeshOutline::new(selection_outline_settings.width)
+    let outline = Outline::jump_flood(selection_outline_settings.width)
         .with_color(selection_outline_settings.color)
-        .with_intensity(selection_outline_settings.intensity);
+        .with_intensity(selection_outline_settings.intensity)
+        .build();
 
     for descendant in children_query.iter_descendants(entity) {
         if mesh_query.get(descendant).is_ok() {
-            commands.entity(descendant).insert(mesh_outline.clone());
+            commands.entity(descendant).insert(outline.clone());
         }
     }
 }
@@ -170,7 +171,7 @@ fn remove_selection_outline_command(
     // Remove outlines from all descendant meshes
     for descendant in children_query.iter_descendants(entity) {
         if mesh_query.get(descendant).is_ok() {
-            commands.entity(descendant).remove::<MeshOutline>();
+            commands.entity(descendant).remove::<Outline>();
         }
     }
 
@@ -198,7 +199,7 @@ fn sync_outline_settings(
     selection_outline_settings: Res<SelectionOutlineSettings>,
     selected_query: Query<Entity, With<Selected>>,
     children_query: Query<&Children>,
-    mut outline_query: Query<&mut MeshOutline>,
+    mut outline_query: Query<&mut Outline>,
 ) {
     if !selection_outline_settings.is_changed() {
         return;
@@ -233,7 +234,7 @@ fn clear_selection_on_background_click(
     let egui_context = egui_contexts.ctx_mut();
     if egui_context
         .as_deref()
-        .is_ok_and(egui::Context::wants_pointer_input)
+        .is_ok_and(egui::Context::egui_wants_pointer_input)
     {
         return;
     }

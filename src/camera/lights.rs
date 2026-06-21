@@ -220,7 +220,10 @@ fn spawn_directional_light(
         .spawn(DirectionalLight {
             color: directional_light_settings.color,
             illuminance: directional_light_settings.illuminance,
-            shadows_enabled: matches!(directional_light_settings.shadow_switch, ShadowSwitch::On),
+            shadow_maps_enabled: matches!(
+                directional_light_settings.shadow_switch,
+                ShadowSwitch::On
+            ),
             shadow_depth_bias: SHADOW_DEPTH_BIAS,
             shadow_normal_bias: SHADOW_NORMAL_BIAS,
             ..default()
@@ -282,7 +285,7 @@ fn manage_lighting(
                 // Update the existing `DirectionalLight`.
                 light.color = directional_light_settings.color;
                 light.illuminance = directional_light_settings.illuminance;
-                light.shadows_enabled =
+                light.shadow_maps_enabled =
                     matches!(directional_light_settings.shadow_switch, ShadowSwitch::On);
             },
             (Some((entity, _, _)), LightSwitch::Off) => {
