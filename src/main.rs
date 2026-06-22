@@ -27,8 +27,8 @@ use bevy::gltf::convert_coordinates::GltfConvertCoordinates;
 use bevy::prelude::*;
 use bevy_brp_extras::BrpExtrasPlugin;
 use bevy_brp_extras::DEFAULT_REMOTE_PORT;
+use bevy_clerestory::WindowManagerPlugin;
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
-use bevy_window_manager::WindowManagerPlugin;
 
 use crate::actor::ActorPlugin;
 use crate::asset_loader::AssetLoaderPlugin;

@@ -718,6 +718,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_clerestory"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84c99d3620d195b64de002ea54e7ed67c5ed323e9cc22636f3ca279870c1169e"
+dependencies = [
+ "bevy",
+ "bevy_diagnostic",
+ "bevy_kana",
+ "dirs",
+ "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
+ "raw-window-handle",
+ "ron",
+ "serde",
+ "windows",
+ "x11rb",
+]
+
+[[package]]
 name = "bevy_clipboard"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2052,25 +2071,6 @@ dependencies = [
  "log",
  "raw-window-handle",
  "serde",
-]
-
-[[package]]
-name = "bevy_window_manager"
-version = "0.21.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea8cf210394bb10a9f0ded5a6860e8e445709663e6a465707a9fb54fb687cf73"
-dependencies = [
- "bevy",
- "bevy_diagnostic",
- "bevy_kana",
- "dirs",
- "objc2 0.6.4",
- "objc2-app-kit 0.3.2",
- "raw-window-handle",
- "ron",
- "serde",
- "windows",
- "x11rb",
 ]
 
 [[package]]
@@ -4263,11 +4263,11 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_brp_extras",
+ "bevy_clerestory",
  "bevy_enhanced_input",
  "bevy_kana",
  "bevy_lagrange",
  "bevy_liminal",
- "bevy_window_manager",
  "rand",
 ]
 
