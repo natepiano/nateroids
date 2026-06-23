@@ -4,11 +4,12 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_kana::Position;
+use bevy_lagrange::AxisResponse;
 use bevy_lagrange::OrbitCam;
 use bevy_lagrange::OrbitCamBlenderLikePreset;
+use bevy_lagrange::OrbitCamInputGain;
 use bevy_lagrange::OrbitCamInputMode;
 use bevy_lagrange::OrbitCamPreset;
-use bevy_lagrange::OrbitCamSensitivity;
 use bevy_liminal::OutlineCamera;
 
 use super::RenderLayer;
@@ -182,14 +183,14 @@ pub(super) fn spawn_game_camera(
             OrbitCam {
                 focus: Vec3::ZERO,
                 target_radius: camera_settings.splash_start.radius,
-                zoom_sensitivity: CAMERA_ZOOM_SENSITIVITY,
+                zoom: AxisResponse::new(CAMERA_ZOOM_SENSITIVITY, CAMERA_ZOOM_SMOOTHNESS),
                 zoom_lower_limit: CAMERA_ZOOM_LOWER_LIMIT,
                 ..default()
             },
             // Middle-drag orbit, Shift+middle-drag pan, Blender-style trackpad.
             OrbitCamInputMode::Preset(OrbitCamPreset::from(
                 OrbitCamBlenderLikePreset::default()
-                    .mouse_sensitivity(OrbitCamSensitivity::uniform(CAMERA_INPUT_SENSITIVITY)),
+                    .mouse_input_gain(OrbitCamInputGain::uniform(CAMERA_INPUT_SENSITIVITY)),
             )),
             Camera {
                 order: CameraOrder::Game.order(),
@@ -227,8 +228,14 @@ fn update_orbit_cam_smoothness(
     mut orbit_cam_query: Query<&mut OrbitCam>,
 ) {
     for mut camera in &mut orbit_cam_query {
-        camera.zoom_smoothness = camera_settings.smoothness_settings.zoom;
-        camera.pan_smoothness = camera_settings.smoothness_settings.pan;
-        camera.orbit_smoothness = camera_settings.smoothness_settings.orbit;
+        camera
+            .zoom
+            .set_damping(camera_settings.smoothness_settings.zoom);
+        camera
+            .pan
+            .set_damping(camera_settings.smoothness_settings.pan);
+        camera
+            .orbit
+            .set_damping(camera_settings.smoothness_settings.orbit);
     }
 }
