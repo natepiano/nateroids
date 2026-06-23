@@ -5,8 +5,10 @@ use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_kana::Position;
 use bevy_lagrange::OrbitCam;
+use bevy_lagrange::OrbitCamBlenderLikePreset;
 use bevy_lagrange::OrbitCamInputMode;
 use bevy_lagrange::OrbitCamPreset;
+use bevy_lagrange::OrbitCamSensitivity;
 use bevy_liminal::OutlineCamera;
 
 use super::RenderLayer;
@@ -15,6 +17,7 @@ use super::constants::CAMERA_BLOOM_INTENSITY;
 use super::constants::CAMERA_BLOOM_LOW_FREQUENCY_BOOST;
 use super::constants::CAMERA_BLOOM_MAX;
 use super::constants::CAMERA_BLOOM_MIN;
+use super::constants::CAMERA_INPUT_SENSITIVITY;
 use super::constants::CAMERA_ORBIT_SMOOTHNESS;
 use super::constants::CAMERA_PAN_SMOOTHNESS;
 use super::constants::CAMERA_SMOOTHNESS_MAX;
@@ -184,7 +187,10 @@ pub(super) fn spawn_game_camera(
                 ..default()
             },
             // Middle-drag orbit, Shift+middle-drag pan, Blender-style trackpad.
-            OrbitCamInputMode::Preset(OrbitCamPreset::BlenderLike),
+            OrbitCamInputMode::Preset(OrbitCamPreset::from(
+                OrbitCamBlenderLikePreset::default()
+                    .mouse_sensitivity(OrbitCamSensitivity::uniform(CAMERA_INPUT_SENSITIVITY)),
+            )),
             Camera {
                 order: CameraOrder::Game.order(),
                 // can't obscure the star camera with this on

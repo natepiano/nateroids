@@ -44,6 +44,9 @@ pub(super) const CAMERA_SPLASH_START_YAW: f32 = -PI;
 pub(super) const CAMERA_ZOOM_LOWER_LIMIT: f32 = 0.001;
 pub(super) const CAMERA_ZOOM_SENSITIVITY: f32 = 0.2;
 
+// mouse input multiplier for orbit/pan/zoom drag and wheel
+pub(super) const CAMERA_INPUT_SENSITIVITY: f32 = 2.0;
+
 // edge markers
 pub(super) const EDGE_MARKER_FONT_SIZE: f32 = 11.0;
 pub(super) const EDGE_MARKER_SPHERE_RADIUS: f32 = 1.0;

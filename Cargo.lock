@@ -1289,9 +1289,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_lagrange"
-version = "0.0.4"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06e12ff535dc04e9bcba76117739a52ed4681c134d5c8b63ee03642f53f30d41"
+checksum = "ac42438e2e9f4c4379cc0649b41eb476b78f58bc2cd9830e76640bd39f1b2ff9"
 dependencies = [
  "bevy",
  "bevy_enhanced_input",
