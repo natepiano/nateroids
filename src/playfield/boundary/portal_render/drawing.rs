@@ -132,8 +132,9 @@ fn draw_multiface_portal(
 
         match multi_face_geometry {
             MultiFaceGeometry::Edge { .. } if face == primary_face => {
-                // Primary face (contains actual portal.position) at edge uses complex arc logic
-                // with TAU angle inversion
+                // `draw_primary_face_arc` handles the `MultiFaceGeometry::Edge`
+                // arc on `Portal::boundary_face` because its endpoints straddle
+                // the primary face and need TAU angle inversion.
                 draw_primary_face_arc(
                     gizmos,
                     &ArcGeometry {
@@ -177,8 +178,9 @@ struct ArcGeometry {
     to:     Vec3,
 }
 
-// Helper function to draw an arc with explicit center, radius, and normal
-// Used for primary face arcs - inverts the angle for proper rendering
+// `draw_primary_face_arc` converts `ArcGeometry::from` and `ArcGeometry::to`
+// into `arc_3d` input: `ArcGeometry::normal` selects the boundary-face plane,
+// and TAU angle inversion preserves winding.
 fn draw_primary_face_arc(
     gizmos: &mut Gizmos<PortalGizmo>,
     arc_geometry: &ArcGeometry,

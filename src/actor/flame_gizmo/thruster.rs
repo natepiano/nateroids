@@ -181,8 +181,8 @@ fn draw_exhaust_flames(gizmos: &mut Gizmos<FlameGizmo>, transform: &Transform, e
         let end = start + spread_direction * line_length;
 
         let center_factor = 1.0 - (angle_offset.abs() / THRUSTER_CONE_HALF_ANGLE);
-        let zone = FlameZone::from_center_factor(center_factor, THRUSTER_COLOR_ZONE_SIZE);
-        let color = zone.color(
+        let flame_zone = FlameZone::from_center_factor(center_factor, THRUSTER_COLOR_ZONE_SIZE);
+        let color = flame_zone.color(
             elapsed,
             phase,
             THRUSTER_COLOR_RED,

@@ -89,8 +89,8 @@ fn on_teleported(
     // Then, mutate nateroid health/collision layers
     let mut nateroid_query = param_set.p1();
 
-    // Check if we should be aggressive based on spawn success rate
-    // Lower spawn success rate = field is crowded = be more aggressive
+    // `NateroidSettings::density_culling_threshold` maps low spawn success to
+    // `FieldDensity::Crowded` for overlap culling.
     let spawn_success_rate = nateroid_spawn_stats.success_rate();
     let field_density = if spawn_success_rate < nateroid_settings.density_culling_threshold {
         FieldDensity::Crowded
@@ -98,8 +98,8 @@ fn on_teleported(
         FieldDensity::Open
     };
 
-    // Kill overlapping asteroids (but not the teleporting entity)
-    // Only kill nateroid-on-nateroid overlaps if field is crowded
+    // `FieldDensity::Crowded` permits nateroid-on-nateroid overlap culling,
+    // while `FieldDensity::Open` preserves overlapping nateroids.
     let is_teleporting_nateroid = nateroid_query.get(event.entity).is_ok();
 
     // Debug logging - only log when crowded state changes

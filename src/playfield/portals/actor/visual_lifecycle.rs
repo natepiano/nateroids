@@ -21,8 +21,8 @@ use crate::playfield::portals::settings::PortalSettings;
 
 #[derive(Component, Default)]
 pub(crate) struct ActorPortals {
-    pub(super) approaching: Option<Portal>,
-    pub(super) emerging:    Option<Portal>,
+    pub(super) approaching_portal: Option<Portal>,
+    pub(super) emerging_portal:    Option<Portal>,
 }
 
 pub(super) fn init_portals(
@@ -94,7 +94,7 @@ fn handle_emerging_visual(
         if boundary_geometry::physics_burst(teleported_position, boundary_transform)
             == PhysicsBurst::Active
         {
-            actor_portals.emerging = None;
+            actor_portals.emerging_portal = None;
             return;
         }
 
@@ -106,17 +106,17 @@ fn handle_emerging_visual(
             boundary_transform,
         );
 
-        actor_portals.emerging = Some(Portal {
+        actor_portals.emerging_portal = Some(Portal {
             actor_distance_to_wall: 0.0,
             boundary_face: final_face,
             position: snapped_position,
             fade_out_started: Some(time.elapsed_secs()),
             ..portal
         });
-    } else if let Some(ref mut emerging) = actor_portals.emerging
-        && emerging.radius <= portal_settings.minimum_radius
+    } else if let Some(ref mut emerging_portal) = actor_portals.emerging_portal
+        && emerging_portal.radius <= portal_settings.minimum_radius
     {
-        actor_portals.emerging = None;
+        actor_portals.emerging_portal = None;
     }
 }
 
@@ -146,10 +146,10 @@ fn handle_approaching_visual(
             let current_face_count =
                 Boundary::calculate_portal_face_count(&temporary_portal, boundary_transform);
             let previous_face_count = actor_portals
-                .approaching
+                .approaching_portal
                 .as_ref()
-                .map_or(DEFAULT_PORTAL_FACE_COUNT, |approaching| {
-                    approaching.face_count
+                .map_or(DEFAULT_PORTAL_FACE_COUNT, |approaching_portal| {
+                    approaching_portal.face_count
                 });
 
             let smoothed_position = if current_face_count == previous_face_count {
@@ -166,7 +166,7 @@ fn handle_approaching_visual(
             let (snapped_position, snapped_face) =
                 boundary_geometry::snap_and_get_face(smoothed_position, face, boundary_transform);
 
-            actor_portals.approaching = Some(Portal {
+            actor_portals.approaching_portal = Some(Portal {
                 actor_distance_to_wall,
                 boundary_face: snapped_face,
                 face_count: current_face_count,
@@ -177,13 +177,13 @@ fn handle_approaching_visual(
         }
     }
 
-    if let Some(approaching) = &mut actor_portals.approaching {
+    if let Some(approaching_portal) = &mut actor_portals.approaching_portal {
         if boundary_geometry::physics_burst(portal.position, boundary_transform)
             == PhysicsBurst::Active
         {
-            actor_portals.approaching = None;
-        } else if approaching.fade_out_started.is_none() {
-            approaching.fade_out_started = Some(time.elapsed_secs());
+            actor_portals.approaching_portal = None;
+        } else if approaching_portal.fade_out_started.is_none() {
+            approaching_portal.fade_out_started = Some(time.elapsed_secs());
         }
     }
 }
@@ -194,22 +194,22 @@ pub(super) fn update_approaching_portals(
     mut portals_query: Query<&mut ActorPortals>,
 ) {
     for mut actor_portals in &mut portals_query {
-        if let Some(ref mut approaching) = actor_portals.approaching {
-            let radius = get_approaching_radius(approaching);
+        if let Some(ref mut approaching_portal) = actor_portals.approaching_portal {
+            let radius = get_approaching_portal_radius(approaching_portal);
 
-            if let Some(fade_out_start) = approaching.fade_out_started {
+            if let Some(fade_out_start) = approaching_portal.fade_out_started {
                 let elapsed_time = time.elapsed_secs() - fade_out_start;
                 let fade_out_duration = portal_settings.fadeout_duration;
-                let below_minimum = approaching.radius < portal_settings.minimum_radius;
+                let below_minimum = approaching_portal.radius < portal_settings.minimum_radius;
                 if elapsed_time >= fade_out_duration || below_minimum {
-                    actor_portals.approaching = None;
+                    actor_portals.approaching_portal = None;
                     continue;
                 }
 
                 let fade_factor = (1.0 - (elapsed_time / fade_out_duration)).clamp(0.0, 1.0);
-                approaching.radius *= fade_factor;
+                approaching_portal.radius *= fade_factor;
             } else {
-                approaching.radius = radius;
+                approaching_portal.radius = radius;
             }
         }
     }
@@ -227,10 +227,10 @@ pub(super) fn draw_approaching_portals(
     };
 
     for (actor_portals, actor_kind) in portals_query.iter() {
-        if let Some(ref approaching) = actor_portals.approaching {
+        if let Some(ref approaching_portal) = actor_portals.approaching_portal {
             Boundary::draw_portal(
                 &mut gizmos,
-                approaching,
+                approaching_portal,
                 portal_settings.color_approaching,
                 portal_settings.resolution,
                 &camera_orientation,
@@ -241,15 +241,15 @@ pub(super) fn draw_approaching_portals(
     }
 }
 
-fn get_approaching_radius(approaching: &Portal) -> f32 {
-    let max_radius = approaching.radius;
+fn get_approaching_portal_radius(approaching_portal: &Portal) -> f32 {
+    let max_radius = approaching_portal.radius;
     let min_radius = max_radius * PORTAL_MIN_RADIUS_FRACTION;
 
-    if approaching.actor_distance_to_wall > approaching.boundary_distance_shrink {
+    if approaching_portal.actor_distance_to_wall > approaching_portal.boundary_distance_shrink {
         max_radius
     } else {
-        let scale_factor = (approaching.actor_distance_to_wall
-            / approaching.boundary_distance_shrink)
+        let scale_factor = (approaching_portal.actor_distance_to_wall
+            / approaching_portal.boundary_distance_shrink)
             .clamp(0.0, 1.0);
         (max_radius - min_radius).mul_add(scale_factor, min_radius)
     }
@@ -261,21 +261,21 @@ pub(super) fn update_emerging_portals(
     mut portals_query: Query<&mut ActorPortals>,
 ) {
     for mut actor_portals in &mut portals_query {
-        if let Some(ref mut emerging) = actor_portals.emerging
-            && let Some(emerging_start) = emerging.fade_out_started
+        if let Some(ref mut emerging_portal) = actor_portals.emerging_portal
+            && let Some(emerging_start) = emerging_portal.fade_out_started
         {
             let elapsed_time = time.elapsed_secs() - emerging_start;
             let emerging_duration = portal_settings.fadeout_duration;
             let progress = (elapsed_time / emerging_duration).clamp(0.0, 1.0);
-            let initial_radius = emerging.radius;
+            let initial_radius = emerging_portal.radius;
             let radius = initial_radius * (1.0 - progress);
 
             if radius > 0.0 {
-                emerging.radius = radius;
+                emerging_portal.radius = radius;
             }
 
             if elapsed_time >= emerging_duration {
-                actor_portals.emerging = None;
+                actor_portals.emerging_portal = None;
             }
         }
     }
@@ -293,10 +293,10 @@ pub(super) fn draw_emerging_portals(
     };
 
     for (actor_portals, actor_kind) in portals_query.iter() {
-        if let Some(ref emerging) = actor_portals.emerging {
+        if let Some(ref emerging_portal) = actor_portals.emerging_portal {
             Boundary::draw_portal(
                 &mut gizmos,
-                emerging,
+                emerging_portal,
                 portal_settings.color_emerging,
                 portal_settings.resolution,
                 &camera_orientation,

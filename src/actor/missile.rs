@@ -106,8 +106,9 @@ impl Default for MissileSettings {
     }
 }
 
-// todo: #rustquestion - how can i make it so that `new` has to be used and
-// `DrawDirection` isn't constructed directly - i still need the fields visible
+// TODO: Decide whether `Missile` should stay a unit `Component` or gain private
+// state before adding a constructor; current `Missile` instances come from
+// `spawn_missile`.
 #[derive(Component, Reflect, Copy, Clone, Debug)]
 #[reflect(Component)]
 #[require(
@@ -124,7 +125,7 @@ pub(super) struct MissilePosition {
     pub(super) total_distance:    f32,
     pub(super) traveled_distance: f32,
     remaining_distance:           f32,
-    pub(super) last:              Option<Position>,
+    pub(super) last_position:     Option<Position>,
 }
 
 impl MissilePosition {
@@ -133,7 +134,7 @@ impl MissilePosition {
             total_distance,
             traveled_distance: 0.,
             remaining_distance: 0.,
-            last: None,
+            last_position: None,
         }
     }
 }
@@ -256,13 +257,13 @@ fn missile_movement(
     for (entity, transform, mut missile_position, teleporter) in &mut missile_position_query {
         let current_position = Position(transform.translation);
 
-        if let Some(last) = missile_position.last {
+        if let Some(last_position) = missile_position.last_position {
             // Calculate the distance traveled since the last update
             let distance_traveled = if teleporter.teleport_status == TeleportStatus::JustTeleported
             {
                 0.0
             } else {
-                last.distance(current_position)
+                last_position.distance(current_position)
             };
 
             // Update the total traveled distance
@@ -272,7 +273,7 @@ fn missile_movement(
         }
 
         // Always update the last position.
-        missile_position.last = Some(current_position);
+        missile_position.last_position = Some(current_position);
 
         if missile_position.traveled_distance >= missile_position.total_distance {
             despawn::despawn(&mut commands, entity);

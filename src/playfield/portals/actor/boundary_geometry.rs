@@ -202,15 +202,17 @@ pub(super) fn smooth_circle_position(
     current_boundary_wall_face: BoundaryFace,
     portal_settings: &PortalSettings,
 ) -> Position {
-    if let Some(approaching) = &actor_portals.approaching {
+    if let Some(approaching_portal) = &actor_portals.approaching_portal {
         let smoothing_factor = portal_settings.movement_smoothing_factor;
 
-        if approaching
+        if approaching_portal
             .normal()
             .dot(current_boundary_wall_face.get_normal())
             > portal_settings.direction_change_factor
         {
-            approaching.position.lerp(collision_point, smoothing_factor)
+            approaching_portal
+                .position
+                .lerp(collision_point, smoothing_factor)
         } else {
             collision_point
         }

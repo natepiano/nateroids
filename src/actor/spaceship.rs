@@ -157,10 +157,10 @@ fn initialize_spaceship(
         .entity(spaceship.entity)
         .insert(spaceship_settings.transform);
 
-    // Controls are only attached while in `InGame`. When the ship spawns
-    // mid-splash (via `spawn_after_splash_text_removed`), it has no controls,
-    // so the skip key can't fire a ship action. `attach_controls_if_spawned`
-    // wires them up on entering `InGame`.
+    // `spawn_after_splash_text_removed` can spawn `Spaceship` before
+    // `GameState::InGame`, so `input::insert_ship_controls` attaches
+    // `ShipControlsContext` and `Actions<ShipControlsContext>` once gameplay
+    // starts.
     if *game_state.get() == GameState::InGame {
         input::insert_ship_controls(&mut commands, spaceship.entity);
     }
