@@ -19,15 +19,6 @@ pub(super) struct NateroidSpawnStats {
     pub(super) last_warning_time: f32,
 }
 
-impl Default for NateroidSpawnStats {
-    fn default() -> Self {
-        Self {
-            attempts:          VecDeque::with_capacity(NATEROID_SPAWN_HISTORY_LEN),
-            last_warning_time: 0.0,
-        }
-    }
-}
-
 impl NateroidSpawnStats {
     pub(super) fn record_attempt(&mut self, result: SpawnResult) {
         self.attempts.push_back(result);
@@ -56,5 +47,14 @@ impl NateroidSpawnStats {
             .iter()
             .filter(|&&result| result == SpawnResult::Success)
             .count()
+    }
+}
+
+impl Default for NateroidSpawnStats {
+    fn default() -> Self {
+        Self {
+            attempts:          VecDeque::with_capacity(NATEROID_SPAWN_HISTORY_LEN),
+            last_warning_time: 0.0,
+        }
     }
 }

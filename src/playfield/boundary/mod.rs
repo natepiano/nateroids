@@ -105,20 +105,6 @@ pub(crate) struct Boundary {
     pub(crate) exterior_scalar:     f32,
 }
 
-impl Default for Boundary {
-    fn default() -> Self {
-        Self {
-            cell_count:          BOUNDARY_CELL_COUNT,
-            // Start with alpha 0 - will be faded in during splash screen
-            grid_color:          BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA),
-            outer_color:         BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA),
-            grid_line_width:     BOUNDARY_GRID_LINE_WIDTH,
-            exterior_line_width: BOUNDARY_OUTER_LINE_WIDTH,
-            exterior_scalar:     BOUNDARY_SCALAR,
-        }
-    }
-}
-
 impl Boundary {
     pub(crate) fn longest_diagonal(&self) -> f32 {
         let boundary_scale = self.scale();
@@ -158,5 +144,19 @@ impl Boundary {
 
     pub(super) fn calculate_portal_face_count(portal: &Portal, transform: &Transform) -> usize {
         calculate_portal_face_count(portal, transform)
+    }
+}
+
+impl Default for Boundary {
+    fn default() -> Self {
+        Self {
+            cell_count:          BOUNDARY_CELL_COUNT,
+            // Start with alpha 0 - will be faded in during splash screen
+            grid_color:          BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA),
+            outer_color:         BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA),
+            grid_line_width:     BOUNDARY_GRID_LINE_WIDTH,
+            exterior_line_width: BOUNDARY_OUTER_LINE_WIDTH,
+            exterior_scalar:     BOUNDARY_SCALAR,
+        }
     }
 }

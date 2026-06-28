@@ -66,6 +66,7 @@ pub(super) const FLAME_COLOR_FLICKER_SPEED: f32 = 12.0;
 pub(super) const FLAME_GIZMO_LINE_WIDTH: f32 = 2.5;
 pub(super) const FLAME_LENGTH_FLICKER_PHASE_MULTIPLIER: f32 = 2.3;
 pub(super) const FLAME_LENGTH_FLICKER_SPEED: f32 = 15.0;
+pub(super) const FLAME_MIDDLE_ZONE_WIDTH_MULTIPLIER: f32 = 2.0;
 pub(super) const FLAME_PHASE_SPREAD: f32 = 1.7;
 pub(super) const FLAME_VIBRATION_AMPLITUDE: f32 = 0.4;
 pub(super) const FLAME_VIBRATION_SPEED: f32 = 25.0;

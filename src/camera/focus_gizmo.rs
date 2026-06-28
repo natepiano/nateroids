@@ -10,6 +10,7 @@ use super::constants::EDGE_MARKER_SPHERE_RADIUS;
 use super::constants::FOCUS_GIZMO_COLOR;
 use super::constants::FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS;
 use super::constants::FOCUS_GIZMO_DISTANCE_LABEL_OFFSET;
+use super::constants::FOCUS_GIZMO_LABEL_RADIUS_MULTIPLIER;
 use super::constants::FOCUS_GIZMO_LINE_WIDTH;
 use super::constants::FOCUS_GIZMO_LINE_WIDTH_MAX;
 use super::constants::FOCUS_GIZMO_LINE_WIDTH_MIN;
@@ -145,9 +146,10 @@ fn draw_camera_focus_gizmo(
         let text = format!("{distance:.1}");
 
         let arrow_direction = focus.normalize_or_zero();
-        let along_arrow_offset = focus_gizmo_state
-            .sphere_radius
-            .mul_add(2.0, FOCUS_GIZMO_DISTANCE_LABEL_OFFSET);
+        let along_arrow_offset = focus_gizmo_state.sphere_radius.mul_add(
+            FOCUS_GIZMO_LABEL_RADIUS_MULTIPLIER,
+            FOCUS_GIZMO_DISTANCE_LABEL_OFFSET,
+        );
         let label_world_position = focus + (arrow_direction * along_arrow_offset);
 
         if let Ok(label_screen_position) =

@@ -118,6 +118,19 @@ pub(super) struct LightSettings {
     pub(super) right:                     DirectionalLightSettings,
 }
 
+impl LightSettings {
+    const fn get_light_settings(&self, light_position: LightPosition) -> &DirectionalLightSettings {
+        match light_position {
+            LightPosition::Front => &self.front,
+            LightPosition::Back => &self.back,
+            LightPosition::Top => &self.top,
+            LightPosition::Bottom => &self.bottom,
+            LightPosition::Left => &self.left,
+            LightPosition::Right => &self.right,
+        }
+    }
+}
+
 impl Default for LightSettings {
     fn default() -> Self {
         Self {
@@ -136,19 +149,6 @@ impl Default for LightSettings {
             bottom:                    DirectionalLightSettings::default(),
             left:                      DirectionalLightSettings::default(),
             right:                     DirectionalLightSettings::default(),
-        }
-    }
-}
-
-impl LightSettings {
-    const fn get_light_settings(&self, light_position: LightPosition) -> &DirectionalLightSettings {
-        match light_position {
-            LightPosition::Front => &self.front,
-            LightPosition::Back => &self.back,
-            LightPosition::Top => &self.top,
-            LightPosition::Bottom => &self.bottom,
-            LightPosition::Left => &self.left,
-            LightPosition::Right => &self.right,
         }
     }
 }

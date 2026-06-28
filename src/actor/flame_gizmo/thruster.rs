@@ -8,6 +8,7 @@ use super::FlameGizmo;
 use super::flicker;
 use crate::actor::constants::FLAME_COLOR_FLICKER_SPEED;
 use crate::actor::constants::FLAME_GIZMO_LINE_WIDTH;
+use crate::actor::constants::FLAME_MIDDLE_ZONE_WIDTH_MULTIPLIER;
 use crate::actor::constants::FLAME_PHASE_SPREAD;
 use crate::actor::constants::FLAME_VIBRATION_AMPLITUDE;
 use crate::actor::constants::FLAME_VIBRATION_SPEED;
@@ -47,7 +48,7 @@ enum FlameZone {
 impl FlameZone {
     /// Classifies a `center_factor` (0.0 = edge, 1.0 = center) into zones.
     fn from_center_factor(value: f32, zone_size: f32) -> Self {
-        let middle_threshold = zone_size * 2.0;
+        let middle_threshold = zone_size * FLAME_MIDDLE_ZONE_WIDTH_MULTIPLIER;
         if value < zone_size {
             Self::Outer(value / zone_size)
         } else if value < middle_threshold {
