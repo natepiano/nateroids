@@ -122,6 +122,25 @@ type ShipTurnRightStateQuery<'w, 's> = Single<
     ),
 >;
 
+enum TurnDirection {
+    Right,
+    Left,
+    Neutral,
+}
+
+impl TurnDirection {
+    fn from_trigger_states(turn_right: TriggerState, turn_left: TriggerState) -> Self {
+        match (
+            turn_right != TriggerState::None,
+            turn_left != TriggerState::None,
+        ) {
+            (true, _) => Self::Right,
+            (false, true) => Self::Left,
+            (false, false) => Self::Neutral,
+        }
+    }
+}
+
 fn spaceship_movement_controls(
     mut spaceship_query: Query<
         (&mut Transform, &mut LinearVelocity, &mut AngularVelocity),
@@ -148,16 +167,14 @@ fn spaceship_movement_controls(
         let rotation_speed = spaceship_control_settings.rotation_speed;
 
         // Set angular velocity based on input
-        let turn_right = **turn_right_state != TriggerState::None;
-        let turn_left = **turn_left_state != TriggerState::None;
         let accelerate = **accelerate_state != TriggerState::None;
 
-        let mut target_angular_velocity = 0.0;
-        if turn_right {
-            target_angular_velocity = rotation_speed;
-        } else if turn_left {
-            target_angular_velocity = -rotation_speed;
-        }
+        let mut target_angular_velocity =
+            match TurnDirection::from_trigger_states(**turn_right_state, **turn_left_state) {
+                TurnDirection::Right => rotation_speed,
+                TurnDirection::Left => -rotation_speed,
+                TurnDirection::Neutral => 0.0,
+            };
 
         // Flip rotation direction if camera is facing opposite
         let camera_forward = camera_transform.forward();

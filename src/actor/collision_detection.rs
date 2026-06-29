@@ -8,6 +8,22 @@ use super::settings::CollisionDamage;
 use super::spaceship::Spaceship;
 use super::teleport::TeleportStatus;
 
+enum InvincibleCollisionSide {
+    Collider1,
+    Collider2,
+    Neither,
+}
+
+impl InvincibleCollisionSide {
+    fn from_collision(event: &CollisionStart, spaceship_just_teleported: Option<Entity>) -> Self {
+        match spaceship_just_teleported {
+            Some(ship_entity) if event.collider1 == ship_entity => Self::Collider1,
+            Some(ship_entity) if event.collider2 == ship_entity => Self::Collider2,
+            _ => Self::Neither,
+        }
+    }
+}
+
 pub(super) fn handle_collision_events(
     mut collision_events: MessageReader<CollisionStart>,
     mut health_query: Query<&mut Health>,
@@ -15,71 +31,64 @@ pub(super) fn handle_collision_events(
     spaceship_query: Query<(Entity, &Teleporter), With<Spaceship>>,
 ) {
     // Check if spaceship just teleported
-    let spaceship_just_teleported = spaceship_query
-        .single()
-        .map(|(entity, teleporter)| {
-            (
-                entity,
-                teleporter.teleport_status == TeleportStatus::JustTeleported,
-            )
-        })
-        .ok();
+    let spaceship_just_teleported =
+        spaceship_query
+            .single()
+            .ok()
+            .and_then(|(entity, teleporter)| {
+                (teleporter.teleport_status == TeleportStatus::JustTeleported).then_some(entity)
+            });
 
     for event in collision_events.read() {
         // Check if either entity is the spaceship that just teleported
-        let entity1_is_invincible_spaceship =
-            spaceship_just_teleported.is_some_and(|(ship_entity, just_teleported)| {
-                just_teleported && event.collider1 == ship_entity
-            });
-        let entity2_is_invincible_spaceship =
-            spaceship_just_teleported.is_some_and(|(ship_entity, just_teleported)| {
-                just_teleported && event.collider2 == ship_entity
-            });
-
-        if entity1_is_invincible_spaceship {
-            // `Spaceship` just teleported - instantly kill entity2
-            if let Ok(mut health) = health_query.get_mut(event.collider2) {
-                info!(
-                    "💀 Spaceship invincibility: killing nateroid that collided with just-teleported spaceship"
+        match InvincibleCollisionSide::from_collision(event, spaceship_just_teleported) {
+            InvincibleCollisionSide::Collider1 => {
+                // `Spaceship` just teleported - instantly kill entity2
+                if let Ok(mut health) = health_query.get_mut(event.collider2) {
+                    info!(
+                        "💀 Spaceship invincibility: killing nateroid that collided with just-teleported spaceship"
+                    );
+                    health.0 = INSTANT_DEATH_HEALTH;
+                }
+                // `Spaceship` still takes normal damage
+                apply_collision_damage(
+                    &mut health_query,
+                    &collision_damage_query,
+                    event.collider2,
+                    event.collider1,
                 );
-                health.0 = INSTANT_DEATH_HEALTH;
-            }
-            // `Spaceship` still takes normal damage
-            apply_collision_damage(
-                &mut health_query,
-                &collision_damage_query,
-                event.collider2,
-                event.collider1,
-            );
-        } else if entity2_is_invincible_spaceship {
-            // `Spaceship` just teleported - instantly kill entity1
-            if let Ok(mut health) = health_query.get_mut(event.collider1) {
-                info!(
-                    "💀 Spaceship invincibility: killing nateroid that collided with just-teleported spaceship"
+            },
+            InvincibleCollisionSide::Collider2 => {
+                // `Spaceship` just teleported - instantly kill entity1
+                if let Ok(mut health) = health_query.get_mut(event.collider1) {
+                    info!(
+                        "💀 Spaceship invincibility: killing nateroid that collided with just-teleported spaceship"
+                    );
+                    health.0 = INSTANT_DEATH_HEALTH;
+                }
+                // `Spaceship` still takes normal damage
+                apply_collision_damage(
+                    &mut health_query,
+                    &collision_damage_query,
+                    event.collider1,
+                    event.collider2,
                 );
-                health.0 = INSTANT_DEATH_HEALTH;
-            }
-            // `Spaceship` still takes normal damage
-            apply_collision_damage(
-                &mut health_query,
-                &collision_damage_query,
-                event.collider1,
-                event.collider2,
-            );
-        } else {
-            // Normal collision handling
-            apply_collision_damage(
-                &mut health_query,
-                &collision_damage_query,
-                event.collider1,
-                event.collider2,
-            );
-            apply_collision_damage(
-                &mut health_query,
-                &collision_damage_query,
-                event.collider2,
-                event.collider1,
-            );
+            },
+            InvincibleCollisionSide::Neither => {
+                // Normal collision handling
+                apply_collision_damage(
+                    &mut health_query,
+                    &collision_damage_query,
+                    event.collider1,
+                    event.collider2,
+                );
+                apply_collision_damage(
+                    &mut health_query,
+                    &collision_damage_query,
+                    event.collider2,
+                    event.collider1,
+                );
+            },
         }
     }
 }
