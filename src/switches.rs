@@ -5,46 +5,25 @@ pub(crate) use bevy_enhanced_input::action::events::Start as InputStart;
 
 use crate::constants::INSPECTOR_SWITCHES;
 
-/// Wires an input action to a switch toggle through an intermediate event.
-///
-/// Registers two observers:
-/// 1. `On<Start<Action>>` → triggers `Event`
-/// 2. `On<Event>` → toggles the switch
-///
-/// The intermediate event decouples the keyboard input from the switch toggle,
-/// making switches BRP-triggerable via `world.trigger_event`.
-///
-/// Use with `action!` and `event!` to generate the action and event structs.
-///
-/// ```rust
-/// bind_action_switch!(app, MySwitch, MySwitchEvent, Switch::MySwitch);
-/// ```
-macro_rules! bind_action_switch {
-    ($app:expr, $action:ty, $event:ty, $switch:expr) => {
-        $app.add_observer(
-            |_: On<$crate::switches::InputStart<$action>>, mut commands: Commands| {
-                commands.trigger(<$event>::default());
-            },
-        );
-        let switch = $switch;
-        $app.add_observer(
-            move |_: On<$event>, mut switches: ResMut<$crate::switches::Switches>| {
-                switches.toggle_switch(switch);
-            },
-        );
-    };
-}
-
-pub(crate) struct SwitchesPlugin;
-
-impl Plugin for SwitchesPlugin {
-    fn build(&self, app: &mut App) { app.init_resource::<Switches>(); }
-}
-
-#[derive(Resource, Default, Debug, Reflect)]
-#[reflect(Resource)]
-pub(crate) struct Switches {
-    map: HashMap<Switch, ToggleState>,
+#[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[reflect(Debug, PartialEq, Hash)]
+pub(crate) enum Switch {
+    ShowAabbs,
+    ShowPhysicsDebug,
+    InspectAabb,
+    InspectBoundary,
+    InspectCamera,
+    InspectFocus,
+    ShowFocus,
+    InspectLights,
+    InspectMissile,
+    InspectNateroid,
+    InspectOutline,
+    InspectPortals,
+    InspectSpaceship,
+    InspectSpaceshipControl,
+    InspectStar,
+    InspectZoom,
 }
 
 #[derive(Default, Copy, Clone, Debug, Reflect, PartialEq, Eq, Hash)]
@@ -55,18 +34,10 @@ pub(crate) enum ToggleState {
     Off,
 }
 
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
-pub(crate) enum InspectorActivity {
-    Active,
-    #[default]
-    Inactive,
-}
-
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
-pub(crate) enum InspectorCloseResult {
-    Closed,
-    #[default]
-    NoActiveInspectors,
+#[derive(Resource, Default, Debug, Reflect)]
+#[reflect(Resource)]
+pub(crate) struct Switches {
+    map: HashMap<Switch, ToggleState>,
 }
 
 impl Switches {
@@ -109,25 +80,54 @@ impl Switches {
     pub(crate) fn toggle_switch(&mut self, switch: Switch) { self.toggle(switch); }
 }
 
-#[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[reflect(Debug, PartialEq, Hash)]
-pub(crate) enum Switch {
-    ShowAabbs,
-    ShowPhysicsDebug,
-    InspectAabb,
-    InspectBoundary,
-    InspectCamera,
-    InspectFocus,
-    ShowFocus,
-    InspectLights,
-    InspectMissile,
-    InspectNateroid,
-    InspectOutline,
-    InspectPortals,
-    InspectSpaceship,
-    InspectSpaceshipControl,
-    InspectStar,
-    InspectZoom,
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum InspectorActivity {
+    Active,
+    #[default]
+    Inactive,
+}
+
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum InspectorCloseResult {
+    Closed,
+    #[default]
+    NoActiveInspectors,
+}
+
+/// Wires an input action to a switch toggle through an intermediate event.
+///
+/// Registers two observers:
+/// 1. `On<Start<Action>>` → triggers `Event`
+/// 2. `On<Event>` → toggles the switch
+///
+/// The intermediate event decouples the keyboard input from the switch toggle,
+/// making switches BRP-triggerable via `world.trigger_event`.
+///
+/// Use with `action!` and `event!` to generate the action and event structs.
+///
+/// ```rust
+/// bind_action_switch!(app, MySwitch, MySwitchEvent, Switch::MySwitch);
+/// ```
+macro_rules! bind_action_switch {
+    ($app:expr, $action:ty, $event:ty, $switch:expr) => {
+        $app.add_observer(
+            |_: On<$crate::switches::InputStart<$action>>, mut commands: Commands| {
+                commands.trigger(<$event>::default());
+            },
+        );
+        let switch = $switch;
+        $app.add_observer(
+            move |_: On<$event>, mut switches: ResMut<$crate::switches::Switches>| {
+                switches.toggle_switch(switch);
+            },
+        );
+    };
+}
+
+pub(crate) struct SwitchesPlugin;
+
+impl Plugin for SwitchesPlugin {
+    fn build(&self, app: &mut App) { app.init_resource::<Switches>(); }
 }
 
 pub(crate) fn is_switch_on(switch: Switch) -> impl Fn(Res<Switches>) -> bool + Clone {

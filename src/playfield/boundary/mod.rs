@@ -35,49 +35,6 @@ use crate::state::GameState;
 use crate::switches;
 use crate::switches::Switch;
 
-event!(BoundaryInspectorEvent);
-
-pub(super) struct BoundaryPlugin;
-
-impl Plugin for BoundaryPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<Boundary>()
-            .init_gizmo_group::<GridGizmo>()
-            .init_gizmo_group::<BoundaryGizmo>()
-            .add_plugins(
-                ResourceInspectorPlugin::<Boundary>::default()
-                    .run_if(switches::is_switch_on(Switch::InspectBoundary)),
-            )
-            .add_systems(Startup, gizmo::spawn_boundary_volume)
-            .add_systems(Update, gizmo::apply_boundary_settings)
-            .add_systems(Update, gizmo::sync_boundary_volume)
-            .add_systems(
-                Update,
-                gizmo::draw_boundary
-                    .run_if(in_state(GameState::Splash).or_else(in_state(GameState::InGame))),
-            )
-            .add_systems(Update, gizmo::fade_boundary_in)
-            .add_systems(
-                Update,
-                gizmo::detect_cell_count_change.run_if(in_state(GameState::InGame)),
-            )
-            .add_systems(
-                Update,
-                gizmo::animate_grid_flash
-                    .run_if(resource_exists::<GridFlashAnimation>)
-                    .after(gizmo::fade_boundary_in),
-            )
-            .add_observer(gizmo::start_boundary_fade)
-            .add_observer(gizmo::on_grid_flash);
-        bind_action_switch!(
-            app,
-            InspectBoundarySwitch,
-            BoundaryInspectorEvent,
-            Switch::InspectBoundary
-        );
-    }
-}
-
 /// Inspector-controlled `Boundary` resource for grid and exterior dimensions.
 #[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
 #[reflect(Resource, InspectorOptions)]
@@ -158,5 +115,48 @@ impl Default for Boundary {
             exterior_line_width: BOUNDARY_OUTER_LINE_WIDTH,
             exterior_scalar:     BOUNDARY_SCALAR,
         }
+    }
+}
+
+event!(BoundaryInspectorEvent);
+
+pub(super) struct BoundaryPlugin;
+
+impl Plugin for BoundaryPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<Boundary>()
+            .init_gizmo_group::<GridGizmo>()
+            .init_gizmo_group::<BoundaryGizmo>()
+            .add_plugins(
+                ResourceInspectorPlugin::<Boundary>::default()
+                    .run_if(switches::is_switch_on(Switch::InspectBoundary)),
+            )
+            .add_systems(Startup, gizmo::spawn_boundary_volume)
+            .add_systems(Update, gizmo::apply_boundary_settings)
+            .add_systems(Update, gizmo::sync_boundary_volume)
+            .add_systems(
+                Update,
+                gizmo::draw_boundary
+                    .run_if(in_state(GameState::Splash).or_else(in_state(GameState::InGame))),
+            )
+            .add_systems(Update, gizmo::fade_boundary_in)
+            .add_systems(
+                Update,
+                gizmo::detect_cell_count_change.run_if(in_state(GameState::InGame)),
+            )
+            .add_systems(
+                Update,
+                gizmo::animate_grid_flash
+                    .run_if(resource_exists::<GridFlashAnimation>)
+                    .after(gizmo::fade_boundary_in),
+            )
+            .add_observer(gizmo::start_boundary_fade)
+            .add_observer(gizmo::on_grid_flash);
+        bind_action_switch!(
+            app,
+            InspectBoundarySwitch,
+            BoundaryInspectorEvent,
+            Switch::InspectBoundary
+        );
     }
 }

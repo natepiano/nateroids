@@ -17,6 +17,16 @@ use crate::asset_loader::AssetsState;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
 
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+#[require(
+    Teleporter,
+    ActorPortals,
+    CollisionEventsEnabled,
+    LockedAxes = LOCKED_AXES_2D
+)]
+pub(crate) struct Nateroid;
+
 pub(super) struct NateroidPlugin;
 
 impl Plugin for NateroidPlugin {
@@ -37,13 +47,3 @@ impl Plugin for NateroidPlugin {
             );
     }
 }
-
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-#[require(
-    Teleporter,
-    ActorPortals,
-    CollisionEventsEnabled,
-    LockedAxes = LOCKED_AXES_2D
-)]
-pub(crate) struct Nateroid;

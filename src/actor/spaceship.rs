@@ -35,6 +35,18 @@ use crate::splash::SplashText;
 use crate::state::GameState;
 use crate::state::PauseState;
 
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+#[require(
+    Teleporter,
+    ActorPortals,
+    CollisionEventsEnabled,
+    LockedAxes = LOCKED_AXES_SPACESHIP,
+    LinearVelocity::ZERO,
+    AngularVelocity::ZERO,
+)]
+pub(crate) struct Spaceship;
+
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone, Deref, DerefMut)]
 #[reflect(Resource)]
 pub(super) struct SpaceshipSettings {
@@ -102,18 +114,6 @@ impl Plugin for SpaceshipPlugin {
 
 #[derive(Component, Default)]
 pub(super) struct ContinuousFire;
-
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-#[require(
-    Teleporter,
-    ActorPortals,
-    CollisionEventsEnabled,
-    LockedAxes = LOCKED_AXES_SPACESHIP,
-    LinearVelocity::ZERO,
-    AngularVelocity::ZERO,
-)]
-pub(crate) struct Spaceship;
 
 /// Returns the default `Spaceship` rotation: model correction (90° around X)
 fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X) }

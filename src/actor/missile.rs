@@ -42,6 +42,19 @@ use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 
+// TODO: Decide whether `Missile` should stay a unit `Component` or gain private
+// state before adding a constructor; current `Missile` instances come from
+// `spawn_missile`.
+#[derive(Component, Reflect, Copy, Clone, Debug)]
+#[reflect(Component)]
+#[require(
+    Teleporter,
+    ActorPortals,
+    CollisionEventsEnabled,
+    LockedAxes = LOCKED_AXES_2D
+)]
+pub(super) struct Missile;
+
 pub(super) struct MissilePlugin;
 
 impl Plugin for MissilePlugin {
@@ -105,19 +118,6 @@ impl Default for MissileSettings {
         }
     }
 }
-
-// TODO: Decide whether `Missile` should stay a unit `Component` or gain private
-// state before adding a constructor; current `Missile` instances come from
-// `spawn_missile`.
-#[derive(Component, Reflect, Copy, Clone, Debug)]
-#[reflect(Component)]
-#[require(
-    Teleporter,
-    ActorPortals,
-    CollisionEventsEnabled,
-    LockedAxes = LOCKED_AXES_2D
-)]
-pub(super) struct Missile;
 
 #[derive(Component, Reflect, Copy, Clone, Debug, Default)]
 #[reflect(Component)]
