@@ -19,7 +19,7 @@ pub(crate) fn insert_ship_controls(commands: &mut Commands, entity: Entity) {
     // `ShipControlsContext` is inserted on entering `InGame`. A held Space key
     // from the splash screen does not emit `Start<ShipFire>` until Space is
     // released and pressed again.
-    let consume_input = ActionSettings {
+    let consuming_action_settings = ActionSettings {
         consume_input: true,
         require_reset: true,
         ..default()
@@ -32,7 +32,7 @@ pub(crate) fn insert_ship_controls(commands: &mut Commands, entity: Entity) {
     // Why require_reset: if a ship/context is spawned while Shift is already
     // held, we avoid treating that as a fresh modifier activation until Shift
     // is released and pressed again.
-    let non_consuming_modifier = ActionSettings {
+    let non_consuming_modifier_action_settings = ActionSettings {
         consume_input: false,
         require_reset: true,
         ..default()
@@ -45,34 +45,34 @@ pub(crate) fn insert_ship_controls(commands: &mut Commands, entity: Entity) {
                 let shift_modifier = context
                     .spawn((
                         Action::<ShipShiftModifier>::new(),
-                        non_consuming_modifier,
+                        non_consuming_modifier_action_settings,
                         bindings![KeyCode::ShiftLeft, KeyCode::ShiftRight],
                     ))
                     .id();
 
                 context.spawn((
                     Action::<ShipAccelerate>::new(),
-                    consume_input,
+                    consuming_action_settings,
                     bindings![KeyCode::KeyW, KeyCode::ArrowUp],
                 ));
                 context.spawn((
                     Action::<ShipTurnLeft>::new(),
-                    consume_input,
+                    consuming_action_settings,
                     bindings![KeyCode::KeyA, KeyCode::ArrowLeft],
                 ));
                 context.spawn((
                     Action::<ShipTurnRight>::new(),
-                    consume_input,
+                    consuming_action_settings,
                     bindings![KeyCode::KeyD, KeyCode::ArrowRight],
                 ));
                 context.spawn((
                     Action::<ShipFire>::new(),
-                    consume_input,
+                    consuming_action_settings,
                     bindings![KeyCode::Space],
                 ));
                 context.spawn((
                     Action::<ShipContinuousFire>::new(),
-                    consume_input,
+                    consuming_action_settings,
                     // Concrete edge case this handles:
                     // 1) Hold Shift
                     // 2) Press F (Shift+F is used by a different action)

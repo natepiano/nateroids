@@ -83,7 +83,7 @@ fn spawn_restart_shortcuts(
 }
 
 pub(super) fn setup_global_shortcuts(mut commands: Commands) {
-    let consume_input = ActionSettings {
+    let consuming_action_settings = ActionSettings {
         consume_input: true,
         ..default()
     };
@@ -96,7 +96,8 @@ pub(super) fn setup_global_shortcuts(mut commands: Commands) {
         ContextPriority::<GlobalShortcutsContext>::new(GLOBAL_SHORTCUTS_PRIORITY),
         Actions::<GlobalShortcutsContext>::spawn(SpawnWith(
             move |spawner: &mut ActionSpawner<GlobalShortcutsContext>| {
-                let keybindings = Keybindings::new::<ModifySelection>(spawner, consume_input);
+                let keybindings =
+                    Keybindings::new::<ModifySelection>(spawner, consuming_action_settings);
                 spawn_main_shortcuts(&keybindings, spawner);
                 spawn_inspector_shortcuts(&keybindings, spawner);
                 spawn_restart_shortcuts(&keybindings, spawner);

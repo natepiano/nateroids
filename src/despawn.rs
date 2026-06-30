@@ -24,16 +24,6 @@ use crate::state::GameState;
 
 pub(crate) struct DespawnPlugin;
 
-#[derive(Component, Debug)]
-pub(crate) struct Deaderoid {
-    pub(crate) initial_scale:          Vec3,
-    pub(crate) target_shrink:          f32,
-    pub(crate) shrink_duration:        f32,
-    pub(crate) elapsed_time:           f32,
-    pub(crate) current_shrink:         f32,
-    pub(crate) current_material_index: usize,
-}
-
 impl Plugin for DespawnPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
@@ -43,6 +33,16 @@ impl Plugin for DespawnPlugin {
         .add_systems(OnExit(GameState::InGame), despawn_all_entities)
         .add_systems(OnExit(GameState::Splash), despawn_splash);
     }
+}
+
+#[derive(Component, Debug)]
+pub(crate) struct Deaderoid {
+    pub(crate) initial_scale:          Vec3,
+    pub(crate) target_shrink:          f32,
+    pub(crate) shrink_duration:        f32,
+    pub(crate) elapsed_time:           f32,
+    pub(crate) current_shrink:         f32,
+    pub(crate) current_material_index: usize,
 }
 
 /// Uses `try_despawn` because entities can be queued for despawn multiple times in a frame

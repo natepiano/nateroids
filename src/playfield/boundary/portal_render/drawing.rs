@@ -30,6 +30,14 @@ struct PortalRenderContext<'a> {
     transform:          &'a Transform,
 }
 
+struct ArcGeometry {
+    center: Vec3,
+    radius: f32,
+    normal: Vec3,
+    from:   Vec3,
+    to:     Vec3,
+}
+
 pub(crate) fn draw_portal(
     gizmos: &mut Gizmos<PortalGizmo>,
     portal: &Portal,
@@ -168,14 +176,6 @@ fn draw_multiface_portal(
             },
         }
     }
-}
-
-struct ArcGeometry {
-    center: Vec3,
-    radius: f32,
-    normal: Vec3,
-    from:   Vec3,
-    to:     Vec3,
 }
 
 // `draw_primary_face_arc` converts `ArcGeometry::from` and `ArcGeometry::to`
