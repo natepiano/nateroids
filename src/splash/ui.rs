@@ -8,6 +8,7 @@ use crate::constants::SPLASH_SKIP_HINT_BOTTOM_OFFSET;
 use crate::constants::SPLASH_SKIP_HINT_COLOR;
 use crate::constants::SPLASH_SKIP_HINT_FONT_SIZE;
 use crate::constants::SPLASH_SKIP_HINT_TEXT;
+use crate::constants::SPLASH_SKIP_HINT_WIDTH_PERCENT;
 
 #[derive(Component)]
 pub(crate) struct SplashText;
@@ -48,7 +49,7 @@ pub(super) fn spawn_splash_skip_hint(mut commands: Commands) {
             position_type: PositionType::Absolute,
             bottom: Val::Px(SPLASH_SKIP_HINT_BOTTOM_OFFSET),
             left: Val::Px(0.0),
-            width: Val::Percent(100.0),
+            width: Val::Percent(SPLASH_SKIP_HINT_WIDTH_PERCENT),
             ..default()
         },
         RenderLayer::UI.layers(),

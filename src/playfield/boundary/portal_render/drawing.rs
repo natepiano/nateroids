@@ -12,6 +12,7 @@ use crate::playfield::constants::CORNER_COLOR_FRONT_BACK_XY;
 use crate::playfield::constants::CORNER_COLOR_LEFT_RIGHT_YZ;
 use crate::playfield::constants::CORNER_COLOR_TOP_BOTTOM_XZ;
 use crate::playfield::constants::DEADEROID_APPROACHING_COLOR;
+use crate::playfield::constants::VALID_PORTAL_ARC_INTERSECTION_COUNT;
 use crate::playfield::portals::Portal;
 use crate::playfield::portals::PortalGizmo;
 
@@ -128,8 +129,9 @@ fn draw_multiface_portal(
             intersection::intersect_portal_with_rectangle(portal, &face_points),
         );
 
-        // Only draw arcs for faces with exactly 2 intersection points
-        if intersections.len() == 2 {
+        // Only draw arcs when `intersections` has
+        // `VALID_PORTAL_ARC_INTERSECTION_COUNT` points.
+        if intersections.len() == VALID_PORTAL_ARC_INTERSECTION_COUNT {
             face_arcs.push((face, intersections));
         }
     }

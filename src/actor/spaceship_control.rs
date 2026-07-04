@@ -243,12 +243,12 @@ fn toggle_continuous_fire_command(
     mut commands: Commands,
     spaceship: Single<(Entity, Option<&ContinuousFire>), With<Spaceship>>,
 ) {
-    let (entity, continuous) = *spaceship;
-    if continuous.is_some() {
-        info!("removing continuous");
+    let (entity, continuous_fire) = *spaceship;
+    if continuous_fire.is_some() {
+        info!("removing continuous fire");
         commands.entity(entity).remove::<ContinuousFire>();
     } else {
-        info!("adding continuous");
+        info!("adding continuous fire");
         commands.entity(entity).insert(ContinuousFire);
     }
 }

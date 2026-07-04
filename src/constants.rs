@@ -73,6 +73,7 @@ pub(crate) const SPLASH_SKIP_HINT_BOTTOM_OFFSET: f32 = 24.0;
 pub(crate) const SPLASH_SKIP_HINT_COLOR: Color = Color::WHITE;
 pub(crate) const SPLASH_SKIP_HINT_FONT_SIZE: f32 = 20.0;
 pub(crate) const SPLASH_SKIP_HINT_TEXT: &str = "Press any key to skip";
+pub(crate) const SPLASH_SKIP_HINT_WIDTH_PERCENT: f32 = 100.0;
 pub(crate) const SPLASH_SLOWDOWN_DURATIONS_MS: &[u64] = &[50, 100, 150, 200];
 pub(crate) const SPLASH_SPIN_DURATIONS_MS: &[u64] = &[500, 400, 300, 200, 100, 50, 25];
 pub(crate) const SPLASH_TEXT_GROWTH_RATE: f32 = 1.2;

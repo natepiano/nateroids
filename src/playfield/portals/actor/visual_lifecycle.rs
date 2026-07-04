@@ -13,10 +13,10 @@ use crate::orientation::CameraOrientation;
 use crate::playfield::Boundary;
 use crate::playfield::BoundaryVolume;
 use crate::playfield::boundary::PortalActorKind;
+use crate::playfield::constants::DEFAULT_PORTAL_FACE_COUNT;
 use crate::playfield::constants::PORTAL_MIN_RADIUS_FRACTION;
 use crate::playfield::portals::Portal;
 use crate::playfield::portals::PortalGizmo;
-use crate::playfield::portals::constants::DEFAULT_PORTAL_FACE_COUNT;
 use crate::playfield::portals::settings::PortalSettings;
 
 #[derive(Component, Default)]

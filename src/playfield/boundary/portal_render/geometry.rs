@@ -3,6 +3,8 @@ use bevy::prelude::*;
 use super::intersection;
 use crate::playfield::boundary_face::BoundaryFace;
 use crate::playfield::constants::BOUNDARY_OVEREXTENSION_EPSILON;
+use crate::playfield::constants::DEFAULT_PORTAL_FACE_COUNT;
+use crate::playfield::constants::VALID_PORTAL_ARC_INTERSECTION_COUNT;
 use crate::playfield::portals::Portal;
 
 /// Describes the geometric configuration of a portal relative to boundary faces.
@@ -28,7 +30,7 @@ pub(crate) fn calculate_portal_face_count(portal: &Portal, transform: &Transform
     let portal_geometry = classify_portal_geometry(portal, transform);
 
     match portal_geometry {
-        PortalGeometry::SingleFace => 1,
+        PortalGeometry::SingleFace => DEFAULT_PORTAL_FACE_COUNT,
         PortalGeometry::MultiFace(multi_face_geometry) => {
             count_faces_with_valid_arcs(portal, &multi_face_geometry, transform)
         },
@@ -82,8 +84,9 @@ fn count_faces_with_valid_arcs(
             intersection::intersect_portal_with_rectangle(portal, &face_points),
         );
 
-        // Only count faces with exactly 2 intersection points
-        if intersections.len() == 2 {
+        // Only count faces when `intersections` has
+        // `VALID_PORTAL_ARC_INTERSECTION_COUNT` points.
+        if intersections.len() == VALID_PORTAL_ARC_INTERSECTION_COUNT {
             face_count += 1;
         }
     }

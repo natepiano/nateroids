@@ -8,10 +8,6 @@ use bevy::color::palettes::tailwind::YELLOW_800;
 pub(super) const PORTAL_COLOR_APPROACHING: Color = Color::Srgba(BLUE_600);
 pub(super) const PORTAL_COLOR_EMERGING: Color = Color::Srgba(YELLOW_800);
 
-// portal defaults
-/// Default face count for a portal that does not straddle a boundary edge.
-pub(super) const DEFAULT_PORTAL_FACE_COUNT: usize = 1;
-
 // portal inspector bounds
 pub(super) const PORTAL_DIRECTION_CHANGE_FACTOR_MAX: f32 = PI;
 pub(super) const PORTAL_DIRECTION_CHANGE_FACTOR_MIN: f32 = 0.0;

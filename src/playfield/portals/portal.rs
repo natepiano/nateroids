@@ -3,8 +3,8 @@ use bevy::math::Vec3;
 use bevy::prelude::*;
 use bevy_kana::Position;
 
-use super::constants::DEFAULT_PORTAL_FACE_COUNT;
 use crate::playfield::boundary_face::BoundaryFace;
+use crate::playfield::constants::DEFAULT_PORTAL_FACE_COUNT;
 
 #[derive(Resource, Clone, Debug)]
 pub(crate) struct Portal {

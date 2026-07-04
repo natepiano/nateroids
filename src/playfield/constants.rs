@@ -48,6 +48,9 @@ pub(super) const BOUNDARY_SNAP_EPSILON: f32 = 0.01;
 /// Epsilon for deduplicating circle–line-segment intersection points
 pub(super) const INTERSECTION_DEDUP_EPSILON: f32 = 1e-6;
 
+// circle-rectangle intersection
+pub(super) const MAX_CIRCLE_RECTANGLE_INTERSECTIONS: usize = 4;
+
 // portal colors
 
 /// Color for Front/Back face corners on XY plane (Yellow)
@@ -102,3 +105,10 @@ pub(super) const PORTAL_SCALAR: f32 = 2.0;
 
 /// Smallest base portal size
 pub(super) const PORTAL_SMALLEST: f32 = 5.0;
+
+// portal defaults
+/// Default face count for a portal that does not straddle a boundary edge.
+pub(super) const DEFAULT_PORTAL_FACE_COUNT: usize = 1;
+
+// portal geometry
+pub(super) const VALID_PORTAL_ARC_INTERSECTION_COUNT: usize = 2;

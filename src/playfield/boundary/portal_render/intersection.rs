@@ -4,6 +4,7 @@ use bevy::prelude::*;
 
 use crate::playfield::boundary_face::BoundaryFace;
 use crate::playfield::constants::INTERSECTION_DEDUP_EPSILON;
+use crate::playfield::constants::MAX_CIRCLE_RECTANGLE_INTERSECTIONS;
 use crate::playfield::portals::Portal;
 
 pub(super) enum Intersection {
@@ -92,10 +93,11 @@ pub(super) fn flatten_intersections(intersections: [Intersection; 4]) -> Vec<Vec
     // Portals positioned in the center typically produce 2 intersection
     // points.
     debug_assert!(
-        result.len() <= 4,
-        "Circle-rectangle intersection exceeded maximum: {} intersection points (expected <=4). \
+        result.len() <= MAX_CIRCLE_RECTANGLE_INTERSECTIONS,
+        "Circle-rectangle intersection exceeded maximum: {} intersection points (expected <={}). \
          This indicates a geometric error in the intersection calculation.",
-        result.len()
+        result.len(),
+        MAX_CIRCLE_RECTANGLE_INTERSECTIONS
     );
 
     result

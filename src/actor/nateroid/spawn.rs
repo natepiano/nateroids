@@ -126,7 +126,7 @@ fn initialize_transform(
     };
 
     let scale = nateroid_settings.actor_settings.transform.scale;
-    let filter =
+    let spatial_query_filter =
         SpatialQueryFilter::from_mask(LayerMask::from([GameLayer::Spaceship, GameLayer::Asteroid]));
 
     for _ in 0..NATEROID_SPAWN_MAX_ATTEMPTS {
@@ -144,8 +144,12 @@ fn initialize_transform(
                 Collider::cuboid(margin, margin, margin)
             },
         };
-        let intersections =
-            spatial_query.shape_intersections(&spawn_collider, *position, rotation, &filter);
+        let intersections = spatial_query.shape_intersections(
+            &spawn_collider,
+            *position,
+            rotation,
+            &spatial_query_filter,
+        );
 
         if intersections.is_empty() {
             return Some(Transform {

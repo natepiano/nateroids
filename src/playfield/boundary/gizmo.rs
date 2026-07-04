@@ -44,13 +44,13 @@ pub(super) fn apply_boundary_settings(
     mut gizmo_config_store: ResMut<GizmoConfigStore>,
     boundary: Res<Boundary>,
 ) {
-    let (gizmo_config, _) = gizmo_config_store.config_mut::<GridGizmo>();
-    gizmo_config.line.width = boundary.grid_line_width;
-    gizmo_config.render_layers = RenderLayer::Game.layers();
+    let (grid_gizmo_config, _) = gizmo_config_store.config_mut::<GridGizmo>();
+    grid_gizmo_config.line.width = boundary.grid_line_width;
+    grid_gizmo_config.render_layers = RenderLayer::Game.layers();
 
-    let (outer_config, _) = gizmo_config_store.config_mut::<BoundaryGizmo>();
-    outer_config.line.width = boundary.exterior_line_width;
-    outer_config.render_layers = RenderLayer::Game.layers();
+    let (boundary_gizmo_config, _) = gizmo_config_store.config_mut::<BoundaryGizmo>();
+    boundary_gizmo_config.line.width = boundary.exterior_line_width;
+    boundary_gizmo_config.render_layers = RenderLayer::Game.layers();
 }
 
 /// Spawns the `BoundaryVolume` entity with a hidden unit-cube mesh.
