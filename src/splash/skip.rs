@@ -37,7 +37,7 @@ pub(super) fn reset_timer_and_boundary(
     splash_text_timer.0.reset();
     skip_state.skip_readiness = SkipReadiness::NotReady;
 
-    // Reset boundary alpha to 0 (transparent) for fade-in animation
+    // `BOUNDARY_START_ALPHA` hides `Boundary` gizmos until `BoundaryFadeIn` runs.
     boundary.grid_color = BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA);
     boundary.outer_color = BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA);
 }
@@ -84,20 +84,18 @@ pub(super) fn run_splash(
 
     splash_text_timer.0.tick(time.delta());
 
-    // Animate text for 2 seconds, then despawn it (observer will spawn objects)
+    // `SplashTextTimer` controls `SplashText` growth and removal; removing the
+    // component starts its observer-driven transition.
     if let Ok((text_entity, mut text)) = text_query.single_mut() {
         if splash_text_timer.0.just_finished() {
-            // Text timer done - remove the text (triggers On<Remove, SplashText> observer)
             commands.entity(text_entity).despawn();
-        } else {
-            // Still animating — grow the pixel size in place.
-            if let FontSize::Px(px) = &mut text.font_size {
-                *px += SPLASH_TEXT_GROWTH_RATE;
-            }
+        } else if let FontSize::Px(px) = &mut text.font_size {
+            *px += SPLASH_TEXT_GROWTH_RATE;
         }
     }
 
-    // Exit splash only when BOTH timer is finished AND camera animation is complete
+    // `GameState::InGame` waits for both `SplashTextTimer` and the splash camera
+    // components to finish.
     let timer_finished = splash_text_timer.0.is_finished();
     let camera_animation_done = camera_query.is_empty();
 

@@ -8,10 +8,6 @@ use crate::input::RestartWithSplashShortcut;
 use crate::switches::InspectorCloseResult;
 use crate::switches::Switches;
 
-event!(EscapeEvent);
-event!(RestartGameEvent);
-event!(RestartWithSplashEvent);
-
 pub(crate) struct StatePlugin;
 
 impl Plugin for StatePlugin {
@@ -40,6 +36,10 @@ impl Plugin for StatePlugin {
         .add_systems(Update, log_transitions::<GameState>);
     }
 }
+
+event!(EscapeEvent);
+event!(RestartGameEvent);
+event!(RestartWithSplashEvent);
 
 /// `GameState`'s for Nateroids
 /// `PostStartup` transitions to `Splash` _after_ camera is spawned.

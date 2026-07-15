@@ -21,6 +21,39 @@ use crate::input::ShowFocusSwitch;
 use crate::switches;
 use crate::switches::Switch;
 
+pub(super) struct FocusGizmoPlugin;
+
+impl Plugin for FocusGizmoPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_gizmo_group::<FocusGizmo>()
+            .init_resource::<FocusSettings>()
+            .init_resource::<FocusGizmoState>()
+            .add_plugins(
+                ResourceInspectorPlugin::<FocusSettings>::default()
+                    .run_if(switches::is_switch_on(Switch::InspectFocus)),
+            );
+        bind_action_switch!(
+            app,
+            InspectFocusSwitch,
+            FocusInspectorEvent,
+            Switch::InspectFocus
+        );
+        bind_action_switch!(app, ShowFocusSwitch, ShowFocusEvent, Switch::ShowFocus);
+        app.add_systems(
+            Update,
+            apply_focus_settings.run_if(resource_changed::<FocusSettings>),
+        )
+        .add_systems(Update, update_focus_gizmo_state)
+        .add_systems(
+            Update,
+            (
+                draw_camera_focus_gizmo.run_if(switches::is_switch_on(Switch::ShowFocus)),
+                cleanup_focus_labels.run_if(switches::is_switch_off(Switch::ShowFocus)),
+            ),
+        );
+    }
+}
+
 event!(FocusInspectorEvent);
 event!(ShowFocusEvent);
 
@@ -66,39 +99,6 @@ struct FocusGizmoState {
 /// Marker component for the focus distance label
 #[derive(Component)]
 struct FocusDistanceLabel;
-
-pub(super) struct FocusGizmoPlugin;
-
-impl Plugin for FocusGizmoPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_gizmo_group::<FocusGizmo>()
-            .init_resource::<FocusSettings>()
-            .init_resource::<FocusGizmoState>()
-            .add_plugins(
-                ResourceInspectorPlugin::<FocusSettings>::default()
-                    .run_if(switches::is_switch_on(Switch::InspectFocus)),
-            );
-        bind_action_switch!(
-            app,
-            InspectFocusSwitch,
-            FocusInspectorEvent,
-            Switch::InspectFocus
-        );
-        bind_action_switch!(app, ShowFocusSwitch, ShowFocusEvent, Switch::ShowFocus);
-        app.add_systems(
-            Update,
-            apply_focus_settings.run_if(resource_changed::<FocusSettings>),
-        )
-        .add_systems(Update, update_focus_gizmo_state)
-        .add_systems(
-            Update,
-            (
-                draw_camera_focus_gizmo.run_if(switches::is_switch_on(Switch::ShowFocus)),
-                cleanup_focus_labels.run_if(switches::is_switch_off(Switch::ShowFocus)),
-            ),
-        );
-    }
-}
 
 fn apply_focus_settings(
     mut gizmo_config_store: ResMut<GizmoConfigStore>,

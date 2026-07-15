@@ -111,18 +111,15 @@ fn draw_multiface_portal(
         MultiFaceGeometry::Corner { overextended } => overextended.clone(),
     };
 
-    // Calculate boundary extents for constraint checking
     let half_size = transform.scale / 2.0;
     let min = transform.translation - half_size;
     let max = transform.translation + half_size;
 
-    // Collect ALL faces that need arcs (primary + overextended)
     let mut all_faces_for_drawing = vec![primary_face];
     all_faces_for_drawing.extend(overextended_faces.iter());
 
     let mut face_arcs = Vec::new();
 
-    // Calculate constrained intersections for each face
     for &face in &all_faces_for_drawing {
         let face_points = face.get_face_points(&min, &max);
         let intersections = intersection::flatten_intersections(
@@ -136,7 +133,6 @@ fn draw_multiface_portal(
         }
     }
 
-    // Draw all arcs
     for (face, points) in face_arcs {
         let face_color = get_portal_color(portal_actor_kind, multi_face_geometry, face, color);
 
@@ -189,29 +185,22 @@ fn draw_primary_face_arc(
     color: Color,
     resolution: u32,
 ) {
-    // Calculate vectors from center to intersection points
     let vec_from = (arc_geometry.from - arc_geometry.center).normalize();
     let vec_to = (arc_geometry.to - arc_geometry.center).normalize();
 
-    // Calculate the angle and determine direction
     let mut angle = vec_from.angle_between(vec_to);
     let cross_product = vec_from.cross(vec_to);
     let is_clockwise = cross_product.dot(arc_geometry.normal) < 0.0;
 
-    // Invert the angle for arc_3d rendering logic
     angle = TAU - angle;
 
-    // Calculate the rotation to align the arc with the boundary face
     let face_rotation = Quat::from_rotation_arc(Vec3::Y, arc_geometry.normal);
 
-    // Determine the start vector based on clockwise/counterclockwise
     let start_vec = if is_clockwise { vec_from } else { vec_to };
     let start_rotation = Quat::from_rotation_arc(face_rotation * Vec3::X, start_vec);
 
-    // Combine rotations
     let final_rotation = start_rotation * face_rotation;
 
-    // Draw the arc
     gizmos
         .arc_3d(
             angle,

@@ -34,8 +34,6 @@ use crate::schedule::InGameSet;
 use crate::switches;
 use crate::switches::Switch;
 
-event!(SpaceshipControlInspectorEvent);
-
 pub(super) struct SpaceshipControlPlugin;
 
 impl Plugin for SpaceshipControlPlugin {
@@ -58,6 +56,8 @@ impl Plugin for SpaceshipControlPlugin {
         );
     }
 }
+
+event!(SpaceshipControlInspectorEvent);
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(Resource, InspectorOptions)]
@@ -160,13 +160,13 @@ fn spaceship_movement_controls(
     if let Ok((mut spaceship_transform, mut linear_velocity, mut angular_velocity)) =
         spaceship_query.single_mut()
     {
-        // dynamically update from inspector while game is running to change size
+        // `SpaceshipSettings::transform.scale` applies inspector changes to the
+        // live `Spaceship` entity.
         spaceship_transform.scale = spaceship_settings.transform.scale;
 
         let delta_secs = time.delta_secs();
         let rotation_speed = spaceship_control_settings.rotation_speed;
 
-        // Set angular velocity based on input
         let accelerate = **accelerate_state != TriggerState::None;
 
         let mut target_angular_velocity =
@@ -176,15 +176,14 @@ fn spaceship_movement_controls(
                 TurnDirection::Neutral => 0.0,
             };
 
-        // Flip rotation direction if camera is facing opposite
         let camera_forward = camera_transform.forward();
         let facing_opposite = camera_forward.dot(Vec3::new(0.0, 0.0, -1.0)) > 0.0;
         if facing_opposite {
             target_angular_velocity = -target_angular_velocity;
         }
 
-        // Apply angular velocity through physics engine
-        // Explicitly enforce 2D rotation by zeroing X/Y components
+        // `AngularVelocity` stays on the Z axis while
+        // `target_angular_velocity` carries the turn input.
         angular_velocity.x = 0.0;
         angular_velocity.y = 0.0;
         angular_velocity.z = target_angular_velocity;
@@ -216,18 +215,16 @@ fn apply_acceleration(
     let proposed_velocity = **linear_velocity + direction * (acceleration * delta_secs);
     let proposed_speed = proposed_velocity.length();
 
-    // Ensure we're not exceeding max velocity
     if proposed_speed > max_speed {
         **linear_velocity = proposed_velocity.normalize() * max_speed;
     } else {
         **linear_velocity = proposed_velocity;
     }
 
-    //todo: #handl3d
+    // Non-3D `CameraOrientation` modes constrain `LinearVelocity` to the XY plane.
     match camera_orientation.orientation_type {
-        // in 3d we can accelerate in all dirs
         OrientationType::BehindSpaceship3D => (),
-        _ => linear_velocity.z = 0.0, // Force the `z` value of linear_velocity to be 0
+        _ => linear_velocity.z = 0.0,
     }
 }
 

@@ -33,10 +33,6 @@ use crate::input::InspectSpaceshipSwitch;
 use crate::switches;
 use crate::switches::Switch;
 
-event!(MissileInspectorEvent);
-event!(NateroidInspectorEvent);
-event!(SpaceshipInspectorEvent);
-
 // `ActorSettingsPlugin` initializes the actor setting resources when
 // `AssetsState::Loaded` starts: `ActorSettings`, `MissileSettings`,
 // `NateroidSettings`, and `SpaceshipSettings`.
@@ -78,6 +74,10 @@ impl Plugin for ActorSettingsPlugin {
         );
     }
 }
+
+event!(MissileInspectorEvent);
+event!(NateroidInspectorEvent);
+event!(SpaceshipInspectorEvent);
 
 #[derive(Reflect, InspectorOptions, Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) enum Spawnability {
@@ -245,7 +245,6 @@ pub(super) fn insert_configured_components(
         WorldAssetRoot(settings.scene.clone()),
     ));
 
-    // Apply damping if configured
     if let Some(linear) = settings.linear_damping {
         commands.entity(actor_entity).insert(LinearDamping(linear));
     }
@@ -255,6 +254,5 @@ pub(super) fn insert_configured_components(
             .insert(AngularDamping(angular));
     }
 
-    // reset the timer if there is a configured spawn_timer_seconds
     settings.spawn_timer = create_spawn_timer(settings.spawn_timer_seconds);
 }

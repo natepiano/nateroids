@@ -41,9 +41,8 @@ pub(super) fn snap_and_get_face(
     (snapped_position, final_face)
 }
 
-/// Snaps a position to slightly inside the given boundary face.
-/// Offsets by epsilon to prevent false-positive overextension detection that would trigger
-/// corner wrapping arcs. Clamps perpendicular axes to handle corner/edge teleportation cases.
+/// Snaps `position` inside `face` by `BOUNDARY_SNAP_EPSILON` so overextension
+/// detection does not create false corner arcs, then clamps the perpendicular axes.
 fn snap_position_to_boundary_face(
     position: Position,
     face: BoundaryFace,
@@ -52,12 +51,10 @@ fn snap_position_to_boundary_face(
     let boundary_min = transform.translation - transform.scale / 2.0;
     let boundary_max = transform.translation + transform.scale / 2.0;
 
-    // Without this offset, portals on exact boundary would be flagged as overextended
     let epsilon = BOUNDARY_SNAP_EPSILON;
 
     let mut snapped_position = *position;
 
-    // Set primary axis slightly inside boundary face and clamp perpendicular axes
     match face {
         BoundaryFace::Right => {
             snapped_position.x = boundary_max.x - epsilon;
@@ -102,7 +99,6 @@ pub(super) fn get_face_for_position(position: Position, transform: &Transform) -
     let boundary_min = transform.translation - half_size;
     let boundary_max = transform.translation + half_size;
 
-    // Calculate distance to all 6 faces and return the closest
     let faces = [
         ((position.x - boundary_min.x).abs(), BoundaryFace::Left),
         ((position.x - boundary_max.x).abs(), BoundaryFace::Right),

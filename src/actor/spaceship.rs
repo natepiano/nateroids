@@ -35,6 +35,25 @@ use crate::splash::SplashText;
 use crate::state::GameState;
 use crate::state::PauseState;
 
+pub(super) struct SpaceshipPlugin;
+
+impl Plugin for SpaceshipPlugin {
+    // make sure this is done after `asset_loader` has run
+    fn build(&self, app: &mut App) {
+        // Spawn `Spaceship` when entering `PauseState::Playing` (game start or unpause)
+        app.add_observer(initialize_spaceship)
+            .add_observer(spawn_after_splash_text_removed)
+            .add_systems(OnEnter(PauseState::Playing), spawn_spaceship_if_needed)
+            .add_systems(OnEnter(GameState::InGame), attach_controls_if_spawned)
+            .add_systems(
+                FixedUpdate,
+                enforce_spaceship_2d_rotation
+                    .after(PhysicsSystems::StepSimulation)
+                    .in_set(InGameSet::EntityUpdates),
+            );
+    }
+}
+
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 #[require(
@@ -90,25 +109,6 @@ impl Default for SpaceshipSettings {
                 spawn_timer:              None,
             },
         }
-    }
-}
-
-pub(super) struct SpaceshipPlugin;
-
-impl Plugin for SpaceshipPlugin {
-    // make sure this is done after `asset_loader` has run
-    fn build(&self, app: &mut App) {
-        // Spawn `Spaceship` when entering `PauseState::Playing` (game start or unpause)
-        app.add_observer(initialize_spaceship)
-            .add_observer(spawn_after_splash_text_removed)
-            .add_systems(OnEnter(PauseState::Playing), spawn_spaceship_if_needed)
-            .add_systems(OnEnter(GameState::InGame), attach_controls_if_spawned)
-            .add_systems(
-                FixedUpdate,
-                enforce_spaceship_2d_rotation
-                    .after(PhysicsSystems::StepSimulation)
-                    .in_set(InGameSet::EntityUpdates),
-            );
     }
 }
 
@@ -188,22 +188,17 @@ fn enforce_spaceship_2d_rotation(
     mut spaceship: Query<(&mut Transform, &mut AngularVelocity), With<Spaceship>>,
 ) {
     if let Ok((mut transform, mut angular_velocity)) = spaceship.single_mut() {
-        // Always zero angular velocity on X/Y axes to prevent future off-axis rotation
         angular_velocity.x = 0.0;
         angular_velocity.y = 0.0;
 
-        // Check if rotation quaternion is valid (not NaN or denormalized)
         if !transform.rotation.is_finite() || !transform.rotation.is_normalized() {
             warn!("Spaceship rotation became invalid (NaN or denormalized), resetting to default");
             transform.rotation = default_spaceship_rotation();
             return;
         }
 
-        // Check if spaceship is tilted by looking at up vector
-        // After +90° X rotation, up should point in +Z (0, 0, 1)
         let up = transform.up();
 
-        // Guard against NaN from corrupted transform
         if !up.is_finite() {
             warn!("Spaceship up vector is NaN, resetting rotation");
             transform.rotation = default_spaceship_rotation();
@@ -213,10 +208,8 @@ fn enforce_spaceship_2d_rotation(
         let tilt_amount = up.x.hypot(up.y);
 
         if tilt_amount > SPACESHIP_TILT_THRESHOLD {
-            // Get current forward direction and project to XY plane
             let forward = transform.forward();
 
-            // Guard against NaN
             if !forward.is_finite() {
                 warn!("Spaceship forward vector is NaN, resetting rotation");
                 transform.rotation = default_spaceship_rotation();
@@ -229,16 +222,16 @@ fn enforce_spaceship_2d_rotation(
             if forward_length_squared > SPACESHIP_FORWARD_EPSILON {
                 let forward_2d_normalized = forward_2d / forward_length_squared.sqrt();
 
-                // Calculate angle in XY plane (from +Y axis)
                 let z_angle = forward_2d_normalized.y.atan2(forward_2d_normalized.x) - FRAC_PI_2;
 
-                // Guard against NaN from atan2
                 if z_angle.is_finite() {
-                    // Rebuild rotation: model correction + gameplay rotation
+                    // `GLTF_ROTATION_X` reapplies the model-space correction before
+                    // the gameplay `z_angle` rotation.
                     let new_rotation =
                         Quat::from_rotation_x(GLTF_ROTATION_X) * Quat::from_rotation_z(z_angle);
 
-                    // Normalize to prevent drift over many frames
+                    // `Quat::normalize` prevents accumulated floating-point drift in
+                    // `Transform::rotation`.
                     transform.rotation = new_rotation.normalize();
                 }
             }

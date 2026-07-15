@@ -47,14 +47,14 @@ pub(super) fn spawn_nateroid(
         return;
     };
 
-    // Pre-validate: only spawn if we can find a valid position
     let current_time = time.elapsed_secs();
     let Some(transform) =
         initialize_transform(boundary_transform, &nateroid_settings, &spatial_query)
     else {
         nateroid_spawn_stats.record_attempt(SpawnResult::Failure);
 
-        // Check if we should output warning (once per second)
+        // `NateroidSpawnStats::last_warning_time` throttles failed-spawn
+        // diagnostics to `NATEROID_WARN_THROTTLE_INTERVAL_SECS`.
         if current_time - nateroid_spawn_stats.last_warning_time
             >= NATEROID_WARN_THROTTLE_INTERVAL_SECS
         {
@@ -72,14 +72,12 @@ pub(super) fn spawn_nateroid(
 
     nateroid_spawn_stats.record_attempt(SpawnResult::Success);
 
-    // Check if we should output stats (once per second, even on success)
     if current_time - nateroid_spawn_stats.last_warning_time >= NATEROID_WARN_THROTTLE_INTERVAL_SECS
     {
         let success_rate = nateroid_spawn_stats.success_rate() * 100.0;
         let successes = nateroid_spawn_stats.successes_count();
         let attempts = nateroid_spawn_stats.attempts_count();
 
-        // Only warn if there were failures
         if successes < attempts {
             warn!(
                 "Nateroid spawn: {successes} / {attempts} attempts ({success_rate:.0}%) in the last {attempts} spawns"
@@ -165,7 +163,7 @@ fn initialize_transform(
 
 fn get_random_position_within_bounds(bounds: &Transform) -> Position {
     let mut rng = rng();
-    let half_scale = bounds.scale.abs() / 2.0; // Use absolute value to ensure positive scale
+    let half_scale = bounds.scale.abs() / 2.0;
     let min = bounds.translation - half_scale;
     let max = bounds.translation + half_scale;
 
@@ -178,9 +176,9 @@ fn get_random_position_within_bounds(bounds: &Transform) -> Position {
 
 fn get_random_component(min: f32, max: f32, rng: &mut impl Rng) -> f32 {
     if (max - min).abs() < f32::EPSILON {
-        min // If the range is effectively zero, just return the min value
+        min
     } else {
-        rng.random_range(min.min(max)..=min.max(max)) // Ensure min is always less than max
+        rng.random_range(min.min(max)..=min.max(max))
     }
 }
 

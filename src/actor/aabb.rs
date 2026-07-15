@@ -18,9 +18,6 @@ use crate::input::InspectAabbSwitch;
 use crate::switches;
 use crate::switches::Switch;
 
-event!(AabbInspectorEvent);
-event!(AabbsEvent);
-
 pub(super) struct AabbPlugin;
 impl Plugin for AabbPlugin {
     fn build(&self, app: &mut App) {
@@ -51,6 +48,9 @@ impl Plugin for AabbPlugin {
         bind_action_switch!(app, AabbsSwitch, AabbsEvent, Switch::ShowAabbs);
     }
 }
+
+event!(AabbInspectorEvent);
+event!(AabbsEvent);
 
 /// Inserted at spawn time to defer `Aabb`, `Collider`, and `RigidBody`
 /// creation until Bevy has computed `Aabb` on child mesh entities via

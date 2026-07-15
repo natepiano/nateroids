@@ -20,8 +20,6 @@ use crate::switches::Switch;
 use crate::switches::Switches;
 use crate::switches::ToggleState;
 
-event!(PhysicsAabbEvent);
-
 pub(crate) struct PhysicsPlugin;
 
 impl Plugin for PhysicsPlugin {
@@ -44,6 +42,8 @@ impl Plugin for PhysicsPlugin {
         );
     }
 }
+
+event!(PhysicsAabbEvent);
 
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 enum StressLevel {

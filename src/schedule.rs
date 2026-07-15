@@ -2,14 +2,6 @@ use bevy::prelude::*;
 
 use crate::state::PauseState;
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
-pub(crate) enum InGameSet {
-    UserInput,
-    EntityUpdates,
-    CollisionDetection,
-    DespawnEntities,
-}
-
 pub(crate) struct SchedulePlugin;
 
 impl Plugin for SchedulePlugin {
@@ -33,4 +25,12 @@ impl Plugin for SchedulePlugin {
             IN_GAME_SETS.chain().run_if(in_state(PauseState::Playing)),
         );
     }
+}
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
+pub(crate) enum InGameSet {
+    UserInput,
+    EntityUpdates,
+    CollisionDetection,
+    DespawnEntities,
 }

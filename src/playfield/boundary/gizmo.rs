@@ -121,16 +121,14 @@ pub(super) fn start_boundary_fade(
     mut commands: Commands,
     camera_query: Query<&CameraMoveList>,
 ) {
-    // Get remaining time from camera animation
     let remaining_time_ms = camera_query
         .iter()
         .next()
         .map_or(0.0, CameraMoveList::remaining_time_ms);
 
-    // Convert milliseconds to seconds for Timer
+    // `Timer::from_seconds` requires `CameraMoveList::remaining_time_ms` in seconds.
     let duration_secs = remaining_time_ms / MILLISECONDS_PER_SECOND;
 
-    // Spawn entity with fade timer
     commands.spawn(BoundaryFadeIn(Timer::from_seconds(
         duration_secs,
         TimerMode::Once,
@@ -147,18 +145,14 @@ pub(super) fn fade_boundary_in(
     for (entity, mut fade) in &mut fade_query {
         fade.0.tick(time.delta());
 
-        // Calculate interpolation factor (0.0 to 1.0)
         let t = fade.0.fraction();
 
-        // Lerp alpha from 0.0 to target values
         let grid_alpha = BOUNDARY_GRID_ALPHA * t;
         let outer_alpha = BOUNDARY_OUTER_ALPHA * t;
 
-        // Update boundary colors
         boundary.grid_color = BOUNDARY_COLOR.with_alpha(grid_alpha);
         boundary.outer_color = BOUNDARY_COLOR.with_alpha(outer_alpha);
 
-        // Log progress occasionally
         if fade.0.elapsed_secs() % FADE_LOG_INTERVAL_SECS < FADE_LOG_FRAME_EPSILON {
             debug!(
                 "Boundary fade progress: {:.1}% (grid alpha={grid_alpha:.3}, outer alpha={outer_alpha:.3})",
@@ -166,7 +160,6 @@ pub(super) fn fade_boundary_in(
             );
         }
 
-        // Remove component when fade is complete
         if fade.0.is_finished() {
             debug!("Boundary fade complete!");
             commands.entity(entity).despawn();
@@ -196,7 +189,8 @@ pub(super) fn detect_cell_count_change(
     match *previous_cells {
         Some(previous) if previous == current => {},
         _ => {
-            // Skip the very first change (resource initialization)
+            // `previous_cells == None` records the initial `Boundary::cell_count`
+            // without emitting `GridFlash`.
             if previous_cells.is_some() {
                 commands.trigger(GridFlash);
             }

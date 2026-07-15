@@ -22,6 +22,30 @@ use crate::playfield::BoundaryVolume;
 use crate::switches;
 use crate::switches::Switch;
 
+pub(super) struct SelectionPlugin;
+
+impl Plugin for SelectionPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<SelectionOutlineSettings>()
+            .add_plugins(
+                ResourceInspectorPlugin::<SelectionOutlineSettings>::default()
+                    .run_if(switches::is_switch_on(Switch::InspectOutline)),
+            )
+            .add_observer(on_nateroid_added)
+            .add_observer(on_spaceship_added)
+            .add_observer(on_selected_added)
+            .add_observer(on_selected_removed)
+            .add_systems(Update, clear_selection_on_background_click)
+            .add_systems(Update, sync_outline_settings);
+        bind_action_switch!(
+            app,
+            InspectOutlineSwitch,
+            OutlineInspectorEvent,
+            Switch::InspectOutline
+        );
+    }
+}
+
 event!(OutlineInspectorEvent);
 
 /// Marker component added to the selected actor entity
@@ -54,30 +78,6 @@ impl Default for SelectionOutlineSettings {
             intensity: SELECTION_OUTLINE_INTENSITY,
             color:     SELECTION_OUTLINE_COLOR,
         }
-    }
-}
-
-pub(super) struct SelectionPlugin;
-
-impl Plugin for SelectionPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<SelectionOutlineSettings>()
-            .add_plugins(
-                ResourceInspectorPlugin::<SelectionOutlineSettings>::default()
-                    .run_if(switches::is_switch_on(Switch::InspectOutline)),
-            )
-            .add_observer(on_nateroid_added)
-            .add_observer(on_spaceship_added)
-            .add_observer(on_selected_added)
-            .add_observer(on_selected_removed)
-            .add_systems(Update, clear_selection_on_background_click)
-            .add_systems(Update, sync_outline_settings);
-        bind_action_switch!(
-            app,
-            InspectOutlineSwitch,
-            OutlineInspectorEvent,
-            Switch::InspectOutline
-        );
     }
 }
 

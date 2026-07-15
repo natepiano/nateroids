@@ -96,26 +96,26 @@ fn create_nateroid_material(
         asset_server.load(NATEROID_ICING_METALLIC_ROUGHNESS_ASSET_PATH);
     let icing_ao: Handle<Image> = asset_server.load(NATEROID_ICING_AO_ASSET_PATH);
 
-    // Create donut PBR material
     let donut_material = materials.add(StandardMaterial {
         base_color_texture: Some(donut_albedo),
         normal_map_texture: Some(donut_normal),
         metallic_roughness_texture: Some(donut_metallic_roughness),
         occlusion_texture: Some(donut_ao),
-        // Set scalars to 1.0 so texture values are used directly
+        // `StandardMaterial::metallic` and `StandardMaterial::perceptual_roughness`
+        // use their texture channels without scalar attenuation.
         metallic: NATEROID_MATERIAL_TEXTURE_SCALAR,
         perceptual_roughness: NATEROID_MATERIAL_TEXTURE_SCALAR,
         cull_mode: None,
         ..default()
     });
 
-    // Create icing PBR material
     let icing_material = materials.add(StandardMaterial {
         base_color_texture: Some(icing_albedo),
         normal_map_texture: Some(icing_normal),
         metallic_roughness_texture: Some(icing_metallic_roughness),
         occlusion_texture: Some(icing_ao),
-        // Set scalars to 1.0 so texture values are used directly
+        // `StandardMaterial::metallic` and `StandardMaterial::perceptual_roughness`
+        // use their texture channels without scalar attenuation.
         metallic: NATEROID_MATERIAL_TEXTURE_SCALAR,
         perceptual_roughness: NATEROID_MATERIAL_TEXTURE_SCALAR,
         reflectance: NATEROID_MATERIAL_REFLECTANCE,
@@ -132,7 +132,6 @@ fn check_asset_loading(
     asset_server: Res<AssetServer>,
     scene_assets: Res<SceneAssets>,
 ) {
-    // Check scene assets
     let scenes_loaded = [
         scene_assets.missile.id(),
         scene_assets.nateroid.id(),
@@ -141,7 +140,6 @@ fn check_asset_loading(
     .iter()
     .all(|&id| matches!(asset_server.get_load_state(id), Some(LoadState::Loaded)));
 
-    // Check environment map images
     let environment_maps_loaded = [
         scene_assets.environment_diffuse_map.id(),
         scene_assets.environment_specular_map.id(),
@@ -149,11 +147,11 @@ fn check_asset_loading(
     .iter()
     .all(|&id| matches!(asset_server.get_load_state(id), Some(LoadState::Loaded)));
 
-    // Check that both nateroid materials have been created
     let materials_ready = scene_assets.nateroid_donut_material.is_some()
         && scene_assets.nateroid_icing_material.is_some();
 
-    // Transition to the Loaded state if all assets are loaded (including environment maps)
+    // `AssetsState::Loaded` begins after every scene, environment map, and
+    // nateroid material is ready.
     if scenes_loaded && environment_maps_loaded && materials_ready {
         debug!("All assets loaded (including environment maps)!");
         next_state.set(AssetsState::Loaded);

@@ -30,8 +30,6 @@ use crate::orientation::CameraOrientation;
 use crate::switches;
 use crate::switches::Switch;
 
-event!(LightsInspectorEvent);
-
 pub(super) struct DirectionalLightsPlugin;
 
 impl Plugin for DirectionalLightsPlugin {
@@ -51,6 +49,8 @@ impl Plugin for DirectionalLightsPlugin {
         );
     }
 }
+
+event!(LightsInspectorEvent);
 
 /// Whether a directional light should be active.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Reflect)]

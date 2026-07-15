@@ -60,12 +60,10 @@ fn count_faces_with_valid_arcs(
     multi_face_geometry: &MultiFaceGeometry,
     transform: &Transform,
 ) -> usize {
-    // Calculate boundary extents for constraint checking
     let half_size = transform.scale / 2.0;
     let min = transform.translation - half_size;
     let max = transform.translation + half_size;
 
-    // Collect all faces from the geometry (primary from portal.boundary_face + overextended)
     let all_faces_in_corner = match multi_face_geometry {
         MultiFaceGeometry::Edge { overextended } => vec![portal.boundary_face, *overextended],
         MultiFaceGeometry::Corner { overextended } => {
@@ -77,7 +75,6 @@ fn count_faces_with_valid_arcs(
 
     let mut face_count = 0;
 
-    // Calculate constrained intersections for each face
     for &face in &all_faces_in_corner {
         let face_points = face.get_face_points(&min, &max);
         let intersections = intersection::flatten_intersections(
@@ -101,11 +98,10 @@ fn get_overextended_faces_for(portal: &Portal, transform: &Transform) -> Vec<Bou
     let max = transform.translation + half_size;
     let radius = portal.radius;
 
-    // Portals are snapped 0.01 inside boundary - without this margin, they'd be incorrectly
-    // detected as overextended, triggering broken corner wrapping math
+    // `BOUNDARY_OVEREXTENSION_EPSILON` prevents snapped portal centers from
+    // producing false overextension and invalid corner arcs.
     let epsilon = BOUNDARY_OVEREXTENSION_EPSILON;
 
-    // Check all faces - only truly overextended if beyond boundary + epsilon
     if portal.position.x - radius < min.x - epsilon {
         overextended_faces.push(BoundaryFace::Left);
     }

@@ -184,7 +184,6 @@ pub(super) fn draw_death_effects(
     };
 
     for (entity, mut death_effect, transform) in &mut death_effect_query {
-        // Only advance effect timer when not paused
         if !is_paused {
             death_effect.elapsed += time.delta_secs();
 
@@ -194,7 +193,8 @@ pub(super) fn draw_death_effects(
             }
         }
 
-        // Use the deaderoid's rotation so the ring follows its spin
+        // `Transform::rotation` keeps the death ring aligned with the spinning
+        // `Deaderoid` mesh.
         let isometry = Isometry3d::new(transform.translation, transform.rotation);
         let ring_effect_config = death_effect.death_style.config();
 

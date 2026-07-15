@@ -44,8 +44,6 @@ use crate::state::GameState;
 use crate::switches;
 use crate::switches::Switch;
 
-event!(InspectStarEvent);
-
 pub(super) struct StarsPlugin;
 
 impl Plugin for StarsPlugin {
@@ -74,6 +72,8 @@ impl Plugin for StarsPlugin {
         );
     }
 }
+
+event!(InspectStarEvent);
 
 #[derive(Debug, Clone, Reflect, InspectorOptions)]
 #[reflect(InspectorOptions)]
@@ -251,16 +251,15 @@ fn get_star_position(
     outer_sphere_radius: f32,
     rng: &mut ThreadRng,
 ) -> Position {
-    // Generate uniform random points on spherical shell using spherical coordinates
-    let azimuth_norm: f32 = rng.random_range(0.0..1.0); // normalized azimuthal angle
-    let polar_norm: f32 = rng.random_range(0.0..1.0); // normalized polar angle
+    // `azimuth_norm` and `polar_norm` sample a uniform point on the spherical shell.
+    let azimuth_norm: f32 = rng.random_range(0.0..1.0);
+    let polar_norm: f32 = rng.random_range(0.0..1.0);
 
-    let theta = azimuth_norm * PI * 2.0; // azimuthal: 0 to 2π
-    // FMA optimization (faster + more precise): 2.0 * polar_norm - 1.0
-    let phi = 2.0f32.mul_add(polar_norm, -1.0).acos(); // polar angle
+    let theta = azimuth_norm * PI * 2.0;
+    // `f32::mul_add` maps `polar_norm` from `[0, 1]` to `[-1, 1]` before `acos`.
+    let phi = 2.0f32.mul_add(polar_norm, -1.0).acos();
     let radius = rng.random_range(inner_sphere_radius..outer_sphere_radius);
 
-    // Convert spherical to Cartesian coordinates
     let x = radius * theta.cos() * phi.sin();
     let y = radius * theta.sin() * phi.sin();
     let z = radius * phi.cos();
@@ -279,13 +278,11 @@ fn get_star_color(star_settings: &StarSettings, rng: &mut impl Rng) -> Vec4 {
         color_start
     };
 
-    // Generate initial color components
     let mut r = rng.random_range(start..end);
     let mut g = rng.random_range(start..end);
     let mut b = rng.random_range(start..end);
 
-    // Ensure minimum brightness
-    // FMA optimization (faster + more precise): start + (end - start) * fraction
+    // `min_brightness` scales RGB together so the sampled color ratios are retained.
     let min_brightness = (end - start).mul_add(STAR_MINIMUM_BRIGHTNESS_FRACTION, start);
     let current_brightness = r.max(g).max(b);
 
@@ -296,7 +293,6 @@ fn get_star_color(star_settings: &StarSettings, rng: &mut impl Rng) -> Vec4 {
         b *= scale;
     }
 
-    // Alpha can remain as is
     let a = rng.random_range(start..end);
 
     Vec4::new(r, g, b, a)
@@ -312,13 +308,13 @@ fn rotate_stars(
         return;
     }
 
-    // Calculate rotation speed (radians per second)
     let rotation_speed = (2.0 * PI) / (star_settings.rotation_cycle_minutes * SECONDS_PER_MINUTE);
 
-    // Update current angle (negative for clockwise rotation when viewed from above)
+    // Decreasing `StarRotationState::current_angle` rotates clockwise when viewed
+    // from above.
     rotation_state.current_angle -= rotation_speed * time.delta_secs();
 
-    // Apply rotation to each star around the configured axis
+    // Each `Star::position` rotates around `StarSettings::rotation_axis`.
     let rotation = Quat::from_axis_angle(star_settings.rotation_axis, rotation_state.current_angle);
 
     for (star, mut transform) in &mut stars {

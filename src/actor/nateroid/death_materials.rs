@@ -96,17 +96,14 @@ pub(super) fn apply_nateroid_materials_to_children(
     let mut donut_count = 0;
     let mut icing_count = 0;
 
-    // Iterate over all descendants to find mesh entities
     for descendant in children_query.iter_descendants(nateroid_entity) {
         if let Ok((mesh_entity, name)) = mesh_query.get(descendant) {
-            // Debug: log the actual mesh name
             if let Some(name) = name {
                 debug!("Found mesh with name: '{}'", name.as_str());
             } else {
                 info!("Found mesh with no Name component");
             }
 
-            // Match mesh name to appropriate material
             let material = if let Some(name) = name {
                 match NateroidMesh::classify(name.as_str()) {
                     Some(NateroidMesh::Donut) => {
@@ -170,7 +167,6 @@ pub(super) fn debug_mesh_components(
                 global_transform,
             )) = mesh_query.get(descendant)
             {
-                // Check if the mesh asset actually has data
                 let mesh_data = meshes.get(&mesh3d.0);
                 let vertex_count = mesh_data.map_or(0, Mesh::count_vertices);
 
@@ -217,13 +213,14 @@ pub(super) fn precompute_death_materials(
 
     let initial_alpha = nateroid_settings.initial_alpha;
     let target_alpha = nateroid_settings.target_alpha;
-    // Safe: alpha values are 0.0-1.0, result is small positive integer (~30-40)
+    // `NateroidSettings::initial_alpha`, `NateroidSettings::target_alpha`, and
+    // `NATEROID_DEATH_ALPHA_STEP` bound `level_count` to roughly 30–40 entries.
     let level_count =
         ((initial_alpha - target_alpha) * (1.0 / NATEROID_DEATH_ALPHA_STEP)).to_usize() + 1;
 
     let mut levels = Vec::with_capacity(level_count);
     for level in 0..level_count {
-        // FMA optimization (faster + more precise): initial_alpha - (level as f32 * step)
+        // `f32::mul_add` computes `initial_alpha - level * NATEROID_DEATH_ALPHA_STEP`.
         let alpha = level
             .to_f32()
             .mul_add(-NATEROID_DEATH_ALPHA_STEP, initial_alpha);

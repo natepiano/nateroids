@@ -15,8 +15,6 @@ use crate::input::InspectPortalSwitch;
 use crate::switches;
 use crate::switches::Switch;
 
-event!(PortalInspectorEvent);
-
 pub(super) struct PortalPlugin;
 
 impl Plugin for PortalPlugin {
@@ -36,3 +34,5 @@ impl Plugin for PortalPlugin {
         );
     }
 }
+
+event!(PortalInspectorEvent);

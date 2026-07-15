@@ -30,7 +30,8 @@ pub(super) fn handle_collision_events(
     collision_damage_query: Query<&CollisionDamage>,
     spaceship_query: Query<(Entity, &Teleporter), With<Spaceship>>,
 ) {
-    // Check if spaceship just teleported
+    // `Teleporter::teleport_status` identifies the `Spaceship` entity protected
+    // by post-teleport collision handling.
     let spaceship_just_teleported =
         spaceship_query
             .single()
@@ -40,17 +41,16 @@ pub(super) fn handle_collision_events(
             });
 
     for event in collision_events.read() {
-        // Check if either entity is the spaceship that just teleported
         match InvincibleCollisionSide::from_collision(event, spaceship_just_teleported) {
             InvincibleCollisionSide::Collider1 => {
-                // `Spaceship` just teleported - instantly kill entity2
+                // A protected `CollisionStart::collider1` transfers instant death
+                // to `CollisionStart::collider2`.
                 if let Ok(mut health) = health_query.get_mut(event.collider2) {
                     info!(
                         "💀 Spaceship invincibility: killing nateroid that collided with just-teleported spaceship"
                     );
                     health.0 = INSTANT_DEATH_HEALTH;
                 }
-                // `Spaceship` still takes normal damage
                 apply_collision_damage(
                     &mut health_query,
                     &collision_damage_query,
@@ -59,14 +59,14 @@ pub(super) fn handle_collision_events(
                 );
             },
             InvincibleCollisionSide::Collider2 => {
-                // `Spaceship` just teleported - instantly kill entity1
+                // A protected `CollisionStart::collider2` transfers instant death
+                // to `CollisionStart::collider1`.
                 if let Ok(mut health) = health_query.get_mut(event.collider1) {
                     info!(
                         "💀 Spaceship invincibility: killing nateroid that collided with just-teleported spaceship"
                     );
                     health.0 = INSTANT_DEATH_HEALTH;
                 }
-                // `Spaceship` still takes normal damage
                 apply_collision_damage(
                     &mut health_query,
                     &collision_damage_query,
@@ -75,7 +75,6 @@ pub(super) fn handle_collision_events(
                 );
             },
             InvincibleCollisionSide::Neither => {
-                // Normal collision handling
                 apply_collision_damage(
                     &mut health_query,
                     &collision_damage_query,

@@ -5,6 +5,12 @@ pub(crate) use bevy_enhanced_input::action::events::Start as InputStart;
 
 use crate::constants::INSPECTOR_SWITCHES;
 
+pub(crate) struct SwitchesPlugin;
+
+impl Plugin for SwitchesPlugin {
+    fn build(&self, app: &mut App) { app.init_resource::<Switches>(); }
+}
+
 #[derive(Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[reflect(Debug, PartialEq, Hash)]
 pub(crate) enum Switch {
@@ -122,12 +128,6 @@ macro_rules! bind_action_switch {
             },
         );
     };
-}
-
-pub(crate) struct SwitchesPlugin;
-
-impl Plugin for SwitchesPlugin {
-    fn build(&self, app: &mut App) { app.init_resource::<Switches>(); }
 }
 
 pub(crate) fn is_switch_on(switch: Switch) -> impl Fn(Res<Switches>) -> bool + Clone {

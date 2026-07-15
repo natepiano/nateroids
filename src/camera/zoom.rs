@@ -34,6 +34,39 @@ use crate::playfield::BoundaryVolume;
 use crate::switches;
 use crate::switches::Switch;
 
+pub(super) struct ZoomPlugin;
+
+impl Plugin for ZoomPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<ZoomTarget>()
+            .init_resource::<ZoomSettings>()
+            .add_plugins(
+                ResourceInspectorPlugin::<ZoomSettings>::default()
+                    .run_if(switches::is_switch_on(Switch::InspectZoom)),
+            )
+            .add_systems(Startup, set_fit_target_debug);
+        bind_action_system!(app, ZoomToFitShortcut, ZoomToFitEvent, zoom_to_fit_command);
+        bind_action_system!(
+            app,
+            CameraHomeShortcut,
+            CameraHomeEvent,
+            camera_home_command
+        );
+        bind_action_system!(
+            app,
+            BoundaryBoxSwitch,
+            ToggleFitTargetDebugEvent,
+            toggle_fit_target_debug_command
+        );
+        bind_action_switch!(
+            app,
+            InspectZoomSwitch,
+            InspectZoomEvent,
+            Switch::InspectZoom
+        );
+    }
+}
+
 /// Resource tracking the currently selected entity for zoom-to-fit.
 /// When `None`, Z zooms to boundary.
 #[derive(Resource, Default)]
@@ -82,39 +115,6 @@ impl Default for ZoomSettings {
             margin_tolerance: ZOOM_MARGIN_TOLERANCE,
             convergence_rate: ZOOM_CONVERGENCE_RATE,
         }
-    }
-}
-
-pub(super) struct ZoomPlugin;
-
-impl Plugin for ZoomPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<ZoomTarget>()
-            .init_resource::<ZoomSettings>()
-            .add_plugins(
-                ResourceInspectorPlugin::<ZoomSettings>::default()
-                    .run_if(switches::is_switch_on(Switch::InspectZoom)),
-            )
-            .add_systems(Startup, set_fit_target_debug);
-        bind_action_system!(app, ZoomToFitShortcut, ZoomToFitEvent, zoom_to_fit_command);
-        bind_action_system!(
-            app,
-            CameraHomeShortcut,
-            CameraHomeEvent,
-            camera_home_command
-        );
-        bind_action_system!(
-            app,
-            BoundaryBoxSwitch,
-            ToggleFitTargetDebugEvent,
-            toggle_fit_target_debug_command
-        );
-        bind_action_switch!(
-            app,
-            InspectZoomSwitch,
-            InspectZoomEvent,
-            Switch::InspectZoom
-        );
     }
 }
 

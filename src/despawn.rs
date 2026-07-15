@@ -109,10 +109,10 @@ fn calculate_death_velocity(
         ), // Front top-right
     ];
 
-    // Select target corner based on strategy
     let target_corner = match death_corner {
         DeathCorner::Nearest => {
-            // Find nearest corner
+            // `f32::total_cmp` orders squared corner distances without partial
+            // comparison failure.
             corners
                 .iter()
                 .min_by(|a, b| {
@@ -124,15 +124,12 @@ fn calculate_death_velocity(
                 .unwrap_or(corners[0])
         },
         DeathCorner::Random => {
-            // Randomly select one corner
             let mut rng = rng();
             corners[rng.random_range(0..corners.len())]
         },
         DeathCorner::Directional => {
-            // Find corner most aligned with current velocity direction
             let velocity_direction = current_velocity.normalize_or_zero();
 
-            // Calculate dot product for each corner (how aligned it is with velocity)
             let corner_scores: Vec<(Vec3, f32)> = corners
                 .iter()
                 .map(|&corner| {
@@ -142,21 +139,20 @@ fn calculate_death_velocity(
                 })
                 .collect();
 
-            // Find maximum dot product (most aligned)
             let max_dot = corner_scores
                 .iter()
                 .map(|(_, dot)| *dot)
                 .max_by(f32::total_cmp)
                 .unwrap_or(0.0);
 
-            // Collect all corners within epsilon of max (handles ties)
+            // `DEATH_VELOCITY_EPSILON` retains tied `corner_scores` for random
+            // selection instead of favoring array order.
             let best_corners: Vec<Vec3> = corner_scores
                 .iter()
                 .filter(|(_, dot)| (dot - max_dot).abs() < DEATH_VELOCITY_EPSILON)
                 .map(|(corner, _)| *corner)
                 .collect();
 
-            // If multiple corners equally aligned, randomly pick one
             if best_corners.len() > 1 {
                 let mut rng = rng();
                 best_corners[rng.random_range(0..best_corners.len())]
@@ -166,8 +162,6 @@ fn calculate_death_velocity(
         },
     };
 
-    // Calculate velocity to reach corner in exactly death_duration seconds
-    // velocity = (target_position - current_position) / time
     Velocity((target_corner - position) / death_duration)
 }
 
@@ -207,7 +201,6 @@ fn despawn_dead_entities(
                     health.0
                 );
 
-                // Calculate velocity to reach target corner in death_duration
                 let death_velocity = calculate_death_velocity(
                     Position(transform.translation),
                     Velocity(linear_velocity.0),
@@ -216,7 +209,8 @@ fn despawn_dead_entities(
                     nateroid_settings.death_corner,
                 );
 
-                // `Nateroid` - start death animation
+                // `Deaderoid` and `LinearVelocity` begin the `Nateroid` death
+                // animation while `CollisionLayers::NONE` disables collisions.
                 commands
                     .entity(entity)
                     .insert((
@@ -233,7 +227,8 @@ fn despawn_dead_entities(
                     ))
                     .remove::<LockedAxes>();
 
-                // Apply initial materials (index 0, alpha 0.25) immediately
+                // `NateroidDeathMaterials::material_for(0, ...)` applies the
+                // initial death alpha before the first animation tick.
                 if let Some(death_materials) = &death_materials
                     && death_materials.level_count() > 0
                 {
@@ -259,7 +254,6 @@ fn despawn_dead_entities(
                     info!("spaceship destroyed: entity {:?}", entity);
                     next_state.set(GameState::GameOver);
                 }
-                // Other entities - despawn immediately
                 despawn(&mut commands, entity);
             }
         }
@@ -291,7 +285,6 @@ fn animate_dying_nateroids(
     nateroid_settings: Res<NateroidSettings>,
     mut commands: Commands,
 ) {
-    // Early return if materials haven't been precomputed yet
     let Some(death_materials) = death_materials else {
         return;
     };
@@ -299,33 +292,27 @@ fn animate_dying_nateroids(
     for (mut deaderoid, mut transform, entity, name) in &mut deaderoid_query {
         let entity_name = name.map_or(UNKNOWN_ENTITY_NAME, Name::as_str);
 
-        // Update elapsed time
         deaderoid.elapsed_time += time.delta_secs();
 
-        // Calculate progress (0.0 to 1.0)
         let progress = (deaderoid.elapsed_time / deaderoid.shrink_duration).min(1.0);
 
-        // Linear interpolation from 1.0 (full size) to target_shrink
-        // FMA optimization (faster + more precise): 1.0 - (1.0 - deaderoid.target_shrink) *
-        // progress
+        // `f32::mul_add` interpolates `Deaderoid::current_shrink` from full size
+        // to `Deaderoid::target_shrink`.
         deaderoid.current_shrink = (1.0 - deaderoid.target_shrink).mul_add(-progress, 1.0);
 
-        // Apply shrinking to transform
         transform.scale = deaderoid.initial_scale * deaderoid.current_shrink;
 
-        // Apply ease-out curve (inverse cubic) for material swapping - fades rapidly at first,
-        // then slows down (exponential decay)
+        // `eased_progress` advances `NateroidDeathMaterials` indices faster at
+        // the start of `Deaderoid::shrink_duration`.
         let eased_progress = 1.0 - (1.0 - progress).powi(3);
-        // Safe: eased_progress is 0.0-1.0, bounded by array size, result is valid index
+        // `eased_progress` and `NateroidDeathMaterials::level_count` bound
+        // `new_index` to an existing material level.
         let new_index = (eased_progress * (death_materials.level_count() - 1).to_f32()).to_usize();
 
-        // Only swap materials when index changes
         if new_index != deaderoid.current_material_index {
             let old_index = deaderoid.current_material_index;
             deaderoid.current_material_index = new_index;
 
-            // Calculate the alpha value for this level
-            // FMA optimization (faster + more precise): initial_alpha - (new_index as f32 * step)
             let alpha = new_index
                 .to_f32()
                 .mul_add(-NATEROID_DEATH_ALPHA_STEP, nateroid_settings.initial_alpha);

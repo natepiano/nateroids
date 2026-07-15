@@ -43,8 +43,6 @@ use crate::input::InspectCameraSwitch;
 use crate::switches;
 use crate::switches::Switch;
 
-event!(InspectCameraEvent);
-
 pub(super) struct GameCameraPlugin;
 
 impl Plugin for GameCameraPlugin {
@@ -67,6 +65,8 @@ impl Plugin for GameCameraPlugin {
         );
     }
 }
+
+event!(InspectCameraEvent);
 
 #[derive(Reflect, InspectorOptions, Debug, PartialEq, Clone, Copy)]
 #[reflect(InspectorOptions)]

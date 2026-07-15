@@ -25,24 +25,20 @@ pub(super) fn rotate_portal_center_to_target_face(
     let current_normal = normal.as_vec3();
     let target_normal = target_face.get_normal();
 
-    // The rotation axis is the cross product of the current and target normals
     let rotation_axis = current_normal.cross(target_normal).normalize();
 
-    // Find the closest point on the rotation axis to the current position
     let rotation_point =
         find_closest_point_on_edge(position, current_normal, target_normal, transform);
 
-    // Create a rotation quaternion (90 degrees around the rotation axis)
     let rotation = Quat::from_axis_angle(rotation_axis, FRAC_PI_2);
 
-    // Apply the rotation to the position relative to the rotation point
     let relative_position = position - rotation_point;
     let rotated_position = rotation * relative_position;
 
     let mut result = rotation_point + rotated_position;
 
-    // Rotation math at corners can produce off-plane positions - force result onto target
-    // face's plane
+    // Corner rotation can move `result` off `target_face`; project it back onto
+    // that face's plane.
     let half_extents = transform.scale / 2.0;
     let center = transform.translation;
 

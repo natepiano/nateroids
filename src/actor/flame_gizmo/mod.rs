@@ -7,9 +7,6 @@ use bevy::prelude::*;
 use crate::state::GameState;
 use crate::state::PauseState;
 
-#[derive(Default, Reflect, GizmoConfigGroup)]
-pub(super) struct FlameGizmo {}
-
 pub(super) struct FlameGizmoPlugin;
 
 impl Plugin for FlameGizmoPlugin {
@@ -31,3 +28,6 @@ impl Plugin for FlameGizmoPlugin {
             );
     }
 }
+
+#[derive(Default, Reflect, GizmoConfigGroup)]
+pub(super) struct FlameGizmo {}

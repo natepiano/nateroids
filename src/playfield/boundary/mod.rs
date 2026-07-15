@@ -35,91 +35,6 @@ use crate::state::GameState;
 use crate::switches;
 use crate::switches::Switch;
 
-/// Inspector-controlled `Boundary` resource for grid and exterior dimensions.
-#[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
-#[reflect(Resource, InspectorOptions)]
-pub(crate) struct Boundary {
-    pub(crate) cell_count:          UVec3,
-    pub(crate) grid_color:          Color,
-    pub(crate) outer_color:         Color,
-    #[inspector(
-        min = BOUNDARY_GRID_LINE_WIDTH_MIN,
-        max = BOUNDARY_GRID_LINE_WIDTH_MAX,
-        display = NumberDisplay::Slider
-    )]
-    pub(crate) grid_line_width:     f32,
-    #[inspector(
-        min = BOUNDARY_EXTERIOR_LINE_WIDTH_MIN,
-        max = BOUNDARY_EXTERIOR_LINE_WIDTH_MAX,
-        display = NumberDisplay::Slider
-    )]
-    pub(crate) exterior_line_width: f32,
-    #[inspector(
-        min = BOUNDARY_EXTERIOR_SCALAR_MIN,
-        max = BOUNDARY_EXTERIOR_SCALAR_MAX,
-        display = NumberDisplay::Slider
-    )]
-    pub(crate) exterior_scalar:     f32,
-}
-
-impl Boundary {
-    pub(crate) fn longest_diagonal(&self) -> f32 {
-        let boundary_scale = self.scale();
-        let x = boundary_scale.x;
-        let y = boundary_scale.y;
-        let z = boundary_scale.z;
-        // FMA optimization (faster + more precise): (x² + y² + z²).sqrt()
-        z.mul_add(z, y.mul_add(y, x.mul_add(x, 0.0))).sqrt()
-    }
-
-    pub(crate) fn max_missile_distance(&self) -> f32 {
-        let boundary_scale = self.scale();
-        boundary_scale.x.max(boundary_scale.y).max(boundary_scale.z)
-    }
-
-    pub(crate) fn scale(&self) -> Vec3 { self.exterior_scalar * self.cell_count.as_vec3() }
-
-    pub(super) fn draw_portal(
-        gizmos: &mut Gizmos<PortalGizmo>,
-        portal: &Portal,
-        color: Color,
-        resolution: u32,
-        camera_orientation: &CameraOrientation,
-        portal_actor_kind: PortalActorKind,
-        transform: &Transform,
-    ) {
-        draw_portal(
-            gizmos,
-            portal,
-            color,
-            resolution,
-            camera_orientation,
-            portal_actor_kind,
-            transform,
-        );
-    }
-
-    pub(super) fn calculate_portal_face_count(portal: &Portal, transform: &Transform) -> usize {
-        calculate_portal_face_count(portal, transform)
-    }
-}
-
-impl Default for Boundary {
-    fn default() -> Self {
-        Self {
-            cell_count:          BOUNDARY_CELL_COUNT,
-            // Start with alpha 0 - will be faded in during splash screen
-            grid_color:          BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA),
-            outer_color:         BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA),
-            grid_line_width:     BOUNDARY_GRID_LINE_WIDTH,
-            exterior_line_width: BOUNDARY_OUTER_LINE_WIDTH,
-            exterior_scalar:     BOUNDARY_SCALAR,
-        }
-    }
-}
-
-event!(BoundaryInspectorEvent);
-
 pub(super) struct BoundaryPlugin;
 
 impl Plugin for BoundaryPlugin {
@@ -160,3 +75,89 @@ impl Plugin for BoundaryPlugin {
         );
     }
 }
+
+/// Inspector-controlled `Boundary` resource for grid and exterior dimensions.
+#[derive(Resource, Reflect, InspectorOptions, Clone, Debug)]
+#[reflect(Resource, InspectorOptions)]
+pub(crate) struct Boundary {
+    pub(crate) cell_count:          UVec3,
+    pub(crate) grid_color:          Color,
+    pub(crate) outer_color:         Color,
+    #[inspector(
+        min = BOUNDARY_GRID_LINE_WIDTH_MIN,
+        max = BOUNDARY_GRID_LINE_WIDTH_MAX,
+        display = NumberDisplay::Slider
+    )]
+    pub(crate) grid_line_width:     f32,
+    #[inspector(
+        min = BOUNDARY_EXTERIOR_LINE_WIDTH_MIN,
+        max = BOUNDARY_EXTERIOR_LINE_WIDTH_MAX,
+        display = NumberDisplay::Slider
+    )]
+    pub(crate) exterior_line_width: f32,
+    #[inspector(
+        min = BOUNDARY_EXTERIOR_SCALAR_MIN,
+        max = BOUNDARY_EXTERIOR_SCALAR_MAX,
+        display = NumberDisplay::Slider
+    )]
+    pub(crate) exterior_scalar:     f32,
+}
+
+impl Boundary {
+    pub(crate) fn longest_diagonal(&self) -> f32 {
+        let boundary_scale = self.scale();
+        let x = boundary_scale.x;
+        let y = boundary_scale.y;
+        let z = boundary_scale.z;
+        // `f32::mul_add` accumulates squared `Boundary::scale` components before
+        // the square root.
+        z.mul_add(z, y.mul_add(y, x.mul_add(x, 0.0))).sqrt()
+    }
+
+    pub(crate) fn max_missile_distance(&self) -> f32 {
+        let boundary_scale = self.scale();
+        boundary_scale.x.max(boundary_scale.y).max(boundary_scale.z)
+    }
+
+    pub(crate) fn scale(&self) -> Vec3 { self.exterior_scalar * self.cell_count.as_vec3() }
+
+    pub(super) fn draw_portal(
+        gizmos: &mut Gizmos<PortalGizmo>,
+        portal: &Portal,
+        color: Color,
+        resolution: u32,
+        camera_orientation: &CameraOrientation,
+        portal_actor_kind: PortalActorKind,
+        transform: &Transform,
+    ) {
+        draw_portal(
+            gizmos,
+            portal,
+            color,
+            resolution,
+            camera_orientation,
+            portal_actor_kind,
+            transform,
+        );
+    }
+
+    pub(super) fn calculate_portal_face_count(portal: &Portal, transform: &Transform) -> usize {
+        calculate_portal_face_count(portal, transform)
+    }
+}
+
+impl Default for Boundary {
+    fn default() -> Self {
+        Self {
+            cell_count:          BOUNDARY_CELL_COUNT,
+            // `BOUNDARY_START_ALPHA` hides both gizmos until `BoundaryFadeIn` runs.
+            grid_color:          BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA),
+            outer_color:         BOUNDARY_COLOR.with_alpha(BOUNDARY_START_ALPHA),
+            grid_line_width:     BOUNDARY_GRID_LINE_WIDTH,
+            exterior_line_width: BOUNDARY_OUTER_LINE_WIDTH,
+            exterior_scalar:     BOUNDARY_SCALAR,
+        }
+    }
+}
+
+event!(BoundaryInspectorEvent);

@@ -68,7 +68,8 @@ fn on_teleported(
     nateroid_settings: Res<NateroidSettings>,
     mut collision_state: ResMut<TeleportCollisionState>,
 ) {
-    // First, do all spatial queries (collect results before mutating)
+    // Both `ParamSet::p0` spatial queries finish before `ParamSet::p1` borrows
+    // `Health` mutably.
     let asteroid_filter = SpatialQueryFilter::from_mask(LayerMask::from([GameLayer::Asteroid]));
     let spaceship_filter = SpatialQueryFilter::from_mask(LayerMask::from([GameLayer::Spaceship]));
 
@@ -86,7 +87,6 @@ fn on_teleported(
         &spaceship_filter,
     );
 
-    // Then, mutate nateroid health/collision layers
     let mut nateroid_query = param_set.p1();
 
     // `NateroidSettings::density_culling_threshold` maps low spawn success to
@@ -102,7 +102,8 @@ fn on_teleported(
     // while `FieldDensity::Open` preserves overlapping nateroids.
     let is_teleporting_nateroid = nateroid_query.get(event.entity).is_ok();
 
-    // Debug logging - only log when crowded state changes
+    // `TeleportCollisionState::last_field_density` suppresses repeated overlap
+    // diagnostics while `FieldDensity` is unchanged.
     if (!overlapping_asteroids.is_empty() || !overlapping_spaceship.is_empty())
         && collision_state.last_field_density != Some(field_density)
     {
@@ -133,7 +134,8 @@ fn on_teleported(
         }
     }
 
-    // If a nateroid teleported onto the spaceship, always kill the nateroid
+    // A teleporting `Nateroid` that overlaps `Spaceship` loses collision layers
+    // and receives `INSTANT_DEATH_HEALTH`.
     if is_teleporting_nateroid
         && !overlapping_spaceship.is_empty()
         && let Ok(mut health) = nateroid_query.get_mut(event.entity)
@@ -176,13 +178,13 @@ fn teleport_at_boundary(
             teleporter.teleport_status = TeleportStatus::Ready;
             teleporter.position = None;
         } else {
-            // If this is a dying nateroid, despawn it instead of teleporting
+            // `Deaderoid` entities despawn at the boundary instead of wrapping.
             if is_deaderoid.is_some() {
                 despawn::despawn(&mut commands, entity);
                 continue;
             }
 
-            // Only log spaceship teleports
+            // `Spaceship` boundary wraps emit source and destination diagnostics.
             if is_spaceship.is_some() {
                 let entity_name = name.map_or(SPACESHIP_ENTITY_NAME, Name::as_str);
                 debug!(
@@ -200,7 +202,8 @@ fn teleport_at_boundary(
             teleporter.teleport_status = TeleportStatus::JustTeleported;
             teleporter.position = Some(teleported_position);
 
-            // Trigger event to handle overlapping entities
+            // `Teleported` resolves overlaps after `Transform` and `Teleporter`
+            // contain the wrapped position.
             commands.trigger(Teleported {
                 entity,
                 position: *teleported_position,

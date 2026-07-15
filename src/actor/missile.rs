@@ -42,19 +42,6 @@ use crate::playfield::ActorPortals;
 use crate::playfield::Boundary;
 use crate::schedule::InGameSet;
 
-// TODO: Decide whether `Missile` should stay a unit `Component` or gain private
-// state before adding a constructor; current `Missile` instances come from
-// `spawn_missile`.
-#[derive(Component, Reflect, Copy, Clone, Debug)]
-#[reflect(Component)]
-#[require(
-    Teleporter,
-    ActorPortals,
-    CollisionEventsEnabled,
-    LockedAxes = LOCKED_AXES_2D
-)]
-pub(super) struct Missile;
-
 pub(super) struct MissilePlugin;
 
 impl Plugin for MissilePlugin {
@@ -71,6 +58,19 @@ impl Plugin for MissilePlugin {
             );
     }
 }
+
+// TODO: Decide whether `Missile` should stay a unit `Component` or gain private
+// state before adding a constructor; current `Missile` instances come from
+// `spawn_missile`.
+#[derive(Component, Reflect, Copy, Clone, Debug)]
+#[reflect(Component)]
+#[require(
+    Teleporter,
+    ActorPortals,
+    CollisionEventsEnabled,
+    LockedAxes = LOCKED_AXES_2D
+)]
+pub(super) struct Missile;
 
 #[derive(Resource, Reflect, InspectorOptions, Debug, Clone, Deref, DerefMut)]
 #[reflect(Resource)]
@@ -159,7 +159,6 @@ fn initialize_missile(
 
     let transform = initialize_transform(spaceship_transform, &missile_settings);
 
-    // Calculate velocity: forward direction * base_velocity + spaceship velocity
     let (linear_velocity, angular_velocity) = calculate_missile_velocity(
         spaceship_transform,
         spaceship_velocity,
@@ -184,12 +183,10 @@ fn initialize_transform(
     spaceship_transform: &Transform,
     missile_settings: &MissileSettings,
 ) -> Transform {
-    // Calculate transform and velocity from spaceship position
     let forward = spaceship_transform.forward();
     let spawn_position =
         spaceship_transform.translation + forward * missile_settings.forward_distance_scalar;
 
-    // Combine rotations: spaceship rotation * missile settings rotation
     let combined_rotation =
         spaceship_transform.rotation * missile_settings.actor_settings.transform.rotation;
 
@@ -258,7 +255,8 @@ fn missile_movement(
         let current_position = Position(transform.translation);
 
         if let Some(last_position) = missile_position.last_position {
-            // Calculate the distance traveled since the last update
+            // `TeleportStatus::JustTeleported` excludes boundary wrapping from
+            // `MissilePosition::traveled_distance`.
             let distance_traveled = if teleporter.teleport_status == TeleportStatus::JustTeleported
             {
                 0.0
@@ -266,13 +264,11 @@ fn missile_movement(
                 last_position.distance(current_position)
             };
 
-            // Update the total traveled distance
             missile_position.traveled_distance += distance_traveled;
             missile_position.remaining_distance =
                 missile_position.total_distance - missile_position.traveled_distance;
         }
 
-        // Always update the last position.
         missile_position.last_position = Some(current_position);
 
         if missile_position.traveled_distance >= missile_position.total_distance {
