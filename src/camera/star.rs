@@ -6,22 +6,21 @@ use super::game::CameraSettings;
 use super::rendering::CameraOrder;
 use super::required_components::RequiredCameraComponents;
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Default, Clone)]
 pub(super) struct StarCamera;
 
-pub(super) fn spawn_star_camera(mut commands: Commands, camera_settings: Res<CameraSettings>) {
-    commands.spawn((
-        RequiredCameraComponents,
-        Camera3d::default(),
+pub(super) fn scene(camera_settings: &CameraSettings) -> impl Scene {
+    bsn! {
+        RequiredCameraComponents
+        Camera3d
         Camera {
-            order: CameraOrder::Stars.order(),
+            order: {CameraOrder::Stars.order()},
             clear_color: ClearColorConfig::Custom(Color::BLACK),
-            ..default()
-        },
-        StarCamera,
-        get_bloom_settings(&camera_settings),
-        RenderLayer::Stars.layers(),
-    ));
+        }
+        StarCamera
+        template_value(get_bloom_settings(camera_settings))
+        template_value(RenderLayer::Stars.layers())
+    }
 }
 
 pub(super) fn update_bloom_settings(

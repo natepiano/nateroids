@@ -37,7 +37,6 @@ use super::constants::CAMERA_ZOOM_SMOOTHNESS;
 use super::lights::LightSettings;
 use super::rendering::CameraOrder;
 use super::required_components::RequiredCameraComponents;
-use super::star::StarCamera;
 use crate::asset_loader::SceneAssets;
 use crate::input::InspectCameraSwitch;
 use crate::switches;
@@ -169,45 +168,38 @@ impl Default for CameraSettings {
     }
 }
 
-pub(super) fn spawn_game_camera(
-    camera_settings: Res<CameraSettings>,
-    scene_assets: Res<SceneAssets>,
-    light_settings: Res<LightSettings>,
-    mut commands: Commands,
-    stars_camera_entity: Single<Entity, With<StarCamera>>,
-) {
-    commands
-        .spawn((
-            RequiredCameraComponents,
-            OutlineCamera,
-            OrbitCam {
-                focus: Vec3::ZERO,
-                target_radius: camera_settings.splash_start.radius,
-                zoom: AxisResponse::new(CAMERA_ZOOM_SENSITIVITY, CAMERA_ZOOM_SMOOTHNESS),
-                zoom_lower_limit: CAMERA_ZOOM_LOWER_LIMIT,
-                ..default()
-            },
-            // Middle-drag orbit, Shift+middle-drag pan, Blender-style trackpad.
-            OrbitCamInputMode::Preset(OrbitCamPreset::from(
-                OrbitCamBlenderLikePreset::default()
-                    .mouse_input_gain(OrbitCamInputGain::uniform(CAMERA_INPUT_SENSITIVITY)),
-            )),
-            Camera {
-                order: CameraOrder::Game.order(),
-                // can't obscure the star camera with this on
-                clear_color: ClearColorConfig::None,
-                ..default()
-            },
-            RenderLayer::Game.layers(),
-            Smaa::default(),
-            EnvironmentMapLight {
-                diffuse_map: scene_assets.environment_diffuse_map.clone(),
-                specular_map: scene_assets.environment_specular_map.clone(),
-                intensity: light_settings.environment_map_intensity,
-                ..default()
-            },
-        ))
-        .add_child(*stars_camera_entity);
+pub(super) fn scene(
+    camera_settings: &CameraSettings,
+    scene_assets: &SceneAssets,
+    light_settings: &LightSettings,
+) -> impl Scene {
+    bsn! {
+        template(|_| Ok(OutlineCamera))
+        RequiredCameraComponents
+        OrbitCam {
+            focus: Vec3::ZERO,
+            target_radius: {camera_settings.splash_start.radius},
+            zoom: {AxisResponse::new(CAMERA_ZOOM_SENSITIVITY, CAMERA_ZOOM_SMOOTHNESS)},
+            zoom_lower_limit: CAMERA_ZOOM_LOWER_LIMIT,
+        }
+        // Middle-drag orbit, Shift+middle-drag pan, Blender-style trackpad.
+        template_value(OrbitCamInputMode::Preset(OrbitCamPreset::from(
+            OrbitCamBlenderLikePreset::default()
+                .mouse_input_gain(OrbitCamInputGain::uniform(CAMERA_INPUT_SENSITIVITY)),
+        )))
+        Camera {
+            order: {CameraOrder::Game.order()},
+            // can't obscure the star camera with this on
+            clear_color: ClearColorConfig::None,
+        }
+        template_value(RenderLayer::Game.layers())
+        Smaa
+        EnvironmentMapLight {
+            diffuse_map: {scene_assets.environment_diffuse_map.clone()},
+            specular_map: {scene_assets.environment_specular_map.clone()},
+            intensity: {light_settings.environment_map_intensity},
+        }
+    }
 }
 
 fn update_environment_map_intensity(

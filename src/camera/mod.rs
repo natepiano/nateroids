@@ -20,13 +20,15 @@ use focus_gizmo::FocusGizmoPlugin;
 pub(crate) use game::CameraSettings;
 use game::GameCameraPlugin;
 use lights::DirectionalLightsPlugin;
+use lights::LightSettings;
 pub(crate) use rendering::RenderLayer;
 use selection::SelectionPlugin;
 use star_twinkling::StarTwinklingPlugin;
 use stars::StarsPlugin;
-use ui::spawn_ui_camera;
 pub(crate) use zoom::CameraHomeEvent;
 use zoom::ZoomPlugin;
+
+use crate::asset_loader::SceneAssets;
 
 pub(crate) struct CameraPlugin;
 
@@ -42,15 +44,22 @@ impl Plugin for CameraPlugin {
             .add_plugins(SelectionPlugin)
             .add_plugins(StarTwinklingPlugin)
             .add_plugins(StarsPlugin)
-            .add_systems(
-                Startup,
-                (
-                    spawn_ui_camera,
-                    star::spawn_star_camera,
-                    game::spawn_game_camera,
-                )
-                    .chain(),
-            )
+            .add_systems(Startup, spawn_camera_group)
             .add_systems(Update, star::update_bloom_settings);
     }
+}
+
+fn spawn_camera_group(
+    mut commands: Commands,
+    camera_settings: Res<CameraSettings>,
+    scene_assets: Res<SceneAssets>,
+    light_settings: Res<LightSettings>,
+) {
+    commands.spawn_scene_list(bsn_list![
+        (
+            game::scene(&camera_settings, &scene_assets, &light_settings)
+            Children [star::scene(&camera_settings)]
+        ),
+        ui::scene(),
+    ]);
 }
