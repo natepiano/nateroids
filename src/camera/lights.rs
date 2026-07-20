@@ -210,40 +210,36 @@ pub(super) struct RotationInfo {
 #[derive(Component)]
 struct LightDirection(LightPosition);
 
-fn spawn_directional_light(
-    commands: &mut Commands,
-    directional_light_settings: &DirectionalLightSettings,
+fn directional_light(
+    directional_light_settings: DirectionalLightSettings,
     light_position: LightPosition,
-    light_rotation: &RotationInfo,
-) {
-    commands
-        .spawn(DirectionalLight {
-            color: directional_light_settings.color,
-            illuminance: directional_light_settings.illuminance,
-            shadow_maps_enabled: matches!(
+    light_rotation: RotationInfo,
+) -> impl Scene {
+    bsn! {
+        template(move |_| Ok(LightDirection(light_position)))
+        DirectionalLight {
+            color: {directional_light_settings.color},
+            illuminance: {directional_light_settings.illuminance},
+            shadow_maps_enabled: {matches!(
                 directional_light_settings.shadow_switch,
                 ShadowSwitch::On
-            ),
+            )},
             shadow_depth_bias: SHADOW_DEPTH_BIAS,
             shadow_normal_bias: SHADOW_NORMAL_BIAS,
+        }
+        template_value(CascadeShadowConfigBuilder {
+            num_cascades: CASCADE_SHADOW_NUM_CASCADES,
+            maximum_distance: CASCADE_SHADOW_MAX_DISTANCE,
+            first_cascade_far_bound: CASCADE_SHADOW_FIRST_FAR_BOUND,
+            overlap_proportion: CASCADE_SHADOW_OVERLAP_PROPORTION,
             ..default()
-        })
-        .insert(
-            CascadeShadowConfigBuilder {
-                num_cascades: CASCADE_SHADOW_NUM_CASCADES,
-                maximum_distance: CASCADE_SHADOW_MAX_DISTANCE,
-                first_cascade_far_bound: CASCADE_SHADOW_FIRST_FAR_BOUND,
-                overlap_proportion: CASCADE_SHADOW_OVERLAP_PROPORTION,
-                ..default()
-            }
-            .build(),
-        )
-        .insert(Transform::from_rotation(Quat::from_axis_angle(
+        }.build())
+        template_value(Transform::from_rotation(Quat::from_axis_angle(
             light_rotation.axis,
             light_rotation.angle,
         )))
-        .insert(RenderLayer::Game.layers())
-        .insert(LightDirection(light_position));
+        template_value(RenderLayer::Game.layers())
+    }
 }
 
 fn manage_lighting(
@@ -294,12 +290,11 @@ fn manage_lighting(
             },
             (None, LightSwitch::On) => {
                 // Spawn the missing `DirectionalLight`.
-                spawn_directional_light(
-                    &mut commands,
-                    directional_light_settings,
+                commands.spawn_scene(directional_light(
+                    *directional_light_settings,
                     *light_position,
-                    &light_rotation,
-                );
+                    light_rotation,
+                ));
             },
             (None, LightSwitch::Off) => {}, /* No `DirectionalLight` exists for the disabled
                                              * setting. */
