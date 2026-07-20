@@ -46,8 +46,7 @@ pub(super) struct MissilePlugin;
 
 impl Plugin for MissilePlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(initialize_missile)
-            .add_observer(on_fire_input)
+        app.add_observer(on_fire_input)
             .add_systems(
                 FixedUpdate,
                 fire_missile_continuous.in_set(InGameSet::UserInput),
@@ -61,8 +60,8 @@ impl Plugin for MissilePlugin {
 
 // TODO: Decide whether `Missile` should stay a unit `Component` or gain private
 // state before adding a constructor; current `Missile` instances come from
-// `spawn_missile`.
-#[derive(Component, Reflect, Copy, Clone, Debug)]
+// `spawn_missile_command`.
+#[derive(Component, Reflect, Copy, Clone, Debug, Default)]
 #[reflect(Component)]
 #[require(
     Teleporter,
@@ -146,39 +145,6 @@ type ShipFireStateQuery<'w, 's> = Single<
     (With<Action<ShipFire>>, With<ActionOf<ShipControlsContext>>),
 >;
 
-fn initialize_missile(
-    missile: On<Add, Missile>,
-    mut commands: Commands,
-    boundary: Res<Boundary>,
-    mut missile_settings: ResMut<MissileSettings>,
-    transform_and_linear_velocity: Single<(&Transform, &LinearVelocity), With<Spaceship>>,
-) {
-    let missile_position = MissilePosition::new(boundary.max_missile_distance());
-
-    let (spaceship_transform, spaceship_velocity) = *transform_and_linear_velocity;
-
-    let transform = initialize_transform(spaceship_transform, &missile_settings);
-
-    let (linear_velocity, angular_velocity) = calculate_missile_velocity(
-        spaceship_transform,
-        spaceship_velocity,
-        missile_settings.base_velocity,
-    );
-
-    commands
-        .entity(missile.entity)
-        .insert(missile_position)
-        .insert(transform)
-        .insert(linear_velocity)
-        .insert(angular_velocity);
-
-    settings::insert_configured_components(
-        &mut commands,
-        &mut missile_settings.actor_settings,
-        missile.entity,
-    );
-}
-
 fn initialize_transform(
     spaceship_transform: &Transform,
     missile_settings: &MissileSettings,
@@ -197,25 +163,46 @@ fn initialize_transform(
     }
 }
 
-fn on_fire_input(_trigger: On<Start<ShipFire>>, mut commands: Commands) {
-    commands.run_system_cached(fire_missile_command);
-}
-
-/// Reusable on-demand command for firing a single `Missile`.
-fn fire_missile_command(
+fn on_fire_input(
+    _trigger: On<Start<ShipFire>>,
     mut commands: Commands,
     continuous_fire_enabled: Single<Option<&ContinuousFire>, With<Spaceship>>,
     missile_settings: Res<MissileSettings>,
 ) {
-    if missile_settings.spawnability == Spawnability::Disabled {
+    if missile_settings.spawnability == Spawnability::Disabled || continuous_fire_enabled.is_some()
+    {
         return;
     }
 
-    if continuous_fire_enabled.is_some() {
-        return;
-    }
+    commands.run_system_cached(spawn_missile_command);
+}
 
-    commands.spawn((Missile, Name::new(MISSILE_ENTITY_NAME)));
+/// Spawns one configured `Missile` for single or continuous fire.
+fn spawn_missile_command(
+    mut commands: Commands,
+    boundary: Res<Boundary>,
+    mut missile_settings: ResMut<MissileSettings>,
+    transform_and_linear_velocity: Single<(&Transform, &LinearVelocity), With<Spaceship>>,
+) {
+    let missile_position = MissilePosition::new(boundary.max_missile_distance());
+    let (spaceship_transform, spaceship_velocity) = *transform_and_linear_velocity;
+    let transform = initialize_transform(spaceship_transform, &missile_settings);
+    let (linear_velocity, angular_velocity) = calculate_missile_velocity(
+        spaceship_transform,
+        spaceship_velocity,
+        missile_settings.base_velocity,
+    );
+
+    commands.spawn_scene(bsn! {
+        Missile
+        template_value(Name::new(MISSILE_ENTITY_NAME))
+        template_value(missile_position)
+        template_value(transform)
+        template_value(linear_velocity)
+        template_value(angular_velocity)
+        settings::configured_actor_scene(missile_settings.actor_settings.clone())
+    });
+    missile_settings.actor_settings.reset_spawn_timer();
 }
 
 fn fire_missile_continuous(
@@ -242,7 +229,7 @@ fn fire_missile_continuous(
         return;
     }
 
-    commands.spawn((Missile, Name::new(MISSILE_ENTITY_NAME)));
+    commands.run_system_cached(spawn_missile_command);
 }
 
 /// Updates `MissilePosition` from `Missile` movement so missiles despawn after

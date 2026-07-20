@@ -26,7 +26,6 @@ impl Plugin for NateroidPlugin {
                 OnEnter(AssetsState::Loaded),
                 death_materials::precompute_death_materials.after(initialize_actors),
             )
-            .add_observer(spawn::initialize_nateroid)
             .add_observer(death_materials::apply_nateroid_materials_to_children)
             .add_systems(
                 Update,
@@ -38,7 +37,7 @@ impl Plugin for NateroidPlugin {
     }
 }
 
-#[derive(Component, Reflect, Debug)]
+#[derive(Component, Reflect, Debug, Default, Clone)]
 #[reflect(Component)]
 #[require(
     Teleporter,

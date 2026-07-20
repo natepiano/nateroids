@@ -86,30 +86,20 @@ pub(super) fn spawn_nateroid(
         nateroid_spawn_stats.last_warning_time = current_time;
     }
 
-    commands.spawn((Nateroid, Name::new(NATEROID_ENTITY_NAME), transform));
-}
-
-pub(super) fn initialize_nateroid(
-    nateroid: On<Add, Nateroid>,
-    mut commands: Commands,
-    mut nateroid_settings: ResMut<NateroidSettings>,
-) {
-    // Normal nateroid: transform already set by `spawn_nateroid`, just add velocities
     let (linear_velocity, angular_velocity) = calculate_nateroid_velocity(
         nateroid_settings.linear_velocity,
         nateroid_settings.angular_velocity,
     );
 
-    commands
-        .entity(nateroid.entity)
-        .insert(linear_velocity)
-        .insert(angular_velocity);
-
-    settings::insert_configured_components(
-        &mut commands,
-        &mut nateroid_settings.actor_settings,
-        nateroid.entity,
-    );
+    commands.spawn_scene(bsn! {
+        Nateroid
+        template_value(Name::new(NATEROID_ENTITY_NAME))
+        template_value(transform)
+        template_value(linear_velocity)
+        template_value(angular_velocity)
+        settings::configured_actor_scene(nateroid_settings.actor_settings.clone())
+    });
+    nateroid_settings.actor_settings.reset_spawn_timer();
 }
 
 fn initialize_transform(

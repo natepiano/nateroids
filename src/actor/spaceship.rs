@@ -41,8 +41,7 @@ impl Plugin for SpaceshipPlugin {
     // make sure this is done after `asset_loader` has run
     fn build(&self, app: &mut App) {
         // Spawn `Spaceship` when entering `PauseState::Playing` (game start or unpause)
-        app.add_observer(initialize_spaceship)
-            .add_observer(spawn_after_splash_text_removed)
+        app.add_observer(spawn_after_splash_text_removed)
             .add_systems(OnEnter(PauseState::Playing), spawn_spaceship_if_needed)
             .add_systems(OnEnter(GameState::InGame), attach_controls_if_spawned)
             .add_systems(
@@ -54,7 +53,7 @@ impl Plugin for SpaceshipPlugin {
     }
 }
 
-#[derive(Component, Reflect, Debug)]
+#[derive(Component, Reflect, Debug, Default, Clone)]
 #[reflect(Component)]
 #[require(
     Teleporter,
@@ -112,7 +111,7 @@ impl Default for SpaceshipSettings {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone)]
 pub(super) struct ContinuousFire;
 
 /// Returns the default `Spaceship` rotation: model correction (90° around X)
@@ -123,59 +122,62 @@ fn spawn_after_splash_text_removed(
     _trigger: On<Remove, SplashText>,
     commands: Commands,
     spaceship_settings: Res<SpaceshipSettings>,
+    game_state: Res<State<GameState>>,
 ) {
-    spawn_spaceship(commands, spaceship_settings);
+    spawn_spaceship(commands, spaceship_settings, game_state);
 }
 
 /// Spawns a `Spaceship` only if one doesn't already exist
 fn spawn_spaceship_if_needed(
     commands: Commands,
     spaceship_settings: Res<SpaceshipSettings>,
+    game_state: Res<State<GameState>>,
     spaceship_query: Query<(), With<Spaceship>>,
 ) {
     // Only spawn if no spaceship exists (e.g., coming from `GameOver`)
     if spaceship_query.is_empty() {
-        spawn_spaceship(commands, spaceship_settings);
+        spawn_spaceship(commands, spaceship_settings, game_state);
     }
 }
 
-fn spawn_spaceship(mut commands: Commands, spaceship_settings: Res<SpaceshipSettings>) {
+fn spawn_spaceship(
+    mut commands: Commands,
+    spaceship_settings: Res<SpaceshipSettings>,
+    game_state: Res<State<GameState>>,
+) {
     if spaceship_settings.spawnability == Spawnability::Disabled {
         return;
     }
 
-    commands.spawn((Spaceship, ContinuousFire, Name::new(SPACESHIP_ENTITY_NAME)));
-}
-
-fn initialize_spaceship(
-    spaceship: On<Add, Spaceship>,
-    mut commands: Commands,
-    mut spaceship_settings: ResMut<SpaceshipSettings>,
-    game_state: Res<State<GameState>>,
-) {
-    commands
-        .entity(spaceship.entity)
-        .insert(spaceship_settings.transform);
+    let spaceship = commands
+        .spawn_scene(spaceship_scene(spaceship_settings.actor_settings.clone()))
+        .id();
 
     // `spawn_after_splash_text_removed` can spawn `Spaceship` before
     // `GameState::InGame`, so `input::insert_ship_controls` attaches
     // `ShipControlsContext` and `Actions<ShipControlsContext>` once gameplay
     // starts.
     if *game_state.get() == GameState::InGame {
-        input::insert_ship_controls(&mut commands, spaceship.entity);
+        input::insert_ship_controls(&mut commands, spaceship);
     }
+}
 
-    settings::insert_configured_components(
-        &mut commands,
-        &mut spaceship_settings.actor_settings,
-        spaceship.entity,
-    );
+fn spaceship_scene(actor_settings: ActorSettings) -> impl Scene {
+    let transform = actor_settings.transform;
+
+    bsn! {
+        Spaceship
+        ContinuousFire
+        template_value(Name::new(SPACESHIP_ENTITY_NAME))
+        template_value(transform)
+        settings::configured_actor_scene(actor_settings)
+    }
 }
 
 /// Attaches ship controls to a spaceship that was spawned during `Splash`.
 /// No-op when the ship hasn't spawned yet (quick restart path) — the
-/// `initialize_spaceship` observer handles that case when the ship spawns
-/// later under `PauseState::Playing`.
+/// spawn path attaches controls when the ship appears later under
+/// `PauseState::Playing`.
 fn attach_controls_if_spawned(mut commands: Commands, spaceships: Query<Entity, With<Spaceship>>) {
     for entity in &spaceships {
         input::insert_ship_controls(&mut commands, entity);

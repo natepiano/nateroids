@@ -149,11 +149,19 @@ pub(crate) struct ActorSettings {
     pub(crate) spawn_timer:              Option<Timer>,
 }
 
-#[derive(Reflect, Component, Clone, Debug)]
+impl ActorSettings {
+    pub(super) fn reset_spawn_timer(&mut self) {
+        self.spawn_timer = self
+            .spawn_timer_seconds
+            .map(|seconds| Timer::from_seconds(seconds, TimerMode::Repeating));
+    }
+}
+
+#[derive(Reflect, Component, Clone, Debug, Default)]
 #[reflect(Component)]
 pub(crate) struct Health(pub f32);
 
-#[derive(Reflect, Component, Clone, Debug)]
+#[derive(Reflect, Component, Clone, Debug, Default)]
 #[reflect(Component)]
 pub(super) struct CollisionDamage(pub f32);
 
@@ -204,55 +212,47 @@ pub(super) fn initialize_actors(mut commands: Commands, scene_assets: Res<SceneA
     commands.insert_resource(spaceship_settings);
 }
 
-fn create_spawn_timer(spawn_timer_seconds: Option<f32>) -> Option<Timer> {
-    spawn_timer_seconds.map(|seconds| Timer::from_seconds(seconds, TimerMode::Repeating))
-}
-
 fn initialize_actor_settings(
     actor_settings: &mut ActorSettings,
     scene_handle: &Handle<WorldAsset>,
 ) {
-    actor_settings.spawn_timer = create_spawn_timer(actor_settings.spawn_timer_seconds);
+    actor_settings.reset_spawn_timer();
     actor_settings.scene = scene_handle.clone();
 }
 
-/// Applies `ActorSettings` values so inspectors can update component defaults
-/// before spawn.
-pub(super) fn insert_configured_components(
-    commands: &mut Commands,
-    settings: &mut ActorSettings,
-    actor_entity: Entity,
-) {
-    // Insert all components on the actor entity
-    commands.entity(actor_entity).insert((
-        PendingCollider {
-            collider_type: settings.collider_type.clone(),
-            margin:        settings.collider_margin,
-            rigid_body:    settings.rigid_body,
-        },
-        CollisionDamage(settings.collision_damage),
-        settings.collision_layers,
-        GravityScale(settings.gravity_scale),
-        Health(settings.health),
+/// Builds the components shared by every configured actor.
+pub(super) fn configured_actor_scene(actor_settings: ActorSettings) -> impl Scene {
+    let pending_collider = template(move |_| {
+        Ok(PendingCollider {
+            collider_type: actor_settings.collider_type.clone(),
+            margin:        actor_settings.collider_margin,
+            rigid_body:    actor_settings.rigid_body,
+        })
+    });
+    let damping = (
+        actor_settings
+            .linear_damping
+            .map(|damping| template_value(LinearDamping(damping))),
+        actor_settings
+            .angular_damping
+            .map(|damping| template_value(AngularDamping(damping))),
+    );
+
+    bsn! {
+        {pending_collider}
+        CollisionDamage({actor_settings.collision_damage})
+        template_value(actor_settings.collision_layers)
+        GravityScale({actor_settings.gravity_scale})
+        Health({actor_settings.health})
         Restitution {
-            coefficient:  settings.restitution,
-            combine_rule: settings.restitution_combine_rule,
-        },
-        Mass(settings.mass),
-        MaxAngularSpeed(settings.max_angular_velocity),
-        MaxLinearSpeed(settings.max_linear_velocity),
-        settings.render_layer.layers(),
-        WorldAssetRoot(settings.scene.clone()),
-    ));
-
-    if let Some(linear) = settings.linear_damping {
-        commands.entity(actor_entity).insert(LinearDamping(linear));
+            coefficient: {actor_settings.restitution},
+            combine_rule: {actor_settings.restitution_combine_rule},
+        }
+        Mass({actor_settings.mass})
+        MaxAngularSpeed({actor_settings.max_angular_velocity})
+        MaxLinearSpeed({actor_settings.max_linear_velocity})
+        template_value(actor_settings.render_layer.layers())
+        WorldAssetRoot({actor_settings.scene})
+        {damping}
     }
-    if let Some(angular) = settings.angular_damping {
-        commands
-            .entity(actor_entity)
-            .insert(AngularDamping(angular));
-    }
-
-    settings.spawn_timer = create_spawn_timer(settings.spawn_timer_seconds);
 }
