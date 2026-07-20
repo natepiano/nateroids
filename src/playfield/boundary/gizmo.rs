@@ -61,13 +61,14 @@ pub(super) fn spawn_boundary_volume(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     let scale = boundary.exterior_scalar * boundary.cell_count.as_vec3();
+    let mesh = meshes.add(Cuboid::new(1.0, 1.0, 1.0));
 
-    commands.spawn((
-        BoundaryVolume,
-        Transform::from_scale(scale),
-        Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
-        Visibility::Hidden,
-    ));
+    commands.spawn_scene(bsn! {
+        template(move |_| Ok(BoundaryVolume))
+        template_value(Transform::from_scale(scale))
+        template(move |_| Ok(Mesh3d(mesh.clone())))
+        template_value(Visibility::Hidden)
+    });
 
     debug!("Spawned BoundaryVolume entity");
 }
