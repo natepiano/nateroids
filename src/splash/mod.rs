@@ -24,8 +24,7 @@ impl Plugin for SplashPlugin {
             OnEnter(GameState::Splash),
             (
                 skip::reset_timer_and_boundary,
-                ui::spawn_splash_text,
-                ui::spawn_splash_skip_hint,
+                ui::splash_ui.spawn(),
                 camera_animation::start_splash_camera_animation,
             ),
         )

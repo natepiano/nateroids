@@ -4,7 +4,7 @@ use super::RenderLayer;
 use super::rendering::CameraOrder;
 use super::required_components::RequiredCameraComponents;
 
-pub(super) fn scene() -> impl Scene {
+pub(super) fn ui_camera() -> impl Scene {
     bsn! {
         RequiredCameraComponents
         Camera2d

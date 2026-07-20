@@ -57,9 +57,9 @@ fn spawn_camera_group(
 ) {
     commands.spawn_scene_list(bsn_list![
         (
-            game::scene(&camera_settings, &scene_assets, &light_settings)
-            Children [star::scene(&camera_settings)]
+            game::game_camera(&camera_settings, &scene_assets, &light_settings)
+            Children [star::star_camera(&camera_settings)]
         ),
-        ui::scene(),
+        ui::ui_camera(),
     ]);
 }

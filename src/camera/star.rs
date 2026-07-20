@@ -9,7 +9,7 @@ use super::required_components::RequiredCameraComponents;
 #[derive(Component, Reflect, Default, Clone)]
 pub(super) struct StarCamera;
 
-pub(super) fn scene(camera_settings: &CameraSettings) -> impl Scene {
+pub(super) fn star_camera(camera_settings: &CameraSettings) -> impl Scene {
     bsn! {
         RequiredCameraComponents
         Camera3d

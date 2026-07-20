@@ -168,7 +168,7 @@ impl Default for CameraSettings {
     }
 }
 
-pub(super) fn scene(
+pub(super) fn game_camera(
     camera_settings: &CameraSettings,
     scene_assets: &SceneAssets,
     light_settings: &LightSettings,
