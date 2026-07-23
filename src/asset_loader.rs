@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy::world_serialization::WorldAsset;
-use hana_lading::AllSetsLoaded;
 use hana_lading::AssetSetLoadFailed;
 use hana_lading::DiskAssetLoader;
 use hana_lading::DiskAssets;
@@ -30,15 +29,9 @@ impl Plugin for AssetLoaderPlugin {
         // recursive dependency completion, emitting `Loaded<SceneAssets>` and
         // `AllSetsLoaded` when every tracked handle resolves.
         app.add_plugins(DiskAssetsPlugin::<SceneAssets>::default())
-            .add_observer(mark_startup_assets_ready)
             .add_observer(exit_on_load_failure);
     }
 }
-
-/// Marker resource inserted once every startup asset set has loaded. The splash
-/// `Splash` → `InGame` transition (including the keypress skip) waits for it.
-#[derive(Resource)]
-pub(crate) struct StartupAssetsReady;
 
 /// PBR texture handles for one nateroid mesh (donut or icing).
 #[derive(Clone, Debug)]
@@ -119,11 +112,6 @@ impl SceneAssets {
             ..self.nateroid_icing.base_material()
         }
     }
-}
-
-fn mark_startup_assets_ready(_loaded: On<AllSetsLoaded>, mut commands: Commands) {
-    debug!("All startup asset sets loaded");
-    commands.insert_resource(StartupAssetsReady);
 }
 
 /// Every tracked asset is gameplay-required, so a failed set exits the app.

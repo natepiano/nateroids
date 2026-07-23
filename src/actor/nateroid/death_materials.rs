@@ -229,7 +229,7 @@ pub(super) fn debug_mesh_components(
 ///
 /// `nateroid_settings` arrives by reference because the caller inserts it in
 /// the same command batch — the resource does not exist yet.
-pub(in crate::actor) fn initialize_materials(
+pub(super) fn initialize_materials(
     commands: &mut Commands,
     scene_assets: &SceneAssets,
     materials: &mut Assets<StandardMaterial>,

@@ -6,13 +6,13 @@ mod spawn;
 use avian3d::prelude::*;
 use bevy::prelude::*;
 pub(crate) use death_materials::NateroidDeathMaterials;
-pub(super) use death_materials::initialize_materials;
 pub(crate) use settings::DeathCorner;
 pub(crate) use settings::NateroidSettings;
 
 use super::Teleporter;
 use super::constants::LOCKED_AXES_2D;
 use super::spawn_stats::NateroidSpawnStats;
+use crate::asset_loader::SceneAssets;
 use crate::playfield::ActorPortals;
 use crate::schedule::InGameSet;
 
@@ -39,3 +39,13 @@ impl Plugin for NateroidPlugin {
     LockedAxes = LOCKED_AXES_2D
 )]
 pub(crate) struct Nateroid;
+
+/// Delegates to `death_materials` so the inner fn stays `pub(super)`.
+pub(super) fn initialize_materials(
+    commands: &mut Commands,
+    scene_assets: &SceneAssets,
+    materials: &mut Assets<StandardMaterial>,
+    nateroid_settings: &NateroidSettings,
+) {
+    death_materials::initialize_materials(commands, scene_assets, materials, nateroid_settings);
+}

@@ -21,9 +21,9 @@ use super::constants::ACTOR_RESTITUTION_MAX;
 use super::constants::ACTOR_RESTITUTION_MIN;
 use super::missile::Missile;
 use super::missile::MissileSettings;
+use super::nateroid;
 use super::nateroid::Nateroid;
 use super::nateroid::NateroidSettings;
-use super::nateroid::initialize_materials;
 use super::spaceship::Spaceship;
 use super::spaceship::SpaceshipSettings;
 use crate::asset_loader::SceneAssets;
@@ -195,7 +195,7 @@ fn propagate_render_layers_on_spawn(
 
 /// Builds every resource derived from the loaded `SceneAssets` in one observer:
 /// the three actor settings resources plus `NateroidMaterials` and
-/// `NateroidDeathMaterials` via `initialize_materials`. hana_lading does not
+/// `NateroidDeathMaterials` via `initialize_materials`. `hana_lading` does not
 /// flush commands queued by a `Loaded` observer before global completion
 /// observers run, so splitting this into ordered observers would leave later
 /// ones reading resources that are still queued.
@@ -212,7 +212,7 @@ fn initialize_actors(
     );
     // The death materials fade from `NateroidSettings::initial_alpha`, so the
     // materials build from the local value before it is queued for insertion.
-    initialize_materials(
+    nateroid::initialize_materials(
         &mut commands,
         &scene_assets,
         &mut materials,

@@ -29,6 +29,7 @@ impl Plugin for SplashPlugin {
             ),
         )
         .add_systems(Update, skip::run_splash.run_if(in_state(GameState::Splash)))
+        .add_observer(skip::arm_game_entry)
         .add_observer(camera_animation::on_animation_end)
         .add_observer(camera_animation::on_zoom_end);
     }
