@@ -5,6 +5,7 @@ use bevy_lagrange::OrbitCam;
 use super::camera_animation::SplashZoomActive;
 use super::ui::SplashSkipHint;
 use super::ui::SplashText;
+use crate::asset_loader::StartupAssetsReady;
 use crate::camera::CameraHomeEvent;
 use crate::constants::SPLASH_TEXT_GROWTH_RATE;
 use crate::playfield::BOUNDARY_COLOR;
@@ -48,6 +49,7 @@ pub(super) fn run_splash(
     mut splash_text_timer: ResMut<SplashTextTimer>,
     mut skip_state: ResMut<SplashSkipState>,
     key_input: Res<ButtonInput<KeyCode>>,
+    startup_assets_ready: Option<Res<StartupAssetsReady>>,
     time: Res<Time>,
     mut text_query: Query<(Entity, &mut TextFont), With<SplashText>>,
     splash_ui_query: Query<Entity, Or<(With<SplashText>, With<SplashSkipHint>)>>,
@@ -66,7 +68,7 @@ pub(super) fn run_splash(
         if key_input.get_pressed().next().is_none() {
             skip_state.skip_readiness = SkipReadiness::Armed;
         }
-    } else if key_input.get_just_pressed().next().is_some() {
+    } else if startup_assets_ready.is_some() && key_input.get_just_pressed().next().is_some() {
         // Immediate splash skip: clear splash-only UI and stop in-flight splash camera sequence.
         for entity in &splash_ui_query {
             commands.entity(entity).despawn();
@@ -94,12 +96,13 @@ pub(super) fn run_splash(
         }
     }
 
-    // `GameState::InGame` waits for both `SplashTextTimer` and the splash camera
-    // components to finish.
+    // `GameState::InGame` waits for `SplashTextTimer`, the splash camera
+    // components, and `StartupAssetsReady` — the game systems read the
+    // settings resources built from the loaded `SceneAssets`.
     let timer_finished = splash_text_timer.0.is_finished();
     let camera_animation_done = camera_query.is_empty();
 
-    if timer_finished && camera_animation_done {
+    if timer_finished && camera_animation_done && startup_assets_ready.is_some() {
         commands.trigger(GridFlash);
         next_state.set(GameState::InGame);
     }

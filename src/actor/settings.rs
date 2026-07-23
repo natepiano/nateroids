@@ -6,6 +6,7 @@ use bevy::world_serialization::WorldAssetRoot;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+use hana_lading::Loaded;
 
 use super::aabb::PendingCollider;
 use super::constants::ACTOR_COLLIDER_MARGIN_MAX;
@@ -22,9 +23,9 @@ use super::missile::Missile;
 use super::missile::MissileSettings;
 use super::nateroid::Nateroid;
 use super::nateroid::NateroidSettings;
+use super::nateroid::initialize_materials;
 use super::spaceship::Spaceship;
 use super::spaceship::SpaceshipSettings;
-use crate::asset_loader::AssetsState;
 use crate::asset_loader::SceneAssets;
 use crate::camera::RenderLayer;
 use crate::input::InspectMissileSwitch;
@@ -34,13 +35,13 @@ use crate::switches;
 use crate::switches::Switch;
 
 // `ActorSettingsPlugin` initializes the actor setting resources when
-// `AssetsState::Loaded` starts: `ActorSettings`, `MissileSettings`,
-// `NateroidSettings`, and `SpaceshipSettings`.
+// `Loaded<SceneAssets>` fires: `MissileSettings`, `NateroidSettings`,
+// `SpaceshipSettings`, plus the nateroid materials derived from them.
 pub(super) struct ActorSettingsPlugin;
 
 impl Plugin for ActorSettingsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AssetsState::Loaded), initialize_actors)
+        app.add_observer(initialize_actors)
             .add_observer(propagate_render_layers_on_spawn)
             .add_plugins(
                 ResourceInspectorPlugin::<MissileSettings>::default()
@@ -192,11 +193,30 @@ fn propagate_render_layers_on_spawn(
     }
 }
 
-pub(super) fn initialize_actors(mut commands: Commands, scene_assets: Res<SceneAssets>) {
+/// Builds every resource derived from the loaded `SceneAssets` in one observer:
+/// the three actor settings resources plus `NateroidMaterials` and
+/// `NateroidDeathMaterials` via `initialize_materials`. hana_lading does not
+/// flush commands queued by a `Loaded` observer before global completion
+/// observers run, so splitting this into ordered observers would leave later
+/// ones reading resources that are still queued.
+fn initialize_actors(
+    _loaded: On<Loaded<SceneAssets>>,
+    mut commands: Commands,
+    scene_assets: Res<SceneAssets>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     let mut nateroid_settings = NateroidSettings::default();
     initialize_actor_settings(
         &mut nateroid_settings.actor_settings,
         &scene_assets.nateroid,
+    );
+    // The death materials fade from `NateroidSettings::initial_alpha`, so the
+    // materials build from the local value before it is queued for insertion.
+    initialize_materials(
+        &mut commands,
+        &scene_assets,
+        &mut materials,
+        &nateroid_settings,
     );
     commands.insert_resource(nateroid_settings);
 

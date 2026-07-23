@@ -1,6 +1,10 @@
-use bevy::asset::LoadState;
 use bevy::prelude::*;
 use bevy::world_serialization::WorldAsset;
+use hana_lading::AllSetsLoaded;
+use hana_lading::AssetSetLoadFailed;
+use hana_lading::DiskAssetLoader;
+use hana_lading::DiskAssets;
+use hana_lading::DiskAssetsPlugin;
 
 use crate::constants::ENVIRONMENT_DIFFUSE_MAP_ASSET_PATH;
 use crate::constants::ENVIRONMENT_SPECULAR_MAP_ASSET_PATH;
@@ -22,138 +26,109 @@ pub(crate) struct AssetLoaderPlugin;
 
 impl Plugin for AssetLoaderPlugin {
     fn build(&self, app: &mut App) {
-        // `AssetsState` reports when handles in `SceneAssets` have finished loading.
-        app.init_state::<AssetsState>()
-            .init_resource::<SceneAssets>()
-            // Run `load_assets` in `PreStartup` before spaceship setup reads
-            // `SceneAssets` during `Startup`.
-            .add_systems(PreStartup, load_assets)
-            .add_systems(
-                Update,
-                (create_nateroid_material, check_asset_loading)
-                    .run_if(in_state(AssetsState::Loading)),
-            );
+        // `DiskAssetsPlugin` loads `SceneAssets` during `PreStartup` and tracks
+        // recursive dependency completion, emitting `Loaded<SceneAssets>` and
+        // `AllSetsLoaded` when every tracked handle resolves.
+        app.add_plugins(DiskAssetsPlugin::<SceneAssets>::default())
+            .add_observer(mark_startup_assets_ready)
+            .add_observer(exit_on_load_failure);
     }
 }
 
-#[derive(States, Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
-pub(crate) enum AssetsState {
-    #[default]
-    Loading,
-    Loaded,
+/// Marker resource inserted once every startup asset set has loaded. The splash
+/// `Splash` → `InGame` transition (including the keypress skip) waits for it.
+#[derive(Resource)]
+pub(crate) struct StartupAssetsReady;
+
+/// PBR texture handles for one nateroid mesh (donut or icing).
+#[derive(Clone, Debug)]
+pub(crate) struct NateroidTextures {
+    albedo:             Handle<Image>,
+    normal:             Handle<Image>,
+    metallic_roughness: Handle<Image>,
+    occlusion:          Handle<Image>,
+}
+
+impl NateroidTextures {
+    /// Builds the `StandardMaterial` shared by the donut and icing meshes;
+    /// `SceneAssets::nateroid_icing_material` layers reflectance on top.
+    fn base_material(&self) -> StandardMaterial {
+        StandardMaterial {
+            base_color_texture: Some(self.albedo.clone()),
+            normal_map_texture: Some(self.normal.clone()),
+            metallic_roughness_texture: Some(self.metallic_roughness.clone()),
+            occlusion_texture: Some(self.occlusion.clone()),
+            // `StandardMaterial::metallic` and `StandardMaterial::perceptual_roughness`
+            // use their texture channels without scalar attenuation.
+            metallic: NATEROID_MATERIAL_TEXTURE_SCALAR,
+            perceptual_roughness: NATEROID_MATERIAL_TEXTURE_SCALAR,
+            cull_mode: None,
+            ..default()
+        }
+    }
 }
 
 // `SceneAssets` stores GLTF `Handle<WorldAsset>` values whose scene graphs can
-// spawn multiple child meshes from a single actor asset.
-#[derive(Resource, Clone, Debug, Default)]
+// spawn multiple child meshes from a single actor asset, plus the environment
+// maps and nateroid PBR textures.
+#[derive(Resource, Clone, Debug)]
 pub(crate) struct SceneAssets {
     pub(crate) missile:                  Handle<WorldAsset>,
     pub(crate) nateroid:                 Handle<WorldAsset>,
-    pub(crate) nateroid_donut_material:  Option<Handle<StandardMaterial>>,
-    pub(crate) nateroid_icing_material:  Option<Handle<StandardMaterial>>,
     pub(crate) spaceship:                Handle<WorldAsset>,
     pub(crate) environment_diffuse_map:  Handle<Image>,
     pub(crate) environment_specular_map: Handle<Image>,
+    nateroid_donut:                      NateroidTextures,
+    nateroid_icing:                      NateroidTextures,
 }
 
-fn load_assets(
-    //    mut commands: Commands,
-    mut scene_assets: ResMut<SceneAssets>,
-    asset_server: Res<AssetServer>,
-) {
-    *scene_assets = SceneAssets {
-        missile:                  asset_server.load(MISSILE_SCENE_ASSET_PATH),
-        nateroid:                 asset_server.load(NATEROID_SCENE_ASSET_PATH),
-        nateroid_donut_material:  None,
-        nateroid_icing_material:  None,
-        spaceship:                asset_server.load(SPACESHIP_SCENE_ASSET_PATH),
-        environment_diffuse_map:  asset_server.load(ENVIRONMENT_DIFFUSE_MAP_ASSET_PATH),
-        environment_specular_map: asset_server.load(ENVIRONMENT_SPECULAR_MAP_ASSET_PATH),
-    };
+impl DiskAssets for SceneAssets {
+    fn load(loader: &mut DiskAssetLoader<'_>) -> Self {
+        Self {
+            missile:                  loader.load(MISSILE_SCENE_ASSET_PATH),
+            nateroid:                 loader.load(NATEROID_SCENE_ASSET_PATH),
+            spaceship:                loader.load(SPACESHIP_SCENE_ASSET_PATH),
+            environment_diffuse_map:  loader.load(ENVIRONMENT_DIFFUSE_MAP_ASSET_PATH),
+            environment_specular_map: loader.load(ENVIRONMENT_SPECULAR_MAP_ASSET_PATH),
+            nateroid_donut:           NateroidTextures {
+                albedo:             loader.load(NATEROID_DONUT_ALBEDO_ASSET_PATH),
+                normal:             loader.load(NATEROID_DONUT_NORMAL_ASSET_PATH),
+                metallic_roughness: loader.load(NATEROID_DONUT_METALLIC_ROUGHNESS_ASSET_PATH),
+                occlusion:          loader.load(NATEROID_DONUT_AO_ASSET_PATH),
+            },
+            nateroid_icing:           NateroidTextures {
+                albedo:             loader.load(NATEROID_ICING_ALBEDO_ASSET_PATH),
+                normal:             loader.load(NATEROID_ICING_NORMAL_ASSET_PATH),
+                metallic_roughness: loader.load(NATEROID_ICING_METALLIC_ROUGHNESS_ASSET_PATH),
+                occlusion:          loader.load(NATEROID_ICING_AO_ASSET_PATH),
+            },
+        }
+    }
 }
 
-/// Create custom PBR materials with baked textures for `Nateroid` (donut and icing)
-fn create_nateroid_material(
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut scene_assets: ResMut<SceneAssets>,
-    asset_server: Res<AssetServer>,
-) {
-    if scene_assets.nateroid_donut_material.is_some() {
-        return;
+impl SceneAssets {
+    /// Custom PBR material for the nateroid donut mesh.
+    pub(crate) fn nateroid_donut_material(&self) -> StandardMaterial {
+        self.nateroid_donut.base_material()
     }
 
-    // Load the donut texture files
-    let donut_albedo: Handle<Image> = asset_server.load(NATEROID_DONUT_ALBEDO_ASSET_PATH);
-    let donut_normal: Handle<Image> = asset_server.load(NATEROID_DONUT_NORMAL_ASSET_PATH);
-    let donut_metallic_roughness: Handle<Image> =
-        asset_server.load(NATEROID_DONUT_METALLIC_ROUGHNESS_ASSET_PATH);
-    let donut_ao: Handle<Image> = asset_server.load(NATEROID_DONUT_AO_ASSET_PATH);
-
-    // Load the icing texture files
-    let icing_albedo: Handle<Image> = asset_server.load(NATEROID_ICING_ALBEDO_ASSET_PATH);
-    let icing_normal: Handle<Image> = asset_server.load(NATEROID_ICING_NORMAL_ASSET_PATH);
-    let icing_metallic_roughness: Handle<Image> =
-        asset_server.load(NATEROID_ICING_METALLIC_ROUGHNESS_ASSET_PATH);
-    let icing_ao: Handle<Image> = asset_server.load(NATEROID_ICING_AO_ASSET_PATH);
-
-    let donut_material = materials.add(StandardMaterial {
-        base_color_texture: Some(donut_albedo),
-        normal_map_texture: Some(donut_normal),
-        metallic_roughness_texture: Some(donut_metallic_roughness),
-        occlusion_texture: Some(donut_ao),
-        // `StandardMaterial::metallic` and `StandardMaterial::perceptual_roughness`
-        // use their texture channels without scalar attenuation.
-        metallic: NATEROID_MATERIAL_TEXTURE_SCALAR,
-        perceptual_roughness: NATEROID_MATERIAL_TEXTURE_SCALAR,
-        cull_mode: None,
-        ..default()
-    });
-
-    let icing_material = materials.add(StandardMaterial {
-        base_color_texture: Some(icing_albedo),
-        normal_map_texture: Some(icing_normal),
-        metallic_roughness_texture: Some(icing_metallic_roughness),
-        occlusion_texture: Some(icing_ao),
-        // `StandardMaterial::metallic` and `StandardMaterial::perceptual_roughness`
-        // use their texture channels without scalar attenuation.
-        metallic: NATEROID_MATERIAL_TEXTURE_SCALAR,
-        perceptual_roughness: NATEROID_MATERIAL_TEXTURE_SCALAR,
-        reflectance: NATEROID_MATERIAL_REFLECTANCE,
-        cull_mode: None,
-        ..default()
-    });
-
-    scene_assets.nateroid_donut_material = Some(donut_material);
-    scene_assets.nateroid_icing_material = Some(icing_material);
+    /// Custom PBR material for the nateroid icing mesh.
+    pub(crate) fn nateroid_icing_material(&self) -> StandardMaterial {
+        StandardMaterial {
+            reflectance: NATEROID_MATERIAL_REFLECTANCE,
+            ..self.nateroid_icing.base_material()
+        }
+    }
 }
 
-fn check_asset_loading(
-    mut next_state: ResMut<NextState<AssetsState>>,
-    asset_server: Res<AssetServer>,
-    scene_assets: Res<SceneAssets>,
-) {
-    let scenes_loaded = [
-        scene_assets.missile.id(),
-        scene_assets.nateroid.id(),
-        scene_assets.spaceship.id(),
-    ]
-    .iter()
-    .all(|&id| matches!(asset_server.get_load_state(id), Some(LoadState::Loaded)));
+fn mark_startup_assets_ready(_loaded: On<AllSetsLoaded>, mut commands: Commands) {
+    debug!("All startup asset sets loaded");
+    commands.insert_resource(StartupAssetsReady);
+}
 
-    let environment_maps_loaded = [
-        scene_assets.environment_diffuse_map.id(),
-        scene_assets.environment_specular_map.id(),
-    ]
-    .iter()
-    .all(|&id| matches!(asset_server.get_load_state(id), Some(LoadState::Loaded)));
-
-    let materials_ready = scene_assets.nateroid_donut_material.is_some()
-        && scene_assets.nateroid_icing_material.is_some();
-
-    // `AssetsState::Loaded` begins after every scene, environment map, and
-    // nateroid material is ready.
-    if scenes_loaded && environment_maps_loaded && materials_ready {
-        debug!("All assets loaded (including environment maps)!");
-        next_state.set(AssetsState::Loaded);
-    }
+/// Every tracked asset is gameplay-required, so a failed set exits the app.
+/// `hana_lading` has already logged the failed path and error.
+fn exit_on_load_failure(failed: On<AssetSetLoadFailed>, mut app_exit: MessageWriter<AppExit>) {
+    error!("exiting: startup asset set {} failed", failed.set_name());
+    app_exit.write(AppExit::error());
 }

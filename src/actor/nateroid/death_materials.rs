@@ -10,6 +10,14 @@ use super::constants::ICING_MESH_NAME;
 use crate::actor::constants::NATEROID_DEATH_ALPHA_STEP;
 use crate::asset_loader::SceneAssets;
 
+/// Custom PBR materials applied to `Nateroid` mesh children (donut and icing),
+/// built from `SceneAssets` textures once every startup asset has loaded.
+#[derive(Resource)]
+struct NateroidMaterials {
+    donut: Handle<StandardMaterial>,
+    icing: Handle<StandardMaterial>,
+}
+
 /// Precomputed `Nateroid` death-animation materials: one faded donut+icing set
 /// per transparency level. Fades the donut/icing materials the meshes actually
 /// use (applied by `apply_nateroid_materials_to_children`), matched per mesh.
@@ -34,6 +42,37 @@ impl NateroidDeathLevel {
 }
 
 impl NateroidDeathMaterials {
+    /// Precomputes faded donut/icing materials for the death animation. Fades
+    /// the custom materials the meshes use rather than the GLTF originals (the
+    /// GLTF scene's embedded `World` is no longer queryable in 0.19).
+    fn precompute(
+        donut_base: &StandardMaterial,
+        icing_base: &StandardMaterial,
+        nateroid_settings: &NateroidSettings,
+        materials: &mut Assets<StandardMaterial>,
+    ) -> Self {
+        let initial_alpha = nateroid_settings.initial_alpha;
+        let target_alpha = nateroid_settings.target_alpha;
+        // `NateroidSettings::initial_alpha`, `NateroidSettings::target_alpha`, and
+        // `NATEROID_DEATH_ALPHA_STEP` bound `level_count` to roughly 30–40 entries.
+        let level_count =
+            ((initial_alpha - target_alpha) * (1.0 / NATEROID_DEATH_ALPHA_STEP)).to_usize() + 1;
+
+        let mut levels = Vec::with_capacity(level_count);
+        for level in 0..level_count {
+            // `f32::mul_add` computes `initial_alpha - level * NATEROID_DEATH_ALPHA_STEP`.
+            let alpha = level
+                .to_f32()
+                .mul_add(-NATEROID_DEATH_ALPHA_STEP, initial_alpha);
+            levels.push(NateroidDeathLevel {
+                donut: materials.add(faded_material(donut_base, alpha)),
+                icing: materials.add(faded_material(icing_base, alpha)),
+            });
+        }
+
+        Self { levels }
+    }
+
     /// Number of precomputed transparency levels.
     pub const fn level_count(&self) -> usize { self.levels.len() }
 
@@ -70,25 +109,23 @@ impl NateroidMesh {
     }
 }
 
-/// System that applies custom materials to `Nateroid` mesh children (donut and icing)
-pub(super) fn apply_nateroid_materials_to_children(
+/// Observer that applies custom materials to `Nateroid` mesh children (donut
+/// and icing). `initialize_materials` registers it in the command batch that
+/// inserts `NateroidMaterials`, so the resource always exists when it fires.
+fn apply_nateroid_materials_to_children(
     children_added: On<Add, Children>,
     mut commands: Commands,
     nateroid_query: Query<(), With<Nateroid>>,
     mesh_query: Query<(Entity, Option<&Name>), With<Mesh3d>>,
     children_query: Query<&Children>,
-    scene_assets: Res<SceneAssets>,
+    nateroid_materials: Res<NateroidMaterials>,
 ) {
     if nateroid_query.get(children_added.entity).is_err() {
         return;
     }
 
-    let Some(donut_material) = &scene_assets.nateroid_donut_material else {
-        return;
-    };
-    let Some(icing_material) = &scene_assets.nateroid_icing_material else {
-        return;
-    };
+    let donut_material = &nateroid_materials.donut;
+    let icing_material = &nateroid_materials.icing;
 
     let nateroid_entity = children_added.entity;
     debug!("Applying materials to nateroid {nateroid_entity:?} mesh children");
@@ -186,53 +223,36 @@ pub(super) fn debug_mesh_components(
     }
 }
 
-/// Precomputes faded donut/icing materials for the death animation once assets
-/// are loaded. Fades the custom materials the meshes use rather than the GLTF
-/// originals (the GLTF scene's embedded `World` is no longer queryable in 0.19).
-pub(super) fn precompute_death_materials(
-    mut commands: Commands,
-    scene_assets: Res<SceneAssets>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    nateroid_settings: Res<NateroidSettings>,
+/// Builds the nateroid donut/icing materials from the loaded `SceneAssets`
+/// textures and precomputes the faded death-animation levels, queueing
+/// `NateroidMaterials` and `NateroidDeathMaterials` for insertion.
+///
+/// `nateroid_settings` arrives by reference because the caller inserts it in
+/// the same command batch — the resource does not exist yet.
+pub(in crate::actor) fn initialize_materials(
+    commands: &mut Commands,
+    scene_assets: &SceneAssets,
+    materials: &mut Assets<StandardMaterial>,
+    nateroid_settings: &NateroidSettings,
 ) {
-    let Some(donut_handle) = scene_assets.nateroid_donut_material.clone() else {
-        warn!("Nateroid donut material not created yet");
-        return;
-    };
-    let Some(icing_handle) = scene_assets.nateroid_icing_material.clone() else {
-        warn!("Nateroid icing material not created yet");
-        return;
-    };
-    let (Some(donut_base), Some(icing_base)) = (
-        materials.get(&donut_handle).cloned(),
-        materials.get(&icing_handle).cloned(),
-    ) else {
-        warn!("Nateroid base materials not loaded yet");
-        return;
-    };
+    let donut_base = scene_assets.nateroid_donut_material();
+    let icing_base = scene_assets.nateroid_icing_material();
 
-    let initial_alpha = nateroid_settings.initial_alpha;
-    let target_alpha = nateroid_settings.target_alpha;
-    // `NateroidSettings::initial_alpha`, `NateroidSettings::target_alpha`, and
-    // `NATEROID_DEATH_ALPHA_STEP` bound `level_count` to roughly 30–40 entries.
-    let level_count =
-        ((initial_alpha - target_alpha) * (1.0 / NATEROID_DEATH_ALPHA_STEP)).to_usize() + 1;
+    let death_materials =
+        NateroidDeathMaterials::precompute(&donut_base, &icing_base, nateroid_settings, materials);
+    debug!(
+        "Precomputed {} nateroid death-material levels (donut + icing)",
+        death_materials.level_count()
+    );
 
-    let mut levels = Vec::with_capacity(level_count);
-    for level in 0..level_count {
-        // `f32::mul_add` computes `initial_alpha - level * NATEROID_DEATH_ALPHA_STEP`.
-        let alpha = level
-            .to_f32()
-            .mul_add(-NATEROID_DEATH_ALPHA_STEP, initial_alpha);
-        levels.push(NateroidDeathLevel {
-            donut: materials.add(faded_material(&donut_base, alpha)),
-            icing: materials.add(faded_material(&icing_base, alpha)),
-        });
-    }
-
-    let level_count = levels.len();
-    commands.insert_resource(NateroidDeathMaterials { levels });
-    debug!("Precomputed {level_count} nateroid death-material levels (donut + icing)");
+    commands.insert_resource(NateroidMaterials {
+        donut: materials.add(donut_base),
+        icing: materials.add(icing_base),
+    });
+    commands.insert_resource(death_materials);
+    // Registered here rather than in `NateroidPlugin` so the observer cannot
+    // fire before `NateroidMaterials` exists (commands apply in queue order).
+    commands.add_observer(apply_nateroid_materials_to_children);
 }
 
 /// Clones `base` into a translucent material at the given `alpha`.

@@ -3558,6 +3558,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "hana_lading"
+version = "0.0.1"
+source = "git+https://github.com/natepiano/hana#df97b2b237a4cb1fdc5c028bbc65c30ee8c3ea28"
+dependencies = [
+ "bevy_app",
+ "bevy_asset",
+ "bevy_ecs",
+ "tracing",
+]
+
+[[package]]
 name = "harfrust"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4268,6 +4279,7 @@ dependencies = [
  "bevy_kana",
  "bevy_lagrange",
  "bevy_liminal",
+ "hana_lading",
  "rand",
 ]
 
