@@ -87,7 +87,12 @@ pub(super) const FOCUS_GIZMO_SPHERE_RADIUS_MAX: f32 = 50.0;
 pub(super) const FOCUS_GIZMO_SPHERE_RADIUS_MIN: f32 = 0.1;
 pub(super) const SELECTION_OUTLINE_MAX: f32 = 30.0;
 pub(super) const SELECTION_OUTLINE_MIN: f32 = 0.0;
-pub(super) const STAR_ROTATION_CYCLE_MAX: f32 = 30.0;
+pub(super) const STAR_ROTATION_CYCLE_MAX: f32 = 100.0;
+pub(super) const STAR_ROTATION_CYCLE_MIN: f32 = 0.0;
+pub(super) const STAR_TWINKLE_AMPLITUDE_MAX: f32 = 1.0;
+pub(super) const STAR_TWINKLE_AMPLITUDE_MIN: f32 = 0.0;
+pub(super) const STAR_TWINKLE_SPEED_MAX: f32 = 10.0;
+pub(super) const STAR_TWINKLE_SPEED_MIN: f32 = 0.0;
 pub(super) const ZOOM_CONVERGENCE_RATE_MAX: f32 = 0.5;
 pub(super) const ZOOM_CONVERGENCE_RATE_MIN: f32 = 0.01;
 pub(super) const ZOOM_MARGIN_MAX: f32 = 0.5;
@@ -127,7 +132,7 @@ pub(super) const STAR_MINIMUM_BRIGHTNESS_FRACTION: f32 = 0.2;
 // star field
 pub(super) const STAR_BATCH_SIZE_REPLACE: usize = 10;
 pub(super) const STAR_COLOR_RANGE_MAX: f32 = 30.0;
-pub(super) const STAR_COLOR_RANGE_MIN: f32 = -30.0;
+pub(super) const STAR_COLOR_RANGE_MIN: f32 = 0.0;
 pub(super) const STAR_COLOR_WHITE_PROBABILITY: f32 = 0.85;
 pub(super) const STAR_COLOR_WHITE_START_RATIO: f32 = 0.7;
 pub(super) const STAR_COUNT: usize = 1000;
@@ -136,22 +141,23 @@ pub(super) const STAR_FIELD_DIAMETER: Range<f32> = 200.0..400.0;
 pub(super) const STAR_RADIUS: Range<f32> = 0.3..2.5;
 
 // star rotation
-/// Minimum rotation cycle in minutes (1 second = 0.01667 minutes).
-/// Also serves as the inspector slider lower bound.
+/// Below this cycle length `rotate_stars` treats rotation as off (1 second =
+/// 0.01667 minutes), so a `rotation_cycle_minutes` of 0 stops the field.
 pub(super) const STAR_ROTATION_CYCLE_MINIMUM_MINUTES: f32 = 0.01667;
 pub(super) const STAR_ROTATION_CYCLE_MINUTES: f32 = 15.0;
 
 // star twinkling
-pub(super) const STAR_TWINKLE_CHOOSE_MULTIPLE_COUNT: usize = 2;
-pub(super) const STAR_TWINKLE_DURATION_MAX: f32 = 2.0;
-pub(super) const STAR_TWINKLE_DURATION_MIN: f32 = 0.5;
-/// Rescaling factor to normalize each half of the twinkle animation to 0.0–1.0
-pub(super) const STAR_TWINKLE_HALF_SCALE: f32 = 2.0;
-pub(super) const STAR_TWINKLE_INTENSITY_MAX: f32 = 20.0;
-pub(super) const STAR_TWINKLE_INTENSITY_MIN: f32 = 10.0;
-/// Fraction of twinkle duration spent brightening (0.5 = symmetric brighten/dim)
-pub(super) const STAR_TWINKLE_MIDPOINT: f32 = 0.5;
-pub(super) const STAR_TWINKLING_DELAY: f32 = 0.5;
+/// Default master brightness swing; each star scales it by its own
+/// `amplitude_fraction`. At 1.0 a star's trough reaches black.
+pub(super) const STAR_TWINKLE_AMPLITUDE: f32 = 0.7;
+/// Per-star amplitude spread, so stars twinkle by different amounts.
+pub(super) const STAR_TWINKLE_AMPLITUDE_FRACTION_MAX: f32 = 1.0;
+pub(super) const STAR_TWINKLE_AMPLITUDE_FRACTION_MIN: f32 = 0.5;
+/// Default master cycle rate in radians per second, before per-star scaling.
+pub(super) const STAR_TWINKLE_SPEED: f32 = 3.0;
+/// Per-star rate spread, so stars twinkle at different speeds.
+pub(super) const STAR_TWINKLE_SPEED_FRACTION_MAX: f32 = 2.0;
+pub(super) const STAR_TWINKLE_SPEED_FRACTION_MIN: f32 = 0.5;
 
 // time conversions
 /// Seconds in one minute, for converting a rotation cycle in minutes to seconds.

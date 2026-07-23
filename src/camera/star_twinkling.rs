@@ -1,154 +1,78 @@
-use std::collections::HashSet;
+use std::f32::consts::TAU;
 
 use bevy::prelude::*;
 use rand::RngExt;
-use rand::rng;
+use rand::prelude::ThreadRng;
 
-use super::constants::STAR_TWINKLE_HALF_SCALE;
-use super::constants::STAR_TWINKLE_MIDPOINT;
+use super::constants::STAR_TWINKLE_AMPLITUDE_FRACTION_MAX;
+use super::constants::STAR_TWINKLE_AMPLITUDE_FRACTION_MIN;
+use super::constants::STAR_TWINKLE_SPEED_FRACTION_MAX;
+use super::constants::STAR_TWINKLE_SPEED_FRACTION_MIN;
 use super::stars::Star;
 use super::stars::StarSettings;
 
 pub(super) struct StarTwinklingPlugin;
 
 impl Plugin for StarTwinklingPlugin {
-    fn build(&self, app: &mut App) {
-        let start_twinkling_timer_duration = StarSettings::default().twinkle.delay;
-        app.insert_resource(StartTwinklingTimer(Timer::from_seconds(
-            start_twinkling_timer_duration,
-            TimerMode::Repeating,
-        )))
-        .add_systems(Update, (start_twinkling, update_twinkling));
-    }
+    fn build(&self, app: &mut App) { app.add_systems(Update, update_twinkling); }
 }
 
+/// Per-star twinkle state, baked once at spawn so the field twinkles with
+/// varied timing, amplitude, and rate rather than in lockstep.
+/// `update_twinkling` scales each star by the live `StarTwinkleSettings`
+/// `amplitude`/`speed` through these fractions, so an inspector edit rescales
+/// every star uniformly while each keeps its individual character.
 #[derive(Component)]
-struct Twinkling {
-    original_emissive: Vec4,
-    target_emissive:   Vec4,
-    twinkle_timer:     Timer,
+pub(super) struct Twinkle {
+    /// Running sine argument, seeded to a random offset so stars start out of
+    /// sync; advanced each frame by `speed * speed_fraction`.
+    phase:              f32,
+    /// This star's share of `StarTwinkleSettings::amplitude` — how much it
+    /// brightens and dims relative to its neighbors.
+    amplitude_fraction: f32,
+    /// This star's share of `StarTwinkleSettings::speed` — how fast it cycles
+    /// relative to its neighbors.
+    speed_fraction:     f32,
 }
 
-#[derive(Resource)]
-struct StartTwinklingTimer(Timer);
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum TwinkleReadiness {
-    Ready,
-    Waiting,
-}
-
-fn twinkle_readiness(start_timer: &mut StartTwinklingTimer, time: &Time) -> TwinkleReadiness {
-    start_timer.0.tick(time.delta());
-    if start_timer.0.just_finished() {
-        TwinkleReadiness::Ready
-    } else {
-        TwinkleReadiness::Waiting
-    }
-}
-
-fn get_random_indices(count: usize, range: usize) -> Vec<usize> {
-    let mut rng = rng();
-    let mut numbers = HashSet::with_capacity(count);
-    while numbers.len() < count {
-        numbers.insert(rng.random_range(0..range));
-    }
-    numbers.into_iter().collect()
-}
-
-fn extract_elements_at_indices<T: Clone>(vec: &[T], indices: &[usize]) -> Vec<T> {
-    indices
-        .iter()
-        .filter_map(|&i| vec.get(i).cloned())
-        .collect()
-}
-
-fn start_twinkling(
-    mut commands: Commands,
-    star_settings: Res<StarSettings>,
-    stars: Query<(Entity, &MeshMaterial3d<StandardMaterial>), (With<Star>, Without<Twinkling>)>,
-    materials: Res<Assets<StandardMaterial>>,
-    mut start_timer: ResMut<StartTwinklingTimer>,
-    time: Res<Time>,
-) {
-    if twinkle_readiness(&mut start_timer, &time) == TwinkleReadiness::Waiting {
-        return;
-    }
-
-    // `all_stars` stores the current `Star` material handles so
-    // `choose_multiple` can sample stable indices before `commands.entity`
-    // inserts `Twinkling`.
-    let all_stars: Vec<(Entity, &MeshMaterial3d<StandardMaterial>)> = stars.iter().collect();
-    let twinkle_count = star_settings
-        .twinkle
-        .choose_multiple_count
-        .min(all_stars.len());
-    let indices = get_random_indices(twinkle_count, all_stars.len());
-
-    // Snapshot the untwinkling stars once so we can sample a bounded subset by index.
-    let filtered_stars = extract_elements_at_indices(&all_stars, &indices);
-
-    let mut rng = rng();
-
-    for (entity, material_handle) in filtered_stars {
-        if let Some(material) = materials.get(material_handle) {
-            let original_emissive = Vec4::new(
-                material.emissive.red,
-                material.emissive.green,
-                material.emissive.blue,
-                material.emissive.alpha,
-            );
-            let intensity = rng.random_range(
-                star_settings.twinkle.intensity.start..star_settings.twinkle.intensity.end,
-            );
-            let target_emissive = original_emissive * intensity;
-
-            let duration = rng.random_range(
-                star_settings.twinkle.duration.start..star_settings.twinkle.duration.end,
-            );
-
-            commands.entity(entity).insert(Twinkling {
-                original_emissive,
-                target_emissive,
-                twinkle_timer: Timer::from_seconds(duration, TimerMode::Once),
-            });
+impl Twinkle {
+    pub(super) fn random(rng: &mut ThreadRng) -> Self {
+        Self {
+            phase:              rng.random_range(0.0..TAU),
+            amplitude_fraction: rng.random_range(
+                STAR_TWINKLE_AMPLITUDE_FRACTION_MIN..STAR_TWINKLE_AMPLITUDE_FRACTION_MAX,
+            ),
+            speed_fraction:     rng
+                .random_range(STAR_TWINKLE_SPEED_FRACTION_MIN..STAR_TWINKLE_SPEED_FRACTION_MAX),
         }
     }
 }
 
 fn update_twinkling(
-    mut commands: Commands,
     time: Res<Time>,
-    mut stars: Query<(Entity, &MeshMaterial3d<StandardMaterial>, &mut Twinkling)>,
+    star_settings: Res<StarSettings>,
+    mut stars: Query<(&Star, &MeshMaterial3d<StandardMaterial>, &mut Twinkle)>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    for (entity, material_handle, mut twinkling) in &mut stars {
-        twinkling.twinkle_timer.tick(time.delta());
+    let twinkle_settings = &star_settings.twinkle;
+    let delta = time.delta_secs();
 
-        if let Some(mut material) = materials.get_mut(material_handle) {
-            let progress = twinkling.twinkle_timer.elapsed_secs()
-                / twinkling.twinkle_timer.duration().as_secs_f32();
-            let new_emissive = if progress < STAR_TWINKLE_MIDPOINT {
-                twinkling.original_emissive.lerp(
-                    twinkling.target_emissive,
-                    progress * STAR_TWINKLE_HALF_SCALE,
-                )
-            } else {
-                twinkling.target_emissive.lerp(
-                    twinkling.original_emissive,
-                    (progress - STAR_TWINKLE_MIDPOINT) * STAR_TWINKLE_HALF_SCALE,
-                )
-            };
-            material.emissive = LinearRgba::new(
-                new_emissive.x,
-                new_emissive.y,
-                new_emissive.z,
-                new_emissive.w,
-            );
-        }
+    for (star, material_handle, mut twinkle) in &mut stars {
+        // Wrap `phase` with `rem_euclid` so `f32` precision holds over long runs.
+        twinkle.phase = (twinkle.speed_fraction)
+            .mul_add(twinkle_settings.speed * delta, twinkle.phase)
+            .rem_euclid(TAU);
 
-        if twinkling.twinkle_timer.is_finished() {
-            commands.entity(entity).remove::<Twinkling>();
-        }
+        let Some(mut material) = materials.get_mut(material_handle) else {
+            continue;
+        };
+
+        // `amplitude` is the live master knob scaled by this star's fraction;
+        // `factor` oscillates around 1.0 and the clamp stops a full-amplitude
+        // trough from pushing emissive below black.
+        let amplitude = twinkle_settings.amplitude * twinkle.amplitude_fraction;
+        let factor = amplitude.mul_add(twinkle.phase.sin(), 1.0).max(0.0);
+        let emissive = star.emissive * factor;
+        material.emissive = LinearRgba::new(emissive.x, emissive.y, emissive.z, emissive.w);
     }
 }

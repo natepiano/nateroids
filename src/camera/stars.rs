@@ -29,15 +29,17 @@ use super::constants::STAR_FIELD_DIAMETER;
 use super::constants::STAR_MINIMUM_BRIGHTNESS_FRACTION;
 use super::constants::STAR_RADIUS;
 use super::constants::STAR_ROTATION_CYCLE_MAX;
+use super::constants::STAR_ROTATION_CYCLE_MIN;
 use super::constants::STAR_ROTATION_CYCLE_MINIMUM_MINUTES;
 use super::constants::STAR_ROTATION_CYCLE_MINUTES;
-use super::constants::STAR_TWINKLE_CHOOSE_MULTIPLE_COUNT;
-use super::constants::STAR_TWINKLE_DURATION_MAX;
-use super::constants::STAR_TWINKLE_DURATION_MIN;
-use super::constants::STAR_TWINKLE_INTENSITY_MAX;
-use super::constants::STAR_TWINKLE_INTENSITY_MIN;
-use super::constants::STAR_TWINKLING_DELAY;
+use super::constants::STAR_TWINKLE_AMPLITUDE;
+use super::constants::STAR_TWINKLE_AMPLITUDE_MAX;
+use super::constants::STAR_TWINKLE_AMPLITUDE_MIN;
+use super::constants::STAR_TWINKLE_SPEED;
+use super::constants::STAR_TWINKLE_SPEED_MAX;
+use super::constants::STAR_TWINKLE_SPEED_MIN;
 use super::star::StarCamera;
+use super::star_twinkling::Twinkle;
 use crate::input::InspectStarSwitch;
 use crate::playfield::Boundary;
 use crate::state::GameState;
@@ -48,6 +50,13 @@ pub(super) struct StarsPlugin;
 
 impl Plugin for StarsPlugin {
     fn build(&self, app: &mut App) {
+        // `Range<f32>` is reflected as opaque with no serialization type data, which
+        // blocks BRP mutation of `StarSettings` range fields. Registering the generic
+        // `Range<f32>` plus `ReflectSerialize`/`ReflectDeserialize` makes them mutable
+        // at runtime.
+        app.register_type::<Range<f32>>()
+            .register_type_data::<Range<f32>, ReflectSerialize>()
+            .register_type_data::<Range<f32>, ReflectDeserialize>();
         app.init_resource::<StarSettings>()
             .insert_resource(StarRotationState { current_angle: 0.0 })
             .add_plugins(
@@ -86,10 +95,22 @@ pub(super) struct StarColorSettings {
 #[derive(Debug, Clone, Reflect, InspectorOptions)]
 #[reflect(InspectorOptions)]
 pub(super) struct StarTwinkleSettings {
-    pub(super) delay:                 f32,
-    pub(super) duration:              Range<f32>,
-    pub(super) intensity:             Range<f32>,
-    pub(super) choose_multiple_count: usize,
+    /// Master brightness swing applied uniformly to every star each frame; each
+    /// star scales it by its own `Twinkle::amplitude_fraction`.
+    #[inspector(
+        min = STAR_TWINKLE_AMPLITUDE_MIN,
+        max = STAR_TWINKLE_AMPLITUDE_MAX,
+        display = NumberDisplay::Slider
+    )]
+    pub(super) amplitude: f32,
+    /// Master cycle rate applied uniformly to every star; each star scales it by
+    /// its own `Twinkle::speed_fraction`.
+    #[inspector(
+        min = STAR_TWINKLE_SPEED_MIN,
+        max = STAR_TWINKLE_SPEED_MAX,
+        display = NumberDisplay::Slider
+    )]
+    pub(super) speed:     f32,
 }
 
 #[derive(Debug, Clone, Reflect, Resource, InspectorOptions)]
@@ -103,7 +124,7 @@ pub(super) struct StarSettings {
     pub(super) field_diameter:         Range<f32>,
     pub(super) twinkle:                StarTwinkleSettings,
     #[inspector(
-        min = STAR_ROTATION_CYCLE_MINIMUM_MINUTES,
+        min = STAR_ROTATION_CYCLE_MIN,
         max = STAR_ROTATION_CYCLE_MAX,
         display = NumberDisplay::Slider
     )]
@@ -125,10 +146,8 @@ impl Default for StarSettings {
             radius:                 STAR_RADIUS,
             field_diameter:         STAR_FIELD_DIAMETER,
             twinkle:                StarTwinkleSettings {
-                delay:                 STAR_TWINKLING_DELAY,
-                duration:              STAR_TWINKLE_DURATION_MIN..STAR_TWINKLE_DURATION_MAX,
-                intensity:             STAR_TWINKLE_INTENSITY_MIN..STAR_TWINKLE_INTENSITY_MAX,
-                choose_multiple_count: STAR_TWINKLE_CHOOSE_MULTIPLE_COUNT,
+                amplitude: STAR_TWINKLE_AMPLITUDE,
+                speed:     STAR_TWINKLE_SPEED,
             },
             rotation_cycle_minutes: STAR_ROTATION_CYCLE_MINUTES,
             rotation_axis:          Vec3::Y,
@@ -234,6 +253,7 @@ fn spawn_stars(
                 radius,
                 emissive,
             },
+            Twinkle::random(&mut rng),
             RenderLayer::Stars.layers(),
             Mesh3d(mesh.clone()),
             MeshMaterial3d(material),
