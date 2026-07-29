@@ -39,17 +39,19 @@ missing_docs = "deny"
 avian3d             = { version = "0.7.0", features = ["debug-plugin", "parallel", "simd"] }
 bevy                = { version = "0.19.0", features = ["bevy_dev_tools", "bevy_remote"] }
 bevy-inspector-egui = "0.37.0"
-bevy_brp_extras     = "0.20.1"
-bevy_clerestory     = "0.1.0"
+bevy_brp_extras     = "0.22.1"
+bevy_clerestory     = "0.2.0"
 bevy_enhanced_input = "0.26.0"
-bevy_kana           = { version = "0.1.0", features = ["input"] }
+bevy_kana           = { version = "0.2.0", features = ["input"] }
 bevy_lagrange       = { version = "0.2.0", features = ["fit_overlay"] }
-bevy_liminal        = "0.0.2"
+bevy_liminal        = "0.0.4"
 hana_lading         = { git = "https://github.com/natepiano/hana" }
-rand                = "0.10.1"
+rand                = "0.10.2"
 # matches the version bevy 0.19 depends on; used only to read adapter limits
 # before `DefaultPlugins` is configured
-wgpu                = "29.0.3"
+# potentially hana and nateroids benefit from checking these limits in the same way so this
+# may move to bevy_kana to be shared implementation for both - more to come
+wgpu = "29.0.4"
 
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
