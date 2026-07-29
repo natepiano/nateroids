@@ -42,6 +42,13 @@ pub(crate) const SPACESHIP_SCENE_ASSET_PATH: &str = "models/Spaceship.glb#Scene0
 pub(crate) const DEATH_VELOCITY_EPSILON: f32 = 0.001;
 pub(crate) const UNKNOWN_ENTITY_NAME: &str = "Unknown";
 
+// mesh preprocessing
+/// Bevy's `build mesh uniforms GPU frustum culling` bind group layout binds
+/// eight storage buffers in the compute stage. Adapters reporting a lower
+/// `max_storage_buffers_per_shader_stage` fail validation when that layout is
+/// created.
+pub(crate) const MESH_PREPROCESSING_STORAGE_BUFFERS_PER_SHADER_STAGE: u32 = 8;
+
 // orientation constants
 pub(crate) const CAMERA_ORIENTATION_DEFAULT_SETTINGS: OrientationSettings = OrientationSettings {
     dimension_mode:   DimensionMode::TwoD,

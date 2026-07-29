@@ -15,6 +15,7 @@ mod asset_loader;
 mod camera;
 mod constants;
 mod despawn;
+mod mesh_preprocessing;
 mod orientation;
 mod physics;
 mod playfield;
@@ -24,6 +25,7 @@ mod state;
 
 use bevy::gltf::GltfPlugin;
 use bevy::gltf::convert_coordinates::GltfConvertCoordinates;
+use bevy::pbr::PbrPlugin;
 use bevy::prelude::*;
 use bevy_brp_extras::BrpExtrasPlugin;
 use bevy_brp_extras::DEFAULT_REMOTE_PORT;
@@ -34,8 +36,11 @@ use crate::actor::ActorPlugin;
 use crate::asset_loader::AssetLoaderPlugin;
 use crate::camera::CameraPlugin;
 use crate::constants::APPLICATION_TITLE;
+use crate::constants::MESH_PREPROCESSING_STORAGE_BUFFERS_PER_SHADER_STAGE;
 use crate::despawn::DespawnPlugin;
 use crate::input::EnhancedInputAppPlugin;
+use crate::mesh_preprocessing::MeshPreprocessing;
+use crate::mesh_preprocessing::MeshPreprocessingPlugin;
 use crate::orientation::OrientationPlugin;
 use crate::physics::PhysicsPlugin;
 use crate::playfield::PlayfieldPlugin;
@@ -56,8 +61,14 @@ fn main() {
         format!("{APPLICATION_TITLE} - {effective_port}")
     };
 
+    let mesh_preprocessing = MeshPreprocessing::detect();
+
     app.add_plugins(
         DefaultPlugins
+            .set(PbrPlugin {
+                use_gpu_instance_buffer_builder: mesh_preprocessing == MeshPreprocessing::Gpu,
+                ..default()
+            })
             .set(GltfPlugin {
                 convert_coordinates: GltfConvertCoordinates {
                     rotate_scene_entity: true,
@@ -74,6 +85,15 @@ fn main() {
             }),
     );
 
+    // `LogPlugin` installs the tracing subscriber during `add_plugins`, so this
+    // is the first point where the detection result can reach the log.
+    if mesh_preprocessing == MeshPreprocessing::Cpu {
+        warn!(
+            "GPU mesh preprocessing disabled: this adapter reports fewer than \
+             {MESH_PREPROCESSING_STORAGE_BUFFERS_PER_SHADER_STAGE} storage buffers per shader stage"
+        );
+    }
+
     app.add_plugins(SwitchesPlugin)
         .add_plugins((
             EguiPlugin::default(),
@@ -84,6 +104,7 @@ fn main() {
             PlayfieldPlugin,
             CameraPlugin,
             DespawnPlugin,
+            MeshPreprocessingPlugin { mesh_preprocessing },
             OrientationPlugin,
             PhysicsPlugin,
             SchedulePlugin,

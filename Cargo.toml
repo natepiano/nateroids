@@ -47,6 +47,9 @@ bevy_lagrange       = { version = "0.2.0", features = ["fit_overlay"] }
 bevy_liminal        = "0.0.2"
 hana_lading         = { git = "https://github.com/natepiano/hana" }
 rand                = "0.10.1"
+# matches the version bevy 0.19 depends on; used only to read adapter limits
+# before `DefaultPlugins` is configured
+wgpu                = "29.0.3"
 
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
