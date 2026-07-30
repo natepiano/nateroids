@@ -678,12 +678,11 @@ dependencies = [
 
 [[package]]
 name = "bevy_brp_extras"
-version = "0.22.1"
+version = "0.22.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64ac36a87b75700a36c69f031713a0f47b85b583a9fa77e727d4a276dc795ece"
+checksum = "49e42d331f668c7b735af2fbea25d424f11d42a2f914bd990289e4d9a71301a6"
 dependencies = [
  "bevy",
- "bevy_kana 0.1.0",
  "bevy_remote",
  "image",
  "schemars",
@@ -5862,9 +5861,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.150"
+version = "1.0.151"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9"
+checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
 dependencies = [
  "indexmap",
  "itoa",

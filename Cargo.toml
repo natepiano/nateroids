@@ -39,7 +39,7 @@ missing_docs = "deny"
 avian3d             = { version = "0.7.0", features = ["debug-plugin", "parallel", "simd"] }
 bevy                = { version = "0.19.0", features = ["bevy_dev_tools", "bevy_remote"] }
 bevy-inspector-egui = "0.37.0"
-bevy_brp_extras     = "0.22.1"
+bevy_brp_extras     = "0.22.2"
 bevy_clerestory     = "0.2.0"
 bevy_enhanced_input = "0.26.0"
 bevy_kana           = { version = "0.2.0", features = ["input"] }
