@@ -49,7 +49,7 @@ echo ""
 # Query for camera entity (done once at startup)
 echo "Querying for camera entity..."
 CAMERA=$(curl -s -X POST http://127.0.0.1:$PORT/jsonrpc -H "Content-Type: application/json" \
-  -d '{"jsonrpc": "2.0", "id": 1, "method": "world.query", "params": {"filter": {"with": ["bevy_lagrange::OrbitCam"]}, "data": {}}}' \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "world.query", "params": {"filter": {"with": ["hana_lagrange::OrbitCam"]}, "data": {}}}' \
   | jq -r '.result[0].entity')
 
 if [ -z "$CAMERA" ]; then
@@ -132,7 +132,7 @@ while true; do
 
   # Zoom in (while paused)
   curl -s -X POST http://127.0.0.1:$PORT/jsonrpc -H "Content-Type: application/json" \
-    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_lagrange::ZoomToFit\", \"value\": {\"entity\": $CAMERA, \"target\": $target, \"margin\": 0.1, \"duration_ms\": 500.0}}}" >/dev/null 2>&1
+    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"hana_lagrange::ZoomToFit\", \"value\": {\"camera\": $CAMERA, \"target\": $target, \"margin\": 0.1, \"anchor\": \"Center\", \"offset_px\": [0.0, 0.0], \"duration\": {\"secs\": 0, \"nanos\": 500000000}, \"easing\": \"CubicOut\"}}}" >/dev/null 2>&1
   echo "Zoomed in (paused for ${PAUSED_DURATION}s)"
 
   sleep "$PAUSED_DURATION"
@@ -167,8 +167,10 @@ while true; do
   fi
 
   # Zoom out
+  anim_secs=$((ZOOM_OUT_ANIMATION_MS / 1000))
+  anim_nanos=$(((ZOOM_OUT_ANIMATION_MS % 1000) * 1000000))
   curl -s -X POST http://127.0.0.1:$PORT/jsonrpc -H "Content-Type: application/json" \
-    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"bevy_lagrange::PlayAnimation\", \"value\": {\"entity\": $CAMERA, \"moves\": [{\"target_translation\": [$x, $y, $z], \"target_focus\": [$focus_x, $focus_y, $focus_z], \"duration_ms\": $ZOOM_OUT_ANIMATION_MS, \"easing\": \"$EASING\"}]}}}" >/dev/null 2>&1
+    -d "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"world.trigger_event\", \"params\": {\"event\": \"hana_lagrange::PlayAnimation\", \"value\": {\"camera\": $CAMERA, \"camera_moves\": [{\"ToLookAt\": {\"position\": [$x, $y, $z], \"target\": [$focus_x, $focus_y, $focus_z], \"roll\": null, \"duration\": {\"secs\": $anim_secs, \"nanos\": $anim_nanos}, \"easing\": \"$EASING\"}}], \"source\": \"PlayAnimation\", \"target\": null, \"zoom_context\": null}}}" >/dev/null 2>&1
   echo "Zooming out (${ZOOM_OUT_ANIMATION_MS}ms animation, watching for ${DISTANCE_WATCH_DURATION}s)"
 
   sleep "$DISTANCE_WATCH_DURATION"

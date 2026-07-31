@@ -2,12 +2,12 @@ use std::time::Duration;
 
 use bevy::math::curve::easing::EaseFunction;
 use bevy::prelude::*;
-use bevy_lagrange::AnimationEnd;
-use bevy_lagrange::CameraMove;
-use bevy_lagrange::OrbitCam;
-use bevy_lagrange::PlayAnimation;
-use bevy_lagrange::ZoomEnd;
-use bevy_lagrange::ZoomToFit;
+use hana_lagrange::AnimationEnd;
+use hana_lagrange::CameraMove;
+use hana_lagrange::OrbitCam;
+use hana_lagrange::PlayAnimation;
+use hana_lagrange::ZoomEnd;
+use hana_lagrange::ZoomToFit;
 
 use crate::camera::CameraSettings;
 use crate::camera::ZOOM_MARGIN;
@@ -67,7 +67,7 @@ fn splash_start_spin_animation_command(
         return;
     };
 
-    let orbit_radius = orbit_cam.target_radius;
+    let orbit_radius = orbit_cam.zoom.target().0;
 
     commands.entity(camera_entity).remove::<SplashZoomActive>();
 
@@ -86,11 +86,12 @@ fn create_spin_sequence(radius: f32, durations: &[u64]) -> Vec<CameraMove> {
     positions
         .iter()
         .zip(durations.iter().cycle())
-        .map(|(position, &duration)| CameraMove::ToPosition {
-            translation: *position,
-            focus:       Vec3::ZERO,
-            duration:    Duration::from_millis(duration),
-            easing:      EaseFunction::Linear,
+        .map(|(position, &duration)| CameraMove::ToLookAt {
+            position: *position,
+            target:   Vec3::ZERO,
+            roll:     None,
+            duration: Duration::from_millis(duration),
+            easing:   EaseFunction::Linear,
         })
         .collect()
 }
@@ -110,9 +111,10 @@ fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
         .iter()
         .cycle()
         .zip(SPLASH_SPIN_DURATIONS_MS.iter())
-        .map(|(&translation, &ms)| CameraMove::ToPosition {
-            translation,
-            focus: Vec3::ZERO,
+        .map(|(&position, &ms)| CameraMove::ToLookAt {
+            position,
+            target: Vec3::ZERO,
+            roll: None,
             duration: Duration::from_millis(ms),
             easing: EaseFunction::Linear,
         })
@@ -131,11 +133,12 @@ fn create_spin_moves(radius: f32) -> Vec<CameraMove> {
 
     // Append the final `CameraMove::ToPosition` using
     // `SPLASH_LAND_HOME_DURATION_MS` and `EaseFunction::QuadraticOut`.
-    camera_moves.push(CameraMove::ToPosition {
-        translation: Vec3::new(0.0, 0.0, radius),
-        focus:       Vec3::ZERO,
-        duration:    Duration::from_millis(SPLASH_LAND_HOME_DURATION_MS),
-        easing:      EaseFunction::QuadraticOut,
+    camera_moves.push(CameraMove::ToLookAt {
+        position: Vec3::new(0.0, 0.0, radius),
+        target:   Vec3::ZERO,
+        roll:     None,
+        duration: Duration::from_millis(SPLASH_LAND_HOME_DURATION_MS),
+        easing:   EaseFunction::QuadraticOut,
     });
 
     camera_moves
@@ -154,19 +157,21 @@ pub(super) fn start_splash_camera_animation(
     commands.entity(entity).insert(SplashZoomActive);
 
     // Instant snap to splash start position, then hold while text animates
-    let snap_move = CameraMove::ToOrbit {
-        focus:    *camera_settings.splash_start.focus,
+    let snap_move = CameraMove::ToOrbitalLookAt {
+        target:   *camera_settings.splash_start.focus,
         yaw:      camera_settings.splash_start.yaw,
         pitch:    camera_settings.splash_start.pitch,
         radius:   camera_settings.splash_start.radius,
+        roll:     None,
         duration: Duration::ZERO,
         easing:   EaseFunction::Linear,
     };
-    let hold_move = CameraMove::ToPosition {
-        translation: Vec3::new(0.0, 0.0, camera_settings.splash_start.radius),
-        focus:       Vec3::ZERO,
-        duration:    Duration::from_millis(SPLASH_HOLD_DURATION_MS),
-        easing:      EaseFunction::BounceOut,
+    let hold_move = CameraMove::ToLookAt {
+        position: Vec3::new(0.0, 0.0, camera_settings.splash_start.radius),
+        target:   Vec3::ZERO,
+        roll:     None,
+        duration: Duration::from_millis(SPLASH_HOLD_DURATION_MS),
+        easing:   EaseFunction::BounceOut,
     };
 
     commands.trigger(PlayAnimation::new(entity, vec![snap_move, hold_move]));

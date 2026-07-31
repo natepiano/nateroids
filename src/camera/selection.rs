@@ -5,9 +5,9 @@ use bevy_inspector_egui::bevy_egui::egui;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
-use bevy_lagrange::OrbitCam;
-use bevy_lagrange::SetFitTarget;
-use bevy_liminal::Outline;
+use hana_lagrange::OrbitCam;
+use hana_lagrange::SetFitTarget;
+use hana_liminal::Outline;
 
 use super::constants::SELECTION_OUTLINE_COLOR;
 use super::constants::SELECTION_OUTLINE_INTENSITY;

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
-use bevy_lagrange::OrbitCam;
+use hana_lagrange::OrbitCam;
 
 use super::RenderLayer;
 use super::constants::EDGE_MARKER_FONT_SIZE;
@@ -120,9 +120,7 @@ fn update_focus_gizmo_state(
     }
 
     if let Ok(orbit_cam) = camera_query.single() {
-        let camera_radius = orbit_cam
-            .radius
-            .unwrap_or(FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS);
+        let camera_radius = orbit_cam.zoom.current().0;
         focus_gizmo_state.sphere_radius =
             focus_settings.sphere_radius * (camera_radius / FOCUS_GIZMO_DEFAULT_CAMERA_RADIUS);
     }
@@ -137,7 +135,7 @@ fn draw_camera_focus_gizmo(
     mut label_query: Query<(&mut Text, &mut Node, &mut TextColor), With<FocusDistanceLabel>>,
 ) {
     if let Ok((camera, camera_transform, orbit_cam)) = camera_query.single() {
-        let focus = orbit_cam.target_focus;
+        let focus = orbit_cam.pan.target().0;
 
         gizmos.sphere(focus, focus_gizmo_state.sphere_radius, focus_settings.color);
         gizmos.arrow(Vec3::ZERO, focus, focus_settings.color);

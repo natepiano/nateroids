@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_lagrange::CameraMoveList;
+use hana_lagrange::CameraMoveList;
 
 use super::Boundary;
 use crate::camera::RenderLayer;

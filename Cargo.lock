@@ -412,7 +412,7 @@ dependencies = [
  "parry3d",
  "parry3d-f64",
  "smallvec",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "thread_local",
 ]
 
@@ -544,7 +544,7 @@ dependencies = [
  "ron",
  "serde",
  "smallvec",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "thread_local",
  "tracing",
  "uuid",
@@ -599,7 +599,7 @@ dependencies = [
  "ctrlc",
  "downcast-rs 2.0.2",
  "log",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "variadics_please 1.1.0",
  "wasm-bindgen",
  "web-sys",
@@ -640,7 +640,7 @@ dependencies = [
  "ron",
  "serde",
  "stackfuture",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
  "uuid",
  "wasm-bindgen",
@@ -715,31 +715,8 @@ dependencies = [
  "downcast-rs 2.0.2",
  "serde",
  "smallvec",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "wgpu-types",
-]
-
-[[package]]
-name = "bevy_clerestory"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "accf9b7ccdc4a76e420156bd1e4411b2b155acfb14989ca8df775958b25a3c45"
-dependencies = [
- "bevy",
- "bevy_diagnostic",
- "bevy_kana 0.2.0",
- "block2 0.6.2",
- "dirs",
- "objc2 0.6.4",
- "objc2-app-kit 0.3.2",
- "objc2-foundation 0.3.2",
- "raw-window-handle",
- "ron",
- "serde",
- "thiserror 2.0.18",
- "windows",
- "winit",
- "x11rb",
 ]
 
 [[package]]
@@ -769,7 +746,7 @@ dependencies = [
  "derive_more",
  "encase",
  "serde",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "wgpu-types",
 ]
 
@@ -846,7 +823,7 @@ dependencies = [
  "bevy_window",
  "ron",
  "serde",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
 ]
 
@@ -892,7 +869,7 @@ dependencies = [
  "serde",
  "slotmap",
  "smallvec",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "variadics_please 1.1.0",
 ]
 
@@ -1045,7 +1022,7 @@ dependencies = [
  "bevy_platform",
  "bevy_time",
  "gilrs",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
 ]
 
@@ -1143,7 +1120,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
  "wgpu-types",
 ]
@@ -1183,7 +1160,7 @@ dependencies = [
  "rectangle-pack",
  "ruzstd",
  "serde",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
  "wgpu-types",
 ]
@@ -1203,7 +1180,7 @@ dependencies = [
  "log",
  "serde",
  "smol_str",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
 ]
 
 [[package]]
@@ -1220,7 +1197,7 @@ dependencies = [
  "bevy_reflect",
  "bevy_window",
  "log",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
 ]
 
 [[package]]
@@ -1285,33 +1262,12 @@ dependencies = [
 
 [[package]]
 name = "bevy_kana"
-version = "0.1.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "680eefefe1fc6ab5cd19f873fb2760684de503ab7a582e5bf07bb2b1a3fadb61"
-dependencies = [
- "bevy",
-]
-
-[[package]]
-name = "bevy_kana"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68b7d6dd9d4ed398ea1e4aa89685a61b264c5f3dc52f5656ba70bf9fe845b48a"
+checksum = "55aa77ff65efadc71ad31ba6e96cb1adaf86379e717a526d3d7f38e28c253857"
 dependencies = [
  "bevy",
  "bevy_enhanced_input",
-]
-
-[[package]]
-name = "bevy_lagrange"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04839c6ff1bf3a47615de15de0ec2df3f3e897e6e028f28c7a691fb9e279edf0"
-dependencies = [
- "bevy",
- "bevy_enhanced_input",
- "bevy_kana 0.1.0",
- "bitflags 2.11.0",
 ]
 
 [[package]]
@@ -1338,21 +1294,6 @@ dependencies = [
  "smallvec",
  "tracing",
  "wgpu-types",
-]
-
-[[package]]
-name = "bevy_liminal"
-version = "0.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fabaa206190828aa4d7b676761035144ba6ce0ced1025c5d0cf5110cbfe9e69"
-dependencies = [
- "bevy",
- "bevy_kana 0.1.0",
- "bevy_render",
- "bytemuck",
- "getrandom 0.4.3",
- "nonmax",
- "rand",
 ]
 
 [[package]]
@@ -1402,7 +1343,7 @@ dependencies = [
  "bevy_utils",
  "encase",
  "smallvec",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
  "variadics_please 1.1.0",
  "wgpu-types",
@@ -1435,7 +1376,7 @@ dependencies = [
  "rand",
  "rand_distr",
  "serde",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "variadics_please 1.1.0",
 ]
 
@@ -1463,7 +1404,7 @@ dependencies = [
  "half",
  "hexasphere",
  "serde",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
  "wgpu-types",
 ]
@@ -1512,7 +1453,7 @@ dependencies = [
  "offset-allocator",
  "smallvec",
  "static_assertions",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
  "wgpu-types",
 ]
@@ -1585,7 +1526,7 @@ dependencies = [
  "bevy_shader",
  "bevy_utils",
  "smallvec",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
 ]
 
@@ -1618,7 +1559,7 @@ dependencies = [
  "serde",
  "smallvec",
  "smol_str",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "uuid",
  "variadics_please 1.1.0",
  "wgpu-types",
@@ -1711,7 +1652,7 @@ dependencies = [
  "offset-allocator",
  "send_wrapper",
  "smallvec",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "variadics_please 1.1.0",
  "wasm-bindgen",
  "weak-table",
@@ -1748,7 +1689,7 @@ dependencies = [
  "bevy_scene_macros",
  "bevy_utils",
  "smallvec",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
  "variadics_please 1.1.0",
 ]
@@ -1779,7 +1720,7 @@ dependencies = [
  "naga",
  "naga_oil",
  "serde",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
  "wgpu-naga-bridge",
  "wgpu-types",
@@ -1914,7 +1855,7 @@ dependencies = [
  "smol_str",
  "swash",
  "sys-locale",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
  "wgpu-types",
 ]
@@ -1948,7 +1889,7 @@ dependencies = [
  "bevy_utils",
  "derive_more",
  "serde",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
 ]
 
 [[package]]
@@ -1994,7 +1935,7 @@ dependencies = [
  "smallvec",
  "swash",
  "taffy",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
  "uuid",
 ]
@@ -2139,7 +2080,7 @@ dependencies = [
  "derive_more",
  "ron",
  "serde",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "uuid",
 ]
 
@@ -2979,7 +2920,7 @@ checksum = "6e3e0ff2ee0b7aa97428308dd9e1e42369cb22f5fb8dc1c55546637443a60f1e"
 dependencies = [
  "const_panic",
  "encase_derive",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
 ]
 
 [[package]]
@@ -3524,7 +3465,7 @@ dependencies = [
  "hashbrown 0.16.1",
  "log",
  "presser",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "windows",
 ]
 
@@ -3579,6 +3520,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "hana_clerestory"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce0813e36537399df5ab66c485f5b92a88d6ceab3f8d52d2e671f732e48990f5"
+dependencies = [
+ "bevy",
+ "bevy_diagnostic",
+ "bevy_kana",
+ "block2 0.6.2",
+ "dirs",
+ "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
+ "raw-window-handle",
+ "ron",
+ "serde",
+ "thiserror 2.0.19",
+ "windows",
+ "winit",
+ "x11rb",
+]
+
+[[package]]
 name = "hana_lading"
 version = "0.0.1"
 source = "git+https://github.com/natepiano/hana#df97b2b237a4cb1fdc5c028bbc65c30ee8c3ea28"
@@ -3587,6 +3551,33 @@ dependencies = [
  "bevy_asset",
  "bevy_ecs",
  "tracing",
+]
+
+[[package]]
+name = "hana_lagrange"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14f26050b0db5f856106c5f3219b510881f44e7842ffcf922b63832678f5ed0e"
+dependencies = [
+ "bevy",
+ "bevy_enhanced_input",
+ "bevy_kana",
+ "bitflags 2.11.0",
+]
+
+[[package]]
+name = "hana_liminal"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5dbacd9ac7a5509493fedfecc5391b21f84af6fe7c51e615632adfc34c3b79c8"
+dependencies = [
+ "bevy",
+ "bevy_kana",
+ "bevy_render",
+ "bytemuck",
+ "getrandom 0.4.3",
+ "nonmax",
+ "rand",
 ]
 
 [[package]]
@@ -4260,7 +4251,7 @@ dependencies = [
  "pp-rs",
  "rustc-hash 1.1.0",
  "spirv",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "unicode-ident",
 ]
 
@@ -4276,7 +4267,7 @@ dependencies = [
  "naga",
  "regex",
  "rustc-hash 1.1.0",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
  "unicode-ident",
 ]
@@ -4295,12 +4286,12 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_brp_extras",
- "bevy_clerestory",
  "bevy_enhanced_input",
- "bevy_kana 0.2.0",
- "bevy_lagrange",
- "bevy_liminal",
+ "bevy_kana",
+ "hana_clerestory",
  "hana_lading",
+ "hana_lagrange",
+ "hana_liminal",
  "rand",
  "wgpu",
 ]
@@ -5082,7 +5073,7 @@ dependencies = [
  "smallvec",
  "spade",
  "static_assertions",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
 ]
 
 [[package]]
@@ -5110,7 +5101,7 @@ dependencies = [
  "slab",
  "smallvec",
  "spade",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
 ]
 
 [[package]]
@@ -5567,7 +5558,7 @@ checksum = "a4e608c6638b9c18977b00b475ac1f28d14e84b27d8d42f70e0bf1e3dec127ac"
 dependencies = [
  "getrandom 0.2.17",
  "libredox",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
 ]
 
 [[package]]
@@ -5641,7 +5632,7 @@ dependencies = [
  "dasp_sample",
  "lewton",
  "num-rational",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "tracing",
 ]
 
@@ -6000,7 +5991,7 @@ dependencies = [
  "log",
  "memmap2",
  "rustix 1.1.4",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "wayland-backend",
  "wayland-client",
  "wayland-csd-frame",
@@ -6239,11 +6230,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.18"
+version = "2.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4288b5bcbc7920c07a1149a35cf9590a2aa808e0bc1eafaade0b80947865fbc4"
+checksum = "09a43598840e33d5b0331f38c5e30d13bb11c11210a4b58f0d9b18a5a5eefcd9"
 dependencies = [
- "thiserror-impl 2.0.18",
+ "thiserror-impl 2.0.19",
 ]
 
 [[package]]
@@ -6259,13 +6250,13 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.18"
+version = "2.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebc4ee7f67670e9b64d05fa4253e753e016c6c95ff35b89b7941d6b856dec1d5"
+checksum = "43cbfe0cf76104d42a574802844187e84a305e531ed54455f11fbde0f10541cd"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.117",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -6985,7 +6976,7 @@ dependencies = [
  "raw-window-handle",
  "rustc-hash 1.1.0",
  "smallvec",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "wgpu-core-deps-apple",
  "wgpu-core-deps-emscripten",
  "wgpu-core-deps-wasm",
@@ -7074,7 +7065,7 @@ dependencies = [
  "raw-window-metal",
  "renderdoc-sys",
  "smallvec",
- "thiserror 2.0.18",
+ "thiserror 2.0.19",
  "wasm-bindgen",
  "wayland-sys",
  "web-sys",

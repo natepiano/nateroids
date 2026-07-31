@@ -13,12 +13,12 @@ mod zoom;
 
 use bevy::picking::mesh_picking::MeshPickingPlugin;
 use bevy::prelude::*;
-use bevy_lagrange::LagrangePlugin;
-use bevy_liminal::LiminalPlugin;
 pub(crate) use constants::ZOOM_MARGIN;
 use focus_gizmo::FocusGizmoPlugin;
 pub(crate) use game::CameraSettings;
 use game::GameCameraPlugin;
+use hana_lagrange::LagrangePlugin;
+use hana_liminal::LiminalPlugin;
 use lights::DirectionalLightsPlugin;
 use lights::LightSettings;
 pub(crate) use rendering::RenderLayer;

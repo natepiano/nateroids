@@ -4,13 +4,15 @@ use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use bevy_kana::Position;
-use bevy_lagrange::AxisResponse;
-use bevy_lagrange::OrbitCam;
-use bevy_lagrange::OrbitCamBlenderLikePreset;
-use bevy_lagrange::OrbitCamInputGain;
-use bevy_lagrange::OrbitCamInputMode;
-use bevy_lagrange::OrbitCamPreset;
-use bevy_liminal::OutlineCamera;
+use hana_lagrange::Operation;
+use hana_lagrange::OrbitCam;
+use hana_lagrange::OrbitCamBlenderLikePreset;
+use hana_lagrange::OrbitCamInputGain;
+use hana_lagrange::OrbitCamInputMode;
+use hana_lagrange::OrbitCamPreset;
+use hana_lagrange::Radius;
+use hana_lagrange::ScalarLimit;
+use hana_liminal::OutlineCamera;
 
 use super::RenderLayer;
 use super::constants::CAMERA_BLOOM_HIGH_PASS_FREQUENCY;
@@ -177,10 +179,15 @@ pub(super) fn game_camera(
         template(|_| Ok(OutlineCamera))
         RequiredCameraComponents
         OrbitCam {
-            focus: Vec3::ZERO,
-            target_radius: {camera_settings.splash_start.radius},
-            zoom: {AxisResponse::new(CAMERA_ZOOM_SENSITIVITY, CAMERA_ZOOM_SMOOTHNESS)},
-            zoom_lower_limit: CAMERA_ZOOM_LOWER_LIMIT,
+            zoom: {Operation::new(
+                Radius(camera_settings.splash_start.radius),
+                CAMERA_ZOOM_SENSITIVITY,
+                CAMERA_ZOOM_SMOOTHNESS,
+                ScalarLimit::Clamp {
+                    min: CAMERA_ZOOM_LOWER_LIMIT,
+                    max: f32::INFINITY,
+                },
+            )},
         }
         // Middle-drag orbit, Shift+middle-drag pan, Blender-style trackpad.
         template_value(OrbitCamInputMode::Preset(OrbitCamPreset::from(

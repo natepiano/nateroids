@@ -5,11 +5,11 @@ use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
-use bevy_lagrange::AnimateToFit;
-use bevy_lagrange::FitOverlay;
-use bevy_lagrange::OrbitCam;
-use bevy_lagrange::SetFitTarget;
-use bevy_lagrange::ZoomToFit;
+use hana_lagrange::AnimateToFit;
+use hana_lagrange::FitOverlay;
+use hana_lagrange::OrbitCam;
+use hana_lagrange::SetFitTarget;
+use hana_lagrange::ZoomToFit;
 
 use super::constants::HOME_ANIMATION_DURATION_MS;
 use super::constants::ZOOM_CONVERGENCE_RATE;
