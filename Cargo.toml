@@ -39,17 +39,17 @@ missing_docs = "deny"
 avian3d = { version = "0.7.0", features = ["debug-plugin", "parallel", "simd"] }
 bevy = { version = "0.19.1", features = ["bevy_dev_tools", "bevy_remote"] }
 bevy-inspector-egui = "0.37.0"
-bevy_brp_extras = "0.22.3"
+bevy_brp_extras = "0.22.6"
 bevy_enhanced_input = "0.26.0"
-hana_clerestory = "0.3.0"
+hana_clerestory = "0.3.1"
 hana_kana = "0.4.0"
 hana_lading = { git = "https://github.com/natepiano/bevy_hana" }
 hana_lagrange = { git = "https://github.com/natepiano/bevy_hana", features = [
   "fit_overlay",
 ] }
-hana_liminal = "0.1.0"
+hana_liminal = "0.1.1"
 hana_rubric = "0.1.0"
-rand = "0.10.2"
+rand = "0.10.3"
 # matches the version bevy 0.19 depends on; used only to read adapter limits
 # before `DefaultPlugins` is configured
 # potentially hana and nateroids benefit from checking these limits in the same way so this
