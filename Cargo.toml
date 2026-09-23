@@ -50,11 +50,6 @@ hana_lagrange = { git = "https://github.com/natepiano/bevy_hana", features = [
 hana_liminal = "0.1.1"
 hana_rubric = "0.1.0"
 rand = "0.10.3"
-# matches the version bevy 0.19 depends on; used only to read adapter limits
-# before `DefaultPlugins` is configured
-# potentially hana and nateroids benefit from checking these limits in the same way so this
-# may move to hana_kana to be shared implementation for both - more to come
-wgpu = "29.0.4"
 
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
