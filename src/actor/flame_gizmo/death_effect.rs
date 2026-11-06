@@ -157,7 +157,7 @@ struct RingDrawParams {
 
 /// observer that adds a death effect to a `Deaderoid`
 pub(super) fn on_deaderoid_added(
-    deaderoid: On<Add, Deaderoid>,
+    deaderoid: On<Add<Deaderoid>>,
     mut commands: Commands,
     aabb_query: Query<&Aabb>,
 ) {

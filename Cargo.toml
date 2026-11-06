@@ -36,20 +36,19 @@ wildcard_imports        = "allow" # Bevy prelude convention
 missing_docs = "deny"
 
 [dependencies]
-avian3d = { version = "0.7.0", features = ["debug-plugin", "parallel", "simd"] }
-bevy = { version = "0.19.1", features = ["bevy_dev_tools", "bevy_remote"] }
-bevy-inspector-egui = "0.37.0"
-bevy_brp_extras = "0.22.6"
-bevy_enhanced_input = "0.26.0"
-hana_clerestory = "0.3.1"
-hana_kana = "0.4.0"
-hana_lading = { git = "https://github.com/natepiano/bevy_hana" }
-hana_lagrange = { git = "https://github.com/natepiano/bevy_hana", features = [
-  "fit_overlay",
-] }
-hana_liminal = "0.1.1"
-hana_rubric = "0.1.0"
-rand = "0.10.3"
+avian3d             = { version = "0.8.0", features = ["debug-plugin", "parallel"] }
+bevy                = { version = "0.20.0", features = ["bevy_dev_tools", "bevy_remote"] }
+bevy-inspector-egui = "0.38.0"
+bevy_brp_extras     = "0.23.0"
+bevy_enhanced_input = "0.27.2"
+bytemuck            = { version = "1", features = ["derive"] }
+hana_clerestory     = "0.4.0"
+hana_kana           = "0.5.0"
+hana_lading         = { git = "https://github.com/natepiano/bevy_hana" }
+hana_lagrange       = { version = "0.6.0", features = ["fit_overlay"] }
+hana_liminal        = "0.2.0"
+hana_rubric         = "0.2.0"
+rand                = "0.10.3"
 
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]

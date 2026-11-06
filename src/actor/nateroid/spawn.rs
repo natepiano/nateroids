@@ -93,11 +93,11 @@ pub(super) fn spawn_nateroid(
 
     commands.spawn_scene(bsn! {
         Nateroid
-        template_value(Name::new(NATEROID_ENTITY_NAME))
-        template_value(transform)
-        template_value(linear_velocity)
-        template_value(angular_velocity)
-        settings::configured_actor_scene(nateroid_settings.actor_settings.clone())
+        Name::new(NATEROID_ENTITY_NAME)
+        transform
+        linear_velocity
+        angular_velocity
+        @settings::configured_actor_scene(nateroid_settings.actor_settings.clone())
     });
     nateroid_settings.actor_settings.reset_spawn_timer();
 }

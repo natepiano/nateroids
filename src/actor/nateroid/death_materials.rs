@@ -113,7 +113,7 @@ impl NateroidMesh {
 /// and icing). `initialize_materials` registers it in the command batch that
 /// inserts `NateroidMaterials`, so the resource always exists when it fires.
 fn apply_nateroid_materials_to_children(
-    children_added: On<Add, Children>,
+    children_added: On<Add<Children>>,
     mut commands: Commands,
     nateroid_query: Query<(), With<Nateroid>>,
     mesh_query: Query<(Entity, Option<&Name>), With<Mesh3d>>,

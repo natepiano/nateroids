@@ -119,7 +119,7 @@ fn default_spaceship_rotation() -> Quat { Quat::from_rotation_x(GLTF_ROTATION_X)
 
 /// Observer that spawns the `Spaceship` when `SplashText` is removed
 fn spawn_after_splash_text_removed(
-    _trigger: On<Remove, SplashText>,
+    _trigger: On<Remove<SplashText>>,
     commands: Commands,
     spaceship_settings: Res<SpaceshipSettings>,
     game_state: Res<State<GameState>>,
@@ -168,9 +168,9 @@ fn spaceship_scene(actor_settings: ActorSettings) -> impl Scene {
     bsn! {
         Spaceship
         ContinuousFire
-        template_value(Name::new(SPACESHIP_ENTITY_NAME))
-        template_value(transform)
-        settings::configured_actor_scene(actor_settings)
+        Name::new(SPACESHIP_ENTITY_NAME)
+        transform
+        @settings::configured_actor_scene(actor_settings)
     }
 }
 

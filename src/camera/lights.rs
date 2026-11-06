@@ -227,18 +227,18 @@ fn directional_light(
             shadow_depth_bias: SHADOW_DEPTH_BIAS,
             shadow_normal_bias: SHADOW_NORMAL_BIAS,
         }
-        template_value(CascadeShadowConfigBuilder {
+        CascadeShadowConfigBuilder {
             num_cascades: CASCADE_SHADOW_NUM_CASCADES,
             maximum_distance: CASCADE_SHADOW_MAX_DISTANCE,
             first_cascade_far_bound: CASCADE_SHADOW_FIRST_FAR_BOUND,
             overlap_proportion: CASCADE_SHADOW_OVERLAP_PROPORTION,
             ..default()
-        }.build())
-        template_value(Transform::from_rotation(Quat::from_axis_angle(
+        }.build()
+        Transform::from_rotation(Quat::from_axis_angle(
             light_rotation.axis,
             light_rotation.angle,
-        )))
-        template_value(RenderLayer::Game.layers())
+        ))
+        RenderLayer::Game.layers()
     }
 }
 

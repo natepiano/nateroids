@@ -46,29 +46,29 @@ pub(crate) fn insert_ship_controls(commands: &mut Commands, entity: Entity) {
                     .spawn((
                         Action::<ShipShiftModifier>::new(),
                         non_consuming_modifier_action_settings,
-                        bindings![KeyCode::ShiftLeft, KeyCode::ShiftRight],
+                        related!(Bindings[Binding::from(KeyCode::ShiftLeft), Binding::from(KeyCode::ShiftRight)]),
                     ))
                     .id();
 
                 context.spawn((
                     Action::<ShipAccelerate>::new(),
                     consuming_action_settings,
-                    bindings![KeyCode::KeyW, KeyCode::ArrowUp],
+                    related!(Bindings[Binding::from(KeyCode::KeyW), Binding::from(KeyCode::ArrowUp)]),
                 ));
                 context.spawn((
                     Action::<ShipTurnLeft>::new(),
                     consuming_action_settings,
-                    bindings![KeyCode::KeyA, KeyCode::ArrowLeft],
+                    related!(Bindings[Binding::from(KeyCode::KeyA), Binding::from(KeyCode::ArrowLeft)]),
                 ));
                 context.spawn((
                     Action::<ShipTurnRight>::new(),
                     consuming_action_settings,
-                    bindings![KeyCode::KeyD, KeyCode::ArrowRight],
+                    related!(Bindings[Binding::from(KeyCode::KeyD), Binding::from(KeyCode::ArrowRight)]),
                 ));
                 context.spawn((
                     Action::<ShipFire>::new(),
                     consuming_action_settings,
-                    bindings![KeyCode::Space],
+                    related!(Bindings[Binding::from(KeyCode::Space)]),
                 ));
                 context.spawn((
                     Action::<ShipContinuousFire>::new(),
@@ -91,7 +91,7 @@ pub(crate) fn insert_ship_controls(commands: &mut Commands, entity: Entity) {
                     //     ::press_plus_blockby_shift_prevents_toggle_on_shift_release
                     Press::default(),
                     BlockBy::single(shift_modifier),
-                    bindings![KeyCode::KeyF],
+                    related!(Bindings[Binding::from(KeyCode::KeyF)]),
                 ));
             },
         )),
@@ -197,14 +197,14 @@ mod tests {
         app.world_mut().spawn((
             GlobalContext,
             ContextPriority::<GlobalContext>::new(100),
-            actions!(GlobalContext[
+            related!(Actions<GlobalContext>[
                 (
                     Action::<ShowFocusToggle>::new(),
                     ActionSettings {
                         consume_input: true,
                         ..default()
                     },
-                    bindings![KeyCode::KeyF.with_mod_keys(ModKeys::SHIFT)],
+                    related!(Bindings[KeyCode::KeyF.with_mod_keys(ModKeys::SHIFT)]),
                 ),
             ]),
         ));
@@ -213,14 +213,14 @@ mod tests {
 
         app.world_mut().spawn((
             ShipContext,
-            actions!(ShipContext[
+            related!(Actions<ShipContext>[
                 (
                     Action::<ContinuousFireToggle>::new(),
                     ActionSettings {
                         consume_input: true,
                         ..default()
                     },
-                    bindings![KeyCode::KeyF],
+                    related!(Bindings[Binding::from(KeyCode::KeyF)]),
                 ),
             ]),
         ));
@@ -304,14 +304,14 @@ mod tests {
 
         app.world_mut().spawn((
             GlobalContext,
-            actions!(GlobalContext[
+            related!(Actions<GlobalContext>[
                 (
                     Action::<ShiftF>::new(),
                     ActionSettings {
                         consume_input: true,
                         ..default()
                     },
-                    bindings![KeyCode::KeyF.with_mod_keys(ModKeys::SHIFT)],
+                    related!(Bindings[KeyCode::KeyF.with_mod_keys(ModKeys::SHIFT)]),
                 ),
                 (
                     Action::<PlainF>::new(),
@@ -319,7 +319,7 @@ mod tests {
                         consume_input: true,
                         ..default()
                     },
-                    bindings![KeyCode::KeyF],
+                    related!(Bindings[Binding::from(KeyCode::KeyF)]),
                 ),
             ]),
         ));
@@ -367,7 +367,7 @@ mod tests {
                             consume_input: false,
                             ..default()
                         },
-                        bindings![KeyCode::ShiftLeft, KeyCode::ShiftRight],
+                        related!(Bindings[Binding::from(KeyCode::ShiftLeft), Binding::from(KeyCode::ShiftRight)]),
                     ))
                     .id();
 
@@ -379,7 +379,7 @@ mod tests {
                     },
                     Press::default(),
                     BlockBy::single(shift),
-                    bindings![KeyCode::KeyF],
+                    related!(Bindings[Binding::from(KeyCode::KeyF)]),
                 ));
             })),
         ));

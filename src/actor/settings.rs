@@ -177,7 +177,7 @@ type ActorRenderLayersQuery<'w, 'a> =
 
 /// Copies parent actor `RenderLayers` onto spawned scene descendants.
 fn propagate_render_layers_on_spawn(
-    add: On<Add, Children>,
+    add: On<Add<Children>>,
     parent_render_layers_query: ActorRenderLayersQuery,
     children_query: Query<&Children>,
     mut commands: Commands,
@@ -252,16 +252,16 @@ pub(super) fn configured_actor_scene(actor_settings: ActorSettings) -> impl Scen
     let damping = (
         actor_settings
             .linear_damping
-            .map(|damping| template_value(LinearDamping(damping))),
+            .map(|damping| bsn! { LinearDamping({damping}) }),
         actor_settings
             .angular_damping
-            .map(|damping| template_value(AngularDamping(damping))),
+            .map(|damping| bsn! { AngularDamping({damping}) }),
     );
 
     bsn! {
-        {pending_collider}
+        @pending_collider
         CollisionDamage({actor_settings.collision_damage})
-        template_value(actor_settings.collision_layers)
+        actor_settings.collision_layers
         GravityScale({actor_settings.gravity_scale})
         Health({actor_settings.health})
         Restitution {
@@ -271,8 +271,8 @@ pub(super) fn configured_actor_scene(actor_settings: ActorSettings) -> impl Scen
         Mass({actor_settings.mass})
         MaxAngularSpeed({actor_settings.max_angular_velocity})
         MaxLinearSpeed({actor_settings.max_linear_velocity})
-        template_value(actor_settings.render_layer.layers())
+        actor_settings.render_layer.layers()
         WorldAssetRoot({actor_settings.scene})
-        {damping}
+        @damping
     }
 }

@@ -195,12 +195,12 @@ fn spawn_missile_command(
 
     commands.spawn_scene(bsn! {
         Missile
-        template_value(Name::new(MISSILE_ENTITY_NAME))
-        template_value(missile_position)
-        template_value(transform)
-        template_value(linear_velocity)
-        template_value(angular_velocity)
-        settings::configured_actor_scene(missile_settings.actor_settings.clone())
+        Name::new(MISSILE_ENTITY_NAME)
+        missile_position
+        transform
+        linear_velocity
+        angular_velocity
+        @settings::configured_actor_scene(missile_settings.actor_settings.clone())
     });
     missile_settings.actor_settings.reset_spawn_timer();
 }

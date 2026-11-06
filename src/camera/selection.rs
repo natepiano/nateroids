@@ -86,18 +86,17 @@ impl Default for SelectionOutlineSettings {
 // ---------------------------------------------------------------------------
 
 /// Attach a click observer when a `Nateroid` is spawned
-fn on_nateroid_added(added: On<Add, Nateroid>, mut commands: Commands) {
+fn on_nateroid_added(added: On<Add<Nateroid>>, mut commands: Commands) {
     commands.entity(added.entity).observe(on_actor_clicked);
 }
 
 /// Attach a click observer when a `Spaceship` is spawned
-fn on_spaceship_added(added: On<Add, Spaceship>, mut commands: Commands) {
+fn on_spaceship_added(added: On<Add<Spaceship>>, mut commands: Commands) {
     commands.entity(added.entity).observe(on_actor_clicked);
 }
 
-/// Per-entity observer: fires when a `Pointer<Click>` bubbles up from a
-/// descendant `Mesh3d` to this actor entity.
-fn on_actor_clicked(click: On<Pointer<Click>>, mut commands: Commands) {
+/// This observer handles a `PointerClick` event from a descendant `Mesh3d`.
+fn on_actor_clicked(click: On<PointerClick>, mut commands: Commands) {
     commands.run_system_cached_with(select_actor_command, click.entity);
 }
 
@@ -127,7 +126,7 @@ fn select_actor_command(
 }
 
 /// When `Selected` is added, walk all descendants and add `MeshOutline` to mesh entities.
-fn on_selected_added(added: On<Add, Selected>, mut commands: Commands) {
+fn on_selected_added(added: On<Add<Selected>>, mut commands: Commands) {
     commands.run_system_cached_with(add_selection_outline_command, added.entity);
 }
 
@@ -154,7 +153,7 @@ fn add_selection_outline_command(
 /// When `Selected` is removed (despawn or manual deselect), remove outlines and
 /// revert zoom target to boundary.
 /// Skips revert if `ZoomTarget` already points to a new entity (switch-selection case).
-fn on_selected_removed(removed: On<Remove, Selected>, mut commands: Commands) {
+fn on_selected_removed(removed: On<Remove<Selected>>, mut commands: Commands) {
     commands.run_system_cached_with(remove_selection_outline_command, removed.entity);
 }
 

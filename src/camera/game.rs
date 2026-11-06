@@ -212,6 +212,8 @@ pub(super) fn game_camera(
     scene_assets: &SceneAssets,
     light_settings: &LightSettings,
 ) -> impl Scene {
+    let input_mode = camera_settings.input_mode();
+
     bsn! {
         template(|_| Ok(OutlineCamera))
         RequiredCameraComponents
@@ -227,13 +229,13 @@ pub(super) fn game_camera(
             )},
         }
         // Middle-drag orbit, Shift+middle-drag pan, Blender-style trackpad.
-        template_value(camera_settings.input_mode())
+        input_mode
         Camera {
             order: {CameraOrder::Game.order()},
             // can't obscure the star camera with this on
             clear_color: ClearColorConfig::None,
         }
-        template_value(RenderLayer::Game.layers())
+        RenderLayer::Game.layers()
         Smaa
         EnvironmentMapLight {
             diffuse_map: {scene_assets.environment_diffuse_map.clone()},

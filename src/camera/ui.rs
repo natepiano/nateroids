@@ -13,6 +13,6 @@ pub(super) fn ui_camera() -> impl Scene {
             // can't obscure game/star cameras with this on
             clear_color: ClearColorConfig::None,
         }
-        template_value(RenderLayer::UI.layers())
+        RenderLayer::UI.layers()
     }
 }

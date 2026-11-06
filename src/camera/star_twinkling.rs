@@ -56,16 +56,18 @@ fn update_twinkling(
             star.rebase(phase);
         }
         if let Some(mut buffer) = buffers.get_mut(&star_twinkling.star_buffer) {
-            buffer.set_data(star_twinkling.stars.clone());
+            buffer.clear();
+            buffer.extend_from_slice(&star_twinkling.stars);
         }
     }
     if let Some(mut buffer) = buffers.get_mut(&star_twinkling.clock_buffer) {
-        buffer.set_data(Vec4::new(
+        buffer.clear();
+        buffer.extend([Vec4::new(
             star_twinkling.phase.to_f32(),
             star_settings.twinkle.amplitude,
             0.0,
             0.0,
-        ));
+        )]);
     }
 }
 
@@ -118,7 +120,7 @@ mod tests {
     fn rebase_preserves_each_stars_brightness_and_subsequent_motion() {
         let mut clock = StarTwinkling::default();
         let mut star = star();
-        let original = star.clone();
+        let original = star;
         let elapsed = STAR_TWINKLE_PHASE_REBASE + 1.0;
         assert_eq!(clock.advance(elapsed, 1.0), Some(elapsed));
         star.rebase(elapsed);

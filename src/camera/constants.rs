@@ -145,7 +145,7 @@ pub(super) const STAR_COUNT: usize = 1000;
 pub(super) const STAR_DURATION_REPLACE_TIMER: f32 = 1.0;
 pub(super) const STAR_FIELD_DIAMETER: Range<f32> = 200.0..400.0;
 pub(super) const STAR_RADIUS: Range<f32> = 0.3..2.5;
-pub(super) const STAR_SHADER_PATH: &str = "shaders/star.wgsl";
+pub(super) const STAR_SHADER_PATH: &str = "shaders/star.wesl";
 
 // star rotation
 /// Below this cycle length `rotate_stars` treats rotation as off (1 second =

@@ -77,7 +77,7 @@ fn spawn_restart_shortcuts(
             consume_input: true,
             ..default()
         },
-        bindings![KeyCode::KeyR.with_mod_keys(ModKeys::SUPER | ModKeys::SHIFT)],
+        related!(Bindings[KeyCode::KeyR.with_mod_keys(ModKeys::SUPER | ModKeys::SHIFT)]),
     ));
     keybindings.spawn_shift_key::<RestartGameShortcut>(spawner, KeyCode::KeyR);
 }

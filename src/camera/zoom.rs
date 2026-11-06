@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy::math::curve::easing::EaseFunction;
+use bevy::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use bevy_inspector_egui::inspector_options::std_options::NumberDisplay;
 use bevy_inspector_egui::prelude::*;

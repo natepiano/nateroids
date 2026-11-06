@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy::math::curve::easing::EaseFunction;
+use bevy::curve::easing::EaseFunction;
 use bevy::prelude::*;
 use hana_lagrange::AnimationEnd;
 use hana_lagrange::AnimationSource;

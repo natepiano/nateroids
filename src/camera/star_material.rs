@@ -5,9 +5,10 @@ use bevy::pbr::ExtendedMaterial;
 use bevy::pbr::MaterialExtension;
 use bevy::prelude::*;
 use bevy::render::render_resource::AsBindGroup;
-use bevy::render::render_resource::ShaderType;
 use bevy::render::storage::ShaderBuffer;
 use bevy::shader::ShaderRef;
+use bytemuck::Pod;
+use bytemuck::Zeroable;
 use hana_kana::ToF32;
 use rand::RngExt;
 
@@ -34,8 +35,9 @@ impl MaterialExtension for StarMaterialExtension {
     fn fragment_shader() -> ShaderRef { STAR_SHADER_PATH.into() }
 }
 
-/// Two aligned vectors shared by Rust and `star.wgsl`.
-#[derive(Clone, Debug, ShaderType)]
+/// Two aligned vectors shared by Rust and `star.wesl`.
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+#[repr(C)]
 pub(super) struct StarData {
     pub(super) emissive: Vec4,
     /// Initial phase, amplitude fraction, speed fraction, and alignment padding.

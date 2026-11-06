@@ -66,9 +66,9 @@ pub(super) fn spawn_boundary_volume(
 
     commands.spawn_scene(bsn! {
         template(move |_| Ok(BoundaryVolume))
-        template_value(Transform::from_scale(scale))
+        Transform::from_scale(scale)
         template(move |_| Ok(Mesh3d(mesh.clone())))
-        template_value(Visibility::Hidden)
+        Visibility::Hidden
     });
 
     debug!("Spawned BoundaryVolume entity");
@@ -119,7 +119,7 @@ pub(super) fn draw_boundary(
 /// Observer that triggers when `SplashText` is removed
 /// Starts the boundary fade-in animation by spawning an entity with `BoundaryFadeIn`
 pub(super) fn start_boundary_fade(
-    _trigger: On<Remove, SplashText>,
+    _trigger: On<Remove<SplashText>>,
     mut commands: Commands,
     camera_query: Query<(Entity, &CameraSequence)>,
     camera_commands: CameraCommands,

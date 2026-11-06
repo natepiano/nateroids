@@ -10,6 +10,8 @@ use super::required_components::RequiredCameraComponents;
 pub(super) struct StarCamera;
 
 pub(super) fn star_camera(camera_settings: &CameraSettings) -> impl Scene {
+    let bloom = get_bloom_settings(camera_settings);
+
     bsn! {
         RequiredCameraComponents
         Camera3d
@@ -18,8 +20,8 @@ pub(super) fn star_camera(camera_settings: &CameraSettings) -> impl Scene {
             clear_color: ClearColorConfig::Custom(Color::BLACK),
         }
         StarCamera
-        template_value(get_bloom_settings(camera_settings))
-        template_value(RenderLayer::Stars.layers())
+        bloom
+        RenderLayer::Stars.layers()
     }
 }
 

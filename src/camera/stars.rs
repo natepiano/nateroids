@@ -261,12 +261,12 @@ fn spawn_stars(
         stars.push(Star { position, radius });
     }
     star_twinkling.star_buffer = buffers.add(ShaderBuffer::from(star_twinkling.stars.clone()));
-    star_twinkling.clock_buffer = buffers.add(ShaderBuffer::from(Vec4::new(
+    star_twinkling.clock_buffer = buffers.add(ShaderBuffer::from(vec![Vec4::new(
         0.0,
         star_settings.twinkle.amplitude,
         0.0,
         0.0,
-    )));
+    )]));
     let material = materials.add(StarMaterial {
         base:      StandardMaterial {
             base_color: Color::BLACK,
@@ -290,7 +290,7 @@ fn spawn_stars(
             RenderLayer::Stars.layers(),
             Mesh3d(mesh.clone()),
             MeshMaterial3d(material.clone()),
-            MeshTag(index.to_u32()),
+            MeshTag::new(index.to_u32()),
             transform,
         ));
     }
@@ -362,7 +362,8 @@ fn rotate_stars(
 
     // Decreasing `StarRotationState::current_angle` rotates clockwise when viewed
     // from above.
-    rotation_state.current_angle -= rotation_speed * time.delta_secs();
+    rotation_state.current_angle =
+        rotation_speed.mul_add(-time.delta_secs(), rotation_state.current_angle);
 
     // Each `Star::position` rotates around `StarSettings::rotation_axis`.
     let rotation = Quat::from_axis_angle(star_settings.rotation_axis, rotation_state.current_angle);
@@ -416,7 +417,7 @@ mod tests {
         for (mesh, material, tag) in query.iter(world) {
             meshes.insert(mesh.0.id());
             materials.insert(material.0.id());
-            tags.push(tag.0);
+            tags.push(tag.value);
         }
         tags.sort_unstable();
         assert_eq!(tags, [0, 1, 2]);
